@@ -1,0 +1,9 @@
+{
+  "name": "Drum Progress",
+  "short_name": "Drum Progress",
+  "description": "Build a daily drumming practice streak.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080909",
+  "theme_color": "#080909"
+}
