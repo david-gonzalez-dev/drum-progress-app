@@ -59,9 +59,19 @@ drop policy if exists "signed-in users can view groups" on public.groups;
 create policy "signed-in users can view groups" on public.groups for select to authenticated using (true);
 drop policy if exists "signed-in users can create groups" on public.groups;
 create policy "signed-in users can create groups" on public.groups for insert to authenticated with check (auth.uid() = created_by);
+-- security definer bypasses RLS internally, avoiding "infinite recursion detected in policy for relation group_members"
+-- (a policy on group_members can't query group_members directly without triggering itself).
+create or replace function public.is_group_member(target_group_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as 'select exists (select 1 from public.group_members where group_id = target_group_id and user_id = auth.uid());';
+
 drop policy if exists "members can view their group's membership" on public.group_members;
 create policy "members can view their group's membership" on public.group_members for select to authenticated using (
-  exists (select 1 from public.group_members m where m.group_id = group_members.group_id and m.user_id = auth.uid())
+  public.is_group_member(group_id)
 );
 drop policy if exists "signed-in users can join groups" on public.group_members;
 create policy "signed-in users can join groups" on public.group_members for insert to authenticated with check (auth.uid() = user_id);
@@ -85,3 +95,20 @@ create policy "group members can view challenge participants" on public.challeng
 );
 drop policy if exists "signed-in users can join challenges" on public.challenge_members;
 create policy "signed-in users can join challenges" on public.challenge_members for insert to authenticated with check (auth.uid() = user_id);
+
+-- Group progress view: lets group members see each other's practice logs (read-only), so the group calendar/leaderboard can show everyone's activity.
+-- This does not change who can create/edit/delete a log -- the existing "users manage their practice logs" policy still restricts writes to the log's own owner.
+drop policy if exists "group members can view each other's practice logs" on public.practice_logs;
+create policy "group members can view each other's practice logs" on public.practice_logs for select to authenticated using (
+  exists (
+    select 1 from public.group_members gm1
+    join public.group_members gm2 on gm1.group_id = gm2.group_id
+    where gm1.user_id = practice_logs.user_id and gm2.user_id = auth.uid()
+  )
+);
+
+-- Leaving a group and deleting a challenge had no policy at all, so both would silently fail with "no rows affected".
+drop policy if exists "users can leave groups" on public.group_members;
+create policy "users can leave groups" on public.group_members for delete to authenticated using (auth.uid() = user_id);
+drop policy if exists "creator can delete their challenge" on public.challenges;
+create policy "creator can delete their challenge" on public.challenges for delete to authenticated using (auth.uid() = created_by);

@@ -23,6 +23,7 @@ function practiceItemLabel(en: string, lang: Lang) {
 }
 
 const NAV_TABS: Tab[] = ["today", "calendar", "group", "settings"];
+const MEMBER_COLORS = ["#ff6b1a", "#4fd1c5", "#9f7aea", "#f6ad55", "#68d391", "#f687b3", "#63b3ed", "#fc8181"];
 
 const translations = {
   en: {
@@ -40,11 +41,22 @@ const translations = {
     },
     group: {
       yourCrew: "YOUR CREW", youreIn: "You're in.", inviteMsg: "Invite drummers with this code:", copyInvite: "Copy invite code",
-      challenges: "CHALLENGES", comingNext: "Coming next", comingNextDesc: "Create your first shared goal as soon as your crew is ready.",
+      challenges: "CHALLENGES",
       practiseTogether: "PRACTISE TOGETHER", yourGroup: "YOUR GROUP", findCrew: "Find your crew.", startGroup: "Start a group", joinCrew: "Join your crew",
       intro: "Stay accountable, climb the leaderboard, and make practice more fun.", createGroupBtn: "Create a group", joinWithCode: "Join with invite code",
       groupNamePlaceholder: "Group name", inviteCodePlaceholder: "Invite code", pleaseWait: "Please wait...", createGroup: "Create group",
       joinGroup: "Join group", back: "Back", inviteNotFound: "That invite code was not found.", couldNotCreate: "Could not create group.",
+      leaderboard: "LEADERBOARD", you: "You", minutesShort: "min",
+      noChallenges: "No challenges yet. Start one with your crew!", newChallenge: "+ New challenge", challengeNamePlaceholder: "Challenge name",
+      typeDaily: "Every day", typeMinutes: "Total minutes", typeSessions: "Days practised", goalLabel: "GOAL", startLabel: "START", endLabel: "END",
+      rewardPlaceholder: "Reward (optional)", punishmentPlaceholder: "Punishment (optional)", createChallengeBtn: "Create challenge",
+      joinChallengeBtn: "Join challenge", joined: "Joined", participants: (n: number) => `${n} joined`,
+      dailyGoalDesc: (min: number) => `${min}+ min every day`, minutesGoalDesc: (total: number) => `Reach ${total} total min`,
+      sessionsGoalDesc: (days: number) => `Practise on ${days} days`, daysProgress: (p: number, t: number) => `${p}/${t} days`,
+      minutesProgress: (p: number, t: number) => `${p}/${t} min`, reward: "Reward:", punishment: "Punishment:", couldNotCreateChallenge: "Could not create challenge.",
+      weekdaysMon: ["M", "T", "W", "T", "F", "S", "S"], copied: "Copied!", progress: "PROGRESS", leaveGroup: "Leave group",
+      confirmLeave: "Leave this group? You can rejoin later with the invite code.", confirmDeleteChallenge: "Delete this challenge? This can't be undone.",
+      deleteChallenge: "Delete", since: (date: string) => `Since ${date}`, couldNotLeave: "Could not leave the group.", couldNotDeleteChallenge: "Could not delete the challenge.",
     },
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
@@ -72,11 +84,22 @@ const translations = {
     },
     group: {
       yourCrew: "TU GRUPO", youreIn: "Ya estás dentro.", inviteMsg: "Invita a otros bateristas con este código:", copyInvite: "Copiar código de invitación",
-      challenges: "DESAFÍOS", comingNext: "Próximamente", comingNextDesc: "Crea tu primera meta compartida en cuanto tu grupo esté listo.",
+      challenges: "DESAFÍOS",
       practiseTogether: "PRACTICA EN GRUPO", yourGroup: "TU GRUPO", findCrew: "Encuentra tu grupo.", startGroup: "Crear un grupo", joinCrew: "Únete a un grupo",
       intro: "Mantente responsable, sube en la clasificación y haz que practicar sea más divertido.", createGroupBtn: "Crear un grupo", joinWithCode: "Unirse con código de invitación",
       groupNamePlaceholder: "Nombre del grupo", inviteCodePlaceholder: "Código de invitación", pleaseWait: "Un momento...", createGroup: "Crear grupo",
       joinGroup: "Unirse al grupo", back: "Atrás", inviteNotFound: "No se encontró ese código de invitación.", couldNotCreate: "No se pudo crear el grupo.",
+      leaderboard: "CLASIFICACIÓN", you: "Tú", minutesShort: "min",
+      noChallenges: "Aún no hay desafíos. ¡Empieza uno con tu grupo!", newChallenge: "+ Nuevo desafío", challengeNamePlaceholder: "Nombre del desafío",
+      typeDaily: "Todos los días", typeMinutes: "Minutos totales", typeSessions: "Días practicados", goalLabel: "META", startLabel: "INICIO", endLabel: "FIN",
+      rewardPlaceholder: "Recompensa (opcional)", punishmentPlaceholder: "Penalización (opcional)", createChallengeBtn: "Crear desafío",
+      joinChallengeBtn: "Unirse al desafío", joined: "Unido", participants: (n: number) => `${n} unidos`,
+      dailyGoalDesc: (min: number) => `${min}+ min cada día`, minutesGoalDesc: (total: number) => `Llega a ${total} min en total`,
+      sessionsGoalDesc: (days: number) => `Practica ${days} días`, daysProgress: (p: number, t: number) => `${p}/${t} días`,
+      minutesProgress: (p: number, t: number) => `${p}/${t} min`, reward: "Recompensa:", punishment: "Penalización:", couldNotCreateChallenge: "No se pudo crear el desafío.",
+      weekdaysMon: ["L", "M", "X", "J", "V", "S", "D"], copied: "¡Copiado!", progress: "PROGRESO", leaveGroup: "Salir del grupo",
+      confirmLeave: "¿Salir de este grupo? Puedes volver a unirte más tarde con el código de invitación.", confirmDeleteChallenge: "¿Eliminar este desafío? Esta acción no se puede deshacer.",
+      deleteChallenge: "Eliminar", since: (date: string) => `Desde ${date}`, couldNotLeave: "No se pudo salir del grupo.", couldNotDeleteChallenge: "No se pudo eliminar el desafío.",
     },
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
@@ -197,7 +220,7 @@ export default function Home() {
   return <main className="shell">
     {tab === "today" && <Today minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} save={save} saved={saved} streak={streak} openMetronome={() => setMetronome(true)} displayName={displayName} language={language} T={T} />}
     {tab === "calendar" && <Calendar logs={logs} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} saveLogFor={saveLogFor} language={language} T={T} />}
-    {tab === "group" && <Group user={user} setError={setAuthError} T={T} />}
+    {tab === "group" && <Group user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
@@ -273,12 +296,182 @@ function DayEditor({ date, log, onSave, language, T }: { date: string; log?: Log
 }
 function Stat({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><strong>{value}</strong></div>; }
 
-function Group({ user, setError, T }: { user: any; setError: (message: string) => void; T: any }) {
+function Group({ user, setError, language, T }: { user: any; setError: (message: string) => void; language: Lang; T: any }) {
   const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [group, setGroup] = useState<any>(null); const [busy, setBusy] = useState(false);
-  useEffect(() => { supabase.from("group_members").select("groups(id,name,invite_code)").eq("user_id", user.id).limit(1).maybeSingle().then(({ data }) => { if (data) setGroup((data as any).groups); }); }, [user]);
+  const [groupLoading, setGroupLoading] = useState(true);
+  const [members, setMembers] = useState<{ id: string; name: string }[]>([]);
+  const [totals, setTotals] = useState<{ id: string; name: string; total: number }[]>([]);
+  const [viewDate, setViewDate] = useState(() => new Date());
+  const [monthLogs, setMonthLogs] = useState<Record<string, string[]>>({});
+  const [copied, setCopied] = useState(false);
+  const [challenges, setChallenges] = useState<any[]>([]);
+  const [showNewChallenge, setShowNewChallenge] = useState(false);
+  const [challengeName, setChallengeName] = useState("");
+  const [challengeType, setChallengeType] = useState<"daily" | "minutes" | "sessions">("sessions");
+  const [challengeGoal, setChallengeGoal] = useState("10");
+  const [challengeStart, setChallengeStart] = useState(dateKey);
+  const [challengeEnd, setChallengeEnd] = useState(dateKey);
+  const [challengeReward, setChallengeReward] = useState("");
+  const [challengePunishment, setChallengePunishment] = useState("");
+  const [challengeBusy, setChallengeBusy] = useState(false);
+  const locale = language === "es" ? "es-ES" : "en-US";
+  useEffect(() => { supabase.from("group_members").select("groups(id,name,invite_code,created_at)").eq("user_id", user.id).order("joined_at", { ascending: true }).limit(1).maybeSingle().then(({ data }) => { if (data) setGroup((data as any).groups); setGroupLoading(false); }); }, [user]);
+  useEffect(() => {
+    if (!group) { setMembers([]); setTotals([]); setChallenges([]); return; }
+    supabase.from("group_members").select("user_id, profiles(name)").eq("group_id", group.id).order("user_id").then(({ data }) => {
+      const memberList = (data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer" }));
+      setMembers(memberList);
+      const memberIds = memberList.map((m) => m.id);
+      if (!memberIds.length) return;
+      const since = String(group.created_at).slice(0, 10);
+      supabase.from("practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since).then(({ data: logRows }) => {
+        const sums: Record<string, number> = {};
+        (logRows ?? []).forEach((row: any) => { sums[row.user_id] = (sums[row.user_id] ?? 0) + row.minutes; });
+        setTotals(memberList.map((m) => ({ ...m, total: sums[m.id] ?? 0 })).sort((a, b) => b.total - a.total));
+      });
+    });
+    loadChallenges();
+  }, [group]);
+  useEffect(() => {
+    if (!group || !members.length) { setMonthLogs({}); return; }
+    const year = viewDate.getFullYear(); const month = viewDate.getMonth();
+    const monthStart = new Date(year, month, 1).toISOString().slice(0, 10);
+    const monthEnd = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+    const memberIds = members.map((m) => m.id);
+    supabase.from("practice_logs").select("practiced_on, user_id").in("user_id", memberIds).gte("practiced_on", monthStart).lte("practiced_on", monthEnd).then(({ data }) => {
+      const byDay: Record<string, string[]> = {};
+      (data ?? []).forEach((row: any) => { byDay[row.practiced_on] = [...(byDay[row.practiced_on] ?? []), row.user_id]; });
+      setMonthLogs(byDay);
+    });
+  }, [group, members, viewDate]);
+  async function loadChallenges() {
+    if (!group) return;
+    const { data: rows } = await supabase.from("challenges").select("id,name,created_by,goal_type,goal_value,start_date,end_date,reward,punishment").eq("group_id", group.id).order("start_date", { ascending: false });
+    const list = rows ?? [];
+    if (!list.length) { setChallenges([]); return; }
+    const ids = list.map((c: any) => c.id);
+    const { data: memberRows } = await supabase.from("challenge_members").select("challenge_id,user_id").in("challenge_id", ids);
+    const earliestStart = list.reduce((min: string, c: any) => (c.start_date < min ? c.start_date : min), list[0].start_date);
+    const { data: logRows } = await supabase.from("practice_logs").select("practiced_on,minutes").eq("user_id", user.id).gte("practiced_on", earliestStart);
+    const myLogs: Record<string, number> = {};
+    (logRows ?? []).forEach((row: any) => { myLogs[row.practiced_on] = row.minutes; });
+    const enriched = list.map((c: any) => {
+      const participants = (memberRows ?? []).filter((m: any) => m.challenge_id === c.id);
+      const joined = participants.some((m: any) => m.user_id === user.id);
+      const end = c.end_date < dateKey ? c.end_date : dateKey;
+      let progress = 0; let target = c.goal_value;
+      if (c.goal_type === "minutes") {
+        for (let cursor = c.start_date; cursor <= end; cursor = shiftDateKey(cursor, 1)) progress += myLogs[cursor] ?? 0;
+      } else if (c.goal_type === "sessions") {
+        for (let cursor = c.start_date; cursor <= end; cursor = shiftDateKey(cursor, 1)) if ((myLogs[cursor] ?? 0) > 0) progress += 1;
+      } else {
+        let broken = false;
+        for (let cursor = c.start_date; cursor <= end; cursor = shiftDateKey(cursor, 1)) { if (!broken && (myLogs[cursor] ?? 0) >= c.goal_value) progress += 1; else broken = true; }
+        target = Math.round((new Date(c.end_date + "T12:00:00").getTime() - new Date(c.start_date + "T12:00:00").getTime()) / 86400000) + 1;
+      }
+      return { ...c, joined, participantCount: participants.length, progress, target };
+    });
+    setChallenges(enriched);
+  }
+  async function joinChallenge(challengeId: string) {
+    const { error } = await supabase.from("challenge_members").upsert({ challenge_id: challengeId, user_id: user.id }, { onConflict: "challenge_id,user_id", ignoreDuplicates: true });
+    if (error) setError(error.message); else loadChallenges();
+  }
+  async function deleteChallenge(challengeId: string) {
+    if (!window.confirm(T.group.confirmDeleteChallenge)) return;
+    const { error, count } = await supabase.from("challenges").delete({ count: "exact" }).eq("id", challengeId);
+    if (error) setError(error.message);
+    else if (!count) setError(T.group.couldNotDeleteChallenge);
+    else loadChallenges();
+  }
+  async function createChallenge() {
+    setChallengeBusy(true);
+    const { data, error } = await supabase.from("challenges").insert({ group_id: group.id, created_by: user.id, name: challengeName, goal_type: challengeType, goal_value: Number(challengeGoal) || 1, start_date: challengeStart, end_date: challengeEnd, reward: challengeReward || null, punishment: challengePunishment || null }).select().single();
+    if (error || !data) { setError(error?.message ?? T.group.couldNotCreateChallenge); setChallengeBusy(false); return; }
+    await supabase.from("challenge_members").insert({ challenge_id: data.id, user_id: user.id });
+    setChallengeName(""); setChallengeGoal("10"); setChallengeReward(""); setChallengePunishment(""); setShowNewChallenge(false); setChallengeBusy(false);
+    loadChallenges();
+  }
   async function createGroup() { setBusy(true); const invite = Math.random().toString(36).slice(2,8).toUpperCase(); const { data, error } = await supabase.from("groups").insert({ name, invite_code: invite, created_by: user.id }).select().single(); if (!error && data) { const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id, role: "owner" }); if (!member.error) setGroup(data); else setError(member.error.message); } else setError(error?.message ?? T.group.couldNotCreate); setBusy(false); }
-  async function joinGroup() { setBusy(true); const { data, error } = await supabase.from("groups").select("id,name,invite_code").eq("invite_code", code.trim().toUpperCase()).maybeSingle(); if (error || !data) setError(T.group.inviteNotFound); else { const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id }); if (member.error) setError(member.error.message); else setGroup(data); } setBusy(false); }
-  if (group) return <section className="page"><header className="simple-head"><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></header><div className="group-card"><div className="group-icon">✦</div><h2>{T.group.youreIn}</h2><p>{T.group.inviteMsg}</p><strong className="invite-code">{group.invite_code}</strong><button className="secondary" onClick={() => navigator.clipboard.writeText(group.invite_code)}>{T.group.copyInvite}</button></div><div className="challenge"><span>{T.group.challenges}</span><h3>{T.group.comingNext}</h3><p>{T.group.comingNextDesc}</p></div></section>;
+  async function joinGroup() { setBusy(true); const { data, error } = await supabase.from("groups").select("id,name,invite_code,created_at").eq("invite_code", code.trim().toUpperCase()).maybeSingle(); if (error || !data) { setError(T.group.inviteNotFound); setBusy(false); return; } const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id }); if (member.error && member.error.code !== "23505") setError(member.error.message); else setGroup(data); setBusy(false); }
+  function copyInvite() { navigator.clipboard.writeText(group.invite_code); setCopied(true); setTimeout(() => setCopied(false), 1500); }
+  async function leaveGroup() {
+    if (!window.confirm(T.group.confirmLeave)) return;
+    const { error, count } = await supabase.from("group_members").delete({ count: "exact" }).eq("group_id", group.id).eq("user_id", user.id);
+    if (error) setError(error.message);
+    else if (!count) setError(T.group.couldNotLeave);
+    else { setGroup(null); setMode("start"); }
+  }
+  if (groupLoading) return <section className="page" />;
+  if (group) {
+    const maxTotal = Math.max(1, ...totals.map((m) => m.total));
+    const year = viewDate.getFullYear(); const month = viewDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
+    const sinceLabel = T.group.since(new Date(group.created_at).toLocaleDateString(locale, { month: "short", day: "numeric" }));
+    return <section className="page">
+      <header className="simple-head group-head">
+        <div><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></div>
+        <button className="invite-chip" onClick={copyInvite}>{copied ? T.group.copied : group.invite_code}</button>
+      </header>
+      <div className="group-progress"><span className="section-label">{T.group.progress}</span><div className="calendar-card">
+        <div className="cal-head"><button onClick={() => setViewDate(new Date(year, month - 1, 1))}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => setViewDate(new Date(year, month + 1, 1))}>›</button></div>
+        <div className="week">{T.group.weekdaysMon.map((x: string, i: number) => <span key={i}>{x}</span>)}</div>
+        <div className="days">
+          {Array.from({ length: firstDayOffset }).map((_, i) => <i key={"b" + i} />)}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const d = i + 1; const key = new Date(year, month, d).toISOString().slice(0, 10); const dayMembers = monthLogs[key] ?? [];
+            const className = (key === dateKey ? "is-today " : "") + (dayMembers.length > 0 ? "done" : "");
+            return <button key={d} className={className}><span>{d}</span>{dayMembers.length > 0 && <div className="day-dots">{members.map((m, idx) => dayMembers.includes(m.id) && <i key={m.id} style={{ background: MEMBER_COLORS[idx % MEMBER_COLORS.length] }} />)}</div>}</button>;
+          })}
+        </div>
+        <div className="calendar-legend">{members.map((m, idx) => <span key={m.id}><i style={{ background: MEMBER_COLORS[idx % MEMBER_COLORS.length] }} />{m.id === user.id ? T.group.you : m.name}</span>)}</div>
+      </div></div>
+      <div className="leaderboard"><span className="section-label">{T.group.leaderboard}</span><span className="section-sublabel">{sinceLabel}</span>
+        {totals.map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / maxTotal) * 100}%` }} /></div><span className="leaderboard-value">{member.total} {T.group.minutesShort}</span></div>)}
+      </div>
+      <div className="challenges-section">
+        <div className="section-head"><span className="section-label">{T.group.challenges}</span><button onClick={() => setShowNewChallenge(!showNewChallenge)}>{T.group.newChallenge}</button></div>
+        {showNewChallenge && <div className="challenge-form">
+          <input className="group-input" value={challengeName} onChange={e => setChallengeName(e.target.value)} placeholder={T.group.challengeNamePlaceholder} />
+          <div className="challenge-type-row">
+            <button className={challengeType === "sessions" ? "chip selected" : "chip"} onClick={() => setChallengeType("sessions")}>{T.group.typeSessions}</button>
+            <button className={challengeType === "daily" ? "chip selected" : "chip"} onClick={() => setChallengeType("daily")}>{T.group.typeDaily}</button>
+            <button className={challengeType === "minutes" ? "chip selected" : "chip"} onClick={() => setChallengeType("minutes")}>{T.group.typeMinutes}</button>
+          </div>
+          <label className="input-label">{T.group.goalLabel}</label>
+          <input className="group-input" inputMode="numeric" value={challengeGoal} onChange={e => setChallengeGoal(e.target.value.replace(/\D/g, ""))} />
+          <div className="challenge-date-row">
+            <div><label className="input-label">{T.group.startLabel}</label><input type="date" className="group-input" value={challengeStart} onChange={e => setChallengeStart(e.target.value)} /></div>
+            <div><label className="input-label">{T.group.endLabel}</label><input type="date" className="group-input" value={challengeEnd} min={challengeStart} onChange={e => setChallengeEnd(e.target.value)} /></div>
+          </div>
+          <input className="group-input" value={challengeReward} onChange={e => setChallengeReward(e.target.value)} placeholder={T.group.rewardPlaceholder} />
+          <input className="group-input" value={challengePunishment} onChange={e => setChallengePunishment(e.target.value)} placeholder={T.group.punishmentPlaceholder} />
+          <button className="primary" disabled={challengeBusy || !challengeName || challengeEnd < challengeStart} onClick={createChallenge}>{challengeBusy ? T.group.pleaseWait : T.group.createChallengeBtn}</button>
+        </div>}
+        {!challenges.length && !showNewChallenge && <p className="hint">{T.group.noChallenges}</p>}
+        {challenges.map((c) => {
+          const desc = c.goal_type === "daily" ? T.group.dailyGoalDesc(c.goal_value) : c.goal_type === "minutes" ? T.group.minutesGoalDesc(c.goal_value) : T.group.sessionsGoalDesc(c.goal_value);
+          const progressLabel = c.goal_type === "minutes" ? T.group.minutesProgress(c.progress, c.target) : T.group.daysProgress(c.progress, c.target);
+          const pct = Math.min(100, (c.progress / Math.max(1, c.target)) * 100);
+          return <div key={c.id} className="challenge-card">
+            <div className="challenge-head"><h3>{c.name}</h3><span>{T.group.participants(c.participantCount)}</span></div>
+            <p className="challenge-desc">{desc}</p>
+            <div className="challenge-range">{new Date(c.start_date + "T12:00:00").toLocaleDateString(locale, { month: "short", day: "numeric" })} – {new Date(c.end_date + "T12:00:00").toLocaleDateString(locale, { month: "short", day: "numeric" })}</div>
+            <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${pct}%` }} /></div>
+            <div className="challenge-progress-label">{progressLabel}</div>
+            {(c.reward || c.punishment) && <div className="challenge-stakes">{c.reward && <p><b>{T.group.reward}</b> {c.reward}</p>}{c.punishment && <p><b>{T.group.punishment}</b> {c.punishment}</p>}</div>}
+            <div className="challenge-actions">
+              {!c.joined && <button className="secondary" onClick={() => joinChallenge(c.id)}>{T.group.joinChallengeBtn}</button>}
+              {c.joined && <span className="challenge-joined">✓ {T.group.joined}</span>}
+              {c.created_by === user.id && <button className="challenge-delete" onClick={() => deleteChallenge(c.id)}>{T.group.deleteChallenge}</button>}
+            </div>
+          </div>;
+        })}
+      </div>
+      <button className="logout" onClick={leaveGroup}>{T.group.leaveGroup}</button>
+    </section>;
+  }
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.group.practiseTogether}</p><h1>{T.group.yourGroup}</h1></header><div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? T.group.findCrew : mode === "create" ? T.group.startGroup : T.group.joinCrew}</h2>{mode === "start" ? <><p>{T.group.intro}</p><button className="primary" onClick={() => setMode("create")}>{T.group.createGroupBtn} <span>→</span></button><button className="secondary" onClick={() => setMode("join")}>{T.group.joinWithCode}</button></> : <><input className="group-input" value={mode === "create" ? name : code} onChange={e => mode === "create" ? setName(e.target.value) : setCode(e.target.value)} placeholder={mode === "create" ? T.group.groupNamePlaceholder : T.group.inviteCodePlaceholder}/><button className="primary" disabled={busy || !(mode === "create" ? name : code)} onClick={mode === "create" ? createGroup : joinGroup}>{busy ? T.group.pleaseWait : mode === "create" ? T.group.createGroup : T.group.joinGroup}</button><button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button></>}</div></section>;
 }
 function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; T: any }) {
