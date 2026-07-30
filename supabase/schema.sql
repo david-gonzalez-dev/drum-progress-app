@@ -133,3 +133,53 @@ create table if not exists public.practice_sessions (
 alter table public.practice_sessions enable row level security;
 drop policy if exists "users manage their practice sessions" on public.practice_sessions;
 create policy "users manage their practice sessions" on public.practice_sessions for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Practice Mode's own categorized exercise catalog (Rudiments / Exercises / Rhythms), separate from
+-- the flat list used for daily "what did you practice" logging.
+create table if not exists public.practice_exercises (
+  id uuid primary key default uuid_generate_v4(),
+  category text not null check (category in ('rudiments', 'exercises', 'rhythms')),
+  subcategory text,
+  name_en text not null,
+  name_es text not null,
+  sort_order integer not null default 0,
+  unique (category, name_en)
+);
+alter table public.practice_exercises enable row level security;
+drop policy if exists "anyone signed in reads practice exercises" on public.practice_exercises;
+create policy "anyone signed in reads practice exercises" on public.practice_exercises for select to authenticated using (true);
+
+insert into public.practice_exercises (category, subcategory, name_en, name_es, sort_order) values
+  ('rudiments', null, 'Single Strokes', 'Golpes simples', 1),
+  ('rudiments', null, 'Double Strokes', 'Golpes dobles', 2),
+  ('rudiments', null, 'Single Paradiddle', 'Paradiddle simple', 3),
+  ('rudiments', null, 'Double Paradiddle', 'Paradiddle doble', 4),
+  ('rudiments', null, 'Triple Paradiddle', 'Paradiddle triple', 5),
+  ('rudiments', null, 'Paradiddle-Diddle', 'Paradiddle-diddle', 6),
+  ('rudiments', null, 'Flam', 'Flam', 7),
+  ('rudiments', null, 'Flam Accent', 'Flam acentuado', 8),
+  ('rudiments', null, 'Flam Tap', 'Flam tap', 9),
+  ('rudiments', null, 'Drag', 'Drag', 10),
+  ('rudiments', null, 'Double Drag', 'Drag doble', 11),
+  ('rudiments', null, 'Ratamacue', 'Ratamacue', 12),
+  ('exercises', 'Bass Drum', 'Heel Down', 'Talón abajo', 1),
+  ('exercises', 'Bass Drum', 'Heel Up', 'Talón arriba', 2),
+  ('exercises', 'Bass Drum', 'Slide Technique', 'Técnica de deslizamiento', 3),
+  ('exercises', 'Bass Drum', 'Double Bass Drum', 'Doble bombo', 4),
+  ('exercises', null, 'Flow', 'Flow', 5),
+  ('exercises', 'Permutations', 'RLKK', 'RLKK', 6),
+  ('exercises', 'Permutations', 'RKKL', 'RKKL', 7),
+  ('exercises', 'Permutations', 'KKRL', 'KKRL', 8),
+  ('exercises', 'Permutations', 'KRLK', 'KRLK', 9),
+  ('exercises', 'Permutations', 'RLLK', 'RLLK', 10)
+on conflict (category, name_en) do nothing;
+
+-- practice_sessions now points at the new catalog instead of the old flat practice_items table.
+alter table public.practice_sessions add column if not exists practice_exercise_id uuid references public.practice_exercises(id);
+alter table public.practice_sessions drop column if exists practice_item_id;
+
+-- Group calendar color: was defaulting every profile to the same orange, making the dots useless.
+-- Now null means "no color picked yet" so the app can auto-assign one instead of everyone matching.
+alter table public.profiles alter column color drop default;
+alter table public.profiles alter column color drop not null;
+update public.profiles set color = null where color = '#ff6b1a';
