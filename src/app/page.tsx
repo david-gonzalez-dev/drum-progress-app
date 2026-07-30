@@ -169,7 +169,7 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 export default function Home() {
   const [tab, setTab] = useState<Tab>("today");
   const [minutes, setMinutes] = useState("35");
-  const [selected, setSelected] = useState<string[]>(["Rudiments", "Single Strokes", "Coordination"]);
+  const [selected, setSelected] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [logs, setLogs] = useState<Record<string, Log>>({});
   const [saved, setSaved] = useState(false);
