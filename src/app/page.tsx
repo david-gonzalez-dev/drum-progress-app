@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-type Tab = "today" | "calendar" | "group" | "settings";
-type Log = { minutes: number; items: string[]; notes: string };
+type Tab = "today" | "calendar" | "group" | "progress" | "settings";
+type Log = { minutes: number; items: string[]; notes: string; equipment: string | null };
 type Lang = "en" | "es";
 
 const PRACTICE_ITEMS = [
@@ -22,7 +22,7 @@ function practiceItemLabel(en: string, lang: Lang) {
   return PRACTICE_ITEMS.find((item) => item.en === en)?.[lang] ?? en;
 }
 
-const NAV_TABS: Tab[] = ["today", "calendar", "group", "settings"];
+const NAV_TABS: Tab[] = ["today", "calendar", "group", "progress", "settings"];
 const MEMBER_COLORS = ["#ff6b1a", "#4fd1c5", "#9f7aea", "#f6ad55", "#68d391", "#f687b3", "#63b3ed", "#fc8181"];
 const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; goal: number; days: number }[] = [
   { key: "daily5", type: "daily", goal: 5, days: 7 },
@@ -33,11 +33,13 @@ const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; 
 
 const translations = {
   en: {
-    nav: { today: "Today", calendar: "Calendar", group: "Group", settings: "Settings" },
+    nav: { today: "Today", calendar: "Calendar", group: "Group", progress: "Progress", settings: "Settings" },
     today: {
-      welcomeBack: "WELCOME BACK", heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", currentStreak: "Current streak", days: "days",
+      heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", currentStreak: "Current streak", days: "days",
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", whatPractised: "WHAT DID YOU PRACTISE?",
       notes: "NOTES", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
+      startToday: "Start your streak today!", daysToMilestone: (left: number, milestone: number) => `${left} days to a ${milestone}-day streak!`,
+      todayGoal: "TODAY'S GOAL", recentDays: "RECENT DAYS", equipment: "PRACTISED WITH", drumset: "Drumset", pad: "Practice Pad", addNotes: "+ Add notes",
     },
     calendar: {
       yourConsistency: "YOUR CONSISTENCY", title: "CALENDAR", longestStreak: "Longest streak", daysThisYear: "Days this year",
@@ -66,6 +68,10 @@ const translations = {
       confirmLeave: "Leave this group? You can rejoin later with the invite code.", confirmDeleteChallenge: "Delete this challenge? This can't be undone.",
       deleteChallenge: "Delete", since: (date: string) => `Since ${date}`, couldNotLeave: "Could not leave the group.", couldNotDeleteChallenge: "Could not delete the challenge.",
     },
+    progressPage: {
+      eyebrow: "YOUR PROGRESS", title: "PROGRESS", techniques: "MOST PRACTISED TECHNIQUES", equipment: "DRUMSET VS PRACTICE PAD",
+      noData: "Log some practice to see your progress here.",
+    },
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
       language: "LANGUAGE", reminders: "Daily practice reminders", on: "ON", off: "OFF", save: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR",
@@ -78,11 +84,13 @@ const translations = {
     },
   },
   es: {
-    nav: { today: "Hoy", calendar: "Calendario", group: "Grupo", settings: "Ajustes" },
+    nav: { today: "Hoy", calendar: "Calendario", group: "Grupo", progress: "Progreso", settings: "Ajustes" },
     today: {
-      welcomeBack: "BIENVENIDO DE NUEVO", heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", currentStreak: "Racha actual", days: "días",
+      heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", currentStreak: "Racha actual", days: "días",
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", whatPractised: "¿QUÉ PRACTICASTE?",
       notes: "NOTAS", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
+      startToday: "¡Empieza tu racha hoy!", daysToMilestone: (left: number, milestone: number) => `¡${left} días para una racha de ${milestone} días!`,
+      todayGoal: "META DE HOY", recentDays: "DÍAS RECIENTES", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", addNotes: "+ Añadir notas",
     },
     calendar: {
       yourConsistency: "TU CONSTANCIA", title: "CALENDARIO", longestStreak: "Racha más larga", daysThisYear: "Días este año",
@@ -111,6 +119,10 @@ const translations = {
       confirmLeave: "¿Salir de este grupo? Puedes volver a unirte más tarde con el código de invitación.", confirmDeleteChallenge: "¿Eliminar este desafío? Esta acción no se puede deshacer.",
       deleteChallenge: "Eliminar", since: (date: string) => `Desde ${date}`, couldNotLeave: "No se pudo salir del grupo.", couldNotDeleteChallenge: "No se pudo eliminar el desafío.",
     },
+    progressPage: {
+      eyebrow: "TU PROGRESO", title: "PROGRESO", techniques: "TÉCNICAS MÁS PRACTICADAS", equipment: "BATERÍA VS PAD DE PRÁCTICA",
+      noData: "Registra algo de práctica para ver tu progreso aquí.",
+    },
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
       language: "IDIOMA", reminders: "Recordatorios diarios de práctica", on: "SÍ", off: "NO", save: "Guardar ajustes", saved: "✓ Ajustes guardados", logout: "Cerrar sesión", calendarColor: "COLOR DEL CALENDARIO DE GRUPO",
@@ -132,9 +144,14 @@ const NAV_ICONS: Record<Tab, React.ReactNode> = {
   today: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="10" cy="10" r="7.3" /><circle cx="10" cy="10" r="2.4" fill="currentColor" stroke="none" /></svg>,
   calendar: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4.5" width="14" height="12.5" rx="2" /><path d="M3 8.5h14" /><path d="M7 2.5v3M13 2.5v3" /></svg>,
   group: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.2" cy="7" r="2.6" /><path d="M2.5 17c0-2.9 2.1-5 4.7-5s4.7 2.1 4.7 5" /><circle cx="14.5" cy="7.8" r="2.1" /><path d="M12.7 12.3c1.9.4 3.3 2.1 3.3 4.7" /></svg>,
+  progress: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16.5V9.5M10 16.5V3.5M16 16.5v-6" /></svg>,
   settings: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="2.6" /><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" /></svg>,
 };
-const dateKey = new Date().toISOString().slice(0, 10);
+function formatLocalDate(year: number, monthIndex0based: number, day: number) {
+  return `${year}-${String(monthIndex0based + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+const now = new Date();
+const dateKey = formatLocalDate(now.getFullYear(), now.getMonth(), now.getDate());
 
 function shiftDateKey(key: string, days: number) {
   const [year, month, day] = key.split("-").map(Number);
@@ -164,13 +181,19 @@ function calculateStreaks(logs: Record<string, unknown>, today: string) {
   return { current, longest };
 }
 
+const STREAK_MILESTONES = [3, 7, 14, 21, 30, 50, 100, 150, 200, 365, 500, 1000];
+function nextStreakMilestone(streak: number) {
+  return STREAK_MILESTONES.find((m) => m > streak) ?? null;
+}
+
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("today");
-  const [minutes, setMinutes] = useState("35");
+  const [minutes, setMinutes] = useState("0");
   const [selected, setSelected] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [equipment, setEquipment] = useState<string | null>(null);
   const [logs, setLogs] = useState<Record<string, Log>>({});
   const [saved, setSaved] = useState(false);
   const [metronome, setMetronome] = useState(false);
@@ -182,6 +205,7 @@ export default function Home() {
   const [profileName, setProfileName] = useState("");
   const displayName = profileName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Drummer";
   const [language, setLanguage] = useState<Lang>("en");
+  const [dailyGoal, setDailyGoal] = useState(30);
   const T = translations[language];
 
   useEffect(() => {
@@ -197,25 +221,26 @@ export default function Home() {
       setProfileName(fallbackName);
       supabase.from("profiles").upsert({ id: user.id, name: fallbackName }, { onConflict: "id" }).then();
     });
-    supabase.from("settings").select("language").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+    supabase.from("settings").select("language, daily_goal_minutes").eq("user_id", user.id).maybeSingle().then(({ data }) => {
       if (data?.language === "es" || data?.language === "en") setLanguage(data.language);
+      if (data?.daily_goal_minutes) setDailyGoal(data.daily_goal_minutes);
     });
-    supabase.from("practice_logs").select("practiced_on,minutes,notes,practice_log_items(practice_items(name_en))").eq("user_id", user.id).then(({ data }) => {
+    supabase.from("practice_logs").select("practiced_on,minutes,notes,equipment,practice_log_items(practice_items(name_en))").eq("user_id", user.id).then(({ data }) => {
       const nextLogs: Record<string, Log> = {};
-      (data ?? []).forEach((row: any) => { nextLogs[row.practiced_on] = { minutes: row.minutes, notes: row.notes ?? "", items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) }; });
+      (data ?? []).forEach((row: any) => { nextLogs[row.practiced_on] = { minutes: row.minutes, notes: row.notes ?? "", equipment: row.equipment ?? null, items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) }; });
       setLogs(nextLogs);
       const todayLog = nextLogs[dateKey];
-      if (todayLog) { setMinutes(String(todayLog.minutes)); setNotes(todayLog.notes); if (todayLog.items.length) setSelected(todayLog.items); }
+      if (todayLog) { setMinutes(String(todayLog.minutes)); setNotes(todayLog.notes); setEquipment(todayLog.equipment); if (todayLog.items.length) setSelected(todayLog.items); }
     });
   }, [user]);
-  async function saveLogFor(targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string) {
+  async function saveLogFor(targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null) {
     if (!user) return false;
-    const { data: log, error } = await supabase.from("practice_logs").upsert({ user_id: user.id, practiced_on: targetDate, minutes: targetMinutes, notes: targetNotes }, { onConflict: "user_id,practiced_on" }).select().single();
+    const { data: log, error } = await supabase.from("practice_logs").upsert({ user_id: user.id, practiced_on: targetDate, minutes: targetMinutes, notes: targetNotes, equipment: targetEquipment }, { onConflict: "user_id,practiced_on" }).select().single();
     if (error || !log) { setAuthError(error?.message ?? "Could not save your practice."); return false; }
     const { data: itemRows } = await supabase.from("practice_items").select("id,name_en").in("name_en", targetItems);
     await supabase.from("practice_log_items").delete().eq("log_id", log.id);
     if (itemRows?.length) await supabase.from("practice_log_items").insert(itemRows.map((item) => ({ log_id: log.id, item_id: item.id })));
-    setLogs((current) => ({ ...current, [targetDate]: { minutes: targetMinutes, items: targetItems, notes: targetNotes } }));
+    setLogs((current) => ({ ...current, [targetDate]: { minutes: targetMinutes, items: targetItems, notes: targetNotes, equipment: targetEquipment } }));
     return true;
   }
   async function deleteLogFor(targetDate: string) {
@@ -226,7 +251,7 @@ export default function Home() {
     return true;
   }
   async function save() {
-    const ok = await saveLogFor(dateKey, Number(minutes) || 0, selected, notes);
+    const ok = await saveLogFor(dateKey, Number(minutes) || 0, selected, notes, equipment);
     if (ok) { setSaved(true); setTimeout(() => setSaved(false), 2200); }
   }
   function toggle(item: string) { setSelected((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
@@ -235,10 +260,11 @@ export default function Home() {
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
   return <main className="shell">
-    {tab === "today" && <Today minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} save={save} saved={saved} streak={streak} openMetronome={() => setMetronome(true)} displayName={displayName} language={language} T={T} />}
+    {tab === "today" && <Today minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} save={save} saved={saved} streak={streak} openMetronome={() => setMetronome(true)} displayName={displayName} language={language} T={T} logs={logs} dailyGoal={dailyGoal} />}
     {tab === "calendar" && <Calendar logs={logs} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} language={language} T={T} />}
-    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} T={T} />}
+    {tab === "progress" && <Progress logs={logs} language={language} T={T} />}
+    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddMinutes={addMetronomeMinutes} T={T} />
@@ -256,10 +282,22 @@ function Login({ error, setError }: { error: string; setError: (message: string)
   return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Build your daily drumming habit, one session at a time.</p><div className="auth-card"><h2>{mode === "login" ? "Welcome back" : "Start your streak"}</h2><input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /><input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !email || !password} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : "Create account"}</button><div className="or">OR</div><button className="google" disabled={busy} onClick={google}>G <span>Continue with Google</span></button><button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
-function Today({ minutes, setMinutes, selected, toggle, notes, setNotes, save, saved, streak, openMetronome, displayName, language, T }: any) {
+function Today({ minutes, setMinutes, selected, toggle, notes, setNotes, equipment, setEquipment, save, saved, streak, openMetronome, displayName, language, T, logs, dailyGoal }: any) {
+  const [notesOpen, setNotesOpen] = useState(false);
+  const showNotes = notesOpen || !!notes;
+  const milestone = nextStreakMilestone(streak);
+  const last7Days = useMemo(() => Array.from({ length: 7 }, (_, i) => shiftDateKey(dateKey, i - 6)), []);
+  const sortedItems = useMemo(() => {
+    const freq: Record<string, number> = {};
+    Object.values(logs as Record<string, Log>).forEach((log) => { log.items.forEach((item) => { freq[item] = (freq[item] ?? 0) + 1; }); });
+    return [...PRACTICE_ITEMS].sort((a, b) => (freq[b.en] ?? 0) - (freq[a.en] ?? 0));
+  }, [logs]);
+  const goalPct = Math.min(100, ((Number(minutes) || 0) / Math.max(1, dailyGoal)) * 100);
+  const goalAchieved = (Number(minutes) || 0) >= dailyGoal;
   return <section className="page today">
-    <header className="hero"><div><p className="eyebrow">{T.today.welcomeBack}, {displayName.toUpperCase()}</p><h1>{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1><p className="date">{formatDate(language)}</p></div><button className="avatar">{displayName.charAt(0).toUpperCase()}</button></header>
-    <div className="streak-card"><div className="flame">🔥</div><div><span>{T.today.currentStreak}</span><strong>{streak} {T.today.days}</strong></div></div>
+    <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1><p className="date">{formatDate(language)}</p></div><button className="avatar">{displayName.charAt(0).toUpperCase()}</button></header>
+    <div className="streak-card"><div className="flame">{streak > 0 ? "🔥" : "🥁"}</div><div><span>{T.today.currentStreak}</span>{streak > 0 ? <strong>{streak} {T.today.days}</strong> : <strong>{T.today.startToday}</strong>}{streak > 0 && milestone && <em className="streak-next">{T.today.daysToMilestone(milestone - streak, milestone)}</em>}</div></div>
+    <div className="mini-week"><span className="mini-week-label">{T.today.recentDays}</span><div className="mini-week-dots">{last7Days.map((day: string) => <i key={day} className={logs[day] ? "filled" : ""} />)}</div></div>
     <div className="section-title"><h2>{T.today.todaysPractice}</h2><button onClick={openMetronome}>⌁ {T.today.metronome}</button></div>
     <div className="form-card"><label className="input-label">{T.today.howLong}</label>
       <div className="minutes-island">
@@ -269,14 +307,22 @@ function Today({ minutes, setMinutes, selected, toggle, notes, setNotes, save, s
         <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1</button>
         <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5</button>
       </div>
-      <label className="input-label checklist-label">{T.today.whatPractised}</label><div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language as Lang]}</button>)}</div>
-      <label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} />
+      <div className="goal-progress"><div className="goal-progress-label"><span>{T.today.todayGoal}</span><strong className={goalAchieved ? "achieved" : ""}>{minutes}/{dailyGoal} min</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
+    </div>
+    <div className="form-card">
+      <label className="input-label checklist-label">{T.today.whatPractised}</label><div className="chips">{sortedItems.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language as Lang]}</button>)}</div>
+      <label className="input-label equipment-label">{T.today.equipment}</label>
+      <div className="equipment-toggle">
+        <button className={equipment === "drumset" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(equipment === "drumset" ? null : "drumset")}>{T.today.drumset}</button>
+        <button className={equipment === "pad" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(equipment === "pad" ? null : "pad")}>{T.today.pad}</button>
+      </div>
+      {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
       <button className={saved ? "save saved" : "save"} onClick={save}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
     </div>
   </section>;
 }
 
-type SaveLogFor = (targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string) => Promise<boolean>;
+type SaveLogFor = (targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null) => Promise<boolean>;
 
 function Calendar({ logs, streak, longestStreak, daysThisYear, saveLogFor, deleteLogFor, language, T }: { logs: Record<string, Log>; streak: number; longestStreak: number; daysThisYear: number; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; language: Lang; T: any }) {
   const today = new Date(); const [selectedDate, setSelectedDate] = useState(dateKey); const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1)); const year = viewDate.getFullYear(); const month = viewDate.getMonth(); const days = new Date(year, month + 1, 0).getDate(); const starts = new Date(year, month, 1).getDay(); const selectedLog = logs[selectedDate];
@@ -284,7 +330,7 @@ function Calendar({ logs, streak, longestStreak, daysThisYear, saveLogFor, delet
   function changeMonth(delta: number) { setViewDate(new Date(year, month + delta, 1)); }
   const isFuture = selectedDate > dateKey;
   const isPast = selectedDate < dateKey;
-  return <section className="page"><header className="simple-head"><p className="eyebrow">{T.calendar.yourConsistency}</p><h1>{T.calendar.title}</h1></header><div className="stats"><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} /><Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} /></div><div className="calendar-card"><div className="cal-head"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = new Date(year, month, d).toISOString().slice(0,10); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=!!logs[key]; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => setSelectedDate(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
+  return <section className="page"><header className="simple-head"><p className="eyebrow">{T.calendar.yourConsistency}</p><h1>{T.calendar.title}</h1></header><div className="stats"><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} /><Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} /></div><div className="calendar-card"><div className="cal-head"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=!!logs[key]; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => setSelectedDate(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
     <div className="day-detail"><span>{new Date(selectedDate + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
       {isFuture && <p>{T.calendar.futureDay}</p>}
       {isPast && <DayEditor key={selectedDate} date={selectedDate} log={selectedLog} onSave={saveLogFor} onDelete={deleteLogFor} language={language} T={T} />}
@@ -297,13 +343,16 @@ function DayEditor({ date, log, onSave, onDelete, language, T }: { date: string;
   const [minutes, setMinutes] = useState(String(log?.minutes ?? ""));
   const [selected, setSelected] = useState<string[]>(log?.items ?? []);
   const [notes, setNotes] = useState(log?.notes ?? "");
+  const [equipment, setEquipment] = useState<string | null>(log?.equipment ?? null);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const showNotes = notesOpen || !!notes;
   const [hasEntry, setHasEntry] = useState(!!log);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   function toggle(item: string) { setSelected((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
   async function handleSave() {
     setBusy(true);
-    const ok = await onSave(date, Number(minutes) || 0, selected, notes);
+    const ok = await onSave(date, Number(minutes) || 0, selected, notes, equipment);
     setBusy(false);
     if (ok) { setSaved(true); setHasEntry(true); setTimeout(() => setSaved(false), 1800); }
   }
@@ -312,9 +361,10 @@ function DayEditor({ date, log, onSave, onDelete, language, T }: { date: string;
     setBusy(true);
     const ok = await onDelete(date);
     setBusy(false);
-    if (ok) { setMinutes(""); setSelected([]); setNotes(""); setHasEntry(false); }
+    if (ok) { setMinutes(""); setSelected([]); setNotes(""); setEquipment(null); setHasEntry(false); }
   }
-  return <div className="form-card">
+  return <>
+  <div className="form-card">
     <label className="input-label">{T.today.howLong}</label>
     <div className="minutes-island">
       <button className="minutes-step" onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 5)))}>-5</button>
@@ -323,13 +373,20 @@ function DayEditor({ date, log, onSave, onDelete, language, T }: { date: string;
       <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1</button>
       <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5</button>
     </div>
+    </div>
+    <div className="form-card">
     <label className="input-label checklist-label">{T.today.whatPractised}</label>
     <div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language]}</button>)}</div>
-    <label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label>
-    <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={T.calendar.notesPlaceholder} />
+    <label className="input-label equipment-label">{T.today.equipment}</label>
+    <div className="equipment-toggle">
+      <button className={equipment === "drumset" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(equipment === "drumset" ? null : "drumset")}>{T.today.drumset}</button>
+      <button className={equipment === "pad" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(equipment === "pad" ? null : "pad")}>{T.today.pad}</button>
+    </div>
+    {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={T.calendar.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
     <button className={saved ? "save saved" : "save"} onClick={handleSave} disabled={busy}>{saved ? T.today.practiceSaved : busy ? T.calendar.saving : T.today.savePractice}<span>→</span></button>
     {hasEntry && <button className="delete-entry" onClick={handleDelete} disabled={busy}>{T.calendar.deleteEntry}</button>}
-  </div>;
+  </div>
+  </>;
 }
 function Stat({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><strong>{value}</strong></div>; }
 
@@ -378,8 +435,8 @@ function Group({ user, setError, language, T }: { user: any; setError: (message:
   useEffect(() => {
     if (!group || !members.length) { setMonthLogs({}); return; }
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
-    const monthStart = new Date(year, month, 1).toISOString().slice(0, 10);
-    const monthEnd = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+    const monthStart = formatLocalDate(year, month, 1);
+    const monthEnd = formatLocalDate(year, month, new Date(year, month + 1, 0).getDate());
     const memberIds = members.map((m) => m.id);
     supabase.from("practice_logs").select("practiced_on, user_id").in("user_id", memberIds).gte("practiced_on", monthStart).lte("practiced_on", monthEnd).then(({ data }) => {
       const byDay: Record<string, string[]> = {};
@@ -480,7 +537,7 @@ function Group({ user, setError, language, T }: { user: any; setError: (message:
         <div className="days">
           {Array.from({ length: firstDayOffset }).map((_, i) => <i key={"b" + i} />)}
           {Array.from({ length: daysInMonth }).map((_, i) => {
-            const d = i + 1; const key = new Date(year, month, d).toISOString().slice(0, 10); const dayMembers = monthLogs[key] ?? [];
+            const d = i + 1; const key = formatLocalDate(year, month, d); const dayMembers = monthLogs[key] ?? [];
             const className = (key === dateKey ? "is-today " : "") + (dayMembers.length > 0 ? "done" : "");
             return <button key={d} className={className}><span>{d}</span>{dayMembers.length > 0 && <div className="day-dots">{members.map((m) => dayMembers.includes(m.id) && <i key={m.id} style={{ background: m.color }} />)}</div>}</button>;
           })}
@@ -536,10 +593,38 @@ function Group({ user, setError, language, T }: { user: any; setError: (message:
   }
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.group.practiseTogether}</p><h1>{T.group.yourGroup}</h1></header><div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? T.group.findCrew : mode === "create" ? T.group.startGroup : T.group.joinCrew}</h2>{mode === "start" ? <><p>{T.group.intro}</p><button className="primary" onClick={() => setMode("create")}>{T.group.createGroupBtn} <span>→</span></button><button className="secondary" onClick={() => setMode("join")}>{T.group.joinWithCode}</button></> : <><input className="group-input" value={mode === "create" ? name : code} onChange={e => mode === "create" ? setName(e.target.value) : setCode(e.target.value)} placeholder={mode === "create" ? T.group.groupNamePlaceholder : T.group.inviteCodePlaceholder}/><button className="primary" disabled={busy || !(mode === "create" ? name : code)} onClick={mode === "create" ? createGroup : joinGroup}>{busy ? T.group.pleaseWait : mode === "create" ? T.group.createGroup : T.group.joinGroup}</button><button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button></>}</div></section>;
 }
-function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; T: any }) {
-  const [name, setName] = useState(profileName); const [goal, setGoal] = useState("30"); const [language, setLanguage] = useState<Lang>(currentLanguage); const [reminders, setReminders] = useState(false); const [color, setColor] = useState(MEMBER_COLORS[0]); const [saved, setSaved] = useState(false);
+function Progress({ logs, language, T }: { logs: Record<string, Log>; language: Lang; T: any }) {
+  const techniqueCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    Object.values(logs).forEach((log) => { log.items.forEach((item) => { counts[item] = (counts[item] ?? 0) + 1; }); });
+    return PRACTICE_ITEMS.map((item) => ({ ...item, count: counts[item.en] ?? 0 })).sort((a, b) => b.count - a.count);
+  }, [logs]);
+  const maxCount = Math.max(1, ...techniqueCounts.map((t) => t.count));
+  const equipmentTotals = useMemo(() => {
+    let drumset = 0; let pad = 0;
+    Object.values(logs).forEach((log) => { if (log.equipment === "drumset") drumset += log.minutes; else if (log.equipment === "pad") pad += log.minutes; });
+    return { drumset, pad };
+  }, [logs]);
+  const maxEquip = Math.max(1, equipmentTotals.drumset, equipmentTotals.pad);
+  const hasData = Object.keys(logs).length > 0;
+  return <section className="page"><header className="simple-head"><p className="eyebrow">{T.progressPage.eyebrow}</p><h1>{T.progressPage.title}</h1></header>
+    {!hasData ? <p className="hint">{T.progressPage.noData}</p> : <>
+      <div className="progress-section"><span className="section-label">{T.progressPage.techniques}</span>
+        <div className="technique-chart">{techniqueCounts.map((t) => <div key={t.en} className="technique-row"><span className="technique-name">{t[language]}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(t.count / maxCount) * 100}%` }} /></div><span className="technique-count">{t.count}</span></div>)}</div>
+      </div>
+      <div className="progress-section"><span className="section-label">{T.progressPage.equipment}</span>
+        <div className="technique-chart">
+          <div className="technique-row"><span className="technique-name">{T.today.drumset}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(equipmentTotals.drumset / maxEquip) * 100}%` }} /></div><span className="technique-count">{equipmentTotals.drumset} min</span></div>
+          <div className="technique-row"><span className="technique-name">{T.today.pad}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(equipmentTotals.pad / maxEquip) * 100}%` }} /></div><span className="technique-count">{equipmentTotals.pad} min</span></div>
+        </div>
+      </div>
+    </>}
+  </section>;
+}
+function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number; onGoalSaved: (goal: number) => void; T: any }) {
+  const [name, setName] = useState(profileName); const [goal, setGoal] = useState(String(dailyGoal)); const [language, setLanguage] = useState<Lang>(currentLanguage); const [reminders, setReminders] = useState(false); const [color, setColor] = useState(MEMBER_COLORS[0]); const [saved, setSaved] = useState(false);
   useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,reminder_enabled").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(String(row.daily_goal_minutes)); setLanguage(row.language); setReminders(row.reminder_enabled); } }); supabase.from("profiles").select("color").eq("id", user.id).maybeSingle().then(({ data }) => { if (data?.color) setColor(data.color); }); }, [user]);
-  async function saveSettings() { const profile = await supabase.from("profiles").upsert({ id: user.id, name, color }, { onConflict: "id" }); const settings = await supabase.from("settings").upsert({ user_id: user.id, daily_goal_minutes: Number(goal) || 30, language, reminder_enabled: reminders }, { onConflict: "user_id" }); if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings."); else { onProfileNameSaved(name); onLanguageSaved(language); setSaved(true); setTimeout(() => setSaved(false), 1800); } }
+  async function saveSettings() { const profile = await supabase.from("profiles").upsert({ id: user.id, name, color }, { onConflict: "id" }); const goalValue = Number(goal) || 30; const settings = await supabase.from("settings").upsert({ user_id: user.id, daily_goal_minutes: goalValue, language, reminder_enabled: reminders }, { onConflict: "user_id" }); if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings."); else { onProfileNameSaved(name); onLanguageSaved(language); onGoalSaved(goalValue); setSaved(true); setTimeout(() => setSaved(false), 1800); } }
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.settings.makeItYours}</p><h1>{T.settings.title}</h1></header><div className="settings-form"><label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label><label>{T.settings.dailyGoal}<input inputMode="numeric" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.calendarColor}<div className="color-swatches">{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setReminders(!reminders)}><span>{T.settings.reminders}</span><b className={reminders ? "on" : ""}>{reminders ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div><button className="logout" onClick={signOut}>{T.settings.logout}</button></section>;
 }
 function Setting({icon,label,value}:{icon:string;label:string;value:string}) { return <button className="setting"><span className="setting-icon">{icon}</span><span>{label}</span><em>{value} ›</em></button>; }

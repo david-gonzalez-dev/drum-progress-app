@@ -115,3 +115,6 @@ create policy "creator can delete their challenge" on public.challenges for dele
 
 -- Lets each person pick their own dot color for the group calendar.
 alter table public.profiles add column if not exists color text not null default '#ff6b1a';
+
+-- Tracks whether a session was on a drumset or a practice pad, for separate monthly metrics later.
+alter table public.practice_logs add column if not exists equipment text check (equipment in ('drumset', 'pad'));
