@@ -63,7 +63,8 @@ export default function Home() {
   const [authError, setAuthError] = useState("");
   const { current: streak, longest: longestStreak } = useMemo(() => calculateStreaks(logs, dateKey), [logs]);
   const daysThisYear = useMemo(() => Object.keys(logs).filter((key) => key.startsWith(dateKey.slice(0, 4))).length, [logs]);
-  const displayName = user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "Drummer";
+  const [profileName, setProfileName] = useState("");
+  const displayName = profileName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Drummer";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setLoading(false); });
@@ -72,7 +73,12 @@ export default function Home() {
   }, []);
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").upsert({ id: user.id, name: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Drummer" }, { onConflict: "id" }).then();
+    const fallbackName = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Drummer";
+    supabase.from("profiles").select("name").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (data?.name) { setProfileName(data.name); return; }
+      setProfileName(fallbackName);
+      supabase.from("profiles").upsert({ id: user.id, name: fallbackName }, { onConflict: "id" }).then();
+    });
     supabase.from("practice_logs").select("practiced_on,minutes,notes,practice_log_items(practice_items(name_en))").eq("user_id", user.id).then(({ data }) => {
       const nextLogs: Record<string, Log> = {};
       (data ?? []).forEach((row: any) => { nextLogs[row.practiced_on] = { minutes: row.minutes, notes: row.notes ?? "", items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) }; });
@@ -104,7 +110,7 @@ export default function Home() {
     {tab === "today" && <Today minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} save={save} saved={saved} streak={streak} openMetronome={() => setMetronome(true)} displayName={displayName} />}
     {tab === "calendar" && <Calendar logs={logs} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} saveLogFor={saveLogFor} />}
     {tab === "group" && <Group user={user} setError={setAuthError} />}
-    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} />}
+    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     <nav className="bottom-nav">{nav.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}><span>{NAV_ICONS[item.id]}</span>{item.label}</button>)}</nav>
     {metronome && <Metronome close={() => setMetronome(false)} onAddMinutes={addMetronomeMinutes} />}
@@ -127,8 +133,8 @@ function Today({ minutes, setMinutes, selected, toggle, notes, setNotes, save, s
     <header className="hero"><div><p className="eyebrow">WELCOME BACK, {displayName.toUpperCase()}</p><h1>KEEP THE<br/><i>RHYTHM.</i></h1><p className="date">{fmtDate.format(new Date())}</p></div><button className="avatar">{displayName.charAt(0).toUpperCase()}</button></header>
     <div className="streak-card"><div className="flame">🔥</div><div><span>Current streak</span><strong>{streak} days</strong></div></div>
     <div className="section-title"><h2>Today&apos;s practice</h2><button onClick={openMetronome}>⌁ Metronome</button></div>
-    <div className="form-card"><label className="input-label">HOW LONG DID YOU PRACTISE?</label><div className="minutes"><input inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))}/><span>min</span></div>
-      <div className="quick-add"><button onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1 min</button><button onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5 min</button></div>
+    <div className="form-card"><label className="input-label">HOW LONG DID YOU PRACTISE?</label><div className="minutes"><input inputMode="numeric" size={3} value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))}/><span>min</span></div>
+      <div className="quick-add"><button onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 5)))}>-5 min</button><button onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 1)))}>-1 min</button><button onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1 min</button><button onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5 min</button></div>
       <label className="input-label checklist-label">WHAT DID YOU PRACTISE?</label><div className="chips">{items.map((item) => <button key={item} onClick={() => toggle(item)} className={selected.includes(item) ? "chip selected" : "chip"}>{selected.includes(item) && <b>✓</b>}{item}</button>)}</div>
       <label className="input-label notes-label">NOTES <em>OPTIONAL</em></label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What did you practise today?" />
       <button className={saved ? "save saved" : "save"} onClick={save}>{saved ? "✓ Practice saved" : "Save practice"}<span>→</span></button>
@@ -167,8 +173,8 @@ function DayEditor({ date, log, onSave }: { date: string; log?: Log; onSave: Sav
   }
   return <div className="form-card">
     <label className="input-label">HOW LONG DID YOU PRACTISE?</label>
-    <div className="minutes"><input inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} /><span>min</span></div>
-    <div className="quick-add"><button onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1 min</button><button onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5 min</button></div>
+    <div className="minutes"><input inputMode="numeric" size={3} value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} /><span>min</span></div>
+    <div className="quick-add"><button onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 5)))}>-5 min</button><button onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 1)))}>-1 min</button><button onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1 min</button><button onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5 min</button></div>
     <label className="input-label checklist-label">WHAT DID YOU PRACTISE?</label>
     <div className="chips">{items.map((item) => <button key={item} onClick={() => toggle(item)} className={selected.includes(item) ? "chip selected" : "chip"}>{selected.includes(item) && <b>✓</b>}{item}</button>)}</div>
     <label className="input-label notes-label">NOTES <em>OPTIONAL</em></label>
@@ -186,10 +192,10 @@ function Group({ user, setError }: { user: any; setError: (message: string) => v
   if (group) return <section className="page"><header className="simple-head"><p className="eyebrow">YOUR CREW</p><h1>{group.name}</h1></header><div className="group-card"><div className="group-icon">✦</div><h2>You&apos;re in.</h2><p>Invite drummers with this code:</p><strong className="invite-code">{group.invite_code}</strong><button className="secondary" onClick={() => navigator.clipboard.writeText(group.invite_code)}>Copy invite code</button></div><div className="challenge"><span>CHALLENGES</span><h3>Coming next</h3><p>Create your first shared goal as soon as your crew is ready.</p></div></section>;
   return <section className="page"><header className="simple-head"><p className="eyebrow">PRACTISE TOGETHER</p><h1>YOUR GROUP</h1></header><div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? "Find your crew." : mode === "create" ? "Start a group" : "Join your crew"}</h2>{mode === "start" ? <><p>Stay accountable, climb the leaderboard, and make practice more fun.</p><button className="primary" onClick={() => setMode("create")}>Create a group <span>→</span></button><button className="secondary" onClick={() => setMode("join")}>Join with invite code</button></> : <><input className="group-input" value={mode === "create" ? name : code} onChange={e => mode === "create" ? setName(e.target.value) : setCode(e.target.value)} placeholder={mode === "create" ? "Group name" : "Invite code"}/><button className="primary" disabled={busy || !(mode === "create" ? name : code)} onClick={mode === "create" ? createGroup : joinGroup}>{busy ? "Please wait..." : mode === "create" ? "Create group" : "Join group"}</button><button className="secondary" onClick={() => setMode("start")}>Back</button></>}</div></section>;
 }
-function Settings({ signOut, user, setError }: { signOut: () => void; user: any; setError: (message: string) => void }) {
-  const [name, setName] = useState(user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Drummer"); const [goal, setGoal] = useState("30"); const [language, setLanguage] = useState("en"); const [reminders, setReminders] = useState(false); const [saved, setSaved] = useState(false);
+function Settings({ signOut, user, setError, profileName, onProfileNameSaved }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void }) {
+  const [name, setName] = useState(profileName); const [goal, setGoal] = useState("30"); const [language, setLanguage] = useState("en"); const [reminders, setReminders] = useState(false); const [saved, setSaved] = useState(false);
   useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,reminder_enabled").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(String(row.daily_goal_minutes)); setLanguage(row.language); setReminders(row.reminder_enabled); } }); }, [user]);
-  async function saveSettings() { const profile = await supabase.from("profiles").upsert({ id: user.id, name }, { onConflict: "id" }); const settings = await supabase.from("settings").upsert({ user_id: user.id, daily_goal_minutes: Number(goal) || 30, language, reminder_enabled: reminders }, { onConflict: "user_id" }); if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings."); else { setSaved(true); setTimeout(() => setSaved(false), 1800); } }
+  async function saveSettings() { const profile = await supabase.from("profiles").upsert({ id: user.id, name }, { onConflict: "id" }); const settings = await supabase.from("settings").upsert({ user_id: user.id, daily_goal_minutes: Number(goal) || 30, language, reminder_enabled: reminders }, { onConflict: "user_id" }); if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings."); else { onProfileNameSaved(name); setSaved(true); setTimeout(() => setSaved(false), 1800); } }
   return <section className="page"><header className="simple-head"><p className="eyebrow">MAKE IT YOURS</p><h1>SETTINGS</h1></header><div className="settings-form"><label>DISPLAY NAME<input value={name} onChange={e => setName(e.target.value)} /></label><label>DAILY PRACTICE GOAL<input inputMode="numeric" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>minutes</small></label><label>LANGUAGE<select value={language} onChange={e => setLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option></select></label><button className="toggle-row" onClick={() => setReminders(!reminders)}><span>Daily practice reminders</span><b className={reminders ? "on" : ""}>{reminders ? "ON" : "OFF"}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? "✓ Settings saved" : "Save settings"}</button></div><button className="logout" onClick={signOut}>Log out</button></section>;
 }
 function Setting({icon,label,value}:{icon:string;label:string;value:string}) { return <button className="setting"><span className="setting-icon">{icon}</span><span>{label}</span><em>{value} ›</em></button>; }
