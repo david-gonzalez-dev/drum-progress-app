@@ -112,3 +112,6 @@ drop policy if exists "users can leave groups" on public.group_members;
 create policy "users can leave groups" on public.group_members for delete to authenticated using (auth.uid() = user_id);
 drop policy if exists "creator can delete their challenge" on public.challenges;
 create policy "creator can delete their challenge" on public.challenges for delete to authenticated using (auth.uid() = created_by);
+
+-- Lets each person pick their own dot color for the group calendar.
+alter table public.profiles add column if not exists color text not null default '#ff6b1a';
