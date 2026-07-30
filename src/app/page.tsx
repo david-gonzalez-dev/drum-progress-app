@@ -31,6 +31,18 @@ const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; 
   { key: "daily5x20", type: "daily", goal: 5, days: 20 },
 ];
 
+const BPM_LEVELS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
+const PRACTICE_TIERS = [
+  { key: "beginner", min: 50, max: 90 },
+  { key: "intermediate", min: 100, max: 130 },
+  { key: "advanced", min: 140, max: 170 },
+  { key: "legend", min: 180, max: 200 },
+];
+const RATING_RANK: Record<string, number> = { not_ready: 1, tense: 2, comfortable: 3, mastered: 4 };
+const RATING_ORDER = ["not_ready", "tense", "comfortable", "mastered"];
+const RATING_COLOR: Record<string, string> = { not_ready: "#e2877d", tense: "#f6ad55", comfortable: "#68d391", mastered: "#ff6b1a" };
+const RATING_ICON: Record<string, string> = { not_ready: "🔴", tense: "🟠", comfortable: "🟢", mastered: "⭐" };
+
 const translations = {
   en: {
     nav: { today: "Today", calendar: "Calendar", group: "Group", progress: "Progress", settings: "Settings" },
@@ -71,6 +83,16 @@ const translations = {
     progressPage: {
       eyebrow: "YOUR PROGRESS", title: "PROGRESS", techniques: "MOST PRACTISED TECHNIQUES", equipment: "DRUMSET VS PRACTICE PAD",
       noData: "Log some practice to see your progress here.",
+    },
+    practiceMode: {
+      trigger: "🎯 Practice Mode", eyebrow: "TRACK YOUR LEVELS", title: "PRACTICE MODE",
+      currentLevel: "CURRENT LEVEL", levelsUnlocked: (n: number, total: number) => `${n} of ${total} levels unlocked`,
+      notStarted: "Not started", bpmLevels: "BPM LEVELS · TAP TO PRACTISE",
+      nextUp: "NEXT UP", locked: "Locked", tapToStart: "Tap to start",
+      tierBeginner: "BEGINNER", tierIntermediate: "INTERMEDIATE", tierAdvanced: "ADVANCED", tierLegend: "LEGEND",
+      ratingNotReady: "Not ready", ratingTense: "Tense", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
+      rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Your session at ${bpm} BPM is saved.`,
+      backToBook: "Back to Practice Mode", couldNotSaveSession: "Could not save this session.",
     },
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
@@ -122,6 +144,16 @@ const translations = {
     progressPage: {
       eyebrow: "TU PROGRESO", title: "PROGRESO", techniques: "TÉCNICAS MÁS PRACTICADAS", equipment: "BATERÍA VS PAD DE PRÁCTICA",
       noData: "Registra algo de práctica para ver tu progreso aquí.",
+    },
+    practiceMode: {
+      trigger: "🎯 Modo práctica", eyebrow: "SIGUE TUS NIVELES", title: "MODO PRÁCTICA",
+      currentLevel: "NIVEL ACTUAL", levelsUnlocked: (n: number, total: number) => `${n} de ${total} niveles desbloqueados`,
+      notStarted: "Sin empezar", bpmLevels: "NIVELES DE BPM · TOCA PARA PRACTICAR",
+      nextUp: "SIGUIENTE", locked: "Bloqueado", tapToStart: "Toca para empezar",
+      tierBeginner: "PRINCIPIANTE", tierIntermediate: "INTERMEDIO", tierAdvanced: "AVANZADO", tierLegend: "LEYENDA",
+      ratingNotReady: "No listo", ratingTense: "Con tensión", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
+      rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Tu sesión a ${bpm} BPM se guardó.`,
+      backToBook: "Volver a Modo práctica", couldNotSaveSession: "No se pudo guardar esta sesión.",
     },
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
@@ -207,6 +239,12 @@ export default function Home() {
   const [language, setLanguage] = useState<Lang>("en");
   const [dailyGoal, setDailyGoal] = useState(30);
   const T = translations[language];
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  const [practiceStep, setPracticeStep] = useState<"list" | "detail" | "session" | "rate">("list");
+  const [practiceExercise, setPracticeExercise] = useState<string | null>(null);
+  const [practiceBpm, setPracticeBpm] = useState(100);
+  const [pendingSessionMinutes, setPendingSessionMinutes] = useState(0);
+  const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string }[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setLoading(false); });
@@ -232,6 +270,9 @@ export default function Home() {
       const todayLog = nextLogs[dateKey];
       if (todayLog) { setMinutes(String(todayLog.minutes)); setNotes(todayLog.notes); setEquipment(todayLog.equipment); if (todayLog.items.length) setSelected(todayLog.items); }
     });
+    supabase.from("practice_sessions").select("bpm,rating,practice_items(name_en)").eq("user_id", user.id).then(({ data }) => {
+      setPracticeSessions((data ?? []).map((row: any) => ({ item_en: row.practice_items?.name_en, bpm: row.bpm, rating: row.rating })).filter((s: any) => s.item_en));
+    });
   }, [user]);
   async function saveLogFor(targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null) {
     if (!user) return false;
@@ -250,6 +291,19 @@ export default function Home() {
     setLogs((current) => { const next = { ...current }; delete next[targetDate]; return next; });
     return true;
   }
+  async function logPracticeSession(itemEn: string, bpm: number, rating: string, durationMinutes: number) {
+    if (!user) return false;
+    const { data: itemRow } = await supabase.from("practice_items").select("id").eq("name_en", itemEn).maybeSingle();
+    const { error } = await supabase.from("practice_sessions").insert({ user_id: user.id, practice_item_id: itemRow?.id ?? null, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey });
+    if (error) { setAuthError(error.message); return false; }
+    const newMinutes = (Number(minutes) || 0) + durationMinutes;
+    const newSelected = selected.includes(itemEn) ? selected : [...selected, itemEn];
+    setMinutes(String(newMinutes));
+    setSelected(newSelected);
+    await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment);
+    setPracticeSessions((current) => [...current, { item_en: itemEn, bpm, rating }]);
+    return true;
+  }
   async function save() {
     const ok = await saveLogFor(dateKey, Number(minutes) || 0, selected, notes, equipment);
     if (ok) { setSaved(true); setTimeout(() => setSaved(false), 2200); }
@@ -260,13 +314,15 @@ export default function Home() {
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
   return <main className="shell">
-    {tab === "today" && <Today minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} save={save} saved={saved} streak={streak} openMetronome={() => setMetronome(true)} displayName={displayName} language={language} T={T} logs={logs} dailyGoal={dailyGoal} />}
-    {tab === "calendar" && <Calendar logs={logs} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} language={language} T={T} />}
-    {tab === "group" && <Group user={user} setError={setAuthError} language={language} T={T} />}
-    {tab === "progress" && <Progress logs={logs} language={language} T={T} />}
-    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} T={T} />}
+    {practiceOpen ? <PracticeMode step={practiceStep} setStep={setPracticeStep} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onClose={() => setPracticeOpen(false)} language={language} T={T} /> : <>
+      {tab === "today" && <Today minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} save={save} saved={saved} streak={streak} openMetronome={() => setMetronome(true)} openPracticeMode={() => setPracticeOpen(true)} displayName={displayName} language={language} T={T} logs={logs} dailyGoal={dailyGoal} />}
+      {tab === "calendar" && <Calendar logs={logs} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} language={language} T={T} />}
+      {tab === "group" && <Group user={user} setError={setAuthError} language={language} T={T} />}
+      {tab === "progress" && <Progress logs={logs} language={language} T={T} />}
+      {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} T={T} />}
+    </>}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
-    <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
+    <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id && !practiceOpen ? "active" : ""} onClick={() => { setPracticeOpen(false); setTab(id); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddMinutes={addMetronomeMinutes} T={T} />
   </main>;
 }
@@ -282,7 +338,7 @@ function Login({ error, setError }: { error: string; setError: (message: string)
   return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Build your daily drumming habit, one session at a time.</p><div className="auth-card"><h2>{mode === "login" ? "Welcome back" : "Start your streak"}</h2><input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /><input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !email || !password} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : "Create account"}</button><div className="or">OR</div><button className="google" disabled={busy} onClick={google}>G <span>Continue with Google</span></button><button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
-function Today({ minutes, setMinutes, selected, toggle, notes, setNotes, equipment, setEquipment, save, saved, streak, openMetronome, displayName, language, T, logs, dailyGoal }: any) {
+function Today({ minutes, setMinutes, selected, toggle, notes, setNotes, equipment, setEquipment, save, saved, streak, openMetronome, openPracticeMode, displayName, language, T, logs, dailyGoal }: any) {
   const [notesOpen, setNotesOpen] = useState(false);
   const showNotes = notesOpen || !!notes;
   const milestone = nextStreakMilestone(streak);
@@ -298,7 +354,7 @@ function Today({ minutes, setMinutes, selected, toggle, notes, setNotes, equipme
     <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1><p className="date">{formatDate(language)}</p></div><button className="avatar">{displayName.charAt(0).toUpperCase()}</button></header>
     <div className="streak-card"><div className="flame">{streak > 0 ? "🔥" : "🥁"}</div><div><span>{T.today.currentStreak}</span>{streak > 0 ? <strong>{streak} {T.today.days}</strong> : <strong>{T.today.startToday}</strong>}{streak > 0 && milestone && <em className="streak-next">{T.today.daysToMilestone(milestone - streak, milestone)}</em>}</div></div>
     <div className="mini-week"><span className="mini-week-label">{T.today.recentDays}</span><div className="mini-week-dots">{last7Days.map((day: string) => <i key={day} className={logs[day] ? "filled" : ""} />)}</div></div>
-    <div className="section-title"><h2>{T.today.todaysPractice}</h2><button onClick={openMetronome}>⌁ {T.today.metronome}</button></div>
+    <div className="section-title"><h2>{T.today.todaysPractice}</h2><div className="section-title-actions"><button onClick={openPracticeMode}>{T.practiceMode.trigger}</button><button onClick={openMetronome}>⌁ {T.today.metronome}</button></div></div>
     <div className="form-card"><label className="input-label">{T.today.howLong}</label>
       <div className="minutes-island">
         <button className="minutes-step" onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 5)))}>-5</button>
@@ -621,6 +677,111 @@ function Progress({ logs, language, T }: { logs: Record<string, Log>; language: 
     </>}
   </section>;
 }
+function PracticeMode({ step, setStep, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, language, T }: any) {
+  function bestRatingAt(itemEn: string, targetBpm: number) {
+    let best: string | null = null;
+    sessions.forEach((s: any) => { if (s.item_en === itemEn && s.bpm === targetBpm && (!best || RATING_RANK[s.rating] > RATING_RANK[best!])) best = s.rating; });
+    return best;
+  }
+  function exerciseStats(itemEn: string) {
+    const attempted = BPM_LEVELS.filter((level) => bestRatingAt(itemEn, level));
+    const bestBpm = attempted.length ? Math.max(...attempted) : null;
+    const bestRating = bestBpm ? bestRatingAt(itemEn, bestBpm) : null;
+    return { unlocked: attempted.length, bestBpm, bestRating };
+  }
+  function tierProgress(itemEn: string, tier: { min: number; max: number }) {
+    const levels = BPM_LEVELS.filter((l) => l >= tier.min && l <= tier.max);
+    const done = levels.filter((l) => { const r = bestRatingAt(itemEn, l); return r === "comfortable" || r === "mastered"; });
+    return levels.length ? (done.length / levels.length) * 100 : 0;
+  }
+  const RATING_LABEL: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
+  const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
+  function openExercise(itemEn: string) { setExercise(itemEn); setStep("detail"); }
+  function startSession(targetBpm: number) { setBpm(targetBpm); setStep("session"); }
+  function handleSessionEnd(sessionMinutes: number) { setPendingMinutes(sessionMinutes); setStep("rate"); }
+  async function rate(rating: string) {
+    if (!exercise) return;
+    await onLogSession(exercise, bpm, rating, pendingMinutes);
+    setStep("detail");
+  }
+
+  if (step === "list") {
+    return <section className="page">
+      <header className="simple-head"><p className="eyebrow">{T.practiceMode.eyebrow}</p><h1>{T.practiceMode.title}</h1></header>
+      <div className="book-list">
+        {PRACTICE_ITEMS.map((item) => {
+          const stats = exerciseStats(item.en);
+          return <button key={item.en} className="ex-row" onClick={() => openExercise(item.en)}>
+            <div className="info">
+              <p className="name">{item[language as Lang]}</p>
+              {stats.unlocked > 0 ? <div className="meta">
+                <span className="best-dot" style={{ background: RATING_COLOR[stats.bestRating ?? ""] }} />
+                <span>{stats.bestBpm} BPM</span>
+                <div className="track"><i style={{ width: `${(stats.unlocked / BPM_LEVELS.length) * 100}%` }} /></div>
+                <span className="frac">{stats.unlocked}/{BPM_LEVELS.length}</span>
+              </div> : <div className="meta"><span>{T.practiceMode.notStarted}</span></div>}
+            </div>
+            <span className="chev">›</span>
+          </button>;
+        })}
+      </div>
+    </section>;
+  }
+
+  if (step === "detail" && exercise) {
+    const stats = exerciseStats(exercise);
+    const label = PRACTICE_ITEMS.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
+    return <section className="page">
+      <div className="back-row"><button onClick={() => setStep("list")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2></div></div>
+      <div className="level-card">
+        <div className="badge">{stats.bestRating ? RATING_ICON[stats.bestRating] : "🥁"}</div>
+        <div>
+          <p className="lc-label">{T.practiceMode.currentLevel}</p>
+          <p className="lc-value">{stats.bestBpm ? `${stats.bestBpm} BPM` : "—"}</p>
+          <p className="lc-sub">{T.practiceMode.levelsUnlocked(stats.unlocked, BPM_LEVELS.length)}</p>
+        </div>
+      </div>
+      <div className="tier-strip">
+        {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className="seg-bar"><i style={{ width: `${tierProgress(exercise, tier)}%` }} /></div><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
+      </div>
+      <span className="ladder-label">{T.practiceMode.bpmLevels}</span>
+      <div className="ladder">
+        {BPM_LEVELS.map((level, idx) => {
+          const rating = bestRatingAt(exercise, level);
+          const isNext = !rating && !BPM_LEVELS.slice(0, idx).some((l) => !bestRatingAt(exercise, l));
+          const className = rating ?? (isNext ? "current" : "locked");
+          return <button key={level} className={`rung ${className}`} onClick={() => startSession(level)}>
+            <span className="bpm">{level}</span>
+            <span className="rung-label">{rating ? RATING_LABEL[rating] : isNext ? T.practiceMode.tapToStart : T.practiceMode.locked}</span>
+            <span className="status">{rating ? RATING_ICON[rating] : isNext ? "▶" : ""}</span>
+          </button>;
+        })}
+      </div>
+      <div className="legend">
+        {RATING_ORDER.map((r) => <span key={r}><i style={{ background: RATING_COLOR[r] }} />{RATING_LABEL[r]}</span>)}
+      </div>
+    </section>;
+  }
+
+  if (step === "session" && exercise) {
+    const label = PRACTICE_ITEMS.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
+    return <section className="page">
+      <div className="back-row"><button onClick={() => setStep("detail")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
+      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} T={T} />
+    </section>;
+  }
+
+  if (step === "rate" && exercise) {
+    const label = PRACTICE_ITEMS.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
+    return <section className="page">
+      <header className="simple-head"><p className="eyebrow">{label} · {bpm} BPM</p><h1>{T.practiceMode.rateTitle}</h1><p className="rate-sub">{T.practiceMode.rateSubtitle(pendingMinutes)}</p></header>
+      <div className="rating-grid">
+        {RATING_ORDER.map((r) => <button key={r} className={`rating-btn ${r}`} onClick={() => rate(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
+      </div>
+    </section>;
+  }
+  return null;
+}
 function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number; onGoalSaved: (goal: number) => void; T: any }) {
   const [name, setName] = useState(profileName); const [goal, setGoal] = useState(String(dailyGoal)); const [language, setLanguage] = useState<Lang>(currentLanguage); const [reminders, setReminders] = useState(false); const [color, setColor] = useState(MEMBER_COLORS[0]); const [saved, setSaved] = useState(false);
   useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,reminder_enabled").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(String(row.daily_goal_minutes)); setLanguage(row.language); setReminders(row.reminder_enabled); } }); supabase.from("profiles").select("color").eq("id", user.id).maybeSingle().then(({ data }) => { if (data?.color) setColor(data.color); }); }, [user]);
@@ -631,8 +792,8 @@ function Setting({icon,label,value}:{icon:string;label:string;value:string}) { r
 
 const SIGNATURE_BEATS: Record<string, number> = { "4/4": 4, "3/4": 3, "6/8": 6 };
 
-function Metronome({ open, close, onAddMinutes, T }: { open: boolean; close: () => void; onAddMinutes: (minutes: number) => void; T: any }) {
-  const [bpm, setBpm] = useState(100);
+function Metronome({ open, close, onAddMinutes, onSessionEnd, initialBpm, T }: { open: boolean; close: () => void; onAddMinutes?: (minutes: number) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; T: any }) {
+  const [bpm, setBpm] = useState(initialBpm ?? 100);
   const [playing, setPlaying] = useState(false);
   const [signature, setSignature] = useState("4/4");
   const [elapsed, setElapsed] = useState(0);
@@ -710,7 +871,7 @@ function Metronome({ open, close, onAddMinutes, T }: { open: boolean; close: () 
     }
     setPlaying(false);
     if (schedulerRef.current !== null) { window.clearInterval(schedulerRef.current); schedulerRef.current = null; }
-    if (elapsed > 0) setShowAddPrompt(true);
+    if (elapsed > 0) { if (onSessionEnd) onSessionEnd(loggedMinutes); else setShowAddPrompt(true); }
   }
   function tapTempo() {
     const now = performance.now();
@@ -724,7 +885,7 @@ function Metronome({ open, close, onAddMinutes, T }: { open: boolean; close: () 
     }
     lastTapRef.current = now;
   }
-  function addTime() { onAddMinutes(loggedMinutes); setShowAddPrompt(false); setElapsed(0); }
+  function addTime() { onAddMinutes?.(loggedMinutes); setShowAddPrompt(false); setElapsed(0); }
   function discardTime() { setShowAddPrompt(false); setElapsed(0); }
   if (!open) return null;
   return <div className="modal"><div className="metro"><button className="close" onClick={close}>×</button><p className="eyebrow">{T.metronome.practiceTool}</p><h2>{T.metronome.title}</h2><div className={playing ? "pulse playing" : "pulse"} style={{ animationDuration: `${60 / bpm}s` }}><span>{bpm}</span><small>BPM</small></div><div className="metronome-timer">{playing ? T.metronome.practiceTimer : T.metronome.sessionTime}<strong>{elapsedLabel}</strong></div><input className="range" type="range" min="40" max="240" value={bpm} onChange={e => setBpm(+e.target.value)}/><div className="tempo-actions"><button onClick={() => setBpm(Math.max(40, bpm - 1))}>−</button><button className="tap" onClick={tapTempo}>{T.metronome.tapTempo}</button><button onClick={() => setBpm(Math.min(240, bpm + 1))}>+</button></div><div className="signatures">{["4/4", "3/4", "6/8"].map(s => <button key={s} onClick={() => setSignature(s)} className={s === signature ? "selected" : ""}>{s}</button>)}</div><button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : T.metronome.start}</button>{showAddPrompt && <div className="add-time"><span>{T.metronome.sessionComplete}</span><h3>{T.metronome.addTimeQuestion(loggedMinutes)}</h3><p>{T.metronome.sessionLasted(elapsedLabel)}</p><div><button className="discard" onClick={discardTime}>{T.metronome.notNow}</button><button className="add" onClick={addTime}>{T.metronome.addTime}</button></div></div>}</div></div>; }

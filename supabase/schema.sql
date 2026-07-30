@@ -118,3 +118,18 @@ alter table public.profiles add column if not exists color text not null default
 
 -- Tracks whether a session was on a drumset or a practice pad, for separate monthly metrics later.
 alter table public.practice_logs add column if not exists equipment text check (equipment in ('drumset', 'pad'));
+
+-- Practice Mode: one row per timed session against a specific exercise + BPM, rated by the user.
+create table if not exists public.practice_sessions (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  practice_item_id uuid references public.practice_items(id),
+  bpm integer not null check (bpm between 40 and 240),
+  rating text not null check (rating in ('not_ready', 'tense', 'comfortable', 'mastered')),
+  duration_minutes integer not null check (duration_minutes >= 0),
+  practiced_on date not null default current_date,
+  created_at timestamptz not null default now()
+);
+alter table public.practice_sessions enable row level security;
+drop policy if exists "users manage their practice sessions" on public.practice_sessions;
+create policy "users manage their practice sessions" on public.practice_sessions for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
