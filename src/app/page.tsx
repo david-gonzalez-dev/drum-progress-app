@@ -63,6 +63,7 @@ export default function Home() {
   const [authError, setAuthError] = useState("");
   const { current: streak, longest: longestStreak } = useMemo(() => calculateStreaks(logs, dateKey), [logs]);
   const daysThisYear = useMemo(() => Object.keys(logs).filter((key) => key.startsWith(dateKey.slice(0, 4))).length, [logs]);
+  const displayName = user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "Drummer";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setLoading(false); });
@@ -100,7 +101,7 @@ export default function Home() {
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
   return <main className="shell">
-    {tab === "today" && <Today minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} save={save} saved={saved} streak={streak} openMetronome={() => setMetronome(true)} />}
+    {tab === "today" && <Today minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} save={save} saved={saved} streak={streak} openMetronome={() => setMetronome(true)} displayName={displayName} />}
     {tab === "calendar" && <Calendar logs={logs} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} saveLogFor={saveLogFor} />}
     {tab === "group" && <Group user={user} setError={setAuthError} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} />}
@@ -121,12 +122,13 @@ function Login({ error, setError }: { error: string; setError: (message: string)
   return <main className="shell"><section className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>KEEP THE<br/><i>RHYTHM.</i></h1><p>Build your daily drumming habit, one session at a time.</p><div className="auth-card"><h2>{mode === "login" ? "Welcome back" : "Start your streak"}</h2><input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /><input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !email || !password} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : "Create account"}</button><div className="or">OR</div><button className="google" disabled={busy} onClick={google}>G <span>Continue with Google</span></button><button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
-function Today({ minutes, setMinutes, selected, toggle, notes, setNotes, save, saved, streak, openMetronome }: any) {
+function Today({ minutes, setMinutes, selected, toggle, notes, setNotes, save, saved, streak, openMetronome, displayName }: any) {
   return <section className="page today">
-    <header className="hero"><div><p className="eyebrow">GOOD MORNING, DAVID</p><h1>KEEP THE<br/><i>RHYTHM.</i></h1><p className="date">{fmtDate.format(new Date())}</p></div><button className="avatar">D</button></header>
+    <header className="hero"><div><p className="eyebrow">WELCOME BACK, {displayName.toUpperCase()}</p><h1>KEEP THE<br/><i>RHYTHM.</i></h1><p className="date">{fmtDate.format(new Date())}</p></div><button className="avatar">{displayName.charAt(0).toUpperCase()}</button></header>
     <div className="streak-card"><div className="flame">🔥</div><div><span>Current streak</span><strong>{streak} days</strong></div></div>
     <div className="section-title"><h2>Today&apos;s practice</h2><button onClick={openMetronome}>⌁ Metronome</button></div>
     <div className="form-card"><label className="input-label">HOW LONG DID YOU PRACTISE?</label><div className="minutes"><input inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))}/><span>min</span></div>
+      <div className="quick-add"><button onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1 min</button><button onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5 min</button></div>
       <label className="input-label checklist-label">WHAT DID YOU PRACTISE?</label><div className="chips">{items.map((item) => <button key={item} onClick={() => toggle(item)} className={selected.includes(item) ? "chip selected" : "chip"}>{selected.includes(item) && <b>✓</b>}{item}</button>)}</div>
       <label className="input-label notes-label">NOTES <em>OPTIONAL</em></label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What did you practise today?" />
       <button className={saved ? "save saved" : "save"} onClick={save}>{saved ? "✓ Practice saved" : "Save practice"}<span>→</span></button>
@@ -166,6 +168,7 @@ function DayEditor({ date, log, onSave }: { date: string; log?: Log; onSave: Sav
   return <div className="form-card">
     <label className="input-label">HOW LONG DID YOU PRACTISE?</label>
     <div className="minutes"><input inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} /><span>min</span></div>
+    <div className="quick-add"><button onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1 min</button><button onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5 min</button></div>
     <label className="input-label checklist-label">WHAT DID YOU PRACTISE?</label>
     <div className="chips">{items.map((item) => <button key={item} onClick={() => toggle(item)} className={selected.includes(item) ? "chip selected" : "chip"}>{selected.includes(item) && <b>✓</b>}{item}</button>)}</div>
     <label className="input-label notes-label">NOTES <em>OPTIONAL</em></label>
@@ -251,14 +254,20 @@ function Metronome({ close, onAddMinutes }: { close: () => void; onAddMinutes: (
 
   const elapsedLabel = String(Math.floor(elapsed / 60)).padStart(2, "0") + ":" + String(elapsed % 60).padStart(2, "0");
   const loggedMinutes = Math.max(1, Math.ceil(elapsed / 60));
-  function togglePlaying() {
+  async function togglePlaying() {
     if (!playing) {
       setElapsed(0);
       setPlaying(true);
       const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = audioCtxRef.current ?? new AudioContextClass();
       audioCtxRef.current = ctx;
-      if (ctx.state === "suspended") ctx.resume();
+      if (ctx.state === "suspended") await ctx.resume();
+      // iOS Safari needs a buffer actually played (not just resume()) within the gesture to fully unlock audio output.
+      const unlockBuffer = ctx.createBuffer(1, 1, 22050);
+      const unlockSource = ctx.createBufferSource();
+      unlockSource.buffer = unlockBuffer;
+      unlockSource.connect(ctx.destination);
+      unlockSource.start(0);
       beatRef.current = 0;
       nextNoteTimeRef.current = ctx.currentTime + 0.05;
       schedulerRef.current = window.setInterval(scheduler, 25);
