@@ -19,12 +19,36 @@
 .page-back{border:0;background:transparent;color:#ff9b50;font:600 13px 'DM Sans';padding:0;margin-bottom:8px}
 .stats.stats-2{grid-template-columns:repeat(2,1fr)}
 .stats-tile{margin-top:-6px;padding:12px 6px}
-.time-info{flex:1;min-width:0}
-.time-info-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
-.time-track{height:4px;background:#1c211f;border-radius:99px;overflow:hidden}
-.time-bar{height:100%;border-radius:99px;background:#ff9b50}
+.time-card{background:#121413;border:1px solid #222724;border-radius:18px;padding:14px 16px;margin-bottom:20px}
+.time-card .section-label{margin-bottom:2px}
+.time-card .section-sublabel{margin:0 0 4px}
+.time-card .stats{margin-bottom:0}
+.time-card .stats div{text-align:center}
+.time-card .time-list{display:flex;flex-direction:column}
+.time-card .time-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0}
+.time-card .time-row+.time-row{border-top:1px solid #1c211f}
+.time-card .time-row .minutes-value{font:700 13px "Barlow Condensed";color:#e7e9e6}
+.roster-detail-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0}
+.roster-detail-row+.roster-detail-row{border-top:1px solid #222724}
+.roster-detail-info{flex:1;min-width:0}
+.roster-detail-head{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:4px}
+.roster-equipment{display:block;font-size:10px;color:#8d9690;margin-bottom:4px}
 .today .section-title{margin-top:24px}
-.practice-mode-heading{margin-top:24px}
+.mode-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.mode-header.train-header{margin-top:30px}
+.mode-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;overflow:hidden;object-fit:cover}
+.mode-copy{flex:1;min-width:0}
+.mode-copy h2{font:700 17px 'Barlow Condensed';margin:0 0 3px}
+.mode-copy p{font-size:12px;color:#9aa19d;margin:0;line-height:1.4}
+.mode-action{flex-shrink:0;align-self:flex-start;background:#2a170a;border:1px solid #472315;color:#ff9b50;font-size:12px;font-weight:700;padding:9px 13px;border-radius:99px;white-space:nowrap}
+.category-list{display:flex;flex-direction:column;gap:10px}
+.category-card{width:100%;text-align:left;background:#121413;border:1px solid #222724;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;color:#f6f7f5;font-family:inherit}
+.category-icon{width:44px;height:44px;border-radius:12px;flex-shrink:0;object-fit:cover;display:block}
+.category-info{flex:1;min-width:0}
+.category-title{font:700 15px 'DM Sans';margin:0 0 3px}
+.category-desc{font-size:12px;color:#9aa19d;margin:0 0 6px;line-height:1.35}
+.category-count{font-size:11px;color:#6d746f;font-weight:600}
+.category-card .chev{color:#565c58;font-size:18px;flex-shrink:0}
 .stats-tile .stats{margin-bottom:0}
 .pin-btn.pinned{border-color:#472315;background:#1c130d;color:#ff9b50}
 .pinned-list{display:flex;flex-direction:column;gap:20px}

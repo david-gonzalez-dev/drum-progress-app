@@ -56,6 +56,7 @@ const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; 
 ];
 
 const PRACTICE_CATEGORIES = ["rudiments", "exercises", "rhythms"] as const;
+const CATEGORY_ICON_SRC: Record<string, string> = { rudiments: "/icons/rudiments.png", exercises: "/icons/exercises.png", rhythms: "/icons/rhythms.png" };
 const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string }[] = [
   { category: "rudiments", subcategory: null, en: "Single Strokes", es: "Golpes simples" },
   { category: "rudiments", subcategory: null, en: "Double Strokes", es: "Golpes dobles" },
@@ -160,6 +161,9 @@ const translations = {
       categoryRudiments: "Rudiments", categoryExercises: "Exercises", categoryRhythms: "Rhythms",
       exerciseCount: (n: number) => `${n} exercise${n === 1 ? "" : "s"}`, comingSoon: "Coming soon",
       pin: "📌 Pin", pinned: "📌 Pinned",
+      quickTitle: "Quick Practice", quickSubtitle: "Log today's practice",
+      trainTitle: "Train a Skill", trainSubtitle: "Choose an area and improve over time.",
+      categoryDescRudiments: "Build technique and control.", categoryDescExercises: "Improve with structured exercises.", categoryDescRhythms: "Grooves, styles and musical vocabulary.",
     },
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
@@ -230,6 +234,9 @@ const translations = {
       categoryRudiments: "Rudimentos", categoryExercises: "Ejercicios", categoryRhythms: "Ritmos",
       exerciseCount: (n: number) => `${n} ejercicio${n === 1 ? "" : "s"}`, comingSoon: "Próximamente",
       pin: "📌 Fijar", pinned: "📌 Fijado",
+      quickTitle: "Práctica rápida", quickSubtitle: "Registra la práctica de hoy",
+      trainTitle: "Entrena una habilidad", trainSubtitle: "Elige un área y mejora con el tiempo.",
+      categoryDescRudiments: "Desarrolla técnica y control.", categoryDescExercises: "Mejora con ejercicios estructurados.", categoryDescRhythms: "Grooves, estilos y vocabulario musical.",
     },
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
@@ -510,12 +517,12 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, language, T }: { 
 function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, roster }: {
   date: string; log?: Log; dailyGoal: number; logs: Record<string, Log>; locale: string; language: Lang; T: any;
   onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>;
-  roster?: { members: { id: string; name: string; color: string }[]; dayMinutes: Record<string, number>; currentUserId: string };
+  roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; equipment: string | null; items: string[] }>; currentUserId: string };
 }) {
   const [editing, setEditing] = useState(false);
   const streakHere = calculateStreaks(logs, date).current;
   const hasPractice = !!log && log.minutes > 0;
-  const rosterRows = roster ? roster.members.filter((m) => (roster.dayMinutes[m.id] ?? 0) > 0).map((m) => ({ ...m, minutes: roster.dayMinutes[m.id] })).sort((a, b) => b.minutes - a.minutes) : null;
+  const rosterRows = roster ? roster.members.filter((m) => (roster.dayLogs[m.id]?.minutes ?? 0) > 0).map((m) => ({ ...m, ...roster.dayLogs[m.id] })).sort((a, b) => b.minutes - a.minutes) : null;
   return <div className="modal modal-center" onClick={onClose}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
     <button className="close" onClick={onClose}>×</button>
     <div className="ds-head">
@@ -523,13 +530,23 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
       <span className="eyebrow">{new Date(date + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
     </div>
     {editing ? <DayEditor key={date} date={date} log={log} onSave={onSave} onDelete={onDelete} language={language} T={T} /> : <>
-      {hasPractice && log ? <>
-        <strong className="ds-minutes">{log.minutes} {T.calendar.minPractised}{log.equipment ? ` - ${T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
-        {log.items.length > 0 && <div className="detail-chips">{log.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>}
-        <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(log.minutes, dailyGoal)}</p>
-        {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
-      </> : <p className="hint">{T.calendar.noPracticeShort}</p>}
-      {rosterRows && <div className="challenge-ranking">{rosterRows.length ? rosterRows.map((m) => <div key={m.id} className="challenge-rank-row"><i style={{ width: 8, height: 8, borderRadius: "50%", background: m.color, flexShrink: 0 }} /><span className="rank-name">{m.id === roster!.currentUserId ? T.group.you : m.name}</span><span className="rank-value">{m.minutes} {T.group.minutesShort}</span></div>) : <p className="hint">{T.group.noOnePractised}</p>}</div>}
+      {roster ? (
+        rosterRows && rosterRows.length ? <div className="challenge-ranking">{rosterRows.map((m) => <div key={m.id} className="roster-detail-row">
+          <i style={{ width: 8, height: 8, borderRadius: "50%", background: m.color, flexShrink: 0, marginTop: 4 }} />
+          <div className="roster-detail-info">
+            <div className="roster-detail-head"><span className="rank-name">{m.id === roster!.currentUserId ? T.group.you : m.name}</span><span className="rank-value">{m.minutes} {T.group.minutesShort}</span></div>
+            {m.equipment && <span className="roster-equipment">{T.calendar.onEquipment(equipmentLabel(m.equipment, T))}</span>}
+            {m.items && m.items.length > 0 && <div className="detail-chips">{m.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>}
+          </div>
+        </div>)}</div> : <p className="hint">{T.group.noOnePractised}</p>
+      ) : (
+        hasPractice && log ? <>
+          <strong className="ds-minutes">{log.minutes} {T.calendar.minPractised}{log.equipment ? ` - ${T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
+          {log.items.length > 0 && <div className="detail-chips">{log.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>}
+          <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(log.minutes, dailyGoal)}</p>
+          {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
+        </> : <p className="hint">{T.calendar.noPracticeShort}</p>
+      )}
       <button className="secondary" onClick={() => setEditing(true)}>{hasPractice ? T.calendar.editDay : T.calendar.nothingToEdit}</button>
     </>}
   </div></div>;
@@ -595,6 +612,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
   const [viewDate, setViewDate] = useState(() => new Date());
   const [monthLogs, setMonthLogs] = useState<Record<string, Record<string, number>>>({});
   const [summaryDayKey, setSummaryDayKey] = useState<string | null>(null);
+  const [dayDetailLogs, setDayDetailLogs] = useState<Record<string, { minutes: number; equipment: string | null; items: string[] }>>({});
   const [copied, setCopied] = useState(false);
   const [challenges, setChallenges] = useState<any[]>([]);
   const [showNewChallenge, setShowNewChallenge] = useState(false);
@@ -653,6 +671,17 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
       setMonthLogs(byDay);
     });
   }, [group, members, viewDate]);
+  useEffect(() => {
+    if (!summaryDayKey || !members.length) { setDayDetailLogs({}); return; }
+    const memberIds = members.map((m) => m.id);
+    supabase.from("practice_logs").select("user_id,minutes,equipment,practice_log_items(practice_items(name_en))").eq("practiced_on", summaryDayKey).in("user_id", memberIds).then(({ data }) => {
+      const byUser: Record<string, { minutes: number; equipment: string | null; items: string[] }> = {};
+      (data ?? []).forEach((row: any) => {
+        byUser[row.user_id] = { minutes: row.minutes, equipment: row.equipment ?? null, items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) };
+      });
+      setDayDetailLogs(byUser);
+    });
+  }, [summaryDayKey, members]);
   function computeChallengeProgress(goalType: string, goalValue: number, startDate: string, endDate: string, userLogs: Record<string, number>) {
     const end = endDate < dateKey ? endDate : dateKey;
     let progress = 0; let target = goalValue;
@@ -730,8 +759,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
   }
   if (groupLoading) return <section className="page" />;
   if (group) {
-    const maxTotal = Math.max(1, ...totals.map((m) => m.total));
-    const maxDays = Math.max(1, ...daysTotals.map((m) => m.days));
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
@@ -741,6 +768,23 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
         <div><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></div>
         <button className="invite-chip" onClick={copyInvite}>{copied ? T.group.copied : group.invite_code}</button>
       </header>
+      <div className="leaderboard"><span className="section-label">{T.group.leaderboard}</span>
+        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / 365) * 100}%` }} /></div><span className="leaderboard-value">{member.days} / 365</span></div>)}
+      </div>
+      <div className="time-card"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{sinceLabel}</span>
+        {totals.length <= 3 ? (
+          <div className="stats" style={{ gridTemplateColumns: `repeat(${totals.length}, 1fr)` }}>
+            {totals.map((member) => <Stat key={member.id} label={member.id === user.id ? T.group.you : member.name} value={formatMinutes(member.total)} />)}
+          </div>
+        ) : (
+          <div className="time-list">
+            {totals.map((member) => <div key={member.id} className="time-row">
+              <span className="minutes-name">{member.id === user.id ? T.group.you : member.name}</span>
+              <span className="minutes-value">{formatMinutes(member.total)}</span>
+            </div>)}
+          </div>
+        )}
+      </div>
       <div className="group-progress"><span className="section-label">{T.group.progress}</span><div className="calendar-card">
         <div className="cal-head"><button onClick={() => setViewDate(new Date(year, month - 1, 1))}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => setViewDate(new Date(year, month + 1, 1))}>›</button></div>
         <div className="week">{T.group.weekdaysMon.map((x: string, i: number) => <span key={i}>{x}</span>)}</div>
@@ -757,21 +801,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
       </div></div>
       {summaryDayKey && <DaySummaryModal date={summaryDayKey} log={logs[summaryDayKey]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
         onClose={() => setSummaryDayKey(null)} onSave={saveLogFor} onDelete={deleteLogFor}
-        roster={{ members, dayMinutes: monthLogs[summaryDayKey] ?? {}, currentUserId: user.id }} />}
-      <div className="leaderboard"><span className="section-label">{T.group.leaderboard}</span>
-        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / maxDays) * 100}%` }} /></div><span className="leaderboard-value">{member.days} / 365</span></div>)}
-      </div>
-      <div className="progress-section time-leaderboard"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{sinceLabel}</span>
-        <div className="minutes-chart">
-          {totals.map((member, idx) => <div key={member.id} className="minutes-row">
-            <span className="minutes-rank">{idx + 1}</span>
-            <div className="time-info">
-              <div className="time-info-head"><span className="minutes-name">{member.id === user.id ? T.group.you : member.name}</span><span className="minutes-value">{formatMinutes(member.total)}</span></div>
-              <div className="time-track"><div className="time-bar" style={{ width: `${(member.total / maxTotal) * 100}%` }} /></div>
-            </div>
-          </div>)}
-        </div>
-      </div>
+        roster={{ members, dayLogs: dayDetailLogs, currentUserId: user.id }} />}
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span><button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button></div>
         {showNewChallenge && <div className="challenge-form">
@@ -905,6 +935,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   const RATING_LABEL: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const CATEGORY_LABEL: Record<string, string> = { rudiments: T.practiceMode.categoryRudiments, exercises: T.practiceMode.categoryExercises, rhythms: T.practiceMode.categoryRhythms };
+  const CATEGORY_DESC: Record<string, string> = { rudiments: T.practiceMode.categoryDescRudiments, exercises: T.practiceMode.categoryDescExercises, rhythms: T.practiceMode.categoryDescRhythms };
   function openCategory(cat: string) { setCategory(cat); setStep("list"); }
   function openExercise(itemEn: string) { setExercise(itemEn); setStep("detail"); }
   function startSession(targetBpm: number) { setBpm(targetBpm); setStep("session"); }
@@ -933,7 +964,12 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   if (step === "category") {
     return <section className="page">
       <header className="simple-head"><p className="eyebrow">{T.practiceMode.pageEyebrow}</p><h1>{T.practiceMode.pageTitle}</h1></header>
-      <div className="section-title"><h2>{T.today.todaysPractice}</h2><div className="section-title-actions"><button onClick={openMetronome}>⌁ {T.today.metronome}</button></div></div>
+
+      <div className="mode-header">
+        <img src="/icons/lightning.png" alt="" className="mode-icon quick" />
+        <div className="mode-copy"><h2>{T.practiceMode.quickTitle}</h2><p>{T.practiceMode.quickSubtitle}</p></div>
+        <button className="mode-action" onClick={openMetronome}>⌁ {T.today.metronome}</button>
+      </div>
       <div className="form-card"><label className="input-label">{T.today.howLong}</label>
         <div className="minutes-island">
           <button className="minutes-step" onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 5)))}>-5</button>
@@ -957,15 +993,20 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
         <button className={saved ? "save saved" : "save"} onClick={save}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
       </div>
-      <div className="section-title practice-mode-heading"><h2>{T.practiceMode.title}</h2></div>
-      <span className="section-sublabel">{T.practiceMode.eyebrow}</span>
-      <div className="book-list">
+
+      <div className="mode-header train-header">
+        <img src="/icons/target.png" alt="" className="mode-icon train" />
+        <div className="mode-copy"><h2>{T.practiceMode.trainTitle}</h2><p>{T.practiceMode.trainSubtitle}</p></div>
+      </div>
+      <div className="category-list">
         {PRACTICE_CATEGORIES.map((cat) => {
           const count = PRACTICE_EXERCISES.filter((e) => e.category === cat).length;
-          return <button key={cat} className="ex-row" onClick={() => openCategory(cat)}>
-            <div className="info">
-              <p className="name">{CATEGORY_LABEL[cat]}</p>
-              <div className="meta"><span>{count ? T.practiceMode.exerciseCount(count) : T.practiceMode.comingSoon}</span></div>
+          return <button key={cat} className="category-card" onClick={() => openCategory(cat)}>
+            <img src={CATEGORY_ICON_SRC[cat]} alt="" className="category-icon" />
+            <div className="category-info">
+              <p className="category-title">{CATEGORY_LABEL[cat]}</p>
+              <p className="category-desc">{CATEGORY_DESC[cat]}</p>
+              <span className="category-count">{count ? T.practiceMode.exerciseCount(count) : T.practiceMode.comingSoon}</span>
             </div>
             <span className="chev">›</span>
           </button>;

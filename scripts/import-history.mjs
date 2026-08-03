@@ -2,7 +2,10 @@
 // One-time historical import: reads a date,user,minutes CSV and writes practice_logs rows
 // exactly as if each row had been logged through the app's quick-log form.
 //
-// Usage: npm run import-history -- path/to/file.csv
+// Usage: npm run import-history -- path/to/file.csv [--force]
+//   --force  overwrite rows that already exist with a different value, instead of
+//            just reporting them as conflicts. Use when the CSV is known to be more
+//            complete/accurate than what's currently stored (e.g. a corrected re-parse).
 //
 // Requires SUPABASE_SERVICE_ROLE_KEY in .env.local (Supabase dashboard -> Project Settings
 // -> API -> service_role key). The service role bypasses RLS, which is required here since
@@ -98,9 +101,11 @@ async function main() {
     process.exit(1);
   }
 
-  const csvPath = process.argv[2];
+  const args = process.argv.slice(2);
+  const force = args.includes("--force");
+  const csvPath = args.find((a) => !a.startsWith("--"));
   if (!csvPath) {
-    console.error("Usage: npm run import-history -- path/to/file.csv");
+    console.error("Usage: npm run import-history -- path/to/file.csv [--force]");
     process.exit(1);
   }
   const absolutePath = resolve(process.cwd(), csvPath);
@@ -137,6 +142,7 @@ async function main() {
   const toImport = [];
   const unchanged = [];
   const conflicts = [];
+  const overwritten = [];
   const skipped = [];
 
   for (const row of rows) {
@@ -150,6 +156,11 @@ async function main() {
     const mapKey = `${userEntry.id}|${row.date}`;
     if (existingMap.has(mapKey)) {
       if (existingMap.get(mapKey) === minutes) { unchanged.push(row); continue; }
+      if (force) {
+        overwritten.push({ ...row, previousMinutes: existingMap.get(mapKey) });
+        toImport.push({ user_id: userEntry.id, practiced_on: row.date, minutes, notes: "", equipment: null });
+        continue;
+      }
       conflicts.push({ ...row, existingMinutes: existingMap.get(mapKey) });
       continue;
     }
@@ -168,11 +179,15 @@ async function main() {
     }
   }
 
-  console.log(`\nImported: ${toImport.length}`);
+  console.log(`\nNew rows imported: ${toImport.length - overwritten.length}`);
   console.log(`Already imported, unchanged: ${unchanged.length}`);
+  if (overwritten.length) {
+    console.log(`\nOverwritten (--force): existing value replaced with the CSV's value:`);
+    for (const o of overwritten) console.log(`  Row ${o.rowNumber}: ${o.user} ${o.date} — was ${o.previousMinutes} min, now ${o.minutesRaw} min`);
+  }
 
   if (conflicts.length) {
-    console.log(`\nConflicts — a log already exists for this user/date with a different value than the CSV. Not overwritten:`);
+    console.log(`\nConflicts — a log already exists for this user/date with a different value than the CSV. Not overwritten (pass --force to overwrite):`);
     for (const c of conflicts) console.log(`  Row ${c.rowNumber}: ${c.user} ${c.date} — CSV says ${c.minutesRaw} min, database already has ${c.existingMinutes} min`);
   }
   if (skipped.length) {
