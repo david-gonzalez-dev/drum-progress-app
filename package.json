@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "import-history": "node scripts/import-history.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

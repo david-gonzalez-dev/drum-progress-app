@@ -21,6 +21,13 @@ const PRACTICE_ITEMS = [
 function practiceItemLabel(en: string, lang: Lang) {
   return PRACTICE_ITEMS.find((item) => item.en === en)?.[lang] ?? en;
 }
+function formatMinutes(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}min`;
+}
 function toggleEquipmentValue(current: string | null, value: "drumset" | "pad") {
   if (current === value) return null;
   if (current === "both") return value === "drumset" ? "pad" : "drumset";
@@ -139,7 +146,7 @@ const translations = {
     },
     progressPage: {
       eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", techniques: "MINUTES PER EXERCISE",
-      noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS",
+      noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS", generalPractice: "General Practice",
     },
     practiceMode: {
       eyebrow: "TRACK YOUR LEVELS", title: "PRACTICE MODE", pageEyebrow: "TRAIN", pageTitle: "PRACTICE",
@@ -209,7 +216,7 @@ const translations = {
     },
     progressPage: {
       eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", techniques: "MINUTOS POR EJERCICIO",
-      noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE",
+      noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE", generalPractice: "Práctica general",
     },
     practiceMode: {
       eyebrow: "SIGUE TUS NIVELES", title: "MODO PRÁCTICA", pageEyebrow: "ENTRENA", pageTitle: "PRÁCTICA",
@@ -414,7 +421,7 @@ export default function Home() {
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} openSettings={() => setTab("settings")} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} save={save} saved={saved} dailyGoal={dailyGoal} logs={logs} openMetronome={() => setMetronome(true)} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} language={language} T={T} />}
-    {tab === "progress" && <Progress practiceSessions={practiceSessions} pinnedExercises={pinnedExercises} language={language} T={T} />}
+    {tab === "progress" && <Progress practiceSessions={practiceSessions} pinnedExercises={pinnedExercises} logs={logs} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} onBack={() => setTab("today")} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
@@ -739,7 +746,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
         onClose={() => setSummaryDayKey(null)} onSave={saveLogFor} onDelete={deleteLogFor}
         roster={{ members, dayMinutes: monthLogs[summaryDayKey] ?? {}, currentUserId: user.id }} />}
       <div className="leaderboard"><span className="section-label">{T.group.leaderboard}</span><span className="section-sublabel">{sinceLabel}</span>
-        {totals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / maxTotal) * 100}%` }} /></div><span className="leaderboard-value">{member.total} {T.group.minutesShort}</span></div>)}
+        {totals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / maxTotal) * 100}%` }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
       </div>
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span><button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button></div>
@@ -787,16 +794,20 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
   }
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.group.practiseTogether}</p><h1>{T.group.yourGroup}</h1></header><div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? T.group.findCrew : mode === "create" ? T.group.startGroup : T.group.joinCrew}</h2>{mode === "start" ? <><p>{T.group.intro}</p><button className="primary" onClick={() => setMode("create")}>{T.group.createGroupBtn} <span>→</span></button><button className="secondary" onClick={() => setMode("join")}>{T.group.joinWithCode}</button></> : <><input className="group-input" value={mode === "create" ? name : code} onChange={e => mode === "create" ? setName(e.target.value) : setCode(e.target.value)} placeholder={mode === "create" ? T.group.groupNamePlaceholder : T.group.inviteCodePlaceholder}/><button className="primary" disabled={busy || !(mode === "create" ? name : code)} onClick={mode === "create" ? createGroup : joinGroup}>{busy ? T.group.pleaseWait : mode === "create" ? T.group.createGroup : T.group.joinGroup}</button><button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button></>}</div></section>;
 }
-function Progress({ practiceSessions, pinnedExercises, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[]; pinnedExercises: string[]; language: Lang; T: any }) {
+function Progress({ practiceSessions, pinnedExercises, logs, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[]; pinnedExercises: string[]; logs: Record<string, Log>; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const totals = useMemo(() => {
     const sums: Record<string, number> = {};
     practiceSessions.forEach((s) => { sums[s.item_en] = (sums[s.item_en] ?? 0) + s.duration_minutes; });
-    return Object.keys(sums)
+    const attributed = Object.values(sums).reduce((sum, m) => sum + m, 0);
+    const totalLogged = Object.values(logs).reduce((sum, log) => sum + log.minutes, 0);
+    const unspecified = Math.max(0, totalLogged - attributed);
+    const list = Object.keys(sums)
       .map((en) => ({ en, label: PRACTICE_EXERCISES.find((e) => e.en === en)?.[language] ?? en, minutes: sums[en] }))
-      .filter((t) => t.minutes > 0)
-      .sort((a, b) => b.minutes - a.minutes);
-  }, [practiceSessions, language]);
+      .filter((t) => t.minutes > 0);
+    if (unspecified > 0) list.push({ en: "__unspecified__", label: T.progressPage.generalPractice, minutes: unspecified });
+    return list.sort((a, b) => b.minutes - a.minutes);
+  }, [practiceSessions, logs, language, T]);
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.progressPage.eyebrow}</p><h1>{T.progressPage.title}</h1></header>
     {pinnedExercises.length > 0 && <div className="progress-section pinned-section">
       <span className="section-label">{T.progressPage.pinned}</span>
@@ -819,7 +830,7 @@ function Progress({ practiceSessions, pinnedExercises, language, T }: { practice
           <span className="minutes-rank">{idx + 1}</span>
           <div className="minutes-info">
             <span className="minutes-name">{t.label}</span>
-            <span className="minutes-value">{t.minutes} min</span>
+            <span className="minutes-value">{formatMinutes(t.minutes)}</span>
           </div>
         </div>)}
       </div>
