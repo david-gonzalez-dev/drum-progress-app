@@ -183,3 +183,14 @@ alter table public.practice_sessions drop column if exists practice_item_id;
 alter table public.profiles alter column color drop default;
 alter table public.profiles alter column color drop not null;
 update public.profiles set color = null where color = '#ff6b1a';
+
+-- Progress tab: lets a user pin a Practice Mode exercise as a current focus, shown with its tier progress.
+create table if not exists public.pinned_exercises (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  exercise_en text not null,
+  pinned_at timestamptz not null default now(),
+  primary key (user_id, exercise_en)
+);
+alter table public.pinned_exercises enable row level security;
+drop policy if exists "users manage their pinned exercises" on public.pinned_exercises;
+create policy "users manage their pinned exercises" on public.pinned_exercises for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
