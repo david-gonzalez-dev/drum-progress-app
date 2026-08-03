@@ -130,7 +130,7 @@ const translations = {
       intro: "Stay accountable, climb the leaderboard, and make practice more fun.", createGroupBtn: "Create a group", joinWithCode: "Join with invite code",
       groupNamePlaceholder: "Group name", inviteCodePlaceholder: "Invite code", pleaseWait: "Please wait...", createGroup: "Create group",
       joinGroup: "Join group", back: "Back", inviteNotFound: "That invite code was not found.", couldNotCreate: "Could not create group.",
-      leaderboard: "LEADERBOARD", you: "You", minutesShort: "min",
+      leaderboard: "LEADERBOARD", timePractised: "TIME PRACTISED", you: "You", minutesShort: "min",
       noChallenges: "No challenges yet. Start one with your crew!", newChallenge: "+ New challenge", cancel: "Cancel", challengeNamePlaceholder: "Challenge name",
       typeDaily: "Every day", typeMinutes: "Total minutes", typeSessions: "Days practised", goalLabel: "GOAL", startLabel: "START", endLabel: "END",
       rewardPlaceholder: "Reward (optional)", punishmentPlaceholder: "Punishment (optional)", createChallengeBtn: "Create challenge",
@@ -200,7 +200,7 @@ const translations = {
       intro: "Mantente responsable, sube en la clasificación y haz que practicar sea más divertido.", createGroupBtn: "Crear un grupo", joinWithCode: "Unirse con código de invitación",
       groupNamePlaceholder: "Nombre del grupo", inviteCodePlaceholder: "Código de invitación", pleaseWait: "Un momento...", createGroup: "Crear grupo",
       joinGroup: "Unirse al grupo", back: "Atrás", inviteNotFound: "No se encontró ese código de invitación.", couldNotCreate: "No se pudo crear el grupo.",
-      leaderboard: "CLASIFICACIÓN", you: "Tú", minutesShort: "min",
+      leaderboard: "CLASIFICACIÓN", timePractised: "TIEMPO PRACTICADO", you: "Tú", minutesShort: "min",
       noChallenges: "Aún no hay desafíos. ¡Empieza uno con tu grupo!", newChallenge: "+ Nuevo desafío", cancel: "Cancelar", challengeNamePlaceholder: "Nombre del desafío",
       typeDaily: "Todos los días", typeMinutes: "Minutos totales", typeSessions: "Días practicados", goalLabel: "META", startLabel: "INICIO", endLabel: "FIN",
       rewardPlaceholder: "Recompensa (opcional)", punishmentPlaceholder: "Penalización (opcional)", createChallengeBtn: "Crear desafío",
@@ -591,6 +591,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
   const [groupLoading, setGroupLoading] = useState(true);
   const [members, setMembers] = useState<{ id: string; name: string; color: string }[]>([]);
   const [totals, setTotals] = useState<{ id: string; name: string; total: number }[]>([]);
+  const [daysTotals, setDaysTotals] = useState<{ id: string; name: string; days: number }[]>([]);
   const [viewDate, setViewDate] = useState(() => new Date());
   const [monthLogs, setMonthLogs] = useState<Record<string, Record<string, number>>>({});
   const [summaryDayKey, setSummaryDayKey] = useState<string | null>(null);
@@ -614,7 +615,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
   ];
   useEffect(() => { supabase.from("group_members").select("groups(id,name,invite_code,created_at)").eq("user_id", user.id).order("joined_at", { ascending: true }).limit(1).maybeSingle().then(({ data }) => { if (data) setGroup((data as any).groups); setGroupLoading(false); }); }, [user]);
   useEffect(() => {
-    if (!group) { setMembers([]); setTotals([]); setChallenges([]); return; }
+    if (!group) { setMembers([]); setTotals([]); setDaysTotals([]); setChallenges([]); return; }
     supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", group.id).order("user_id").then(({ data }) => {
       const memberList = (data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) }));
       setMembers(memberList);
@@ -625,6 +626,17 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
         const sums: Record<string, number> = {};
         (logRows ?? []).forEach((row: any) => { sums[row.user_id] = (sums[row.user_id] ?? 0) + row.minutes; });
         setTotals(memberList.map((m) => ({ ...m, total: sums[m.id] ?? 0 })).sort((a, b) => b.total - a.total));
+      });
+      const yearStart = `${dateKey.slice(0, 4)}-01-01`;
+      const yearEnd = `${dateKey.slice(0, 4)}-12-31`;
+      supabase.from("practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd).then(({ data: yearRows }) => {
+        const daySets: Record<string, Set<string>> = {};
+        (yearRows ?? []).forEach((row: any) => {
+          if (row.minutes <= 0) return;
+          if (!daySets[row.user_id]) daySets[row.user_id] = new Set();
+          daySets[row.user_id].add(row.practiced_on);
+        });
+        setDaysTotals(memberList.map((m) => ({ ...m, days: daySets[m.id]?.size ?? 0 })).sort((a, b) => b.days - a.days));
       });
     });
   }, [group]);
@@ -719,6 +731,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
   if (groupLoading) return <section className="page" />;
   if (group) {
     const maxTotal = Math.max(1, ...totals.map((m) => m.total));
+    const maxDays = Math.max(1, ...daysTotals.map((m) => m.days));
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
@@ -745,8 +758,19 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
       {summaryDayKey && <DaySummaryModal date={summaryDayKey} log={logs[summaryDayKey]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
         onClose={() => setSummaryDayKey(null)} onSave={saveLogFor} onDelete={deleteLogFor}
         roster={{ members, dayMinutes: monthLogs[summaryDayKey] ?? {}, currentUserId: user.id }} />}
-      <div className="leaderboard"><span className="section-label">{T.group.leaderboard}</span><span className="section-sublabel">{sinceLabel}</span>
-        {totals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / maxTotal) * 100}%` }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
+      <div className="leaderboard"><span className="section-label">{T.group.leaderboard}</span>
+        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / maxDays) * 100}%` }} /></div><span className="leaderboard-value">{member.days} / 365</span></div>)}
+      </div>
+      <div className="progress-section time-leaderboard"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{sinceLabel}</span>
+        <div className="minutes-chart">
+          {totals.map((member, idx) => <div key={member.id} className="minutes-row">
+            <span className="minutes-rank">{idx + 1}</span>
+            <div className="time-info">
+              <div className="time-info-head"><span className="minutes-name">{member.id === user.id ? T.group.you : member.name}</span><span className="minutes-value">{formatMinutes(member.total)}</span></div>
+              <div className="time-track"><div className="time-bar" style={{ width: `${(member.total / maxTotal) * 100}%` }} /></div>
+            </div>
+          </div>)}
+        </div>
       </div>
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span><button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button></div>

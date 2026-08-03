@@ -19,6 +19,10 @@
 .page-back{border:0;background:transparent;color:#ff9b50;font:600 13px 'DM Sans';padding:0;margin-bottom:8px}
 .stats.stats-2{grid-template-columns:repeat(2,1fr)}
 .stats-tile{margin-top:-6px;padding:12px 6px}
+.time-info{flex:1;min-width:0}
+.time-info-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.time-track{height:4px;background:#1c211f;border-radius:99px;overflow:hidden}
+.time-bar{height:100%;border-radius:99px;background:#ff9b50}
 .today .section-title{margin-top:24px}
 .practice-mode-heading{margin-top:24px}
 .stats-tile .stats{margin-bottom:0}
