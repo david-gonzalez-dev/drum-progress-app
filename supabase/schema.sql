@@ -194,3 +194,21 @@ create table if not exists public.pinned_exercises (
 alter table public.pinned_exercises enable row level security;
 drop policy if exists "users manage their pinned exercises" on public.pinned_exercises;
 create policy "users manage their pinned exercises" on public.pinned_exercises for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Equipment can now also be "both" (drumset + practice pad in the same day).
+-- Drops any existing check constraint on this column (whatever it's actually named) before adding the widened one.
+do $$
+declare
+  r record;
+begin
+  for r in
+    select con.conname
+    from pg_constraint con
+    join pg_class rel on rel.oid = con.conrelid
+    join pg_attribute att on att.attrelid = rel.oid and att.attnum = any(con.conkey)
+    where rel.relname = 'practice_logs' and att.attname = 'equipment' and con.contype = 'c'
+  loop
+    execute format('alter table public.practice_logs drop constraint %I', r.conname);
+  end loop;
+end $$;
+alter table public.practice_logs add constraint practice_logs_equipment_check check (equipment in ('drumset', 'pad', 'both'));

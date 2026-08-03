@@ -21,6 +21,18 @@ const PRACTICE_ITEMS = [
 function practiceItemLabel(en: string, lang: Lang) {
   return PRACTICE_ITEMS.find((item) => item.en === en)?.[lang] ?? en;
 }
+function toggleEquipmentValue(current: string | null, value: "drumset" | "pad") {
+  if (current === value) return null;
+  if (current === "both") return value === "drumset" ? "pad" : "drumset";
+  if (current === null) return value;
+  return "both";
+}
+function equipmentLabel(equipment: string | null, T: any) {
+  if (equipment === "drumset") return T.today.drumset;
+  if (equipment === "pad") return T.today.pad;
+  if (equipment === "both") return T.today.equipmentBoth;
+  return null;
+}
 
 const NAV_TABS: Tab[] = ["today", "practice", "group", "progress"];
 const MEMBER_COLORS = ["#ff6b1a", "#4fd1c5", "#9f7aea", "#f6ad55", "#68d391", "#f687b3", "#63b3ed", "#fc8181"];
@@ -90,7 +102,7 @@ const translations = {
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", whatPractised: "WHAT DID YOU PRACTISE?",
       notes: "NOTES", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
       startToday: "Start your streak today!", daysToMilestone: (left: number, milestone: number) => `${left} days to a ${milestone}-day streak!`,
-      todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drumset", pad: "Practice Pad", addNotes: "+ Add notes",
+      todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drumset", pad: "Practice Pad", equipmentBoth: "Drumset & Practice Pad", addNotes: "+ Add notes",
       todaySummary: "TODAY'S SUMMARY", noPracticeYet: "No practice logged yet today.",
     },
     calendar: {
@@ -100,6 +112,7 @@ const translations = {
       notesPlaceholder: "What did you practise that day?", saving: "Saving...",
       deleteEntry: "Delete entry", confirmDeleteEntry: "Delete this day's practice? This can't be undone.", couldNotDeleteEntry: "Could not delete this entry.",
       goalMet: "🎯 Daily goal reached", goalMissed: (done: number, total: number) => `${done}/${total} min toward your goal`,
+      onEquipment: (label: string) => `On ${label}`,
       streakOnDay: (n: number) => `🔥 ${n}-day streak`, noPracticeShort: "No practice logged for this day.",
       editDay: "Edit this day", nothingToEdit: "+ Log practice for this day",
     },
@@ -159,7 +172,7 @@ const translations = {
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", whatPractised: "¿QUÉ PRACTICASTE?",
       notes: "NOTAS", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
       startToday: "¡Empieza tu racha hoy!", daysToMilestone: (left: number, milestone: number) => `¡${left} días para una racha de ${milestone} días!`,
-      todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", addNotes: "+ Añadir notas",
+      todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas",
       todaySummary: "RESUMEN DE HOY", noPracticeYet: "Aún no has registrado práctica hoy.",
     },
     calendar: {
@@ -169,6 +182,7 @@ const translations = {
       notesPlaceholder: "¿Qué practicaste ese día?", saving: "Guardando...",
       deleteEntry: "Eliminar entrada", confirmDeleteEntry: "¿Eliminar la práctica de este día? Esta acción no se puede deshacer.", couldNotDeleteEntry: "No se pudo eliminar esta entrada.",
       goalMet: "🎯 Meta diaria alcanzada", goalMissed: (done: number, total: number) => `${done}/${total} min hacia tu meta`,
+      onEquipment: (label: string) => `Con ${label}`,
       streakOnDay: (n: number) => `🔥 Racha de ${n} días`, noPracticeShort: "No hay práctica registrada para este día.",
       editDay: "Editar este día", nothingToEdit: "+ Registrar práctica de este día",
     },
@@ -503,7 +517,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
     </div>
     {editing ? <DayEditor key={date} date={date} log={log} onSave={onSave} onDelete={onDelete} language={language} T={T} /> : <>
       {hasPractice && log ? <>
-        <strong className="ds-minutes">{log.minutes} {T.calendar.minPractised}</strong>
+        <strong className="ds-minutes">{log.minutes} {T.calendar.minPractised}{log.equipment ? ` - ${T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
         {log.items.length > 0 && <div className="detail-chips">{log.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>}
         <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(log.minutes, dailyGoal)}</p>
         {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
@@ -554,8 +568,8 @@ function DayEditor({ date, log, onSave, onDelete, language, T }: { date: string;
     <div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language]}</button>)}</div>
     <label className="input-label equipment-label">{T.today.equipment}</label>
     <div className="equipment-toggle">
-      <button className={equipment === "drumset" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(equipment === "drumset" ? null : "drumset")}>{T.today.drumset}</button>
-      <button className={equipment === "pad" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(equipment === "pad" ? null : "pad")}>{T.today.pad}</button>
+      <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(toggleEquipmentValue(equipment, "drumset"))}>{T.today.drumset}</button>
+      <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(toggleEquipmentValue(equipment, "pad"))}>{T.today.pad}</button>
     </div>
     {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={T.calendar.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
     <button className={saved ? "save saved" : "save"} onClick={handleSave} disabled={busy}>{saved ? T.today.practiceSaved : busy ? T.calendar.saving : T.today.savePractice}<span>→</span></button>
@@ -901,8 +915,8 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
           <div className="chips">{sortedItems.map((item: any) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language as Lang]}</button>)}</div>
           <label className="input-label equipment-label">{T.today.equipment}</label>
           <div className="equipment-toggle">
-            <button className={equipment === "drumset" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(equipment === "drumset" ? null : "drumset")}>{T.today.drumset}</button>
-            <button className={equipment === "pad" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(equipment === "pad" ? null : "pad")}>{T.today.pad}</button>
+            <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(toggleEquipmentValue(equipment, "drumset"))}>{T.today.drumset}</button>
+            <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => setEquipment(toggleEquipmentValue(equipment, "pad"))}>{T.today.pad}</button>
           </div>
         </>}
         {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
