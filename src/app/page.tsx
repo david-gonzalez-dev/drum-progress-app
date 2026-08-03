@@ -105,6 +105,7 @@ function tierProgressFor(sessions: { item_en: string; bpm: number; rating: strin
 const translations = {
   en: {
     nav: { today: "Today", practice: "Practice", group: "Group", progress: "Progress", settings: "Settings" },
+    confirm: { cancel: "Cancel", confirm: "Confirm" },
     today: {
       heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", currentStreak: "Current streak", days: "days",
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", whatPractised: "WHAT DID YOU PRACTISE?",
@@ -144,6 +145,7 @@ const translations = {
       weekdaysMon: ["M", "T", "W", "T", "F", "S", "S"], copied: "Copied!", progress: "PROGRESS", leaveGroup: "Leave group",
       confirmLeave: "Leave this group? You can rejoin later with the invite code.", confirmDeleteChallenge: "Delete this challenge? This can't be undone.",
       deleteChallenge: "Delete", since: (date: string) => `Since ${date}`, couldNotLeave: "Could not leave the group.", couldNotDeleteChallenge: "Could not delete the challenge.",
+      deleteGroupBtn: "Delete group", confirmDeleteGroup: "Delete this group? This removes it for everyone and can't be undone.", couldNotDeleteGroup: "Could not delete the group.",
     },
     progressPage: {
       eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", techniques: "MINUTES PER EXERCISE",
@@ -178,6 +180,7 @@ const translations = {
   },
   es: {
     nav: { today: "Hoy", practice: "Práctica", group: "Grupo", progress: "Progreso", settings: "Ajustes" },
+    confirm: { cancel: "Cancelar", confirm: "Confirmar" },
     today: {
       heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", currentStreak: "Racha actual", days: "días",
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", whatPractised: "¿QUÉ PRACTICASTE?",
@@ -217,6 +220,7 @@ const translations = {
       weekdaysMon: ["L", "M", "X", "J", "V", "S", "D"], copied: "¡Copiado!", progress: "PROGRESO", leaveGroup: "Salir del grupo",
       confirmLeave: "¿Salir de este grupo? Puedes volver a unirte más tarde con el código de invitación.", confirmDeleteChallenge: "¿Eliminar este desafío? Esta acción no se puede deshacer.",
       deleteChallenge: "Eliminar", since: (date: string) => `Desde ${date}`, couldNotLeave: "No se pudo salir del grupo.", couldNotDeleteChallenge: "No se pudo eliminar el desafío.",
+      deleteGroupBtn: "Eliminar grupo", confirmDeleteGroup: "¿Eliminar este grupo? Se eliminará para todos y no se puede deshacer.", couldNotDeleteGroup: "No se pudo eliminar el grupo.",
     },
     progressPage: {
       eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", techniques: "MINUTOS POR EJERCICIO",
@@ -312,6 +316,10 @@ export default function Home() {
   const [logs, setLogs] = useState<Record<string, Log>>({});
   const [saved, setSaved] = useState(false);
   const [metronome, setMetronome] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ message: string; resolve: (value: boolean) => void } | null>(null);
+  function askConfirm(message: string): Promise<boolean> {
+    return new Promise((resolve) => setConfirmState({ message, resolve }));
+  }
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState("");
@@ -425,14 +433,15 @@ export default function Home() {
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
   return <main className="shell">
-    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} openSettings={() => setTab("settings")} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} save={save} saved={saved} dailyGoal={dailyGoal} logs={logs} openMetronome={() => setMetronome(true)} language={language} T={T} />}
-    {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} language={language} T={T} />}
+    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} displayName={displayName} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} save={save} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} language={language} T={T} />}
+    {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} pinnedExercises={pinnedExercises} logs={logs} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} onBack={() => setTab("today")} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddMinutes={addMetronomeMinutes} T={T} />
+    {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
   </main>;
 }
 
@@ -472,7 +481,7 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
   return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Choose a new password for your account.</p><div className="auth-card"><h2>Set a new password</h2><input type="password" placeholder="New password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? "Please wait..." : "Update password"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
-function Today({ streak, longestStreak, daysThisYear, dailyGoal, logs, saveLogFor, deleteLogFor, openSettings, displayName, language, T }: any) {
+function Today({ streak, longestStreak, daysThisYear, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, displayName, language, T }: any) {
   const milestone = nextStreakMilestone(streak);
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
@@ -488,13 +497,13 @@ function Today({ streak, longestStreak, daysThisYear, dailyGoal, logs, saveLogFo
       {todayLog && todayLog.items.length > 0 ? <div className="detail-chips">{todayLog.items.map((item: string) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>}
     </div>
     <div className="section-title"><h2>{T.calendar.title}</h2></div>
-    <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} language={language} T={T} />
+    <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} language={language} T={T} />
   </section>;
 }
 
 type SaveLogFor = (targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null) => Promise<boolean>;
 
-function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, language, T }: { logs: Record<string, Log>; dailyGoal: number; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; language: Lang; T: any }) {
+function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T }: { logs: Record<string, Log>; dailyGoal: number; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
   const today = new Date(); const [selectedDate, setSelectedDate] = useState(dateKey); const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1)); const year = viewDate.getFullYear(); const month = viewDate.getMonth(); const days = new Date(year, month + 1, 0).getDate(); const starts = new Date(year, month, 1).getDay(); const selectedLog = logs[selectedDate];
   const locale = language === "es" ? "es-ES" : "en-US";
   const [summaryDate, setSummaryDate] = useState<string | null>(null);
@@ -511,12 +520,23 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, language, T }: { 
       {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{selectedLog.minutes} {T.calendar.minPractised}</strong><div className="detail-chips">{selectedLog.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
     </div>
     {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
-      onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} />}
+      onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} />}
   </>;
 }
-function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, roster }: {
+function ConfirmModal({ message, onConfirm, onCancel, T }: { message: string; onConfirm: () => void; onCancel: () => void; T: any }) {
+  return <div className="modal modal-center" onClick={onCancel}>
+    <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
+      <p className="confirm-message">{message}</p>
+      <div className="confirm-actions">
+        <button className="confirm-cancel" onClick={onCancel}>{T.confirm.cancel}</button>
+        <button className="confirm-danger" onClick={onConfirm}>{T.confirm.confirm}</button>
+      </div>
+    </div>
+  </div>;
+}
+function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, confirm, roster }: {
   date: string; log?: Log; dailyGoal: number; logs: Record<string, Log>; locale: string; language: Lang; T: any;
-  onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>;
+  onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>;
   roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; equipment: string | null; items: string[] }>; currentUserId: string };
 }) {
   const [editing, setEditing] = useState(false);
@@ -529,7 +549,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
       {editing && <button className="ds-back" onClick={() => setEditing(false)}>‹</button>}
       <span className="eyebrow">{new Date(date + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
     </div>
-    {editing ? <DayEditor key={date} date={date} log={log} onSave={onSave} onDelete={onDelete} language={language} T={T} /> : <>
+    {editing ? <DayEditor key={date} date={date} log={log} onSave={onSave} onDelete={onDelete} confirm={confirm} language={language} T={T} /> : <>
       {roster ? (
         rosterRows && rosterRows.length ? <div className="challenge-ranking">{rosterRows.map((m) => <div key={m.id} className="roster-detail-row">
           <i style={{ width: 8, height: 8, borderRadius: "50%", background: m.color, flexShrink: 0, marginTop: 4 }} />
@@ -552,7 +572,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
   </div></div>;
 }
 
-function DayEditor({ date, log, onSave, onDelete, language, T }: { date: string; log?: Log; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; language: Lang; T: any }) {
+function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date: string; log?: Log; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
   const [minutes, setMinutes] = useState(String(log?.minutes ?? ""));
   const [selected, setSelected] = useState<string[]>(log?.items ?? []);
   const [notes, setNotes] = useState(log?.notes ?? "");
@@ -570,7 +590,7 @@ function DayEditor({ date, log, onSave, onDelete, language, T }: { date: string;
     if (ok) { setSaved(true); setHasEntry(true); setTimeout(() => setSaved(false), 1800); }
   }
   async function handleDelete() {
-    if (!window.confirm(T.calendar.confirmDeleteEntry)) return;
+    if (!(await confirm(T.calendar.confirmDeleteEntry))) return;
     setBusy(true);
     const ok = await onDelete(date);
     setBusy(false);
@@ -603,8 +623,9 @@ function DayEditor({ date, log, onSave, onDelete, language, T }: { date: string;
 }
 function Stat({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><strong>{value}</strong></div>; }
 
-function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, language, T }: { user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; language: Lang; T: any }) {
-  const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [group, setGroup] = useState<any>(null); const [busy, setBusy] = useState(false);
+function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T }: { user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
+  const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [groups, setGroups] = useState<any[]>([]); const [activeGroupId, setActiveGroupId] = useState<string | null>(null); const [addingGroup, setAddingGroup] = useState(false); const [busy, setBusy] = useState(false);
+  const group = useMemo(() => groups.find((g) => g.id === activeGroupId) ?? null, [groups, activeGroupId]);
   const [groupLoading, setGroupLoading] = useState(true);
   const [members, setMembers] = useState<{ id: string; name: string; color: string }[]>([]);
   const [totals, setTotals] = useState<{ id: string; name: string; total: number }[]>([]);
@@ -631,7 +652,14 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
     { ...CHALLENGE_PRESETS[2], label: T.group.presetSessions3weekly },
     { ...CHALLENGE_PRESETS[3], label: T.group.presetDaily5x20 },
   ];
-  useEffect(() => { supabase.from("group_members").select("groups(id,name,invite_code,created_at)").eq("user_id", user.id).order("joined_at", { ascending: true }).limit(1).maybeSingle().then(({ data }) => { if (data) setGroup((data as any).groups); setGroupLoading(false); }); }, [user]);
+  useEffect(() => {
+    supabase.from("group_members").select("groups(id,name,invite_code,created_at,created_by)").eq("user_id", user.id).order("joined_at", { ascending: true }).then(({ data }) => {
+      const list = (data ?? []).map((row: any) => row.groups).filter(Boolean);
+      setGroups(list);
+      setActiveGroupId((current) => (current && list.some((g: any) => g.id === current)) ? current : (list[0]?.id ?? null));
+      setGroupLoading(false);
+    });
+  }, [user]);
   useEffect(() => {
     if (!group) { setMembers([]); setTotals([]); setDaysTotals([]); setChallenges([]); return; }
     supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", group.id).order("user_id").then(({ data }) => {
@@ -733,7 +761,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
     if (error) setError(error.message); else loadChallenges();
   }
   async function deleteChallenge(challengeId: string) {
-    if (!window.confirm(T.group.confirmDeleteChallenge)) return;
+    if (!(await confirm(T.group.confirmDeleteChallenge))) return;
     const { error, count } = await supabase.from("challenges").delete({ count: "exact" }).eq("id", challengeId);
     if (error) setError(error.message);
     else if (!count) setError(T.group.couldNotDeleteChallenge);
@@ -747,18 +775,55 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
     setChallengeName(""); setChallengeGoal("10"); setChallengeReward(""); setChallengePunishment(""); setShowNewChallenge(false); setChallengeBusy(false);
     loadChallenges();
   }
-  async function createGroup() { setBusy(true); const invite = Math.random().toString(36).slice(2,8).toUpperCase(); const { data, error } = await supabase.from("groups").insert({ name, invite_code: invite, created_by: user.id }).select().single(); if (!error && data) { const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id, role: "owner" }); if (!member.error) setGroup(data); else setError(member.error.message); } else setError(error?.message ?? T.group.couldNotCreate); setBusy(false); }
-  async function joinGroup() { setBusy(true); const { data, error } = await supabase.from("groups").select("id,name,invite_code,created_at").eq("invite_code", code.trim().toUpperCase()).maybeSingle(); if (error || !data) { setError(T.group.inviteNotFound); setBusy(false); return; } const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id }); if (member.error && member.error.code !== "23505") setError(member.error.message); else setGroup(data); setBusy(false); }
+  async function createGroup() {
+    setBusy(true);
+    const invite = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const { data, error } = await supabase.from("groups").insert({ name, invite_code: invite, created_by: user.id }).select().single();
+    if (!error && data) {
+      const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id, role: "owner" });
+      if (!member.error) { setGroups((current) => [...current, data]); setActiveGroupId(data.id); setAddingGroup(false); setMode("start"); setName(""); }
+      else setError(member.error.message);
+    } else setError(error?.message ?? T.group.couldNotCreate);
+    setBusy(false);
+  }
+  async function joinGroup() {
+    setBusy(true);
+    const { data, error } = await supabase.from("groups").select("id,name,invite_code,created_at,created_by").eq("invite_code", code.trim().toUpperCase()).maybeSingle();
+    if (error || !data) { setError(T.group.inviteNotFound); setBusy(false); return; }
+    const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id });
+    if (member.error && member.error.code !== "23505") { setError(member.error.message); setBusy(false); return; }
+    setGroups((current) => current.some((g) => g.id === data.id) ? current : [...current, data]);
+    setActiveGroupId(data.id);
+    setAddingGroup(false); setMode("start"); setCode("");
+    setBusy(false);
+  }
   function copyInvite() { navigator.clipboard.writeText(group.invite_code); setCopied(true); setTimeout(() => setCopied(false), 1500); }
   async function leaveGroup() {
-    if (!window.confirm(T.group.confirmLeave)) return;
+    if (!group) return;
+    if (!(await confirm(T.group.confirmLeave))) return;
     const { error, count } = await supabase.from("group_members").delete({ count: "exact" }).eq("group_id", group.id).eq("user_id", user.id);
     if (error) setError(error.message);
     else if (!count) setError(T.group.couldNotLeave);
-    else { setGroup(null); setMode("start"); }
+    else {
+      const next = groups.filter((g) => g.id !== group.id);
+      setGroups(next);
+      setActiveGroupId(next[0]?.id ?? null);
+    }
+  }
+  async function deleteGroup() {
+    if (!group) return;
+    if (!(await confirm(T.group.confirmDeleteGroup))) return;
+    const { error, count } = await supabase.from("groups").delete({ count: "exact" }).eq("id", group.id);
+    if (error) setError(error.message);
+    else if (!count) setError(T.group.couldNotDeleteGroup);
+    else {
+      const next = groups.filter((g) => g.id !== group.id);
+      setGroups(next);
+      setActiveGroupId(next[0]?.id ?? null);
+    }
   }
   if (groupLoading) return <section className="page" />;
-  if (group) {
+  if (!addingGroup && group) {
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
@@ -766,8 +831,9 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
     return <section className="page">
       <header className="simple-head group-head">
         <div><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></div>
-        <button className="invite-chip" onClick={copyInvite}>{copied ? T.group.copied : group.invite_code}</button>
+        <button className="group-add-btn" onClick={() => { setAddingGroup(true); setMode("start"); }}>+</button>
       </header>
+      {groups.length > 1 && <div className="group-switcher">{groups.map((g) => <button key={g.id} className={g.id === activeGroupId ? "chip selected" : "chip"} onClick={() => setActiveGroupId(g.id)}>{g.name}</button>)}</div>}
       <div className="leaderboard"><span className="section-label">{T.group.leaderboard}</span>
         {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / 365) * 100}%` }} /></div><span className="leaderboard-value">{member.days} / 365</span></div>)}
       </div>
@@ -800,7 +866,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
         <div className="calendar-legend">{members.map((m) => <span key={m.id}><i style={{ background: m.color }} />{m.id === user.id ? T.group.you : m.name}</span>)}</div>
       </div></div>
       {summaryDayKey && <DaySummaryModal date={summaryDayKey} log={logs[summaryDayKey]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
-        onClose={() => setSummaryDayKey(null)} onSave={saveLogFor} onDelete={deleteLogFor}
+        onClose={() => setSummaryDayKey(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm}
         roster={{ members, dayLogs: dayDetailLogs, currentUserId: user.id }} />}
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span><button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button></div>
@@ -843,10 +909,17 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, lang
           </div>;
         })}
       </div>
-      <button className="logout" onClick={leaveGroup}>{T.group.leaveGroup}</button>
+      <div className="group-invite-footer">
+        <span className="section-sublabel">{T.group.inviteMsg}</span>
+        <button className="invite-chip" onClick={copyInvite}>{copied ? T.group.copied : group.invite_code}</button>
+      </div>
+      <button className="leave-group-btn" onClick={leaveGroup}>{T.group.leaveGroup}</button>
+      {group.created_by === user.id && <button className="delete-group-btn" onClick={deleteGroup}>{T.group.deleteGroupBtn}</button>}
     </section>;
   }
-  return <section className="page"><header className="simple-head"><p className="eyebrow">{T.group.practiseTogether}</p><h1>{T.group.yourGroup}</h1></header><div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? T.group.findCrew : mode === "create" ? T.group.startGroup : T.group.joinCrew}</h2>{mode === "start" ? <><p>{T.group.intro}</p><button className="primary" onClick={() => setMode("create")}>{T.group.createGroupBtn} <span>→</span></button><button className="secondary" onClick={() => setMode("join")}>{T.group.joinWithCode}</button></> : <><input className="group-input" value={mode === "create" ? name : code} onChange={e => mode === "create" ? setName(e.target.value) : setCode(e.target.value)} placeholder={mode === "create" ? T.group.groupNamePlaceholder : T.group.inviteCodePlaceholder}/><button className="primary" disabled={busy || !(mode === "create" ? name : code)} onClick={mode === "create" ? createGroup : joinGroup}>{busy ? T.group.pleaseWait : mode === "create" ? T.group.createGroup : T.group.joinGroup}</button><button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button></>}</div></section>;
+  return <section className="page"><header className="simple-head"><p className="eyebrow">{T.group.practiseTogether}</p><h1>{T.group.yourGroup}</h1></header>
+    {groups.length > 0 && <button className="page-back" onClick={() => setAddingGroup(false)}>‹ {T.group.back}</button>}
+    <div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? T.group.findCrew : mode === "create" ? T.group.startGroup : T.group.joinCrew}</h2>{mode === "start" ? <><p>{T.group.intro}</p><button className="primary" onClick={() => setMode("create")}>{T.group.createGroupBtn} <span>→</span></button><button className="secondary" onClick={() => setMode("join")}>{T.group.joinWithCode}</button></> : <><input className="group-input" value={mode === "create" ? name : code} onChange={e => mode === "create" ? setName(e.target.value) : setCode(e.target.value)} placeholder={mode === "create" ? T.group.groupNamePlaceholder : T.group.inviteCodePlaceholder}/><button className="primary" disabled={busy || !(mode === "create" ? name : code)} onClick={mode === "create" ? createGroup : joinGroup}>{busy ? T.group.pleaseWait : mode === "create" ? T.group.createGroup : T.group.joinGroup}</button><button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button></>}</div></section>;
 }
 function Progress({ practiceSessions, pinnedExercises, logs, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[]; pinnedExercises: string[]; logs: Record<string, Log>; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
@@ -891,7 +964,7 @@ function Progress({ practiceSessions, pinnedExercises, logs, language, T }: { pr
     </div>}
   </section>;
 }
-function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, pinnedExercises, onTogglePin, minutes, setMinutes, selected, toggle, notes, setNotes, equipment, setEquipment, save, saved, dailyGoal, logs, openMetronome, language, T }: any) {
+function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, pinnedExercises, onTogglePin, minutes, setMinutes, selected, toggle, notes, setNotes, equipment, setEquipment, save, saved, dailyGoal, logs, confirm, openMetronome, language, T }: any) {
   const [notesOpen, setNotesOpen] = useState(false);
   const showNotes = notesOpen || !!notes;
   const [whatOpen, setWhatOpen] = useState(false);
@@ -929,7 +1002,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
   async function handleReset(targetBpm: number) {
     if (!exercise) return;
-    if (!window.confirm(T.practiceMode.confirmResetLevel(targetBpm))) return;
+    if (!(await confirm(T.practiceMode.confirmResetLevel(targetBpm)))) return;
     await onResetLevel(exercise, targetBpm);
   }
   const RATING_LABEL: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };

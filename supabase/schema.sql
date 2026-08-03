@@ -212,3 +212,50 @@ begin
   end loop;
 end $$;
 alter table public.practice_logs add constraint practice_logs_equipment_check check (equipment in ('drumset', 'pad', 'both'));
+
+-- Lets the group's creator delete it entirely. group_members, challenges and challenge_members all
+-- reference groups with "on delete cascade", so deleting a group cleans those up automatically.
+drop policy if exists "creator can delete their group" on public.groups;
+create policy "creator can delete their group" on public.groups for delete to authenticated using (auth.uid() = created_by);
+
+-- The row-level security policies on group_members/challenges/challenge_members only let each person
+-- delete their OWN rows, which blocks the cascade above from removing other members' rows when a
+-- group is deleted. This function runs with elevated privileges (like is_group_member) to do the
+-- whole deletion in one step, after checking the caller is actually the group's creator.
+create or replace function public.delete_group_as_creator(target_group_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  deleted_count integer;
+begin
+  delete from public.groups where id = target_group_id and created_by = auth.uid();
+  get diagnostics deleted_count = row_count;
+  return deleted_count > 0;
+end;
+$$;
+grant execute on function public.delete_group_as_creator(uuid) to authenticated;
+
+-- The delete_group_as_creator() function above turned out to be unreliable in practice (Supabase's
+-- API layer kept serving a stale "function not found" error even after a manual schema reload and a
+-- full project restart). Switching to a simpler, more reliable fix instead: widen the delete policies
+-- on the tables a group-delete cascades into, so the app's plain "delete from groups" works directly.
+-- These are additive (OR'd with the existing narrower policies), so nothing already working changes.
+drop policy if exists "creator can remove any member when deleting their group" on public.group_members;
+create policy "creator can remove any member when deleting their group" on public.group_members for delete to authenticated using (
+  exists (select 1 from public.groups g where g.id = group_members.group_id and g.created_by = auth.uid())
+);
+drop policy if exists "creator can delete any challenge when deleting their group" on public.challenges;
+create policy "creator can delete any challenge when deleting their group" on public.challenges for delete to authenticated using (
+  exists (select 1 from public.groups g where g.id = challenges.group_id and g.created_by = auth.uid())
+);
+drop policy if exists "creator can remove challenge participants when deleting their group" on public.challenge_members;
+create policy "creator can remove challenge participants when deleting their group" on public.challenge_members for delete to authenticated using (
+  exists (
+    select 1 from public.challenges c
+    join public.groups g on g.id = c.group_id
+    where c.id = challenge_members.challenge_id and g.created_by = auth.uid()
+  )
+);

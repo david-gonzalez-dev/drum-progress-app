@@ -33,6 +33,19 @@
 .roster-detail-info{flex:1;min-width:0}
 .roster-detail-head{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:4px}
 .roster-equipment{display:block;font-size:10px;color:#8d9690;margin-bottom:4px}
+.group-add-btn{width:32px;height:32px;border-radius:50%;border:1px solid #472315;background:#2a170a;color:#ff9b50;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.group-switcher{display:flex;gap:8px;overflow-x:auto;margin-bottom:20px;padding-bottom:2px}
+.group-switcher .chip{white-space:nowrap;flex-shrink:0}
+.group-invite-footer{margin-top:24px;text-align:center}
+.group-invite-footer .invite-chip{margin-top:8px}
+.confirm-card{width:100%;max-width:320px;background:#151311;border:1px solid #3d2a20;border-radius:20px;padding:22px}
+.confirm-message{font-size:14px;color:#ecefea;line-height:1.5;margin:0 0 20px}
+.confirm-actions{display:flex;gap:10px}
+.confirm-actions button{flex:1;border:0;border-radius:12px;padding:13px;font:700 13px 'DM Sans'}
+.confirm-cancel{background:#1c211f;color:#d2d6d3}
+.confirm-danger{background:#ff6b1a;color:#260d02}
+.leave-group-btn{display:block;background:none;border:0;color:#9aa19d;font:600 13px 'DM Sans';margin:48px auto 0;padding:0}
+.delete-group-btn{display:block;width:100%;border:1px solid #6b2a24;background:#2a1310;color:#e2877d;font:700 13px 'DM Sans';padding:14px;border-radius:12px;margin-top:14px}
 .today .section-title{margin-top:24px}
 .mode-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
 .mode-header.train-header{margin-top:30px}
