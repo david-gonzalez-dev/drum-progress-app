@@ -259,3 +259,8 @@ create policy "creator can remove challenge participants when deleting their gro
     where c.id = challenge_members.challenge_id and g.created_by = auth.uid()
   )
 );
+
+-- Optional per-equipment minute split for a day (e.g. 20 min drumset + 10 min pad). Null means
+-- "not split" -- the day's single `minutes`/`equipment` fields stay the source of truth for totals.
+alter table public.practice_logs add column if not exists drumset_minutes integer check (drumset_minutes is null or drumset_minutes >= 0);
+alter table public.practice_logs add column if not exists pad_minutes integer check (pad_minutes is null or pad_minutes >= 0);
