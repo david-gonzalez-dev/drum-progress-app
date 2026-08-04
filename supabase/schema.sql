@@ -264,3 +264,15 @@ create policy "creator can remove challenge participants when deleting their gro
 -- "not split" -- the day's single `minutes`/`equipment` fields stay the source of truth for totals.
 alter table public.practice_logs add column if not exists drumset_minutes integer check (drumset_minutes is null or drumset_minutes >= 0);
 alter table public.practice_logs add column if not exists pad_minutes integer check (pad_minutes is null or pad_minutes >= 0);
+
+-- Lets each user pick which synthesized click sound the metronome uses.
+alter table public.settings add column if not exists metronome_tone text not null default 'click' check (metronome_tone in ('click', 'beep', 'wood', 'clave'));
+
+-- Leftover seconds under a minute, e.g. from a short metronome "Add time" session (0 min 5 sec).
+-- `minutes` stays the whole-minute total everything else (goals, streaks, leaderboards) reads.
+alter table public.practice_logs add column if not exists seconds integer not null default 0 check (seconds >= 0 and seconds < 60);
+
+-- Freeform "Other" items typed into the metronome's Add-Time prompt. Kept separate from the shared
+-- practice_items catalog (no client insert policy there) so they render as pills without needing a
+-- new item added to that global list for every user.
+alter table public.practice_logs add column if not exists custom_items text[] not null default '{}';
