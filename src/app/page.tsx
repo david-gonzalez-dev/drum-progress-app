@@ -55,7 +55,7 @@ function autoColorForUserId(userId: string) {
   return MEMBER_COLORS[hash];
 }
 const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; goal: number; days: number }[] = [
-  { key: "daily5", type: "daily", goal: 5, days: 7 },
+  { key: "daily3", type: "daily", goal: 3, days: 7 },
   { key: "daily30x5", type: "daily", goal: 30, days: 5 },
   { key: "sessions3weekly", type: "sessions", goal: 3, days: 7 },
   { key: "daily5x20", type: "daily", goal: 5, days: 20 },
@@ -96,7 +96,7 @@ const PRACTICE_TIERS = [
 ];
 const RATING_RANK: Record<string, number> = { not_ready: 1, tense: 2, comfortable: 3, mastered: 4 };
 const RATING_ORDER = ["not_ready", "tense", "comfortable", "mastered"];
-const RATING_COLOR: Record<string, string> = { not_ready: "#e2877d", tense: "#f6ad55", comfortable: "#68d391", mastered: "#ffc94d" };
+const RATING_COLOR: Record<string, string> = { not_ready: "#e2877d", tense: "#f6ad55", comfortable: "#68d391", mastered: "#68d391" };
 const UNLOCK_MINUTES = 2;
 const RATING_ICON: Record<string, string> = { not_ready: "🔴", tense: "🟠", comfortable: "🟢", mastered: "⭐" };
 function qualifyingMinutesFor(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[], itemEn: string, targetBpm: number) {
@@ -114,8 +114,8 @@ const translations = {
     confirm: { cancel: "Cancel", confirm: "Confirm" },
     today: {
       heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", currentStreak: "Current streak", days: "days",
-      todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", whatPractised: "WHAT DID YOU PRACTISE?",
-      notes: "NOTES", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
+      todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", whatPractised: "ADD WHAT YOU PRACTISED",
+      notes: "NOTES", notesPrefix: "Notes:", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
       startToday: "Start your streak today!", daysToMilestone: (left: number, milestone: number) => `${left} days to a ${milestone}-day streak!`,
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${minutes} min on ${equipmentName}`,
       todaySummary: "TODAY'S SUMMARY", goalLabel: "GOAL", noPracticeYet: "No practice logged yet today.", secondsCarried: "extra (not counted in minutes yet)", other: "Other", otherPlaceholder: "What else did you practice?",
@@ -147,7 +147,7 @@ const translations = {
       dailyGoalDesc: (min: number) => `${min}+ min every day`, minutesGoalDesc: (total: number) => `Reach ${total} total min`,
       sessionsGoalDesc: (days: number) => `Practise on ${days} days`, daysProgress: (p: number, t: number) => `${p}/${t} days`,
       minutesProgress: (p: number, t: number) => `${p}/${t} min`, reward: "Reward:", punishment: "Punishment:", couldNotCreateChallenge: "Could not create challenge.",
-      presetDaily5: "5 min every day", presetDaily30x5: "30+ min, 5 days straight", presetSessions3weekly: "3 sessions this week", presetDaily5x20: "20-day challenge: 5+ min daily",
+      presetDaily5: "3 min every day", presetDaily30x5: "30+ min, 5 days straight", presetSessions3weekly: "3 sessions this week", presetDaily5x20: "20-day challenge: 5+ min daily",
       noOnePractised: "No one practised on this day.",
       weekdaysMon: ["M", "T", "W", "T", "F", "S", "S"], copied: "Copied!", progress: "PROGRESS", leaveGroup: "Leave group",
       confirmLeave: "Leave this group? You can rejoin later with the invite code.", confirmDeleteChallenge: "Delete this challenge? This can't be undone.",
@@ -178,6 +178,10 @@ const translations = {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
       language: "LANGUAGE", reminders: "Daily practice reminders", on: "ON", off: "OFF", save: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR", autoColor: "Auto",
       metronomeTone: "METRONOME TONE", toneNames: { click: "Click", beep: "Beep", wood: "Wood", clave: "Clave" },
+      userSection: "USER", accountSection: "ACCOUNT SETTINGS", pleaseWait: "Please wait...",
+      changeEmail: "Change email", newEmailPlaceholder: "New email address", updateEmail: "Update email", emailChangeSent: "Check your new email to confirm the change.",
+      changePassword: "Change password", newPasswordPlaceholder: "New password", confirmPasswordPlaceholder: "Confirm new password", updatePassword: "Update password", passwordChanged: "✓ Password updated", passwordMismatch: "Passwords don't match.", passwordTooShort: "Password must be at least 6 characters.",
+      deleteAccount: "Delete account", deleteAccountWarning: "This permanently deletes your account and all your practice history. This can't be undone.", deleteAccountConfirmPrompt: (email: string) => `Type your email (${email}) to confirm:`, deleteAccountBtn: "Delete my account", deleteAccountBusy: "Deleting…", couldNotDeleteAccount: "Could not delete your account.",
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
@@ -192,8 +196,8 @@ const translations = {
     confirm: { cancel: "Cancelar", confirm: "Confirmar" },
     today: {
       heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", currentStreak: "Racha actual", days: "días",
-      todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", whatPractised: "¿QUÉ PRACTICASTE?",
-      notes: "NOTAS", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
+      todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", whatPractised: "AÑADE LO QUE PRACTICASTE",
+      notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
       startToday: "¡Empieza tu racha hoy!", daysToMilestone: (left: number, milestone: number) => `¡${left} días para una racha de ${milestone} días!`,
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${minutes} min en ${equipmentName}`,
       todaySummary: "RESUMEN DE HOY", goalLabel: "META", noPracticeYet: "Aún no has registrado práctica hoy.", secondsCarried: "extra (aún no contado en minutos)", other: "Otro", otherPlaceholder: "¿Qué más practicaste?",
@@ -225,7 +229,7 @@ const translations = {
       dailyGoalDesc: (min: number) => `${min}+ min cada día`, minutesGoalDesc: (total: number) => `Llega a ${total} min en total`,
       sessionsGoalDesc: (days: number) => `Practica ${days} días`, daysProgress: (p: number, t: number) => `${p}/${t} días`,
       minutesProgress: (p: number, t: number) => `${p}/${t} min`, reward: "Recompensa:", punishment: "Penalización:", couldNotCreateChallenge: "No se pudo crear el desafío.",
-      presetDaily5: "5 min cada día", presetDaily30x5: "30+ min, 5 días seguidos", presetSessions3weekly: "3 sesiones esta semana", presetDaily5x20: "Reto de 20 días: 5+ min diarios",
+      presetDaily5: "3 min cada día", presetDaily30x5: "30+ min, 5 días seguidos", presetSessions3weekly: "3 sesiones esta semana", presetDaily5x20: "Reto de 20 días: 5+ min diarios",
       noOnePractised: "Nadie practicó ese día.",
       weekdaysMon: ["L", "M", "X", "J", "V", "S", "D"], copied: "¡Copiado!", progress: "PROGRESO", leaveGroup: "Salir del grupo",
       confirmLeave: "¿Salir de este grupo? Puedes volver a unirte más tarde con el código de invitación.", confirmDeleteChallenge: "¿Eliminar este desafío? Esta acción no se puede deshacer.",
@@ -256,6 +260,10 @@ const translations = {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
       language: "IDIOMA", reminders: "Recordatorios diarios de práctica", on: "SÍ", off: "NO", save: "Guardar ajustes", saved: "✓ Ajustes guardados", logout: "Cerrar sesión", calendarColor: "COLOR DEL CALENDARIO DE GRUPO", autoColor: "Auto",
       metronomeTone: "SONIDO DEL METRÓNOMO", toneNames: { click: "Click", beep: "Bip", wood: "Madera", clave: "Clave" },
+      userSection: "USUARIO", accountSection: "AJUSTES DE CUENTA", pleaseWait: "Un momento...",
+      changeEmail: "Cambiar correo electrónico", newEmailPlaceholder: "Nuevo correo electrónico", updateEmail: "Actualizar correo", emailChangeSent: "Revisa tu nuevo correo para confirmar el cambio.",
+      changePassword: "Cambiar contraseña", newPasswordPlaceholder: "Nueva contraseña", confirmPasswordPlaceholder: "Confirmar nueva contraseña", updatePassword: "Actualizar contraseña", passwordChanged: "✓ Contraseña actualizada", passwordMismatch: "Las contraseñas no coinciden.", passwordTooShort: "La contraseña debe tener al menos 6 caracteres.",
+      deleteAccount: "Eliminar cuenta", deleteAccountWarning: "Esto elimina tu cuenta y todo tu historial de práctica de forma permanente. Esta acción no se puede deshacer.", deleteAccountConfirmPrompt: (email: string) => `Escribe tu correo (${email}) para confirmar:`, deleteAccountBtn: "Eliminar mi cuenta", deleteAccountBusy: "Eliminando…", couldNotDeleteAccount: "No se pudo eliminar tu cuenta.",
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
@@ -482,7 +490,7 @@ export default function Home() {
     {tab === "progress" && <Progress practiceSessions={practiceSessions} pinnedExercises={pinnedExercises} logs={logs} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} onBack={() => setTab("today")} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
-    <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
+    <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
   </main>;
@@ -531,7 +539,7 @@ function Today({ streak, longestStreak, daysThisYear, dailyGoal, logs, saveLogFo
   const goalAchieved = todayMinutes >= dailyGoal;
   const goalPct = Math.min(100, (todayMinutes / Math.max(1, dailyGoal)) * 100);
   return <section className="page today">
-    <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1><p className="date">{formatDate(language)}</p></div><button className="avatar" onClick={openSettings}>{displayName.charAt(0).toUpperCase()}</button></header>
+    <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1><p className="date">{formatDate(language)}</p></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
     <div className="streak-card"><div className="flame">{streak > 0 ? "🔥" : "🥁"}</div><div><span>{T.today.currentStreak}</span>{streak > 0 ? <strong>{streak} {T.today.days}</strong> : <strong>{T.today.startToday}</strong>}{streak > 0 && milestone && <em className="streak-next">{T.today.daysToMilestone(milestone - streak, milestone)}</em>}</div></div>
     <div className="form-card stats-tile"><div className="stats stats-2"><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} /><Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} /></div></div>
     <div className="form-card">
@@ -540,7 +548,7 @@ function Today({ streak, longestStreak, daysThisYear, dailyGoal, logs, saveLogFo
       {todayLog && todayLog.equipment && <span className="roster-equipment">{equipmentSplitLabel(todayLog.drumsetMinutes, todayLog.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(todayLog.equipment, T))}</span>}
       {todayLog && todayLog.seconds > 0 && <span className="roster-equipment">+{todayLog.seconds}s</span>}
       {todayLog && (todayLog.items.length > 0 || todayLog.customItems.length > 0) ? <div className="detail-chips">{todayLog.items.map((item: string) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{todayLog.customItems.map((item: string) => <em key={item}>{item}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>}
-      {todayLog && todayLog.notes && <p className="today-notes">{todayLog.notes}</p>}
+      {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>
     <div className="section-title"><h2>{T.calendar.title}</h2></div>
     <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} language={language} T={T} />
@@ -583,7 +591,7 @@ function ConfirmModal({ message, onConfirm, onCancel, T }: { message: string; on
 function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, confirm, roster }: {
   date: string; log?: Log; dailyGoal: number; logs: Record<string, Log>; locale: string; language: Lang; T: any;
   onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>;
-  roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[] }>; currentUserId: string };
+  roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }>; currentUserId: string };
 }) {
   const [editing, setEditing] = useState(false);
   const streakHere = calculateStreaks(logs, date).current;
@@ -603,12 +611,14 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
             <div className="roster-detail-head"><span className="rank-name">{m.id === roster!.currentUserId ? T.group.you : m.name}</span><span className="rank-value">{m.minutes} {T.group.minutesShort}{m.seconds > 0 ? ` +${m.seconds}s` : ""}</span></div>
             {m.equipment && <span className="roster-equipment">{equipmentSplitLabel(m.drumsetMinutes, m.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(m.equipment, T))}</span>}
             {((m.items && m.items.length > 0) || (m.customItems && m.customItems.length > 0)) && <div className="detail-chips">{m.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{(m.customItems ?? []).map((item) => <em key={item}>{item}</em>)}</div>}
+            {m.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {m.notes}</p>}
           </div>
         </div>)}</div> : <p className="hint">{T.group.noOnePractised}</p>
       ) : (
         hasPractice && log ? <>
           <strong className="ds-minutes">{log.minutes} {T.calendar.minPractised}{log.seconds > 0 ? ` +${log.seconds}s` : ""}{log.equipment ? ` - ${equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
           {(log.items.length > 0 || log.customItems.length > 0) && <div className="detail-chips">{log.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{log.customItems.map((item) => <em key={item}>{item}</em>)}</div>}
+          {log.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
           <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(log.minutes, dailyGoal)}</p>
           {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
         </> : <p className="hint">{T.calendar.noPracticeShort}</p>
@@ -711,7 +721,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [viewDate, setViewDate] = useState(() => new Date());
   const [monthLogs, setMonthLogs] = useState<Record<string, Record<string, number>>>({});
   const [summaryDayKey, setSummaryDayKey] = useState<string | null>(null);
-  const [dayDetailLogs, setDayDetailLogs] = useState<Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[] }>>({});
+  const [dayDetailLogs, setDayDetailLogs] = useState<Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }>>({});
   const [copied, setCopied] = useState(false);
   const [challenges, setChallenges] = useState<any[]>([]);
   const [showNewChallenge, setShowNewChallenge] = useState(false);
@@ -780,10 +790,10 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   useEffect(() => {
     if (!summaryDayKey || !members.length) { setDayDetailLogs({}); return; }
     const memberIds = members.map((m) => m.id);
-    supabase.from("practice_logs").select("user_id,minutes,seconds,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("practiced_on", summaryDayKey).in("user_id", memberIds).then(({ data }) => {
-      const byUser: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[] }> = {};
+    supabase.from("practice_logs").select("user_id,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("practiced_on", summaryDayKey).in("user_id", memberIds).then(({ data }) => {
+      const byUser: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }> = {};
       (data ?? []).forEach((row: any) => {
-        byUser[row.user_id] = { minutes: row.minutes, seconds: row.seconds ?? 0, equipment: row.equipment ?? null, drumsetMinutes: row.drumset_minutes ?? null, padMinutes: row.pad_minutes ?? null, customItems: row.custom_items ?? [], items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) };
+        byUser[row.user_id] = { minutes: row.minutes, seconds: row.seconds ?? 0, equipment: row.equipment ?? null, drumsetMinutes: row.drumset_minutes ?? null, padMinutes: row.pad_minutes ?? null, customItems: row.custom_items ?? [], notes: row.notes ?? "", items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) };
       });
       setDayDetailLogs(byUser);
     });
@@ -1059,8 +1069,6 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     Object.values(logs as Record<string, Log>).forEach((log) => { log.items.forEach((item) => { freq[item] = (freq[item] ?? 0) + 1; }); });
     return [...PRACTICE_ITEMS].sort((a, b) => (freq[b.en] ?? 0) - (freq[a.en] ?? 0));
   }, [logs]);
-  const goalPct = Math.min(100, ((Number(minutes) || 0) / Math.max(1, dailyGoal)) * 100);
-  const goalAchieved = (Number(minutes) || 0) >= dailyGoal;
   function qualifyingMinutesAt(itemEn: string, targetBpm: number) {
     return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum: number, s: any) => sum + s.duration_minutes, 0);
   }
@@ -1109,7 +1117,15 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   function openCategory(cat: string) { setCategory(cat); setStep("list"); }
   function openExercise(itemEn: string) { setExercise(itemEn); setStep("detail"); }
   function startSession(targetBpm: number) { setBpm(targetBpm); setStep("session"); }
-  function handleSessionEnd(sessionMinutes: number) { setPendingMinutes(sessionMinutes); setStep("rate"); }
+  async function handleSessionEnd(sessionMinutes: number) {
+    if (exercise && bestQualifyingRating(exercise, bpm) === "mastered") {
+      await onLogSession(exercise, bpm, "mastered", sessionMinutes);
+      setStep("detail");
+      return;
+    }
+    setPendingMinutes(sessionMinutes);
+    setStep("rate");
+  }
   async function rate(rating: string) {
     if (!exercise) return;
     await onLogSession(exercise, bpm, rating, pendingMinutes);
@@ -1140,7 +1156,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         <div className="mode-copy"><h2>{T.practiceMode.quickTitle}</h2><p>{T.practiceMode.quickSubtitle}</p></div>
         <button className="mode-action" onClick={openMetronome}>⌁ {T.today.metronome}</button>
       </div>
-      <div className="form-card"><label className="input-label">{T.today.howLong}</label>
+      <div className="form-card quick-start"><label className="input-label"><span className="step-badge">1</span>{T.today.howLong}</label>
         {equipment === "both" ? (
           <div className="split-minutes">
             <div className="split-minutes-field">
@@ -1170,10 +1186,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
           </div>
         )}
         {Number(seconds) > 0 && <p className="seconds-note">+{seconds}s {T.today.secondsCarried}</p>}
-        <div className="goal-progress"><div className="goal-progress-label"><span>{T.today.todayGoal}</span><strong className={goalAchieved ? "achieved" : ""}>{minutes}/{dailyGoal} min</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
-      </div>
-      <div className="form-card">
-        <button className="collapsible-header" onClick={() => setWhatOpen(!whatOpen)}><span className="input-label checklist-label">{T.today.whatPractised}{!whatOpen ? ` (${selected.length})` : ""}</span><span className="collapse-chevron">{whatOpen ? "⌃" : "⌄"}</span></button>
+        <button className="collapsible-header" onClick={() => setWhatOpen(!whatOpen)}><span className="input-label checklist-label"><span className="step-badge">2</span>{T.today.whatPractised}{!whatOpen && (selected.length > 0 || notes) ? ` (${[selected.length > 0 ? String(selected.length) : null, notes ? "+note" : null].filter(Boolean).join(" ")})` : ""}</span><span className={whatOpen ? "collapse-chevron open" : "collapse-chevron"}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7.5l5 5 5-5" /></svg></span></button>
         {whatOpen && <>
           <div className="chips">{sortedItems.map((item: any) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language as Lang]}</button>)}</div>
           <label className="input-label equipment-label">{T.today.equipment}</label>
@@ -1181,8 +1194,8 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
             <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
             <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("pad")}>{T.today.pad}</button>
           </div>
+          {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
         </>}
-        {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
         <button className={saved ? "save saved" : "save"} onClick={save}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
         <button className="reset-practice" onClick={handleResetPractice}>{T.today.resetPractice}</button>
       </div>
@@ -1258,7 +1271,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
               <span className="bpm">{level}</span>
               <div className="rung-progress">
                 <div className="rung-progress-track"><div className="rung-progress-bar" style={{ width: `${pct}%`, background: barColor }} /></div>
-                <span className="rung-progress-label">{unlocked ? "✓" : `${Math.min(totalMinutes, UNLOCK_MINUTES)}/${UNLOCK_MINUTES} min`}</span>
+                <span className="rung-progress-label">{unlocked ? (rating === "mastered" ? "⭐" : "✓") : `${Math.min(totalMinutes, UNLOCK_MINUTES)}/${UNLOCK_MINUTES} min`}</span>
               </div>
             </button>
             {hasHistory && <button className="rung-reset" onClick={() => handleReset(level)}>↺</button>}
@@ -1269,7 +1282,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         <span><i style={{ background: "#303531" }} />{T.practiceMode.notStarted}</span>
         <span><i style={{ background: "#ff6b1a" }} />{T.practiceMode.inProgress}</span>
         <span><i style={{ background: RATING_COLOR.comfortable }} />{T.practiceMode.unlockedLabel}</span>
-        <span><i style={{ background: RATING_COLOR.mastered }} />{T.practiceMode.ratingMastered}</span>
+        <span><i style={{ background: RATING_COLOR.mastered }} />⭐ {T.practiceMode.ratingMastered}</span>
       </div>
     </section>;
   }
@@ -1285,7 +1298,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   if (step === "rate" && exercise) {
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     return <section className="page">
-      <header className="simple-head"><p className="eyebrow">{label} · {bpm} BPM</p><h1>{T.practiceMode.rateTitle}</h1><p className="rate-sub">{T.practiceMode.rateSubtitle(pendingMinutes)}</p></header>
+      <header className="simple-head"><p className="eyebrow">{label} · {bpm} BPM</p><h1>{T.practiceMode.rateTitle}</h1><p className="rate-sub">{T.practiceMode.rateSubtitle(bpm)}</p></header>
       <div className="rating-grid">
         {RATING_ORDER.map((r) => <button key={r} className={`rating-btn ${r}`} onClick={() => rate(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
       </div>
@@ -1295,9 +1308,65 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
 }
 function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number; onGoalSaved: (goal: number) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; onBack: () => void; T: any }) {
   const [name, setName] = useState(profileName); const [goal, setGoal] = useState(String(dailyGoal)); const [language, setLanguage] = useState<Lang>(currentLanguage); const [reminders, setReminders] = useState(false); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [saved, setSaved] = useState(false);
+  const [newEmail, setNewEmail] = useState(""); const [emailBusy, setEmailBusy] = useState(false); const [emailMsg, setEmailMsg] = useState("");
+  const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [passwordBusy, setPasswordBusy] = useState(false); const [passwordMsg, setPasswordMsg] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState(""); const [deleteBusy, setDeleteBusy] = useState(false);
   useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,reminder_enabled,metronome_tone").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(String(row.daily_goal_minutes)); setLanguage(row.language); setReminders(row.reminder_enabled); if (row.metronome_tone) setTone(row.metronome_tone); } }); supabase.from("profiles").select("color").eq("id", user.id).maybeSingle().then(({ data }) => { setColor(data?.color ?? null); }); }, [user]);
   async function saveSettings() { const profile = await supabase.from("profiles").upsert({ id: user.id, name, color }, { onConflict: "id" }); const goalValue = Number(goal) || 30; const settings = await supabase.from("settings").upsert({ user_id: user.id, daily_goal_minutes: goalValue, language, reminder_enabled: reminders, metronome_tone: tone }, { onConflict: "user_id" }); if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings."); else { onProfileNameSaved(name); onLanguageSaved(language); onGoalSaved(goalValue); onMetronomeToneSaved(tone); setSaved(true); setTimeout(() => setSaved(false), 1800); } }
-  return <section className="page"><button className="page-back" onClick={onBack}>‹ {T.nav.today}</button><header className="simple-head"><p className="eyebrow">{T.settings.makeItYours}</p><h1>{T.settings.title}</h1></header><div className="settings-form"><label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label><label>{T.settings.dailyGoal}<input inputMode="numeric" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setReminders(!reminders)}><span>{T.settings.reminders}</span><b className={reminders ? "on" : ""}>{reminders ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div><button className="logout" onClick={signOut}>{T.settings.logout}</button></section>;
+  async function changeEmail() {
+    if (!newEmail.trim()) return;
+    setEmailBusy(true); setEmailMsg("");
+    const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+    setEmailBusy(false);
+    if (error) { setError(error.message); return; }
+    setEmailMsg(T.settings.emailChangeSent);
+    setNewEmail("");
+  }
+  async function changePassword() {
+    if (newPassword.length < 6) { setError(T.settings.passwordTooShort); return; }
+    if (newPassword !== confirmPassword) { setError(T.settings.passwordMismatch); return; }
+    setPasswordBusy(true); setPasswordMsg("");
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordBusy(false);
+    if (error) { setError(error.message); return; }
+    setPasswordMsg(T.settings.passwordChanged);
+    setNewPassword(""); setConfirmPassword("");
+  }
+  async function deleteAccount() {
+    if (deleteConfirmText.trim().toLowerCase() !== (user.email ?? "").toLowerCase()) return;
+    setDeleteBusy(true);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    const res = await fetch("/api/delete-account", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setDeleteBusy(false);
+      setError(body.error ?? T.settings.couldNotDeleteAccount);
+      return;
+    }
+    await supabase.auth.signOut();
+  }
+  return <section className="page"><button className="page-back" onClick={onBack}>‹ {T.nav.today}</button><header className="simple-head"><p className="eyebrow">{T.settings.makeItYours}</p><h1>{T.settings.title}</h1></header>
+    <p className="settings-section-label">{T.settings.userSection}</p>
+    <div className="settings-form"><label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label><label>{T.settings.dailyGoal}<input inputMode="numeric" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setReminders(!reminders)}><span>{T.settings.reminders}</span><b className={reminders ? "on" : ""}>{reminders ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
+    <p className="settings-section-label">{T.settings.accountSection}</p>
+    <div className="settings-form account-settings">
+      <label>{T.settings.changeEmail}<input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={T.settings.newEmailPlaceholder} /></label>
+      {emailMsg && <p className="settings-hint">{emailMsg}</p>}
+      <button className="secondary-btn" disabled={emailBusy || !newEmail.trim()} onClick={changeEmail}>{emailBusy ? T.settings.pleaseWait : T.settings.updateEmail}</button>
+      <label className="account-field-spaced">{T.settings.changePassword}<input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder={T.settings.newPasswordPlaceholder} /></label>
+      <input type="password" className="account-confirm-input" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={T.settings.confirmPasswordPlaceholder} />
+      {passwordMsg && <p className="settings-hint">{passwordMsg}</p>}
+      <button className="secondary-btn" disabled={passwordBusy || !newPassword || !confirmPassword} onClick={changePassword}>{passwordBusy ? T.settings.pleaseWait : T.settings.updatePassword}</button>
+      <button className="logout" onClick={signOut}>{T.settings.logout}</button>
+      <div className="danger-zone">
+        <p className="danger-title">{T.settings.deleteAccount}</p>
+        <p className="danger-warning">{T.settings.deleteAccountWarning}</p>
+        <label className="account-field-spaced">{T.settings.deleteAccountConfirmPrompt(user.email ?? "")}<input value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder={user.email ?? ""} /></label>
+        <button className="danger-btn" disabled={deleteBusy || deleteConfirmText.trim().toLowerCase() !== (user.email ?? "").toLowerCase()} onClick={deleteAccount}>{deleteBusy ? T.settings.deleteAccountBusy : T.settings.deleteAccountBtn}</button>
+      </div>
+    </div>
+  </section>;
 }
 function Setting({icon,label,value}:{icon:string;label:string;value:string}) { return <button className="setting"><span className="setting-icon">{icon}</span><span>{label}</span><em>{value} ›</em></button>; }
 
