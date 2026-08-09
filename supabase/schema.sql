@@ -314,3 +314,20 @@ drop trigger if exists practice_logs_touch_updated_at on public.practice_logs;
 create trigger practice_logs_touch_updated_at
 before update on public.practice_logs
 for each row execute function public.touch_updated_at();
+
+-- Renamed 4 exercises in the app's PRACTICE_EXERCISES list to note the note value they're practiced
+-- at (e.g. "Heel Down" -> "Heel Down, 8th Notes"). Update any existing rows that reference the old
+-- names so past sessions, pins, and challenges stay linked to the renamed exercise instead of being
+-- orphaned under a label that no longer exists in the app.
+update public.practice_sessions set item_en = 'Heel Down, 8th Notes' where item_en = 'Heel Down';
+update public.practice_sessions set item_en = 'Heel Up, 8th Notes' where item_en = 'Heel Up';
+update public.practice_sessions set item_en = 'Slide Technique, 8th Notes' where item_en = 'Slide Technique';
+update public.practice_sessions set item_en = 'Flow, 16th Notes' where item_en = 'Flow';
+update public.pinned_exercises set exercise_en = 'Heel Down, 8th Notes' where exercise_en = 'Heel Down';
+update public.pinned_exercises set exercise_en = 'Heel Up, 8th Notes' where exercise_en = 'Heel Up';
+update public.pinned_exercises set exercise_en = 'Slide Technique, 8th Notes' where exercise_en = 'Slide Technique';
+update public.pinned_exercises set exercise_en = 'Flow, 16th Notes' where exercise_en = 'Flow';
+update public.personal_challenges set exercise_en = 'Heel Down, 8th Notes' where exercise_en = 'Heel Down';
+update public.personal_challenges set exercise_en = 'Heel Up, 8th Notes' where exercise_en = 'Heel Up';
+update public.personal_challenges set exercise_en = 'Slide Technique, 8th Notes' where exercise_en = 'Slide Technique';
+update public.personal_challenges set exercise_en = 'Flow, 16th Notes' where exercise_en = 'Flow';

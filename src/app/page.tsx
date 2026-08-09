@@ -76,16 +76,19 @@ const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcat
   { category: "rudiments", subcategory: null, en: "Drag", es: "Drag" },
   { category: "rudiments", subcategory: null, en: "Double Drag", es: "Drag doble" },
   { category: "rudiments", subcategory: null, en: "Ratamacue", es: "Ratamacue" },
-  { category: "exercises", subcategory: null, en: "Heel Down", es: "Talón abajo" },
-  { category: "exercises", subcategory: null, en: "Heel Up", es: "Talón arriba" },
-  { category: "exercises", subcategory: null, en: "Slide Technique", es: "Técnica de deslizamiento" },
+  { category: "exercises", subcategory: null, en: "Heel Down, 8th Notes", es: "Talón abajo, corcheas" },
+  { category: "exercises", subcategory: null, en: "Heel Up, 8th Notes", es: "Talón arriba, corcheas" },
+  { category: "exercises", subcategory: null, en: "Slide Technique, 8th Notes", es: "Técnica de deslizamiento, corcheas" },
   { category: "exercises", subcategory: null, en: "Double Bass Drum", es: "Doble bombo" },
-  { category: "exercises", subcategory: null, en: "Flow", es: "Flow" },
+  { category: "exercises", subcategory: null, en: "Flow, 16th Notes", es: "Flow, semicorcheas" },
   { category: "exercises", subcategory: null, en: "RLKK", es: "RLKK" },
   { category: "exercises", subcategory: null, en: "RKKL", es: "RKKL" },
   { category: "exercises", subcategory: null, en: "KKRL", es: "KKRL" },
   { category: "exercises", subcategory: null, en: "KRLK", es: "KRLK" },
   { category: "exercises", subcategory: null, en: "RLLK", es: "RLLK" },
+  { category: "exercises", subcategory: null, en: "Finger Technique (Single-Handed)", es: "Técnica de dedos (una mano)" },
+  { category: "exercises", subcategory: null, en: "16th Note Single Strokes Around the Set", es: "Golpes simples en semicorcheas alrededor de la batería" },
+  { category: "exercises", subcategory: null, en: "Hi-Hat Pedal 8th Notes", es: "Pedal de hi-hat en corcheas" },
 ];
 const CHALLENGE_EXERCISE_OPTIONS: { en: string; es: string }[] = (() => {
   const seen = new Set<string>();
