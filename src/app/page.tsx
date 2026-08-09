@@ -87,6 +87,14 @@ const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcat
   { category: "exercises", subcategory: null, en: "KRLK", es: "KRLK" },
   { category: "exercises", subcategory: null, en: "RLLK", es: "RLLK" },
 ];
+const CHALLENGE_EXERCISE_OPTIONS: { en: string; es: string }[] = (() => {
+  const seen = new Set<string>();
+  const combined: { en: string; es: string }[] = [];
+  [...PRACTICE_EXERCISES, ...PRACTICE_ITEMS].forEach((item) => {
+    if (!seen.has(item.en)) { seen.add(item.en); combined.push({ en: item.en, es: item.es }); }
+  });
+  return combined;
+})();
 const BPM_LEVELS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
 const PRACTICE_TIERS = [
   { key: "beginner", min: 50, max: 90 },
@@ -98,6 +106,7 @@ const RATING_RANK: Record<string, number> = { not_ready: 1, tense: 2, comfortabl
 const RATING_ORDER = ["not_ready", "tense", "comfortable", "mastered"];
 const RATING_COLOR: Record<string, string> = { not_ready: "#e2877d", tense: "#f6ad55", comfortable: "#68d391", mastered: "#68d391" };
 const UNLOCK_MINUTES = 2;
+const MAX_PINNED_EXERCISES = 3;
 const RATING_ICON: Record<string, string> = { not_ready: "🔴", tense: "🟠", comfortable: "🟢", mastered: "⭐" };
 function qualifyingMinutesFor(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[], itemEn: string, targetBpm: number) {
   return sessions.filter((s) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum, s) => sum + s.duration_minutes, 0);
@@ -116,7 +125,6 @@ const translations = {
       heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", currentStreak: "Current streak", days: "days",
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", whatPractised: "ADD WHAT YOU PRACTISED",
       notes: "NOTES", notesPrefix: "Notes:", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
-      startToday: "Start your streak today!", daysToMilestone: (left: number, milestone: number) => `${left} days to a ${milestone}-day streak!`,
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${minutes} min on ${equipmentName}`,
       todaySummary: "TODAY'S SUMMARY", goalLabel: "GOAL", noPracticeYet: "No practice logged yet today.", secondsCarried: "extra (not counted in minutes yet)", other: "Other", otherPlaceholder: "What else did you practice?",
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
@@ -155,8 +163,23 @@ const translations = {
       deleteGroupBtn: "Delete group", confirmDeleteGroup: "Delete this group? This removes it for everyone and can't be undone.", couldNotDeleteGroup: "Could not delete the group.",
     },
     progressPage: {
-      eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", techniques: "MINUTES PER EXERCISE",
+      eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", yourPractice: "YOUR PRACTICE",
       noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS", generalPractice: "General Practice",
+      skillProgress: "SKILL PROGRESS", noSkillData: "Train an exercise's BPM levels to see your skill progress here.",
+      achievements: "ACHIEVEMENTS", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
+    },
+    personalChallenges: {
+      title: "Personal Challenges", homeTitle: "PERSONAL CHALLENGES", subtitle: "Set a focused practice goal for yourself.",
+      newChallenge: "+ New challenge", cancel: "Cancel",
+      exerciseLabel: "EXERCISE", minutesLabel: "MINUTES PER DAY", bpmLabel: "TARGET BPM (OPTIONAL)", bpmPlaceholder: "Any tempo",
+      lengthLabel: "CHALLENGE LENGTH (DAYS)", startChallenge: "Start challenge", pleaseWait: "Please wait...",
+      noChallenges: "No personal challenges yet. Create one to build a focused practice habit.",
+      challengeTitle: (exercise: string, days: number) => `${exercise} — ${days} Day Challenge`,
+      challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practice ${minutes} min at ${bpm}+ BPM every day for ${days} consecutive days.` : `Practice ${minutes} min every day for ${days} consecutive days.`,
+      statusActive: (done: number, total: number) => `${done}/${total} days`, statusCompleted: "✓ Completed — achievement unlocked!", statusFailed: "Missed a day — challenge broken",
+      deleteChallenge: "Delete", confirmDelete: "Delete this challenge? This can't be undone.",
+      resetChallenge: "Reset", confirmReset: "Restart this challenge from day 1?",
+      couldNotCreate: "Could not create challenge.",
     },
     practiceMode: {
       eyebrow: "TRACK YOUR LEVELS", title: "PRACTICE MODE", pageEyebrow: "TRAIN", pageTitle: "PRACTICE",
@@ -168,10 +191,9 @@ const translations = {
       rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Your session at ${bpm} BPM is saved.`,
       backToBook: "Back to Practice Mode", couldNotSaveSession: "Could not save this session.",
       categoryRudiments: "Rudiments", categoryExercises: "Exercises", categoryRhythms: "Rhythms",
-      exerciseCount: (n: number) => `${n} exercise${n === 1 ? "" : "s"}`, comingSoon: "Coming soon",
       pin: "Pin", pinned: "Pinned",
-      quickTitle: "Quick Practice", quickSubtitle: "Log today's practice",
-      trainTitle: "Train a Skill", trainSubtitle: "Choose an area and improve over time.",
+      quickTitle: "Quick Practice",
+      trainTitle: "Train a Skill",
       categoryDescRudiments: "Build technique and control.", categoryDescExercises: "Improve with structured exercises.", categoryDescRhythms: "Grooves, styles and musical vocabulary.",
     },
     settings: {
@@ -198,7 +220,6 @@ const translations = {
       heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", currentStreak: "Racha actual", days: "días",
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", whatPractised: "AÑADE LO QUE PRACTICASTE",
       notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
-      startToday: "¡Empieza tu racha hoy!", daysToMilestone: (left: number, milestone: number) => `¡${left} días para una racha de ${milestone} días!`,
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${minutes} min en ${equipmentName}`,
       todaySummary: "RESUMEN DE HOY", goalLabel: "META", noPracticeYet: "Aún no has registrado práctica hoy.", secondsCarried: "extra (aún no contado en minutos)", other: "Otro", otherPlaceholder: "¿Qué más practicaste?",
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
@@ -237,8 +258,23 @@ const translations = {
       deleteGroupBtn: "Eliminar grupo", confirmDeleteGroup: "¿Eliminar este grupo? Se eliminará para todos y no se puede deshacer.", couldNotDeleteGroup: "No se pudo eliminar el grupo.",
     },
     progressPage: {
-      eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", techniques: "MINUTOS POR EJERCICIO",
+      eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", yourPractice: "TU PRÁCTICA",
       noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE", generalPractice: "Práctica general",
+      skillProgress: "PROGRESO TÉCNICO", noSkillData: "Entrena los niveles de BPM de un ejercicio para ver tu progreso técnico aquí.",
+      achievements: "LOGROS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
+    },
+    personalChallenges: {
+      title: "Retos personales", homeTitle: "RETOS PERSONALES", subtitle: "Ponte una meta de práctica enfocada.",
+      newChallenge: "+ Nuevo reto", cancel: "Cancelar",
+      exerciseLabel: "EJERCICIO", minutesLabel: "MINUTOS POR DÍA", bpmLabel: "BPM OBJETIVO (OPCIONAL)", bpmPlaceholder: "Cualquier tempo",
+      lengthLabel: "DURACIÓN DEL RETO (DÍAS)", startChallenge: "Empezar reto", pleaseWait: "Un momento...",
+      noChallenges: "Aún no tienes retos personales. Crea uno para desarrollar un hábito de práctica enfocado.",
+      challengeTitle: (exercise: string, days: number) => `${exercise} — Reto de ${days} Días`,
+      challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practica ${minutes} min a ${bpm}+ BPM cada día durante ${days} días consecutivos.` : `Practica ${minutes} min cada día durante ${days} días consecutivos.`,
+      statusActive: (done: number, total: number) => `${done}/${total} días`, statusCompleted: "✓ Completado — ¡logro desbloqueado!", statusFailed: "Un día sin completar — reto interrumpido",
+      deleteChallenge: "Eliminar", confirmDelete: "¿Eliminar este reto? Esta acción no se puede deshacer.",
+      resetChallenge: "Reiniciar", confirmReset: "¿Reiniciar este reto desde el día 1?",
+      couldNotCreate: "No se pudo crear el reto.",
     },
     practiceMode: {
       eyebrow: "SIGUE TUS NIVELES", title: "MODO PRÁCTICA", pageEyebrow: "ENTRENA", pageTitle: "PRÁCTICA",
@@ -250,10 +286,9 @@ const translations = {
       rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Tu sesión a ${bpm} BPM se guardó.`,
       backToBook: "Volver a Modo práctica", couldNotSaveSession: "No se pudo guardar esta sesión.",
       categoryRudiments: "Rudimentos", categoryExercises: "Ejercicios", categoryRhythms: "Ritmos",
-      exerciseCount: (n: number) => `${n} ejercicio${n === 1 ? "" : "s"}`, comingSoon: "Próximamente",
       pin: "Fijar", pinned: "Fijado",
-      quickTitle: "Práctica rápida", quickSubtitle: "Registra la práctica de hoy",
-      trainTitle: "Entrena una habilidad", trainSubtitle: "Elige un área y mejora con el tiempo.",
+      quickTitle: "Práctica rápida",
+      trainTitle: "Entrena una habilidad",
       categoryDescRudiments: "Desarrolla técnica y control.", categoryDescExercises: "Mejora con ejercicios estructurados.", categoryDescRhythms: "Grooves, estilos y vocabulario musical.",
     },
     settings: {
@@ -275,16 +310,13 @@ const translations = {
   },
 } as const;
 
-function formatDate(lang: Lang) {
-  return new Intl.DateTimeFormat(lang === "es" ? "es-ES" : "en-US", { weekday: "long", month: "long", day: "numeric" }).format(new Date());
-}
 
 const NAV_ICONS: Record<Tab, React.ReactNode> = {
   today: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="10" cy="10" r="7.3" /><circle cx="10" cy="10" r="2.4" fill="currentColor" stroke="none" /></svg>,
   practice: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="10" cy="10" r="7" /><circle cx="10" cy="10" r="4" /><circle cx="10" cy="10" r="1.1" fill="currentColor" stroke="none" /></svg>,
   group: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.2" cy="7" r="2.6" /><path d="M2.5 17c0-2.9 2.1-5 4.7-5s4.7 2.1 4.7 5" /><circle cx="14.5" cy="7.8" r="2.1" /><path d="M12.7 12.3c1.9.4 3.3 2.1 3.3 4.7" /></svg>,
   progress: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16.5V9.5M10 16.5V3.5M16 16.5v-6" /></svg>,
-  settings: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="2.6" /><path d="M10 2.8v2M10 15.2v2M17.2 10h-2M4.8 10h-2M15.1 4.9l-1.4 1.4M6.3 13.7l-1.4 1.4M15.1 15.1l-1.4-1.4M6.3 6.3L4.9 4.9" /></svg>,
+  settings: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>,
 };
 function formatLocalDate(year: number, monthIndex0based: number, day: number) {
   return `${year}-${String(monthIndex0based + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -297,6 +329,58 @@ function shiftDateKey(key: string, days: number) {
   const date = new Date(Date.UTC(year, month - 1, day));
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+function localDateFromTimestamp(iso: string) {
+  const d = new Date(iso);
+  return formatLocalDate(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function challengeExerciseLabel(en: string, language: Lang) {
+  return CHALLENGE_EXERCISE_OPTIONS.find((e) => e.en === en)?.[language] ?? en;
+}
+type ChallengeLogEntry = { minutes: number; items: string[]; customItems: string[]; updatedAt: string };
+function isChallengeDayValid(challenge: any, date: string, practiceSessions: { item_en: string; bpm: number; duration_minutes: number; practiced_on: string }[], logsCache: Record<string, ChallengeLogEntry>) {
+  if (challenge.target_bpm) {
+    const minutes = practiceSessions.filter((s) => s.item_en === challenge.exercise_en && s.practiced_on === date && s.bpm >= challenge.target_bpm).reduce((sum, s) => sum + s.duration_minutes, 0);
+    return minutes >= challenge.target_minutes;
+  }
+  const log = logsCache[date];
+  if (!log) return false;
+  const tags = [...log.items, ...log.customItems];
+  if (!tags.includes(challenge.exercise_en)) return false;
+  // Anti-backdating: only count this day if the log row was last touched (created or edited) on the
+  // same LOCAL calendar day it represents. An edit made on a later day pushes updated_at forward and
+  // disqualifies it, so a missed day can't be quietly repaired after the fact.
+  if (!log.updatedAt || localDateFromTimestamp(log.updatedAt) !== date) return false;
+  const share = log.minutes / tags.length;
+  return share >= challenge.target_minutes;
+}
+function evaluateChallenge(challenge: any, practiceSessions: { item_en: string; bpm: number; duration_minutes: number; practiced_on: string }[], logsCache: Record<string, ChallengeLogEntry>) {
+  const days: { date: string; valid: boolean | null }[] = [];
+  for (let i = 0; i < challenge.length_days; i++) {
+    const date = shiftDateKey(challenge.start_date, i);
+    let valid: boolean | null;
+    if (date > dateKey) {
+      valid = null; // future day, not reached yet
+    } else {
+      const done = isChallengeDayValid(challenge, date, practiceSessions, logsCache);
+      // Today stays "pending" (not a miss) until the day is over and still incomplete; only a
+      // completed *past* day is a permanent miss.
+      valid = done ? true : (date === dateKey ? null : false);
+    }
+    days.push({ date, valid });
+  }
+  const completedCount = days.filter((d) => d.valid === true).length;
+  const brokenIndex = days.findIndex((d) => d.valid === false);
+  const status = completedCount === challenge.length_days ? "completed" : brokenIndex !== -1 ? "failed" : "active";
+  return { days, completedCount, status };
+}
+async function fetchChallengeLogsCache(userId: string, earliestStart: string) {
+  const { data: logRows } = await supabase.from("practice_logs").select("practiced_on,minutes,updated_at,custom_items,practice_log_items(practice_items(name_en))").eq("user_id", userId).gte("practiced_on", earliestStart);
+  const cache: Record<string, ChallengeLogEntry> = {};
+  (logRows ?? []).forEach((row: any) => {
+    cache[row.practiced_on] = { minutes: row.minutes, items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean), customItems: row.custom_items ?? [], updatedAt: row.updated_at };
+  });
+  return cache;
 }
 
 function calculateStreaks(logs: Record<string, Log>, today: string) {
@@ -318,11 +402,6 @@ function calculateStreaks(logs: Record<string, Log>, today: string) {
     previous = key;
   }
   return { current, longest };
-}
-
-const STREAK_MILESTONES = [3, 7, 14, 21, 30, 50, 100, 150, 200, 365, 500, 1000];
-function nextStreakMilestone(streak: number) {
-  return STREAK_MILESTONES.find((m) => m > streak) ?? null;
 }
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
@@ -486,10 +565,10 @@ export default function Home() {
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
   return <main className="shell">
-    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} language={language} T={T} />}
+    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} displayName={displayName} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
-    {tab === "progress" && <Progress practiceSessions={practiceSessions} pinnedExercises={pinnedExercises} logs={logs} language={language} T={T} />}
+    {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} onBack={() => setTab("today")} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
@@ -534,16 +613,43 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
   return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Choose a new password for your account.</p><div className="auth-card"><h2>Set a new password</h2><input type="password" placeholder="New password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? "Please wait..." : "Update password"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
-function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, displayName, language, T }: any) {
-  const milestone = nextStreakMilestone(streak);
+function HomeChallenges({ user, practiceSessions, language, T }: any) {
+  const [challenges, setChallenges] = useState<any[]>([]);
+  const [logsCache, setLogsCache] = useState<Record<string, ChallengeLogEntry>>({});
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date").eq("user_id", user.id).order("start_date", { ascending: false });
+      const list = data ?? [];
+      if (cancelled) return;
+      setChallenges(list);
+      if (!list.length) { setLogsCache({}); return; }
+      const earliestStart = list.reduce((min: string, c: any) => (c.start_date < min ? c.start_date : min), list[0].start_date);
+      const cache = await fetchChallengeLogsCache(user.id, earliestStart);
+      if (!cancelled) setLogsCache(cache);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+  const active = challenges
+    .map((c) => ({ ...c, ...evaluateChallenge(c, practiceSessions, logsCache) }))
+    .filter((c) => c.status === "active");
+  if (!active.length) return null;
+  return <div className="home-pinned">
+    <span className="section-sublabel">{T.personalChallenges.homeTitle}</span>
+    {active.map((c) => <div key={c.id} className="home-pinned-row">
+      <div className="home-pinned-head"><span className="home-pinned-name">{challengeExerciseLabel(c.exercise_en, language)}</span><span className="home-pinned-time">{T.personalChallenges.statusActive(c.completedCount, c.length_days)}</span></div>
+      <div className="personal-challenge-dots home-challenge-dots">{c.days.map((d: any) => <i key={d.date} className={`pc-dot ${d.valid === true ? "hit" : d.valid === false ? "miss" : "pending"}`} />)}</div>
+    </div>)}
+  </div>;
+}
+function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, displayName, language, T }: any) {
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
   const goalAchieved = todayMinutes >= dailyGoal;
   const goalPct = Math.min(100, (todayMinutes / Math.max(1, dailyGoal)) * 100);
   return <section className="page today">
-    <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1><p className="date">{formatDate(language)}</p></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
-    <div className="streak-card"><div className="flame">{streak > 0 ? "🔥" : "🥁"}</div><div><span>{T.today.currentStreak}</span>{streak > 0 ? <strong>{streak} {T.today.days}</strong> : <strong>{T.today.startToday}</strong>}{streak > 0 && milestone && <em className="streak-next">{T.today.daysToMilestone(milestone - streak, milestone)}</em>}</div></div>
-    <div className="form-card stats-tile"><div className="stats stats-2" style={showDaysThisYear ? undefined : { gridTemplateColumns: "1fr" }}><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
+    <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
+    <div className="form-card stats-tile"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
     <div className="form-card">
       <label className="input-label">{T.today.todaySummary}</label>
       <div className="goal-progress"><div className="goal-progress-label"><span>{T.today.goalLabel}</span><strong className={goalAchieved ? "achieved" : ""}>{todayMinutes}/{dailyGoal} min</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
@@ -552,6 +658,25 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, dailyGoa
       {todayLog && (todayLog.items.length > 0 || todayLog.customItems.length > 0) ? <div className="detail-chips">{todayLog.items.map((item: string) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{todayLog.customItems.map((item: string) => <em key={item}>{item}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>}
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>
+    <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} />
+    {pinnedExercises.length > 0 && <div className="home-pinned">
+      <span className="section-sublabel">{T.progressPage.pinned}</span>
+      {pinnedExercises.slice(0, MAX_PINNED_EXERCISES).map((en: string) => {
+        const label = PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en;
+        const unlockedLevels = BPM_LEVELS.filter((level) => qualifyingMinutesFor(practiceSessions, en, level) >= UNLOCK_MINUTES);
+        const bestBpm = unlockedLevels.length ? Math.max(...unlockedLevels) : null;
+        const totalMinutes = practiceSessions.filter((s: any) => s.item_en === en).reduce((sum: number, s: any) => sum + s.duration_minutes, 0);
+        return <div key={en} className="home-pinned-row">
+          <div className="home-pinned-head"><span className="home-pinned-name">{label}</span><span className="home-pinned-time">{formatMinutes(totalMinutes)}</span></div>
+          {unlockedLevels.length > 0 ? <div className="home-pinned-meta">
+            <span className="home-pinned-bpm">{bestBpm} BPM</span>
+            <div className="home-pinned-tiers">
+              {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="home-pinned-tier-seg"><i style={{ width: `${tierProgressFor(practiceSessions, en, tier)}%` }} /></div>)}
+            </div>
+          </div> : <span className="home-pinned-bpm">{T.practiceMode.notStarted}</span>}
+        </div>;
+      })}
+    </div>}
     <div className="section-title"><h2>{T.calendar.title}</h2></div>
     <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} language={language} T={T} />
   </section>;
@@ -1011,8 +1136,30 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     {groups.length > 0 && <button className="page-back" onClick={() => setAddingGroup(false)}>‹ {T.group.back}</button>}
     <div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? T.group.findCrew : mode === "create" ? T.group.startGroup : T.group.joinCrew}</h2>{mode === "start" ? <><p>{T.group.intro}</p><button className="primary" onClick={() => setMode("create")}>{T.group.createGroupBtn} <span>→</span></button><button className="secondary" onClick={() => setMode("join")}>{T.group.joinWithCode}</button></> : <><input className="group-input" value={mode === "create" ? name : code} onChange={e => mode === "create" ? setName(e.target.value) : setCode(e.target.value)} placeholder={mode === "create" ? T.group.groupNamePlaceholder : T.group.inviteCodePlaceholder}/><button className="primary" disabled={busy || !(mode === "create" ? name : code)} onClick={mode === "create" ? createGroup : joinGroup}>{busy ? T.group.pleaseWait : mode === "create" ? T.group.createGroup : T.group.joinGroup}</button><button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button></>}</div></section>;
 }
-function Progress({ practiceSessions, pinnedExercises, logs, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[]; pinnedExercises: string[]; logs: Record<string, Log>; language: Lang; T: any }) {
+function Progress({ practiceSessions, logs, user, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
+  const [wonChallenges, setWonChallenges] = useState<any[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const { data } = await supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date").eq("user_id", user.id);
+      const list = data ?? [];
+      if (!list.length) { if (!cancelled) setWonChallenges([]); return; }
+      const earliestStart = list.reduce((min: string, c: any) => (c.start_date < min ? c.start_date : min), list[0].start_date);
+      const logsCache = await fetchChallengeLogsCache(user.id, earliestStart);
+      const completed = list.filter((c: any) => evaluateChallenge(c, practiceSessions, logsCache).status === "completed");
+      if (!cancelled) setWonChallenges(completed);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [user, practiceSessions]);
+  const skillExercises = useMemo(() => {
+    const practicedEnSet = new Set(practiceSessions.map((s) => s.item_en));
+    return PRACTICE_EXERCISES
+      .filter((e) => practicedEnSet.has(e.en))
+      .map((e) => ({ en: e.en, label: e[language as Lang], unlockedCount: BPM_LEVELS.filter((level) => qualifyingMinutesFor(practiceSessions, e.en, level) >= UNLOCK_MINUTES).length }))
+      .sort((a, b) => b.unlockedCount - a.unlockedCount || a.label.localeCompare(b.label));
+  }, [practiceSessions, language]);
   const totals = useMemo(() => {
     const sums: Record<string, number> = {};
     const labelFor: Record<string, string> = {};
@@ -1044,22 +1191,8 @@ function Progress({ practiceSessions, pinnedExercises, logs, language, T }: { pr
       .sort((a, b) => b.minutes - a.minutes);
   }, [practiceSessions, logs, language, T]);
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.progressPage.eyebrow}</p><h1>{T.progressPage.title}</h1></header>
-    {pinnedExercises.length > 0 && <div className="progress-section pinned-section">
-      <span className="section-label">{T.progressPage.pinned}</span>
-      <div className="pinned-list">
-        {pinnedExercises.map((en) => {
-          const label = PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en;
-          return <div key={en} className="pinned-card">
-            <div className="pinned-head"><span className="pinned-name">{label}</span></div>
-            <div className="tier-strip">
-              {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className="seg-bar"><i style={{ width: `${tierProgressFor(practiceSessions, en, tier)}%` }} /></div><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
-            </div>
-          </div>;
-        })}
-      </div>
-    </div>}
     {!totals.length ? <p className="hint">{T.progressPage.noData}</p> : <div className="progress-section">
-      <span className="section-label">{T.progressPage.techniques}</span>
+      <span className="section-label">{T.progressPage.yourPractice}</span>
       <div className="minutes-chart">
         {totals.map((t, idx) => <div key={t.en} className="minutes-row">
           <span className="minutes-rank">{idx + 1}</span>
@@ -1070,9 +1203,113 @@ function Progress({ practiceSessions, pinnedExercises, logs, language, T }: { pr
         </div>)}
       </div>
     </div>}
+    <div className="progress-section">
+      <span className="section-label">{T.progressPage.skillProgress}</span>
+      {!skillExercises.length ? <p className="hint">{T.progressPage.noSkillData}</p> : <div className="pinned-list">
+        {skillExercises.map((ex) => <div key={ex.en} className="pinned-card">
+          <div className="pinned-head"><span className="pinned-name">{ex.label}</span></div>
+          <div className="tier-strip">
+            {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className="seg-bar"><i style={{ width: `${tierProgressFor(practiceSessions, ex.en, tier)}%` }} /></div><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
+          </div>
+        </div>)}
+      </div>}
+    </div>
+    <div className="progress-section achievements-teaser">
+      <span className="section-label">{T.progressPage.achievements}</span>
+      <p className="achievements-intro">{T.progressPage.achievementsIntro}</p>
+      {wonChallenges.length > 0 && <div className="trophy-list">
+        {wonChallenges.map((c) => <span key={c.id} className="trophy-chip">🏆 {T.personalChallenges.challengeTitle(challengeExerciseLabel(c.exercise_en, language), c.length_days)}</span>)}
+      </div>}
+    </div>
   </section>;
 }
-function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, pinnedExercises, onTogglePin, minutes, setMinutes, seconds, selected, toggle, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, language, T }: any) {
+function PersonalChallenges({ user, practiceSessions, confirm, setError, language, T }: any) {
+  const [challenges, setChallenges] = useState<any[]>([]);
+  const [logsCache, setLogsCache] = useState<Record<string, { minutes: number; items: string[]; customItems: string[]; updatedAt: string }>>({});
+  const [showNew, setShowNew] = useState(false);
+  const [exerciseEn, setExerciseEn] = useState(CHALLENGE_EXERCISE_OPTIONS[0]?.en ?? "");
+  const [targetMinutes, setTargetMinutes] = useState("10");
+  const [targetBpm, setTargetBpm] = useState("");
+  const [lengthDays, setLengthDays] = useState("7");
+  const [busy, setBusy] = useState(false);
+  const isLadder = PRACTICE_EXERCISES.some((e) => e.en === exerciseEn);
+
+  async function loadChallenges() {
+    const { data } = await supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date").eq("user_id", user.id).order("start_date", { ascending: false });
+    const list = data ?? [];
+    setChallenges(list);
+    if (!list.length) { setLogsCache({}); return; }
+    const earliestStart = list.reduce((min: string, c: any) => (c.start_date < min ? c.start_date : min), list[0].start_date);
+    setLogsCache(await fetchChallengeLogsCache(user.id, earliestStart));
+  }
+  useEffect(() => { loadChallenges(); }, [user]);
+
+  async function createChallenge() {
+    setBusy(true);
+    const { error } = await supabase.from("personal_challenges").insert({ user_id: user.id, exercise_en: exerciseEn, target_minutes: Number(targetMinutes) || 1, target_bpm: isLadder && targetBpm ? Number(targetBpm) : null, length_days: Number(lengthDays) || 1, start_date: dateKey });
+    setBusy(false);
+    if (error) { setError(error.message ?? T.personalChallenges.couldNotCreate); return; }
+    setShowNew(false); setTargetMinutes("10"); setTargetBpm(""); setLengthDays("7");
+    loadChallenges();
+  }
+
+  async function deleteChallenge(id: string) {
+    if (!(await confirm(T.personalChallenges.confirmDelete))) return;
+    const { error } = await supabase.from("personal_challenges").delete().eq("id", id);
+    if (error) { setError(error.message); return; }
+    loadChallenges();
+  }
+
+  async function resetChallenge(id: string) {
+    if (!(await confirm(T.personalChallenges.confirmReset))) return;
+    const { error } = await supabase.from("personal_challenges").update({ start_date: dateKey }).eq("id", id);
+    if (error) { setError(error.message); return; }
+    loadChallenges();
+  }
+
+
+  return <>
+    <div className="mode-header train-header">
+      <span className="mode-icon challenge">🏆</span>
+      <div className="mode-copy"><h2>{T.personalChallenges.title}</h2><p>{T.personalChallenges.subtitle}</p></div>
+      <button className="mode-action" onClick={() => setShowNew(!showNew)}>{showNew ? T.personalChallenges.cancel : T.personalChallenges.newChallenge}</button>
+    </div>
+    {showNew && <div className="challenge-form">
+      <label className="input-label">{T.personalChallenges.exerciseLabel}</label>
+      <select className="group-input" value={exerciseEn} onChange={(e) => { setExerciseEn(e.target.value); setTargetBpm(""); }}>
+        {CHALLENGE_EXERCISE_OPTIONS.map((opt) => <option key={opt.en} value={opt.en}>{opt[language as Lang]}</option>)}
+      </select>
+      <label className="input-label">{T.personalChallenges.minutesLabel}</label>
+      <input className="group-input" inputMode="numeric" value={targetMinutes} onChange={(e) => setTargetMinutes(e.target.value.replace(/\D/g, ""))} />
+      {isLadder && <><label className="input-label">{T.personalChallenges.bpmLabel}</label>
+      <input className="group-input" inputMode="numeric" value={targetBpm} onChange={(e) => setTargetBpm(e.target.value.replace(/\D/g, ""))} placeholder={T.personalChallenges.bpmPlaceholder} /></>}
+      <label className="input-label">{T.personalChallenges.lengthLabel}</label>
+      <input className="group-input" inputMode="numeric" value={lengthDays} onChange={(e) => setLengthDays(e.target.value.replace(/\D/g, ""))} />
+      <button className="primary" disabled={busy || !exerciseEn || !targetMinutes || !lengthDays} onClick={createChallenge}>{busy ? T.personalChallenges.pleaseWait : T.personalChallenges.startChallenge}</button>
+    </div>}
+    {!challenges.length && !showNew && <p className="hint">{T.personalChallenges.noChallenges}</p>}
+    {challenges.map((c) => {
+      const { days, completedCount, status } = evaluateChallenge(c, practiceSessions, logsCache);
+      return <div key={c.id} className="challenge-card">
+        <div className="challenge-head">
+          <h3>{T.personalChallenges.challengeTitle(challengeExerciseLabel(c.exercise_en, language), c.length_days)}</h3>
+          <button className="challenge-delete" onClick={() => deleteChallenge(c.id)}>{T.personalChallenges.deleteChallenge}</button>
+        </div>
+        <p className="challenge-desc">{T.personalChallenges.challengeDescription(c.target_minutes, c.target_bpm, c.length_days)}</p>
+        <div className="personal-challenge-dots">
+          {days.map((d) => <i key={d.date} className={`pc-dot ${d.valid === true ? "hit" : d.valid === false ? "miss" : "pending"}`} />)}
+        </div>
+        <div className="personal-challenge-status-row">
+          <p className={`personal-challenge-status ${status}`}>
+            {status === "completed" ? T.personalChallenges.statusCompleted : status === "failed" ? T.personalChallenges.statusFailed : T.personalChallenges.statusActive(completedCount, c.length_days)}
+          </p>
+          {status === "failed" && <button className="challenge-reset" onClick={() => resetChallenge(c.id)}>{T.personalChallenges.resetChallenge}</button>}
+        </div>
+      </div>;
+    })}
+  </>;
+}
+function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, pinnedExercises, onTogglePin, minutes, setMinutes, seconds, selected, toggle, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -1171,9 +1408,9 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     return <section className="page">
       <header className="simple-head"><p className="eyebrow">{T.practiceMode.pageEyebrow}</p><h1>{T.practiceMode.pageTitle}</h1></header>
 
-      <div className="mode-header">
+      <div className="mode-header quick-header">
         <img src="/icons/lightning.png" alt="" className="mode-icon quick" />
-        <div className="mode-copy"><h2>{T.practiceMode.quickTitle}</h2><p>{T.practiceMode.quickSubtitle}</p></div>
+        <div className="mode-copy"><h2>{T.practiceMode.quickTitle}</h2></div>
         <button className="mode-action" onClick={openMetronome}>⌁ {T.today.metronome}</button>
       </div>
       <div className="form-card quick-start"><label className="input-label"><span className="step-badge">1</span>{T.today.howLong}</label>
@@ -1220,24 +1457,23 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         <button className="reset-practice" onClick={handleResetPractice}>{T.today.resetPractice}</button>
       </div>
 
-      <div className="mode-header train-header">
+      <div className="mode-header train-header skill-header">
         <img src="/icons/target.png" alt="" className="mode-icon train" />
-        <div className="mode-copy"><h2>{T.practiceMode.trainTitle}</h2><p>{T.practiceMode.trainSubtitle}</p></div>
+        <div className="mode-copy"><h2>{T.practiceMode.trainTitle}</h2></div>
       </div>
       <div className="category-list">
         {PRACTICE_CATEGORIES.map((cat) => {
-          const count = PRACTICE_EXERCISES.filter((e) => e.category === cat).length;
           return <button key={cat} className="category-card" onClick={() => openCategory(cat)}>
             <img src={CATEGORY_ICON_SRC[cat]} alt="" className="category-icon" />
             <div className="category-info">
               <p className="category-title">{CATEGORY_LABEL[cat]}</p>
               <p className="category-desc">{CATEGORY_DESC[cat]}</p>
-              <span className="category-count">{count ? T.practiceMode.exerciseCount(count) : T.practiceMode.comingSoon}</span>
             </div>
             <span className="chev">›</span>
           </button>;
         })}
       </div>
+      <PersonalChallenges user={user} practiceSessions={sessions} confirm={confirm} setError={setError} language={language} T={T} />
     </section>;
   }
 

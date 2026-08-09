@@ -279,3 +279,38 @@ alter table public.practice_logs add column if not exists custom_items text[] no
 
 -- Lets a user hide the "days this year / 365" stat on their Home dashboard if they don't want it.
 alter table public.settings add column if not exists show_days_this_year boolean not null default true;
+
+-- Personal Challenges: a self-set structured practice goal (exercise + minutes/day, optional BPM,
+-- consecutive days). exercise_en is a plain string (matching pinned_exercises' pattern) rather than a
+-- foreign key, since it can point at either the practice_exercises catalog or the flat quick-log items.
+create table if not exists public.personal_challenges (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  exercise_en text not null,
+  target_minutes integer not null check (target_minutes > 0),
+  target_bpm integer check (target_bpm is null or target_bpm > 0),
+  frequency text not null default 'daily' check (frequency in ('daily')),
+  length_days integer not null check (length_days > 0 and length_days <= 90),
+  start_date date not null,
+  created_at timestamptz not null default now()
+);
+alter table public.personal_challenges enable row level security;
+drop policy if exists "users manage their personal challenges" on public.personal_challenges;
+create policy "users manage their personal challenges" on public.personal_challenges for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Personal Challenges must be able to tell a same-day log entry from one backdated/edited later, so a
+-- missed challenge day can't be "repaired" after the fact. updated_at never actually changed on edit
+-- before now (Postgres only applies `default now()` at insert time), so add a trigger to keep it honest.
+create or replace function public.touch_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+drop trigger if exists practice_logs_touch_updated_at on public.practice_logs;
+create trigger practice_logs_touch_updated_at
+before update on public.practice_logs
+for each row execute function public.touch_updated_at();
