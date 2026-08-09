@@ -276,3 +276,6 @@ alter table public.practice_logs add column if not exists seconds integer not nu
 -- practice_items catalog (no client insert policy there) so they render as pills without needing a
 -- new item added to that global list for every user.
 alter table public.practice_logs add column if not exists custom_items text[] not null default '{}';
+
+-- Lets a user hide the "days this year / 365" stat on their Home dashboard if they don't want it.
+alter table public.settings add column if not exists show_days_this_year boolean not null default true;
