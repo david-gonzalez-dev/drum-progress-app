@@ -167,7 +167,7 @@ const translations = {
     },
     progressPage: {
       eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", yourPractice: "YOUR PRACTICE",
-      noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS", generalPractice: "General Practice",
+      noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS - Pinned exercises", generalPractice: "General Practice",
       skillProgress: "SKILL PROGRESS", noSkillData: "Train an exercise's BPM levels to see your skill progress here.",
       achievements: "ACHIEVEMENTS", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
     },
@@ -262,7 +262,7 @@ const translations = {
     },
     progressPage: {
       eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", yourPractice: "TU PRÁCTICA",
-      noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE", generalPractice: "Práctica general",
+      noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE - Ejercicios fijados", generalPractice: "Práctica general",
       skillProgress: "PROGRESO TÉCNICO", noSkillData: "Entrena los niveles de BPM de un ejercicio para ver tu progreso técnico aquí.",
       achievements: "LOGROS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
     },
@@ -1208,14 +1208,17 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
     </div>}
     <div className="progress-section">
       <span className="section-label">{T.progressPage.skillProgress}</span>
-      {!skillExercises.length ? <p className="hint">{T.progressPage.noSkillData}</p> : <div className="pinned-list">
+      {!skillExercises.length ? <p className="hint">{T.progressPage.noSkillData}</p> : <><div className="tier-strip tier-strip-header">
+        {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
+      </div>
+      <div className="pinned-list">
         {skillExercises.map((ex) => <div key={ex.en} className="pinned-card">
           <div className="pinned-head"><span className="pinned-name">{ex.label}</span></div>
           <div className="tier-strip">
-            {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className="seg-bar"><i style={{ width: `${tierProgressFor(practiceSessions, ex.en, tier)}%` }} /></div><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
+            {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className="seg-bar"><i style={{ width: `${tierProgressFor(practiceSessions, ex.en, tier)}%` }} /></div></div>)}
           </div>
         </div>)}
-      </div>}
+      </div></>}
     </div>
     <div className="progress-section achievements-teaser">
       <span className="section-label">{T.progressPage.achievements}</span>

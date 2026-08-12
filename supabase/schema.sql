@@ -316,13 +316,19 @@ before update on public.practice_logs
 for each row execute function public.touch_updated_at();
 
 -- Renamed 4 exercises in the app's PRACTICE_EXERCISES list to note the note value they're practiced
--- at (e.g. "Heel Down" -> "Heel Down, 8th Notes"). Update any existing rows that reference the old
--- names so past sessions, pins, and challenges stay linked to the renamed exercise instead of being
--- orphaned under a label that no longer exists in the app.
-update public.practice_sessions set item_en = 'Heel Down, 8th Notes' where item_en = 'Heel Down';
-update public.practice_sessions set item_en = 'Heel Up, 8th Notes' where item_en = 'Heel Up';
-update public.practice_sessions set item_en = 'Slide Technique, 8th Notes' where item_en = 'Slide Technique';
-update public.practice_sessions set item_en = 'Flow, 16th Notes' where item_en = 'Flow';
+-- at (e.g. "Heel Down" -> "Heel Down, 8th Notes"), and added 3 new ones. practice_sessions links to
+-- practice_exercises by id, so renaming the catalog row (not practice_sessions) is what keeps past
+-- sessions attached to the renamed exercise. pinned_exercises/personal_challenges store the name as
+-- plain text, so those need their own update to stay matched.
+update public.practice_exercises set name_en = 'Heel Down, 8th Notes', name_es = 'Talón abajo, corcheas' where name_en = 'Heel Down';
+update public.practice_exercises set name_en = 'Heel Up, 8th Notes', name_es = 'Talón arriba, corcheas' where name_en = 'Heel Up';
+update public.practice_exercises set name_en = 'Slide Technique, 8th Notes', name_es = 'Técnica de deslizamiento, corcheas' where name_en = 'Slide Technique';
+update public.practice_exercises set name_en = 'Flow, 16th Notes', name_es = 'Flow, semicorcheas' where name_en = 'Flow';
+insert into public.practice_exercises (category, subcategory, name_en, name_es, sort_order) values
+  ('exercises', null, 'Finger Technique (Single-Handed)', 'Técnica de dedos (una mano)', 11),
+  ('exercises', null, '16th Note Single Strokes Around the Set', 'Golpes simples en semicorcheas alrededor de la batería', 12),
+  ('exercises', null, 'Hi-Hat Pedal 8th Notes', 'Pedal de hi-hat en corcheas', 13)
+on conflict (category, name_en) do nothing;
 update public.pinned_exercises set exercise_en = 'Heel Down, 8th Notes' where exercise_en = 'Heel Down';
 update public.pinned_exercises set exercise_en = 'Heel Up, 8th Notes' where exercise_en = 'Heel Up';
 update public.pinned_exercises set exercise_en = 'Slide Technique, 8th Notes' where exercise_en = 'Slide Technique';

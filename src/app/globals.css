@@ -67,7 +67,7 @@
 .pinned-list{display:flex;flex-direction:column;gap:20px}
 .pinned-card .pinned-head{margin-bottom:10px}
 .pinned-card .pinned-name{font-size:15px;color:#ecefea;font-weight:600}
-.pinned-card .tier-strip{margin-bottom:0}
+.pinned-card .tier-strip{margin-bottom:0}.tier-strip-header{margin-bottom:14px}
 .back-row button{width:32px;height:32px;border-radius:50%;border:1px solid #2c312e;background:#161918;color:#f6f7f5;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .back-row .title-block .eyebrow{margin-bottom:2px}
 .back-row h2{font-size:24px;margin:0}
