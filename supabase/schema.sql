@@ -337,3 +337,46 @@ update public.personal_challenges set exercise_en = 'Heel Down, 8th Notes' where
 update public.personal_challenges set exercise_en = 'Heel Up, 8th Notes' where exercise_en = 'Heel Up';
 update public.personal_challenges set exercise_en = 'Slide Technique, 8th Notes' where exercise_en = 'Slide Technique';
 update public.personal_challenges set exercise_en = 'Flow, 16th Notes' where exercise_en = 'Flow';
+
+-- Low-key group chat, capped to the most recent 50 messages per group so storage stays flat no
+-- matter how much a group chats over time (older messages are auto-deleted after each insert).
+create table if not exists public.group_messages (
+  id uuid primary key default uuid_generate_v4(),
+  group_id uuid not null references public.groups(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  message text not null check (char_length(message) > 0 and char_length(message) <= 500),
+  created_at timestamptz not null default now()
+);
+alter table public.group_messages enable row level security;
+drop policy if exists "group members read messages" on public.group_messages;
+create policy "group members read messages" on public.group_messages for select to authenticated using (
+  exists (select 1 from public.group_members gm where gm.group_id = group_messages.group_id and gm.user_id = auth.uid())
+);
+drop policy if exists "group members send messages" on public.group_messages;
+create policy "group members send messages" on public.group_messages for insert to authenticated with check (
+  auth.uid() = user_id and exists (select 1 from public.group_members gm where gm.group_id = group_messages.group_id and gm.user_id = auth.uid())
+);
+
+-- security definer so the cleanup delete isn't blocked by RLS (it may need to delete messages sent
+-- by other members of the group, not just the message that was just inserted).
+create or replace function public.cap_group_messages()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  delete from public.group_messages
+  where group_id = new.group_id
+    and id not in (
+      select id from public.group_messages
+      where group_id = new.group_id
+      order by created_at desc
+      limit 50
+    );
+  return new;
+end;
+$$;
+drop trigger if exists group_messages_cap on public.group_messages;
+create trigger group_messages_cap
+after insert on public.group_messages
+for each row execute function public.cap_group_messages();

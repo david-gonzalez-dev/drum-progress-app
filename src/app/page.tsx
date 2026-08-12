@@ -164,6 +164,7 @@ const translations = {
       confirmLeave: "Leave this group? You can rejoin later with the invite code.", confirmDeleteChallenge: "Delete this challenge? This can't be undone.",
       deleteChallenge: "Delete", since: (date: string) => `Since ${date}`, couldNotLeave: "Could not leave the group.", couldNotDeleteChallenge: "Could not delete the challenge.",
       deleteGroupBtn: "Delete group", confirmDeleteGroup: "Delete this group? This removes it for everyone and can't be undone.", couldNotDeleteGroup: "Could not delete the group.",
+      chat: "CHAT", noMessages: "No messages yet. Say hi to your crew!", chatPlaceholder: "Message your crew...", send: "Send", couldNotSend: "Could not send message.",
     },
     progressPage: {
       eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", yourPractice: "YOUR PRACTICE",
@@ -259,6 +260,7 @@ const translations = {
       confirmLeave: "¿Salir de este grupo? Puedes volver a unirte más tarde con el código de invitación.", confirmDeleteChallenge: "¿Eliminar este desafío? Esta acción no se puede deshacer.",
       deleteChallenge: "Eliminar", since: (date: string) => `Desde ${date}`, couldNotLeave: "No se pudo salir del grupo.", couldNotDeleteChallenge: "No se pudo eliminar el desafío.",
       deleteGroupBtn: "Eliminar grupo", confirmDeleteGroup: "¿Eliminar este grupo? Se eliminará para todos y no se puede deshacer.", couldNotDeleteGroup: "No se pudo eliminar el grupo.",
+      chat: "CHAT", noMessages: "Aún no hay mensajes. ¡Saluda a tu grupo!", chatPlaceholder: "Escribe a tu grupo...", send: "Enviar", couldNotSend: "No se pudo enviar el mensaje.",
     },
     progressPage: {
       eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", yourPractice: "TU PRÁCTICA",
@@ -863,6 +865,9 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [challengeReward, setChallengeReward] = useState("");
   const [challengePunishment, setChallengePunishment] = useState("");
   const [challengeBusy, setChallengeBusy] = useState(false);
+  const [messages, setMessages] = useState<{ id: string; user_id: string; message: string; created_at: string }[]>([]);
+  const [chatText, setChatText] = useState("");
+  const [chatBusy, setChatBusy] = useState(false);
   const locale = language === "es" ? "es-ES" : "en-US";
   const presetOptions = [
     { ...CHALLENGE_PRESETS[0], label: T.group.presetDaily5 },
@@ -905,6 +910,31 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     });
   }, [group]);
   useEffect(() => { loadChallenges(); }, [group, members]);
+  async function loadMessages() {
+    if (!group) { setMessages([]); return; }
+    const { data } = await supabase.from("group_messages").select("id,user_id,message,created_at").eq("group_id", group.id).order("created_at", { ascending: true }).limit(50);
+    setMessages(data ?? []);
+  }
+  useEffect(() => { loadMessages(); }, [group]);
+  useEffect(() => {
+    if (!group) return;
+    const interval = setInterval(loadMessages, 8000);
+    return () => clearInterval(interval);
+  }, [group]);
+  function nameFor(userId: string) {
+    if (userId === user.id) return T.group.you;
+    return members.find((m) => m.id === userId)?.name ?? "Drummer";
+  }
+  async function sendMessage() {
+    const text = chatText.trim();
+    if (!text || !group) return;
+    setChatBusy(true);
+    const { error } = await supabase.from("group_messages").insert({ group_id: group.id, user_id: user.id, message: text });
+    setChatBusy(false);
+    if (error) { setError(error.message ?? T.group.couldNotSend); return; }
+    setChatText("");
+    loadMessages();
+  }
   useEffect(() => {
     if (!group || !members.length) { setMonthLogs({}); return; }
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
@@ -1126,6 +1156,21 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
             </div>
           </div>;
         })}
+      </div>
+      <div className="chat-section">
+        <div className="section-head"><span className="section-label">{T.group.chat}</span></div>
+        <div className="chat-messages">
+          {!messages.length ? <p className="hint">{T.group.noMessages}</p> : messages.map((m) => (
+            <div key={m.id} className={m.user_id === user.id ? "chat-message mine" : "chat-message"}>
+              <span className="chat-message-name">{nameFor(m.user_id)}</span>
+              <p className="chat-message-text">{m.message}</p>
+            </div>
+          ))}
+        </div>
+        <div className="chat-input-row">
+          <input className="group-input chat-input" value={chatText} onChange={(e) => setChatText(e.target.value)} placeholder={T.group.chatPlaceholder} maxLength={300} onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }} />
+          <button className="chat-send" disabled={chatBusy || !chatText.trim()} onClick={sendMessage}>{T.group.send}</button>
+        </div>
       </div>
       <div className="group-invite-footer">
         <span className="section-sublabel">{T.group.inviteMsg}</span>
