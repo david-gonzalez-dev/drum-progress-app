@@ -119,6 +119,12 @@ function tierProgressFor(sessions: { item_en: string; bpm: number; rating: strin
   const done = levels.filter((l) => qualifyingMinutesFor(sessions, itemEn, l) >= UNLOCK_MINUTES);
   return levels.length ? (done.length / levels.length) * 100 : 0;
 }
+// A tier reads as "skipped" (dotted, not solid) when the user hasn't touched it at all but has
+// already unlocked something in a higher tier — i.e. they jumped ahead instead of working up.
+function tierIsSkipped(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[], itemEn: string, tier: { min: number; max: number }) {
+  if (tierProgressFor(sessions, itemEn, tier) > 0) return false;
+  return PRACTICE_TIERS.some((t) => t.min > tier.max && tierProgressFor(sessions, itemEn, t) > 0);
+}
 
 const translations = {
   en: {
@@ -199,6 +205,9 @@ const translations = {
       quickTitle: "Quick Practice",
       trainTitle: "Train a Skill",
       categoryDescRudiments: "Build technique and control.", categoryDescExercises: "Improve with structured exercises.", categoryDescRhythms: "Grooves, styles and musical vocabulary.",
+      listIntroRudiments: (min: number) => `Standard rudiments for clean technique. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it before moving to the next tempo.`,
+      listIntroExercises: (min: number) => `Focused drills for coordination and control. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it, same as rudiments.`,
+      listIntroRhythms: (min: number) => `Grooves and styles to build your musical vocabulary. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it and move up.`,
     },
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
@@ -295,6 +304,9 @@ const translations = {
       quickTitle: "Práctica rápida",
       trainTitle: "Entrena una habilidad",
       categoryDescRudiments: "Desarrolla técnica y control.", categoryDescExercises: "Mejora con ejercicios estructurados.", categoryDescRhythms: "Grooves, estilos y vocabulario musical.",
+      listIntroRudiments: (min: number) => `Rudimentos estándar para una técnica limpia. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo antes de pasar al siguiente tempo.`,
+      listIntroExercises: (min: number) => `Ejercicios enfocados en coordinación y control. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo, igual que con los rudimentos.`,
+      listIntroRhythms: (min: number) => `Grooves y estilos para ampliar tu vocabulario musical. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo y subir de nivel.`,
     },
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
@@ -518,11 +530,17 @@ export default function Home() {
     const { error } = await supabase.from("practice_sessions").insert({ user_id: user.id, practice_exercise_id: exerciseRow?.id ?? null, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey });
     if (error) { setAuthError(error.message); return false; }
     const newMinutes = (Number(minutes) || 0) + durationMinutes;
-    const newSelected = selected.includes(itemEn) ? selected : [...selected, itemEn];
+    // practice_log_items only links against the flat quick-log catalog (practice_items), which BPM-ladder
+    // exercise names don't always exist in — those go into custom_items instead so they still show up
+    // in Today's Summary/Calendar chips rather than silently vanishing from the practice_items join.
+    const isFlatItem = PRACTICE_ITEMS.some((item) => item.en === itemEn);
+    const newSelected = isFlatItem && !selected.includes(itemEn) ? [...selected, itemEn] : selected;
+    const newCustomItems = !isFlatItem && !customItems.includes(itemEn) ? [...customItems, itemEn] : customItems;
     setMinutes(String(newMinutes));
     setSelected(newSelected);
+    setCustomItems(newCustomItems);
     const isSplit = equipment === "both";
-    await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, Number(seconds) || 0, customItems);
+    await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, Number(seconds) || 0, newCustomItems);
     setPracticeSessions((current) => [...current, { item_en: itemEn, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey }]);
     return true;
   }
@@ -652,6 +670,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
   const todayMinutes = todayLog?.minutes ?? 0;
   const goalAchieved = todayMinutes >= dailyGoal;
   const goalPct = Math.min(100, (todayMinutes / Math.max(1, dailyGoal)) * 100);
+  const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   return <section className="page today">
     <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
     <div className="form-card stats-tile"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
@@ -666,6 +685,9 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
     <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} />
     {pinnedExercises.length > 0 && <div className="home-pinned">
       <span className="section-sublabel">{T.progressPage.pinned}</span>
+      <div className="tier-strip tier-strip-header">
+        {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
+      </div>
       {pinnedExercises.slice(0, MAX_PINNED_EXERCISES).map((en: string) => {
         const label = PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en;
         const unlockedLevels = BPM_LEVELS.filter((level) => qualifyingMinutesFor(practiceSessions, en, level) >= UNLOCK_MINUTES);
@@ -676,7 +698,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
           {unlockedLevels.length > 0 ? <div className="home-pinned-meta">
             <span className="home-pinned-bpm">{bestBpm} BPM</span>
             <div className="home-pinned-tiers">
-              {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="home-pinned-tier-seg"><i style={{ width: `${tierProgressFor(practiceSessions, en, tier)}%` }} /></div>)}
+              {PRACTICE_TIERS.map((tier) => <div key={tier.key} className={tierIsSkipped(practiceSessions, en, tier) ? "home-pinned-tier-seg skipped" : "home-pinned-tier-seg"}><i style={{ width: `${tierIsSkipped(practiceSessions, en, tier) ? 100 : tierProgressFor(practiceSessions, en, tier)}%` }} /></div>)}
             </div>
           </div> : <span className="home-pinned-bpm">{T.practiceMode.notStarted}</span>}
         </div>;
@@ -1264,7 +1286,7 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
         {skillExercises.map((ex) => <div key={ex.en} className="pinned-card">
           <div className="pinned-head"><span className="pinned-name">{ex.label}</span></div>
           <div className="tier-strip">
-            {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className="seg-bar"><i style={{ width: `${tierProgressFor(practiceSessions, ex.en, tier)}%` }} /></div></div>)}
+            {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className={tierIsSkipped(practiceSessions, ex.en, tier) ? "seg-bar skipped" : "seg-bar"}><i style={{ width: `${tierIsSkipped(practiceSessions, ex.en, tier) ? 100 : tierProgressFor(practiceSessions, ex.en, tier)}%` }} /></div></div>)}
           </div>
         </div>)}
       </div></>}
@@ -1534,17 +1556,37 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
 
   if (step === "list" && category) {
     const items = PRACTICE_EXERCISES.filter((e) => e.category === category);
-    const subcats: { en: string; es: string }[] = [];
-    items.forEach((e) => { if (e.subcategory && !subcats.some((s) => s.en === e.subcategory!.en)) subcats.push(e.subcategory); });
-    const groups = [...subcats.map((s) => ({ key: s.en, label: s[language as Lang] })), ...(items.some((e) => !e.subcategory) ? [{ key: "", label: "" }] : [])];
-    return <section className="page">
-      <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL[category]}</h2></div></div>
-      {groups.map((g) => <div key={g.key || "__none"}>
+    const LIST_INTRO: Record<string, string> = { rudiments: T.practiceMode.listIntroRudiments(UNLOCK_MINUTES), exercises: T.practiceMode.listIntroExercises(UNLOCK_MINUTES), rhythms: T.practiceMode.listIntroRhythms(UNLOCK_MINUTES) };
+    function lastPracticedDate(itemEn: string): string | null {
+      let latest: string | null = null;
+      sessions.forEach((s: any) => { if (s.item_en === itemEn && (!latest || s.practiced_on > latest)) latest = s.practiced_on; });
+      return latest;
+    }
+    let listBody;
+    if (category === "exercises") {
+      const sortedItems = [...items].sort((a, b) => {
+        const da = lastPracticedDate(a.en); const db = lastPracticedDate(b.en);
+        if (da && db) return db.localeCompare(da);
+        if (da && !db) return -1;
+        if (!da && db) return 1;
+        return 0;
+      });
+      listBody = <div className="book-list">{sortedItems.map((item) => <ExerciseRow key={item.en} item={item} />)}</div>;
+    } else {
+      const subcats: { en: string; es: string }[] = [];
+      items.forEach((e) => { if (e.subcategory && !subcats.some((s) => s.en === e.subcategory!.en)) subcats.push(e.subcategory); });
+      const groups = [...subcats.map((s) => ({ key: s.en, label: s[language as Lang] })), ...(items.some((e) => !e.subcategory) ? [{ key: "", label: "" }] : [])];
+      listBody = <>{groups.map((g) => <div key={g.key || "__none"}>
         {g.key && <span className="ladder-label">{g.label.toUpperCase()}</span>}
         <div className="book-list">
           {items.filter((e) => (e.subcategory?.en ?? "") === g.key).map((item) => <ExerciseRow key={item.en} item={item} />)}
         </div>
-      </div>)}
+      </div>)}</>;
+    }
+    return <section className="page">
+      <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL[category]}</h2></div></div>
+      <p className="category-list-intro">{LIST_INTRO[category]}</p>
+      {listBody}
     </section>;
   }
 
@@ -1563,7 +1605,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         </div>
       </div>
       <div className="tier-strip">
-        {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className="seg-bar"><i style={{ width: `${tierProgress(exercise, tier)}%` }} /></div><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
+        {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className={tierIsSkipped(sessions, exercise, tier) ? "seg-bar skipped" : "seg-bar"}><i style={{ width: `${tierIsSkipped(sessions, exercise, tier) ? 100 : tierProgress(exercise, tier)}%` }} /></div><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
       </div>
       <span className="ladder-label">{T.practiceMode.bpmLevels}</span>
       <div className="ladder">
@@ -1602,7 +1644,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     return <section className="page">
       <div className="back-row"><button onClick={() => setStep("detail")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
-      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} T={T} />
+      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} T={T} />
     </section>;
   }
 
@@ -1692,7 +1734,7 @@ const TONE_PRESETS: Record<string, ToneDef> = {
 const TONE_KEYS = ["click", "beep", "wood", "clave"];
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], otherNote: string) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; language?: Lang; T: any }) {
+function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], otherNote: string) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; language?: Lang; T: any }) {
   const [bpm, setBpm] = useState(initialBpm ?? 100);
   const [playing, setPlaying] = useState(false);
   const [beatsPerBar, setBeatsPerBar] = useState(4);
@@ -1837,7 +1879,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   if (!open) return null;
   const beatsPerMeasure = beatsPerBar;
   const lang = language ?? "en";
-  return <div className="modal modal-center"><div className="metro"><button className="close" onClick={close}>×</button><p className="eyebrow">{T.metronome.practiceTool}</p><h2>{T.metronome.title}</h2>
+  return <div className="modal modal-center"><div className="metro"><button className="close" onClick={close}>×</button><p className="eyebrow">{exerciseLabel ?? T.metronome.practiceTool}</p><h2>{T.metronome.title}</h2>
     {showAddPrompt ? <div className="add-time">
       <span>{T.metronome.sessionComplete}</span>
       <h3>{addPromptSeconds > 0 ? T.metronome.addTimeQuestion(formatMinSecLabel(addPromptSeconds)) : T.metronome.addTimeTooShort}</h3>
