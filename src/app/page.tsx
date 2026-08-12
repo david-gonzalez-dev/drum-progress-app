@@ -186,9 +186,9 @@ const translations = {
       noChallenges: "No personal challenges yet. Create one to build a focused practice habit.",
       challengeTitle: (exercise: string, days: number) => `${exercise} — ${days} Day Challenge`,
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practice ${minutes} min at ${bpm}+ BPM every day for ${days} consecutive days.` : `Practice ${minutes} min every day for ${days} consecutive days.`,
-      statusActive: (done: number, total: number) => `${done}/${total} days`, statusCompleted: "✓ Completed — achievement unlocked!", statusFailed: "Missed a day — challenge broken",
+      statusActive: (done: number, total: number) => `${done}/${total} days`, statusCompleted: "✓ Completed — achievement unlocked!", statusFailed: "Challenge failed. Want to start over?",
       deleteChallenge: "Delete", confirmDelete: "Delete this challenge? This can't be undone.",
-      resetChallenge: "Reset", confirmReset: "Restart this challenge from day 1?",
+      resetChallenge: "Try again", confirmReset: "Restart this challenge from day 1?",
       couldNotCreate: "Could not create challenge.",
     },
     practiceMode: {
@@ -285,9 +285,9 @@ const translations = {
       noChallenges: "Aún no tienes retos personales. Crea uno para desarrollar un hábito de práctica enfocado.",
       challengeTitle: (exercise: string, days: number) => `${exercise} — Reto de ${days} Días`,
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practica ${minutes} min a ${bpm}+ BPM cada día durante ${days} días consecutivos.` : `Practica ${minutes} min cada día durante ${days} días consecutivos.`,
-      statusActive: (done: number, total: number) => `${done}/${total} días`, statusCompleted: "✓ Completado — ¡logro desbloqueado!", statusFailed: "Un día sin completar — reto interrumpido",
+      statusActive: (done: number, total: number) => `${done}/${total} días`, statusCompleted: "✓ Completado — ¡logro desbloqueado!", statusFailed: "Reto fallido. ¿Quieres empezar de nuevo?",
       deleteChallenge: "Eliminar", confirmDelete: "¿Eliminar este reto? Esta acción no se puede deshacer.",
-      resetChallenge: "Reiniciar", confirmReset: "¿Reiniciar este reto desde el día 1?",
+      resetChallenge: "Intentar de nuevo", confirmReset: "¿Reiniciar este reto desde el día 1?",
       couldNotCreate: "No se pudo crear el reto.",
     },
     practiceMode: {
@@ -1373,15 +1373,19 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
           <button className="challenge-delete" onClick={() => deleteChallenge(c.id)}>{T.personalChallenges.deleteChallenge}</button>
         </div>
         <p className="challenge-desc">{T.personalChallenges.challengeDescription(c.target_minutes, c.target_bpm, c.length_days)}</p>
-        <div className="personal-challenge-dots">
-          {days.map((d) => <i key={d.date} className={`pc-dot ${d.valid === true ? "hit" : d.valid === false ? "miss" : "pending"}`} />)}
-        </div>
-        <div className="personal-challenge-status-row">
+        {status === "failed" ? (
+          <div className="challenge-failed-block">
+            <p className="personal-challenge-status failed">{T.personalChallenges.statusFailed}</p>
+            <button className="challenge-try-again" onClick={() => resetChallenge(c.id)}>{T.personalChallenges.resetChallenge}</button>
+          </div>
+        ) : <>
+          <div className="personal-challenge-dots">
+            {days.map((d) => <i key={d.date} className={`pc-dot ${d.valid === true ? "hit" : d.valid === false ? "miss" : "pending"}`} />)}
+          </div>
           <p className={`personal-challenge-status ${status}`}>
-            {status === "completed" ? T.personalChallenges.statusCompleted : status === "failed" ? T.personalChallenges.statusFailed : T.personalChallenges.statusActive(completedCount, c.length_days)}
+            {status === "completed" ? T.personalChallenges.statusCompleted : T.personalChallenges.statusActive(completedCount, c.length_days)}
           </p>
-          {status === "failed" && <button className="challenge-reset" onClick={() => resetChallenge(c.id)}>{T.personalChallenges.resetChallenge}</button>}
-        </div>
+        </>}
       </div>;
     })}
   </>;
