@@ -868,6 +868,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [messages, setMessages] = useState<{ id: string; user_id: string; message: string; created_at: string }[]>([]);
   const [chatText, setChatText] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const locale = language === "es" ? "es-ES" : "en-US";
   const presetOptions = [
     { ...CHALLENGE_PRESETS[0], label: T.group.presetDaily5 },
@@ -916,6 +917,9 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     setMessages(data ?? []);
   }
   useEffect(() => { loadMessages(); }, [group]);
+  useEffect(() => {
+    if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+  }, [messages]);
   useEffect(() => {
     if (!group) return;
     const interval = setInterval(loadMessages, 8000);
@@ -1159,7 +1163,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       </div>
       <div className="chat-section">
         <div className="section-head"><span className="section-label">{T.group.chat}</span></div>
-        <div className="chat-messages">
+        <div className="chat-messages" ref={chatScrollRef}>
           {!messages.length ? <p className="hint">{T.group.noMessages}</p> : messages.map((m) => (
             <div key={m.id} className={m.user_id === user.id ? "chat-message mine" : "chat-message"}>
               <span className="chat-message-name">{nameFor(m.user_id)}</span>
