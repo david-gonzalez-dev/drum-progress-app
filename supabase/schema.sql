@@ -606,3 +606,38 @@ drop trigger if exists challenges_rate_limit on public.challenges;
 create trigger challenges_rate_limit
 before insert on public.challenges
 for each row execute function public.enforce_challenge_creation_rate_limit();
+
+-- HARDENING FIX (audit findings #5 and #6, both LOW severity / defense-in-depth):
+--
+-- 5) group_members.role was writable by the client on insert with no
+--    constraint tying it to reality. Verified via a full-file grep that
+--    nothing in the app actually reads .role for any permission decision
+--    today (all real creator-only checks use groups.created_by = auth.uid()
+--    instead), so this had zero live impact -- but leaving it spoofable is a
+--    hazard for whatever future feature eventually trusts this column.
+--    join_group_by_code already never sets role (so joiners always get the
+--    column default, 'member'); this closes the one remaining path, adding a
+--    check that the only way to insert role = 'owner' is the actual creator
+--    adding themself.
+--
+-- 6) profiles was readable by every signed-in user, not just people who
+--    share a group with you -- broader than the leaderboard/group-member-name
+--    feature (the only real reader of other users' profiles, confirmed via
+--    grep) actually needs. Narrowed to your own row plus profiles of users
+--    who share a group with you, same self-join pattern already used by the
+--    "group members can view each other's practice logs" policy above.
+
+drop policy if exists "creator can add themself when creating a group" on public.group_members;
+create policy "creator can add themself when creating a group" on public.group_members for insert to authenticated with check (
+  auth.uid() = user_id and role = 'owner' and exists (select 1 from public.groups g where g.id = group_members.group_id and g.created_by = auth.uid())
+);
+
+drop policy if exists "profiles are visible to signed-in users" on public.profiles;
+create policy "own profile or shared-group members' profiles are visible" on public.profiles for select to authenticated using (
+  auth.uid() = id
+  or exists (
+    select 1 from public.group_members gm1
+    join public.group_members gm2 on gm1.group_id = gm2.group_id
+    where gm1.user_id = profiles.id and gm2.user_id = auth.uid()
+  )
+);
