@@ -81,10 +81,9 @@
 
 .tier-strip{display:flex;gap:6px;margin-bottom:20px}
 .tier-seg{flex:1;text-align:center}
-.tier-seg .seg-bar{height:6px;border-radius:99px;background:#1c211f;overflow:hidden;margin-bottom:6px}
-.tier-seg .seg-bar i{display:block;height:100%;background:#ff6b1a;border-radius:99px}
-.tier-seg .seg-bar.skipped{background:transparent;border:1.5px dashed #ff6b1a}
-.tier-seg .seg-bar.skipped i{display:none}
+.tier-seg .seg-bar{height:6px;border-radius:99px;background:#1c211f;overflow:hidden;margin-bottom:6px;display:flex}
+.tier-seg .seg-bar-fill{display:block;height:100%;background:#ff6b1a;border-radius:99px;flex-shrink:0}
+.tier-seg .seg-bar-remainder{display:block;height:100%;border:1.5px dashed #ff6b1a;border-radius:99px;box-sizing:border-box;flex-shrink:0}
 .tier-seg .seg-label{font-size:9px;letter-spacing:.4px;color:#8d9690;font-weight:700}
 
 .ladder-label{font-size:11px;letter-spacing:1px;color:#8d9690;display:block;margin-bottom:10px}
@@ -97,8 +96,10 @@
 .rung-tap{flex:1;min-width:0;text-align:left;display:flex;align-items:center;gap:12px;background:transparent;border:0;color:inherit;font-family:inherit;padding:0}
 .rung .bpm{font:800 20px 'Barlow Condensed';width:34px;flex-shrink:0}
 .rung.not-started .bpm{color:#565c58}
+.rung.skipped .bpm{color:#565c58}
 .rung-progress{flex:1;min-width:0}
 .rung-progress-track{height:6px;background:#1c211f;border-radius:99px;overflow:hidden;margin-bottom:5px}
+.rung.skipped .rung-progress-track{background:transparent;border:1.5px dashed #3a413c}
 .rung-progress-bar{height:100%;border-radius:99px;transition:width .3s ease}
 .rung-progress-label{font-size:11px;color:#9aa19d}
 .rung.unlocked .rung-progress-label{color:#e7e9e6;font-weight:700}
@@ -108,6 +109,7 @@
 
 .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:2px}
 .legend span{display:flex;align-items:center;gap:5px;font-size:10px;color:#9aa19d}
+.legend i.legend-dash{background:transparent;border:1.5px dashed #6b7268}
 .category-list-intro{font-size:12px;color:#8d9690;line-height:1.5;margin:-10px 0 18px}
 .legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
 

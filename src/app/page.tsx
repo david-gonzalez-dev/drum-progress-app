@@ -229,11 +229,20 @@ function tierProgressFor(sessions: { item_en: string; bpm: number; rating: strin
   const done = levels.filter((l) => qualifyingMinutesFor(sessions, itemEn, l) >= UNLOCK_MINUTES);
   return levels.length ? (done.length / levels.length) * 100 : 0;
 }
-// A tier reads as "skipped" (dotted, not solid) when the user hasn't touched it at all but has
-// already unlocked something in a higher tier — i.e. they jumped ahead instead of working up.
+// A tier's unfinished remainder reads as "skipped" (dotted, not empty) when a later tier already
+// has some progress — i.e. the user jumped ahead instead of working through what's left here. This
+// applies even when the tier itself is partially done (not just fully untouched), so e.g. practicing
+// 50 and 100 but not 60-90 dots out the Beginner tier's remaining, unpracticed levels.
 function tierIsSkipped(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[], itemEn: string, tier: { min: number; max: number }) {
-  if (tierProgressFor(sessions, itemEn, tier) > 0) return false;
   return PRACTICE_TIERS.some((t) => t.min > tier.max && tierProgressFor(sessions, itemEn, t) > 0);
+}
+// Solid fill for what's actually done, plus a dashed remainder for what's left when tierIsSkipped
+// flags this tier as jumped-ahead-past, so the gap reads as "skipped" rather than "not reached yet".
+function renderTierSegBar(pct: number, skipped: boolean) {
+  return <div className="seg-bar">
+    {pct > 0 && <i className="seg-bar-fill" style={{ width: `${pct}%` }} />}
+    {skipped && pct < 100 && <i className="seg-bar-remainder" style={{ width: `${100 - pct}%` }} />}
+  </div>;
 }
 
 const translations = {
@@ -306,7 +315,7 @@ const translations = {
       currentLevel: "CURRENT LEVEL", levelsUnlocked: (n: number, total: number) => `${n} of ${total} levels unlocked`,
       notStarted: "Not started", bpmLevels: "BPM LEVELS · TAP TO PRACTISE",
       inProgress: "In progress", unlockedLabel: "Unlocked", confirmResetLevel: (bpm: number) => `Reset your progress at ${bpm} BPM? This can't be undone.`,
-      editRatingTitle: "Change rating",
+      editRatingTitle: "Change rating", skippedLabel: "Skipped",
       tierBeginner: "BEGINNER", tierIntermediate: "INTERMEDIATE", tierAdvanced: "ADVANCED", tierLegend: "LEGEND",
       ratingNotReady: "Not ready", ratingTense: "Tense", ratingAlmost: "Almost there", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
       rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Rate your session at ${bpm} BPM to save it.`, skipRating: "Skip, don't log this",
@@ -410,7 +419,7 @@ const translations = {
       currentLevel: "NIVEL ACTUAL", levelsUnlocked: (n: number, total: number) => `${n} de ${total} niveles desbloqueados`,
       notStarted: "Sin empezar", bpmLevels: "NIVELES DE BPM · TOCA PARA PRACTICAR",
       inProgress: "En progreso", unlockedLabel: "Desbloqueado", confirmResetLevel: (bpm: number) => `¿Reiniciar tu progreso a ${bpm} BPM? Esta acción no se puede deshacer.`,
-      editRatingTitle: "Cambiar calificación",
+      editRatingTitle: "Cambiar calificación", skippedLabel: "Omitido",
       tierBeginner: "PRINCIPIANTE", tierIntermediate: "INTERMEDIO", tierAdvanced: "AVANZADO", tierLegend: "LEYENDA",
       ratingNotReady: "No listo", ratingTense: "Con tensión", ratingAlmost: "Casi listo", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
       rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Califica tu sesión a ${bpm} BPM para guardarla.`, skipRating: "Omitir, no guardar esto",
@@ -896,7 +905,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
             <span className="home-pinned-bpm">{bestBpm} BPM</span>
             <div className="tier-strip home-pinned-tier-strip">
               {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg">
-                <div className={tierIsSkipped(practiceSessions, en, tier) ? "seg-bar skipped" : "seg-bar"}><i style={{ width: `${tierIsSkipped(practiceSessions, en, tier) ? 100 : tierProgressFor(practiceSessions, en, tier)}%` }} /></div>
+                {renderTierSegBar(tierProgressFor(practiceSessions, en, tier), tierIsSkipped(practiceSessions, en, tier))}
               </div>)}
             </div>
           </> : <span className="home-pinned-bpm">{T.practiceMode.notStarted}</span>}
@@ -1485,7 +1494,7 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
         {skillExercises.map((ex) => <div key={ex.en} className="pinned-card">
           <div className="pinned-head"><span className="pinned-name">{ex.label}</span></div>
           <div className="tier-strip">
-            {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className={tierIsSkipped(practiceSessions, ex.en, tier) ? "seg-bar skipped" : "seg-bar"}><i style={{ width: `${tierIsSkipped(practiceSessions, ex.en, tier) ? 100 : tierProgressFor(practiceSessions, ex.en, tier)}%` }} /></div></div>)}
+            {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg">{renderTierSegBar(tierProgressFor(practiceSessions, ex.en, tier), tierIsSkipped(practiceSessions, ex.en, tier))}</div>)}
           </div>
         </div>)}
       </div></>}
@@ -1852,7 +1861,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         </div>
       </div>
       <div className="tier-strip">
-        {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className={tierIsSkipped(sessions, exercise, tier) ? "seg-bar skipped" : "seg-bar"}><i style={{ width: `${tierIsSkipped(sessions, exercise, tier) ? 100 : tierProgress(exercise, tier)}%` }} /></div><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
+        {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg">{renderTierSegBar(tierProgress(exercise, tier), tierIsSkipped(sessions, exercise, tier))}<span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
       </div>
       <span className="ladder-label">{T.practiceMode.bpmLevels}</span>
       {PRACTICE_TIERS.map((tier) => {
@@ -1870,7 +1879,8 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
               const totalMinutes = totalMinutesAny(exercise, level);
               const pct = unlocked ? 100 : Math.min(100, (totalMinutes / UNLOCK_MINUTES) * 100);
               const barColor = unlocked ? RATING_COLOR[rating ?? "comfortable"] : anyRating ? RATING_COLOR[anyRating] : "#ff6b1a";
-              const stateClass = unlocked ? "unlocked" : totalMinutes > 0 ? "in-progress" : "not-started";
+              const skipped = !unlocked && totalMinutes === 0 && BPM_LEVELS.some((l) => l > level && isUnlocked(exercise, l));
+              const stateClass = unlocked ? "unlocked" : totalMinutes > 0 ? "in-progress" : skipped ? "skipped" : "not-started";
               return <div key={level} className={`rung ${stateClass}`}>
                 <button className="rung-tap" onClick={() => startSession(level)}>
                   <span className="bpm">{level}</span>
@@ -1901,6 +1911,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
       </div></div>}
       <div className="legend">
         <span><i style={{ background: "#303531" }} />{T.practiceMode.notStarted}</span>
+        <span><i className="legend-dash" />{T.practiceMode.skippedLabel}</span>
         <span><i style={{ background: "#ff6b1a" }} />{T.practiceMode.inProgress}</span>
         <span><i style={{ background: RATING_COLOR.comfortable }} />{T.practiceMode.unlockedLabel}</span>
         <span><i style={{ background: RATING_COLOR.mastered }} />⭐ {T.practiceMode.ratingMastered}</span>
