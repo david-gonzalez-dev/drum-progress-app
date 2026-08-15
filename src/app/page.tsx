@@ -500,33 +500,51 @@ export default function Home() {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
-  useEffect(() => {
-    if (!user) return;
-    const fallbackName = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Drummer";
-    supabase.from("profiles").select("name").eq("id", user.id).maybeSingle().then(({ data }) => {
+  function loadUserData(currentUser: any, hydrateToday = true) {
+    const fallbackName = currentUser.user_metadata?.full_name ?? currentUser.email?.split("@")[0] ?? "Drummer";
+    supabase.from("profiles").select("name").eq("id", currentUser.id).maybeSingle().then(({ data }) => {
       if (data?.name) { setProfileName(data.name); return; }
       setProfileName(fallbackName);
-      supabase.from("profiles").upsert({ id: user.id, name: fallbackName }, { onConflict: "id" }).then();
+      supabase.from("profiles").upsert({ id: currentUser.id, name: fallbackName }, { onConflict: "id" }).then();
     });
-    supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+    supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year").eq("user_id", currentUser.id).maybeSingle().then(({ data }) => {
       if (data?.language === "es" || data?.language === "en") setLanguage(data.language);
       if (data?.daily_goal_minutes) setDailyGoal(data.daily_goal_minutes);
       if (data?.metronome_tone) setMetronomeTone(data.metronome_tone);
       if (data?.show_days_this_year != null) setShowDaysThisYear(data.show_days_this_year);
     });
-    supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("user_id", user.id).then(({ data }) => {
+    supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("user_id", currentUser.id).then(({ data }) => {
       const nextLogs: Record<string, Log> = {};
       (data ?? []).forEach((row: any) => { nextLogs[row.practiced_on] = { minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes ?? "", equipment: row.equipment ?? null, drumsetMinutes: row.drumset_minutes ?? null, padMinutes: row.pad_minutes ?? null, customItems: row.custom_items ?? [], items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) }; });
       setLogs(nextLogs);
+      // Only hydrate the in-progress Quick Practice form from today's saved log on first load —
+      // a background refetch (e.g. after the tab regains focus) shouldn't clobber unsaved edits.
       const todayLog = nextLogs[dateKey];
-      if (todayLog) { setMinutes(String(todayLog.minutes)); setSeconds(String(todayLog.seconds)); setNotes(todayLog.notes); setEquipment(todayLog.equipment); setDrumsetMinutes(todayLog.drumsetMinutes != null ? String(todayLog.drumsetMinutes) : ""); setPadMinutes(todayLog.padMinutes != null ? String(todayLog.padMinutes) : ""); setCustomItems(todayLog.customItems); if (todayLog.items.length) setSelected(todayLog.items); }
+      if (hydrateToday && todayLog) { setMinutes(String(todayLog.minutes)); setSeconds(String(todayLog.seconds)); setNotes(todayLog.notes); setEquipment(todayLog.equipment); setDrumsetMinutes(todayLog.drumsetMinutes != null ? String(todayLog.drumsetMinutes) : ""); setPadMinutes(todayLog.padMinutes != null ? String(todayLog.padMinutes) : ""); setCustomItems(todayLog.customItems); if (todayLog.items.length) setSelected(todayLog.items); }
     });
-    supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,practice_exercises(name_en)").eq("user_id", user.id).then(({ data }) => {
+    supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,practice_exercises(name_en)").eq("user_id", currentUser.id).then(({ data }) => {
       setPracticeSessions((data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en, bpm: row.bpm, rating: row.rating, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on })).filter((s: any) => s.item_en));
     });
-    supabase.from("pinned_exercises").select("exercise_en").eq("user_id", user.id).then(({ data }) => {
+    supabase.from("pinned_exercises").select("exercise_en").eq("user_id", currentUser.id).then(({ data }) => {
       setPinnedExercises((data ?? []).map((row: any) => row.exercise_en));
     });
+  }
+  useEffect(() => {
+    if (!user) return;
+    loadUserData(user, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+  useEffect(() => {
+    // Supabase re-emits the user object (a new reference, same account) on every token refresh,
+    // which happens whenever the phone/tab wakes up from being backgrounded — that alone shouldn't
+    // force a refetch above (keyed on user?.id instead). But a refetch initiated while the device is
+    // still reconnecting can silently fail with no retry, leaving stats looking empty until the user
+    // manually refreshes. Refetching whenever the tab becomes visible again closes that gap.
+    function handleVisibility() {
+      if (document.visibilityState === "visible" && user) loadUserData(user, false);
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [user]);
   async function togglePin(itemEn: string) {
     if (!user) return;
@@ -1792,6 +1810,27 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   const beatTimeoutsRef = useRef<number[]>([]);
   const tapTimesRef = useRef<number[]>([]);
   const lastTapRef = useRef<number | null>(null);
+  const wakeLockRef = useRef<any>(null);
+
+  // Keeps the screen from turning off while the metronome is running — without it, mobile browsers
+  // suspend the audio scheduler as soon as the display sleeps, silently stopping playback mid-session.
+  async function acquireWakeLock() {
+    if (!("wakeLock" in navigator)) return;
+    try { wakeLockRef.current = await (navigator as any).wakeLock.request("screen"); } catch { /* not available in this context, e.g. low battery mode */ }
+  }
+  useEffect(() => {
+    if (playing) acquireWakeLock();
+    else { wakeLockRef.current?.release(); wakeLockRef.current = null; }
+  }, [playing]);
+  useEffect(() => {
+    function handleVisibility() {
+      // The wake lock is auto-released whenever the tab is hidden; if playback is still going once
+      // the tab is visible again, re-acquire it so the screen stays awake for the rest of the session.
+      if (document.visibilityState === "visible" && playing && !wakeLockRef.current) acquireWakeLock();
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [playing]);
 
   useEffect(() => { bpmRef.current = bpm; }, [bpm]);
   useEffect(() => { beatsPerMeasureRef.current = beatsPerBar; }, [beatsPerBar]);
@@ -1814,6 +1853,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       if (schedulerRef.current !== null) window.clearInterval(schedulerRef.current);
       clearBeatTimeouts();
       audioCtxRef.current?.close();
+      wakeLockRef.current?.release();
     };
   }, []);
 
