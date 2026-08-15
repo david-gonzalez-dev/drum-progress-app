@@ -416,3 +416,9 @@ drop trigger if exists group_messages_cap on public.group_messages;
 create trigger group_messages_cap
 after insert on public.group_messages
 for each row execute function public.cap_group_messages();
+
+-- Optional context captured on the post-session rating prompt: a free-text note and/or tags for
+-- common technique issues (wrist tension, lost stick control, etc.), so a session can record more
+-- than just its BPM/rating.
+alter table public.practice_sessions add column if not exists notes text;
+alter table public.practice_sessions add column if not exists issues text[] not null default '{}';

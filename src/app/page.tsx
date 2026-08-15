@@ -7,6 +7,14 @@ type Tab = "today" | "practice" | "group" | "progress" | "settings";
 type Log = { minutes: number; seconds: number; items: string[]; customItems: string[]; notes: string; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null };
 type Lang = "en" | "es";
 
+const SESSION_ISSUE_TAGS: { en: string; es: string }[] = [
+  { en: "Wrist tension", es: "Tensión en la muñeca" },
+  { en: "Thumb tension", es: "Tensión en el pulgar" },
+  { en: "Lost control of the stick", es: "Perdí el control de la baqueta" },
+  { en: "Messy dynamics", es: "Dinámica desordenada" },
+  { en: "Stick slides", es: "La baqueta se resbala" },
+  { en: "Index finger issue", es: "Problema con el dedo índice" },
+];
 const PRACTICE_ITEMS = [
   { en: "Rudiments", es: "Rudimentos" },
   { en: "Single Strokes", es: "Golpes simples" },
@@ -129,19 +137,19 @@ const CHALLENGE_EXERCISE_OPTIONS: { en: string; es: string }[] = (() => {
   });
   return combined;
 })();
-const BPM_LEVELS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
+const BPM_LEVELS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 165, 170, 175, 180, 185, 190, 195, 200, 205, 210, 215, 220];
 const PRACTICE_TIERS = [
   { key: "beginner", min: 50, max: 90 },
-  { key: "intermediate", min: 100, max: 130 },
-  { key: "advanced", min: 140, max: 170 },
-  { key: "legend", min: 180, max: 200 },
+  { key: "intermediate", min: 100, max: 150 },
+  { key: "advanced", min: 160, max: 190 },
+  { key: "legend", min: 195, max: 220 },
 ];
-const RATING_RANK: Record<string, number> = { not_ready: 1, tense: 2, comfortable: 3, mastered: 4 };
-const RATING_ORDER = ["not_ready", "tense", "comfortable", "mastered"];
-const RATING_COLOR: Record<string, string> = { not_ready: "#e2877d", tense: "#f6ad55", comfortable: "#68d391", mastered: "#68d391" };
+const RATING_RANK: Record<string, number> = { not_ready: 1, tense: 2, almost: 3, comfortable: 4, mastered: 5 };
+const RATING_ORDER = ["not_ready", "tense", "almost", "comfortable", "mastered"];
+const RATING_COLOR: Record<string, string> = { not_ready: "#e2877d", tense: "#f6ad55", almost: "#f2c94c", comfortable: "#68d391", mastered: "#68d391" };
 const UNLOCK_MINUTES = 2;
 const MAX_PINNED_EXERCISES = 3;
-const RATING_ICON: Record<string, string> = { not_ready: "🔴", tense: "🟠", comfortable: "🟢", mastered: "⭐" };
+const RATING_ICON: Record<string, string> = { not_ready: "🔴", tense: "🟠", almost: "🟡", comfortable: "🟢", mastered: "⭐" };
 function qualifyingMinutesFor(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[], itemEn: string, targetBpm: number) {
   return sessions.filter((s) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum, s) => sum + s.duration_minutes, 0);
 }
@@ -228,8 +236,9 @@ const translations = {
       notStarted: "Not started", bpmLevels: "BPM LEVELS · TAP TO PRACTISE",
       inProgress: "In progress", unlockedLabel: "Unlocked", confirmResetLevel: (bpm: number) => `Reset your progress at ${bpm} BPM? This can't be undone.`,
       tierBeginner: "BEGINNER", tierIntermediate: "INTERMEDIATE", tierAdvanced: "ADVANCED", tierLegend: "LEGEND",
-      ratingNotReady: "Not ready", ratingTense: "Tense", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
-      rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Your session at ${bpm} BPM is saved.`,
+      ratingNotReady: "Not ready", ratingTense: "Tense", ratingAlmost: "Almost there", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
+      rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Rate your session at ${bpm} BPM to save it.`, skipRating: "Skip, don't log this",
+      issueLabel: "WHAT HAPPENED? (OPTIONAL)", sessionNotePlaceholder: "Add a note (optional)", saveRating: "Save",
       backToBook: "Back to Practice Mode", couldNotSaveSession: "Could not save this session.",
       categoryRudiments: "Rudiments", categoryExercises: "Exercises", categoryRhythms: "Rhythms",
       pin: "Pin", pinned: "Pinned",
@@ -251,6 +260,7 @@ const translations = {
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
+      tempoLocked: "Tempo locked to this level",
       start: "▶ Start", stop: "■ Stop", sessionComplete: "SESSION COMPLETE",
       addTimeQuestion: (label: string) => `Add ${label} to today's practice?`, addTimeTooShort: "Too short to log — adjust the timer above", sessionLasted: (time: string) => `Your metronome session lasted ${time}.`, minAbbr: "min", secAbbr: "sec",
       notNow: "Not now", addTime: "Add time",
@@ -327,8 +337,9 @@ const translations = {
       notStarted: "Sin empezar", bpmLevels: "NIVELES DE BPM · TOCA PARA PRACTICAR",
       inProgress: "En progreso", unlockedLabel: "Desbloqueado", confirmResetLevel: (bpm: number) => `¿Reiniciar tu progreso a ${bpm} BPM? Esta acción no se puede deshacer.`,
       tierBeginner: "PRINCIPIANTE", tierIntermediate: "INTERMEDIO", tierAdvanced: "AVANZADO", tierLegend: "LEYENDA",
-      ratingNotReady: "No listo", ratingTense: "Con tensión", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
-      rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Tu sesión a ${bpm} BPM se guardó.`,
+      ratingNotReady: "No listo", ratingTense: "Con tensión", ratingAlmost: "Casi listo", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
+      rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Califica tu sesión a ${bpm} BPM para guardarla.`, skipRating: "Omitir, no guardar esto",
+      issueLabel: "¿QUÉ PASÓ? (OPCIONAL)", sessionNotePlaceholder: "Añade una nota (opcional)", saveRating: "Guardar",
       backToBook: "Volver a Modo práctica", couldNotSaveSession: "No se pudo guardar esta sesión.",
       categoryRudiments: "Rudimentos", categoryExercises: "Ejercicios", categoryRhythms: "Ritmos",
       pin: "Fijar", pinned: "Fijado",
@@ -350,6 +361,7 @@ const translations = {
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
+      tempoLocked: "Tempo bloqueado para este nivel",
       start: "▶ Iniciar", stop: "■ Detener", sessionComplete: "SESIÓN COMPLETA",
       addTimeQuestion: (label: string) => `¿Añadir ${label} a la práctica de hoy?`, addTimeTooShort: "Muy corto para registrar — ajusta el tiempo arriba", sessionLasted: (time: string) => `Tu sesión de metrónomo duró ${time}.`, minAbbr: "min", secAbbr: "seg",
       notNow: "Ahora no", addTime: "Añadir tiempo",
@@ -573,10 +585,10 @@ export default function Home() {
     setLogs((current) => { const next = { ...current }; delete next[targetDate]; return next; });
     return true;
   }
-  async function logPracticeSession(itemEn: string, bpm: number, rating: string, durationMinutes: number) {
+  async function logPracticeSession(itemEn: string, bpm: number, rating: string, durationMinutes: number, issues: string[] = [], note = "") {
     if (!user) return false;
     const { data: exerciseRow } = await supabase.from("practice_exercises").select("id").eq("name_en", itemEn).maybeSingle();
-    const { error } = await supabase.from("practice_sessions").insert({ user_id: user.id, practice_exercise_id: exerciseRow?.id ?? null, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey });
+    const { error } = await supabase.from("practice_sessions").insert({ user_id: user.id, practice_exercise_id: exerciseRow?.id ?? null, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey, issues, notes: note || null });
     if (error) { setAuthError(error.message); return false; }
     const newMinutes = (Number(minutes) || 0) + durationMinutes;
     // practice_log_items only links against the flat quick-log catalog (practice_items), which BPM-ladder
@@ -1451,6 +1463,12 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   const [notesOpen, setNotesOpen] = useState(false);
   const showNotes = notesOpen || !!notes;
   const [whatOpen, setWhatOpen] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<string | null>(null);
+  const [sessionIssues, setSessionIssues] = useState<string[]>([]);
+  const [sessionNote, setSessionNote] = useState("");
+  function toggleSessionIssue(tagEn: string) {
+    setSessionIssues((current) => current.includes(tagEn) ? current.filter((t) => t !== tagEn) : [...current, tagEn]);
+  }
   const sortedItems = useMemo(() => {
     const freq: Record<string, number> = {};
     Object.values(logs as Record<string, Log>).forEach((log) => { log.items.forEach((item) => { freq[item] = (freq[item] ?? 0) + 1; }); });
@@ -1497,7 +1515,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     if (!(await confirm(T.today.confirmResetPractice))) return;
     await onReset();
   }
-  const RATING_LABEL: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
+  const RATING_LABEL: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const CATEGORY_LABEL: Record<string, string> = { rudiments: T.practiceMode.categoryRudiments, exercises: T.practiceMode.categoryExercises, rhythms: T.practiceMode.categoryRhythms };
   const CATEGORY_DESC: Record<string, string> = { rudiments: T.practiceMode.categoryDescRudiments, exercises: T.practiceMode.categoryDescExercises, rhythms: T.practiceMode.categoryDescRhythms };
@@ -1511,11 +1529,17 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
       return;
     }
     setPendingMinutes(sessionMinutes);
+    setSelectedRating(null);
+    setSessionIssues([]);
+    setSessionNote("");
     setStep("rate");
   }
-  async function rate(rating: string) {
-    if (!exercise) return;
-    await onLogSession(exercise, bpm, rating, pendingMinutes);
+  async function submitRating() {
+    if (!exercise || !selectedRating) return;
+    await onLogSession(exercise, bpm, selectedRating, pendingMinutes, sessionIssues, sessionNote.trim());
+    setStep("detail");
+  }
+  function skipRating() {
     setStep("detail");
   }
   function ExerciseRow({ item }: { item: { en: string; es: string } }) {
@@ -1661,29 +1685,36 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><div className={tierIsSkipped(sessions, exercise, tier) ? "seg-bar skipped" : "seg-bar"}><i style={{ width: `${tierIsSkipped(sessions, exercise, tier) ? 100 : tierProgress(exercise, tier)}%` }} /></div><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
       </div>
       <span className="ladder-label">{T.practiceMode.bpmLevels}</span>
-      <div className="ladder">
-        {BPM_LEVELS.map((level) => {
-          const qualifying = qualifyingMinutesAt(exercise, level);
-          const unlocked = qualifying >= UNLOCK_MINUTES;
-          const rating = bestQualifyingRating(exercise, level);
-          const anyRating = bestRatingAny(exercise, level);
-          const hasHistory = hasHistoryAt(exercise, level);
-          const totalMinutes = totalMinutesAny(exercise, level);
-          const pct = unlocked ? 100 : Math.min(100, (totalMinutes / UNLOCK_MINUTES) * 100);
-          const barColor = unlocked ? RATING_COLOR[rating ?? "comfortable"] : anyRating ? RATING_COLOR[anyRating] : "#ff6b1a";
-          const stateClass = unlocked ? "unlocked" : totalMinutes > 0 ? "in-progress" : "not-started";
-          return <div key={level} className={`rung ${stateClass}`}>
-            <button className="rung-tap" onClick={() => startSession(level)}>
-              <span className="bpm">{level}</span>
-              <div className="rung-progress">
-                <div className="rung-progress-track"><div className="rung-progress-bar" style={{ width: `${pct}%`, background: barColor }} /></div>
-                <span className="rung-progress-label">{unlocked ? (rating === "mastered" ? "⭐" : "✓") : `${Math.min(totalMinutes, UNLOCK_MINUTES)}/${UNLOCK_MINUTES} min`}</span>
-              </div>
-            </button>
-            {hasHistory && <button className="rung-reset" onClick={() => handleReset(level)}>↺</button>}
-          </div>;
-        })}
-      </div>
+      {PRACTICE_TIERS.map((tier) => {
+        const levels = BPM_LEVELS.filter((l) => l >= tier.min && l <= tier.max);
+        if (!levels.length) return null;
+        return <div key={tier.key} className="ladder-tier-group">
+          <div className="ladder-tier-divider"><span>{TIER_LABEL[tier.key]}</span></div>
+          <div className="ladder">
+            {levels.map((level) => {
+              const qualifying = qualifyingMinutesAt(exercise, level);
+              const unlocked = qualifying >= UNLOCK_MINUTES;
+              const rating = bestQualifyingRating(exercise, level);
+              const anyRating = bestRatingAny(exercise, level);
+              const hasHistory = hasHistoryAt(exercise, level);
+              const totalMinutes = totalMinutesAny(exercise, level);
+              const pct = unlocked ? 100 : Math.min(100, (totalMinutes / UNLOCK_MINUTES) * 100);
+              const barColor = unlocked ? RATING_COLOR[rating ?? "comfortable"] : anyRating ? RATING_COLOR[anyRating] : "#ff6b1a";
+              const stateClass = unlocked ? "unlocked" : totalMinutes > 0 ? "in-progress" : "not-started";
+              return <div key={level} className={`rung ${stateClass}`}>
+                <button className="rung-tap" onClick={() => startSession(level)}>
+                  <span className="bpm">{level}</span>
+                  <div className="rung-progress">
+                    <div className="rung-progress-track"><div className="rung-progress-bar" style={{ width: `${pct}%`, background: barColor }} /></div>
+                    <span className="rung-progress-label">{unlocked ? (rating === "mastered" ? "⭐" : "✓") : `${Math.min(totalMinutes, UNLOCK_MINUTES)}/${UNLOCK_MINUTES} min`}</span>
+                  </div>
+                </button>
+                {hasHistory && <button className="rung-reset" onClick={() => handleReset(level)}>↺</button>}
+              </div>;
+            })}
+          </div>
+        </div>;
+      })}
       <div className="legend">
         <span><i style={{ background: "#303531" }} />{T.practiceMode.notStarted}</span>
         <span><i style={{ background: "#ff6b1a" }} />{T.practiceMode.inProgress}</span>
@@ -1697,7 +1728,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     return <section className="page">
       <div className="back-row"><button onClick={() => setStep("detail")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
-      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} T={T} />
+      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} lockTempo T={T} />
     </section>;
   }
 
@@ -1706,8 +1737,15 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     return <section className="page">
       <header className="simple-head"><p className="eyebrow">{label} · {bpm} BPM</p><h1>{T.practiceMode.rateTitle}</h1><p className="rate-sub">{T.practiceMode.rateSubtitle(bpm)}</p></header>
       <div className="rating-grid">
-        {RATING_ORDER.map((r) => <button key={r} className={`rating-btn ${r}`} onClick={() => rate(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
+        {RATING_ORDER.map((r) => <button key={r} className={selectedRating === r ? `rating-btn ${r} selected` : `rating-btn ${r}`} onClick={() => setSelectedRating(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
       </div>
+      {selectedRating && <div className="form-card">
+        <label className="input-label">{T.practiceMode.issueLabel}</label>
+        <div className="chips">{SESSION_ISSUE_TAGS.map((tag) => <button key={tag.en} onClick={() => toggleSessionIssue(tag.en)} className={sessionIssues.includes(tag.en) ? "chip selected" : "chip"}>{sessionIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div>
+        <textarea value={sessionNote} onChange={(e: any) => setSessionNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
+        <button className="save" onClick={submitRating}>{T.practiceMode.saveRating}<span>→</span></button>
+      </div>}
+      <button className="reset-practice" onClick={skipRating}>{T.practiceMode.skipRating}</button>
     </section>;
   }
   return null;
@@ -1787,7 +1825,7 @@ const TONE_PRESETS: Record<string, ToneDef> = {
 const TONE_KEYS = ["click", "beep", "wood", "clave"];
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], otherNote: string) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; language?: Lang; T: any }) {
+function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, lockTempo, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], otherNote: string) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; lockTempo?: boolean; language?: Lang; T: any }) {
   const [bpm, setBpm] = useState(initialBpm ?? 100);
   const [playing, setPlaying] = useState(false);
   const [beatsPerBar, setBeatsPerBar] = useState(4);
@@ -1968,8 +2006,10 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <div className={playing ? "pulse playing" : "pulse"} style={{ animationDuration: `${60 / bpm}s` }}><span>{bpm}</span><small>BPM</small></div>
       <div className="beat-dots">{Array.from({ length: beatsPerMeasure }).map((_, i) => <i key={i} className={playing && activeBeat === i ? "beat-dot active" : "beat-dot"} />)}</div>
       <div className="metronome-timer">{playing ? T.metronome.practiceTimer : T.metronome.sessionTime}<strong>{elapsedLabel}</strong></div>
-      <input className="range" type="range" min="40" max="240" value={bpm} onChange={e => setBpm(+e.target.value)}/>
-      <div className="tempo-actions"><button onClick={() => setBpm(Math.max(40, bpm - 1))}>−</button><button className="tap" onClick={tapTempo}>{T.metronome.tapTempo}</button><button onClick={() => setBpm(Math.min(240, bpm + 1))}>+</button></div>
+      {lockTempo ? <p className="tempo-locked-note">🔒 {T.metronome.tempoLocked}</p> : <>
+        <input className="range" type="range" min="40" max="240" value={bpm} onChange={e => setBpm(+e.target.value)}/>
+        <div className="tempo-actions"><button onClick={() => setBpm(Math.max(40, bpm - 1))}>−</button><button className="tap" onClick={tapTempo}>{T.metronome.tapTempo}</button><button onClick={() => setBpm(Math.min(240, bpm + 1))}>+</button></div>
+      </>}
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
       <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : T.metronome.start}</button>
     </>}
