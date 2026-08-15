@@ -548,3 +548,61 @@ begin
     execute 'grant execute on function public.delete_group_as_creator(uuid) to authenticated';
   end if;
 end $$;
+
+-- SECURITY/INTEGRITY FIX (audit findings #3 and #4):
+--
+-- 3) practice_logs.minutes and practice_sessions.duration_minutes had no upper
+--    bound (only >= 0). Since group members can read each other's practice_logs
+--    (see the "group members can view each other's practice logs" policy
+--    above), a single absurd entry -- e.g. minutes: 999999 for one day --
+--    would permanently skew a shared group leaderboard for every real member
+--    of that group, not just the entering user's own stats. Capping both at
+--    1440 (minutes in a day), a ceiling no real practice session can reach.
+--
+-- 4) No application-level rate limiting existed on group or challenge
+--    creation. Login/signup/password reset already get Supabase Auth's own
+--    built-in rate limiting, but plain table inserts through PostgREST have
+--    nothing playing that role. Both are plain INSERT trigger checks (same
+--    style as the existing cap_group_messages trigger) capping how many rows
+--    a single user can create in a rolling window -- generous enough that no
+--    real usage pattern would ever hit them, but low enough to blunt a script.
+--    (Invite-code brute-forcing via join_group_by_code isn't rate-limited
+--    separately: codes are drawn from a 36^6 ≈ 2.18 billion space, which is
+--    already impractical to brute-force at any sustainable request rate.)
+
+alter table public.practice_logs drop constraint if exists practice_logs_minutes_check;
+alter table public.practice_logs add constraint practice_logs_minutes_check check (minutes >= 0 and minutes <= 1440);
+alter table public.practice_sessions drop constraint if exists practice_sessions_duration_minutes_check;
+alter table public.practice_sessions add constraint practice_sessions_duration_minutes_check check (duration_minutes >= 0 and duration_minutes <= 1440);
+
+create or replace function public.enforce_group_creation_rate_limit()
+returns trigger
+language plpgsql
+as $$
+begin
+  if (select count(*) from public.groups where created_by = new.created_by and created_at > now() - interval '1 hour') >= 5 then
+    raise exception 'Too many groups created recently. Please try again in a bit.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists groups_rate_limit on public.groups;
+create trigger groups_rate_limit
+before insert on public.groups
+for each row execute function public.enforce_group_creation_rate_limit();
+
+create or replace function public.enforce_challenge_creation_rate_limit()
+returns trigger
+language plpgsql
+as $$
+begin
+  if (select count(*) from public.challenges where created_by = new.created_by and created_at > now() - interval '1 hour') >= 10 then
+    raise exception 'Too many challenges created recently. Please try again in a bit.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists challenges_rate_limit on public.challenges;
+create trigger challenges_rate_limit
+before insert on public.challenges
+for each row execute function public.enforce_challenge_creation_rate_limit();
