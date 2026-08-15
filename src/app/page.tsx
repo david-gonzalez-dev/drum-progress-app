@@ -83,7 +83,6 @@ const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcat
   { category: "rudiments", subcategory: null, en: "Flam Accent", es: "Flam acentuado" },
   { category: "rudiments", subcategory: null, en: "Flam Tap", es: "Flam tap" },
   { category: "rudiments", subcategory: null, en: "Drag", es: "Drag" },
-  { category: "rudiments", subcategory: null, en: "Double Drag", es: "Drag doble" },
   { category: "rudiments", subcategory: null, en: "Ratamacue", es: "Ratamacue" },
   { category: "rudiments", subcategory: null, en: "Single Strokes Four", es: "Golpes Simples Cuatro" },
   { category: "rudiments", subcategory: null, en: "Single Strokes Seven", es: "Golpes Simples Siete" },
@@ -130,6 +129,74 @@ const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcat
   { category: "exercises", subcategory: null, en: "16th Note Single Strokes Around the Set", es: "Golpes simples en semicorcheas alrededor de la batería" },
   { category: "exercises", subcategory: null, en: "Hi-Hat Pedal 8th Notes", es: "Pedal de hi-hat en corcheas" },
 ];
+// Structured sticking data for the Practice Mode metronome's sticking panel. A token is one stroke:
+// hand ("R"/"L"), an optional grace flag (soft pre-stroke for flams/drags, rendered smaller/dimmer),
+// and an optional count (for repeated strokes shown as a superscript, e.g. R R -> R²). Authored below
+// as compact shorthand strings ("l l R L R L") and parsed once into tokens at module load, so the
+// value every component actually reads (EXERCISE_STICKING) is real structured data, not a string
+// re-parsed at render time. Shorthand: uppercase = normal stroke, lowercase = grace note, a trailing
+// digit = stroke count (R2 -> R with a superscript 2).
+type StickingToken = { hand: "R" | "L"; grace?: boolean; count?: number };
+// `secondTokens` is set for rudiments given as two sides (e.g. "starting on R" — "starting on L"),
+// shown split by a dash so a long pattern wraps to a new line as a whole side, not mid-letter.
+type StickingEntry = { tokens: StickingToken[]; secondTokens?: StickingToken[] };
+function parseSticking(shorthand: string): StickingToken[] {
+  return shorthand.trim().split(/\s+/).map((raw): StickingToken => {
+    const letter = raw[0];
+    const hand = letter.toUpperCase() as "R" | "L";
+    const grace = letter !== letter.toUpperCase();
+    const count = raw.length > 1 ? Number(raw.slice(1)) : undefined;
+    return grace ? { hand, grace: true, count } : { hand, count };
+  });
+}
+function parseStickingEntry(shorthand: string): StickingEntry {
+  const [first, second] = shorthand.split("—").map((side) => side.trim());
+  return second ? { tokens: parseSticking(first), secondTokens: parseSticking(second) } : { tokens: parseSticking(first) };
+}
+const EXERCISE_STICKING: Record<string, StickingEntry> = Object.fromEntries(
+  Object.entries({
+    "Single Strokes": "R L R L",
+    "Double Strokes": "R R L L",
+    "Single Paradiddle": "R L R R L R L L",
+    "Double Paradiddle": "R L R L R R L R L R L L",
+    "Triple Paradiddle": "R L R L R L R R L R L R L R L L",
+    "Paradiddle-Diddle": "R L R R L L",
+    "Flam": "l R",
+    "Flam Accent": "l R L R",
+    "Flam Tap": "l R R r L L",
+    "Drag": "l l R",
+    "Ratamacue": "l l R L R L",
+    "Single Strokes Four": "R L R L",
+    "Single Strokes Seven": "R L R L R L R",
+    "5 Stroke Roll": "R R L L R",
+    "6 Stroke Roll": "R L L R R L",
+    "7 Stroke Roll": "R R L L R R L",
+    "9 Stroke Roll": "R2 L2 R2 L",
+    "10 Stroke Roll": "R2 L2 R2 L2",
+    "11 Stroke Roll": "R2 L2 R2 L2 R",
+    "13 Stroke Roll": "R2 L2 R2 L2 R2 L",
+    "15 Stroke Roll": "R2 L2 R2 L2 R2 L2 R",
+    "17 Stroke Roll": "R2 L2 R2 L2 R2 L2 R2 L",
+    "Lesson 25": "l l R L R",
+    "Single Drag Tap": "l l R L",
+    "Single Dragadiddle": "r r R L R",
+    "Drag Paradiddle #1": "R l l R L R R",
+    "Drag Paradiddle #2": "R l l R l l R L R R",
+    "Flammed Mill": "l R R L R",
+    "Swiss Army Triplet": "l R R L",
+    "Flamacue": "l R L R L r L",
+    "Triple Stroke Roll": "R R R L L L",
+    "Flam Paradiddle": "l R L R R",
+    "Patafla-fla": "l R L R r L",
+    "Double Drag Tap": "l l R l l R L — r r L r r L R",
+    "Flam Paradiddle-diddle": "l R L R R L L",
+    "Single Ratamacue": "l l R L R L",
+    "Double Ratamacue": "l l R l l R L R L",
+    "Triple Ratamacue": "l l R l l R l l R L R L",
+    "Inverted Flam Tap": "l R L",
+    "Flam Drag": "l R l l R",
+  }).map(([key, shorthand]) => [key, parseStickingEntry(shorthand)])
+);
 const CHALLENGE_EXERCISE_OPTIONS: { en: string; es: string }[] = (() => {
   const seen = new Set<string>();
   const combined: { en: string; es: string }[] = [];
@@ -265,7 +332,7 @@ const translations = {
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
-      tempoLocked: "Tempo locked to this level",
+      startPractice: "Start Practice", stickingLabel: "STICKING",
       start: "▶ Start", stop: "■ Stop", sessionComplete: "SESSION COMPLETE",
       addTimeQuestion: (label: string) => `Add ${label} to today's practice?`, addTimeTooShort: "Too short to log — adjust the timer above", sessionLasted: (time: string) => `Your metronome session lasted ${time}.`, minAbbr: "min", secAbbr: "sec",
       notNow: "Not now", addTime: "Add time",
@@ -369,7 +436,7 @@ const translations = {
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
-      tempoLocked: "Tempo bloqueado para este nivel",
+      startPractice: "Empezar práctica", stickingLabel: "BAQUETEO",
       start: "▶ Iniciar", stop: "■ Detener", sessionComplete: "SESIÓN COMPLETA",
       addTimeQuestion: (label: string) => `¿Añadir ${label} a la práctica de hoy?`, addTimeTooShort: "Muy corto para registrar — ajusta el tiempo arriba", sessionLasted: (time: string) => `Tu sesión de metrónomo duró ${time}.`, minAbbr: "min", secAbbr: "seg",
       notNow: "Ahora no", addTime: "Añadir tiempo",
@@ -844,10 +911,10 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language
   const isFuture = selectedDate > dateKey;
   return <>
     <div className="calendar-card"><div className="cal-head"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=(logs[key]?.minutes ?? 0) > 0; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
-    <div className="day-detail"><span>{new Date(selectedDate + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
+    {selectedDate !== dateKey && <div className="day-detail"><span>{new Date(selectedDate + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
       {isFuture && <p>{T.calendar.futureDay}</p>}
       {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{selectedLog.minutes} {T.calendar.minPractised}{selectedLog.seconds > 0 ? ` +${selectedLog.seconds}s` : ""}</strong><div className="detail-chips">{selectedLog.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{selectedLog.customItems.map((item) => <em key={item}>{item}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
-    </div>
+    </div>}
     {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
       onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} />}
   </>;
@@ -1834,7 +1901,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     return <section className="page">
       <div className="back-row"><button onClick={() => setStep("detail")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
-      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} lockTempo T={T} />
+      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} exerciseEn={exercise} lockTempo T={T} />
     </section>;
   }
 
@@ -1931,7 +1998,7 @@ const TONE_PRESETS: Record<string, ToneDef> = {
 const TONE_KEYS = ["click", "beep", "wood", "clave"];
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, lockTempo, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], otherNote: string) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; lockTempo?: boolean; language?: Lang; T: any }) {
+function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], otherNote: string) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; language?: Lang; T: any }) {
   const [bpm, setBpm] = useState(initialBpm ?? 100);
   const [playing, setPlaying] = useState(false);
   const [beatsPerBar, setBeatsPerBar] = useState(4);
@@ -2098,6 +2165,38 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   if (!open) return null;
   const beatsPerMeasure = beatsPerBar;
   const lang = language ?? "en";
+
+  function renderStickingTokens(tokens: StickingToken[]) {
+    return tokens.map((token, i) => <span key={i} className={token.grace ? `sticking-letter ${token.hand.toLowerCase()} grace` : `sticking-letter ${token.hand.toLowerCase()}`}>{token.grace ? token.hand.toLowerCase() : token.hand}{token.count && token.count > 1 ? <sup>{token.count}</sup> : null}</span>);
+  }
+  if (lockTempo) {
+    const exerciseCategory = exerciseEn ? PRACTICE_EXERCISES.find((e) => e.en === exerciseEn)?.category : null;
+    const sticking = exerciseEn ? EXERCISE_STICKING[exerciseEn] : null;
+    return <div className="modal modal-center"><div className="metro metro-practice">
+      <button className="close" onClick={close}>×</button>
+      <p className="eyebrow">{T.practiceMode.title}</p>
+      <div className="metro-exercise-head">
+        {exerciseCategory && <img src={CATEGORY_ICON_SRC[exerciseCategory]} alt="" className="metro-exercise-icon" />}
+        <h2 className="metro-exercise-name">{exerciseLabel}</h2>
+      </div>
+      {sticking && <div className="sticking-panel">
+        <span className="sticking-label">{T.metronome.stickingLabel}</span>
+        <div className="sticking-pill">
+          <div className="sticking-side">
+            {renderStickingTokens(sticking.tokens)}
+            {sticking.secondTokens && <span className="sticking-sep">–</span>}
+          </div>
+          {sticking.secondTokens && <div className="sticking-side">{renderStickingTokens(sticking.secondTokens)}</div>}
+        </div>
+      </div>}
+      <div className="tempo-simple"><span className="tempo-bpm-num">{bpm}</span><span className="tempo-bpm-unit">BPM</span></div>
+      <div className="beat-dots">{Array.from({ length: beatsPerMeasure }).map((_, i) => <i key={i} className={playing && activeBeat === i ? "beat-dot active" : "beat-dot"} />)}</div>
+      <div className="metronome-timer">{playing ? T.metronome.practiceTimer : T.metronome.sessionTime}<strong>{elapsedLabel}</strong></div>
+      <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
+      <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : `▶ ${T.metronome.startPractice}`}</button>
+    </div></div>;
+  }
+
   return <div className="modal modal-center"><div className="metro"><button className="close" onClick={close}>×</button><p className="eyebrow">{exerciseLabel ?? T.metronome.practiceTool}</p><h2>{T.metronome.title}</h2>
     {showAddPrompt ? <div className="add-time">
       <span>{T.metronome.sessionComplete}</span>
@@ -2112,10 +2211,8 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <div className={playing ? "pulse playing" : "pulse"} style={{ animationDuration: `${60 / bpm}s` }}><span>{bpm}</span><small>BPM</small></div>
       <div className="beat-dots">{Array.from({ length: beatsPerMeasure }).map((_, i) => <i key={i} className={playing && activeBeat === i ? "beat-dot active" : "beat-dot"} />)}</div>
       <div className="metronome-timer">{playing ? T.metronome.practiceTimer : T.metronome.sessionTime}<strong>{elapsedLabel}</strong></div>
-      {lockTempo ? <p className="tempo-locked-note">🔒 {T.metronome.tempoLocked}</p> : <>
-        <input className="range" type="range" min="40" max="240" value={bpm} onChange={e => setBpm(+e.target.value)}/>
-        <div className="tempo-actions"><button onClick={() => setBpm(Math.max(40, bpm - 1))}>−</button><button className="tap" onClick={tapTempo}>{T.metronome.tapTempo}</button><button onClick={() => setBpm(Math.min(240, bpm + 1))}>+</button></div>
-      </>}
+      <input className="range" type="range" min="40" max="240" value={bpm} onChange={e => setBpm(+e.target.value)}/>
+      <div className="tempo-actions"><button onClick={() => setBpm(Math.max(40, bpm - 1))}>−</button><button className="tap" onClick={tapTempo}>{T.metronome.tapTempo}</button><button onClick={() => setBpm(Math.min(240, bpm + 1))}>+</button></div>
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
       <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : T.metronome.start}</button>
     </>}
