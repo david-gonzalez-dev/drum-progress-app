@@ -125,6 +125,7 @@ const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcat
   { category: "exercises", subcategory: null, en: "KKRL", es: "KKRL" },
   { category: "exercises", subcategory: null, en: "KRLK", es: "KRLK" },
   { category: "exercises", subcategory: null, en: "RLLK", es: "RLLK" },
+  { category: "exercises", subcategory: null, en: "R L L (Triplets)", es: "R L L (Tresillos)" },
   { category: "exercises", subcategory: null, en: "Finger Technique (Single-Handed)", es: "Técnica de dedos (una mano)" },
   { category: "exercises", subcategory: null, en: "16th Note Single Strokes Around the Set", es: "Golpes simples en semicorcheas alrededor de la batería" },
   { category: "exercises", subcategory: null, en: "Hi-Hat Pedal 8th Notes", es: "Pedal de hi-hat en corcheas" },
@@ -195,6 +196,7 @@ const EXERCISE_STICKING: Record<string, StickingEntry> = Object.fromEntries(
     "Triple Ratamacue": "l l R l l R l l R L R L",
     "Inverted Flam Tap": "l R L",
     "Flam Drag": "l R l l R",
+    "R L L (Triplets)": "R L L",
   }).map(([key, shorthand]) => [key, parseStickingEntry(shorthand)])
 );
 const CHALLENGE_EXERCISE_OPTIONS: { en: string; es: string }[] = (() => {
@@ -1831,7 +1833,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     const isPinned = pinnedExercises.includes(exercise);
     return <section className="page">
-      <div className="back-row"><button onClick={() => setStep("list")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2></div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}>📌</button></div>
+      <div className="back-row"><button onClick={() => setStep("list")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2></div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
       <div className="level-card">
         <div className="badge">{stats.bestRating ? RATING_ICON[stats.bestRating] : "🥁"}</div>
         <div>

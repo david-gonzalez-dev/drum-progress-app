@@ -15,7 +15,7 @@
 .ex-row .chev{color:#565c58;font-size:18px;flex-shrink:0}
 
 .back-row{display:flex;align-items:center;gap:10px;margin-bottom:18px}
-.pin-toggle{margin-left:auto;flex-shrink:0;width:36px;height:36px;border-radius:50%;border:1px solid #2c312e;background:#161918;color:#6d746f;font-size:16px;display:flex;align-items:center;justify-content:center;filter:grayscale(1);opacity:.7;transition:all .15s ease}.pin-toggle.pinned{border-color:#472315;background:#2a170a;filter:none;opacity:1;box-shadow:0 0 0 1px #ff6b1a33}
+.pin-toggle{margin-left:auto;flex-shrink:0;width:36px;height:36px;border-radius:50%;border:1px solid #2c312e;background:#161918;color:#6d746f;display:flex;align-items:center;justify-content:center;transition:all .15s ease}.pin-toggle svg{width:16px;height:16px}.pin-toggle.pinned{border-color:#472315;background:#2a170a;color:#ff9b50;box-shadow:0 0 0 1px #ff6b1a33}
 .page-back{border:0;background:transparent;color:#ff9b50;font:600 15px 'DM Sans';padding:0;margin-bottom:8px}
 .stats.stats-2{grid-template-columns:repeat(2,1fr)}
 .stats-tile{padding:12px 6px}
