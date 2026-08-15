@@ -70,7 +70,7 @@ const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; 
   { key: "daily5x20", type: "daily", goal: 5, days: 20 },
 ];
 
-const PRACTICE_CATEGORIES = ["rudiments", "exercises", "rhythms"] as const;
+const PRACTICE_CATEGORIES = ["rudiments", "exercises"] as const;
 const CATEGORY_ICON_SRC: Record<string, string> = { rudiments: "/icons/rudiments.png", exercises: "/icons/exercises.png", rhythms: "/icons/rhythms.png" };
 const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string }[] = [
   { category: "rudiments", subcategory: null, en: "Single Strokes", es: "Golpes simples" },
