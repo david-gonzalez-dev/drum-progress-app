@@ -338,6 +338,42 @@ update public.personal_challenges set exercise_en = 'Heel Up, 8th Notes' where e
 update public.personal_challenges set exercise_en = 'Slide Technique, 8th Notes' where exercise_en = 'Slide Technique';
 update public.personal_challenges set exercise_en = 'Flow, 16th Notes' where exercise_en = 'Flow';
 
+-- Filled out the rudiments catalog with the rest of the standard 40 PAS rudiments, plus two new
+-- Push Pull exercises.
+insert into public.practice_exercises (category, subcategory, name_en, name_es, sort_order) values
+  ('rudiments', null, 'Single Strokes Four', 'Golpes Simples Cuatro', 13),
+  ('rudiments', null, 'Single Strokes Seven', 'Golpes Simples Siete', 14),
+  ('rudiments', null, '5 Stroke Roll', 'Redoble de 5 Golpes', 15),
+  ('rudiments', null, '6 Stroke Roll', 'Redoble de 6 Golpes', 16),
+  ('rudiments', null, '7 Stroke Roll', 'Redoble de 7 Golpes', 17),
+  ('rudiments', null, '9 Stroke Roll', 'Redoble de 9 Golpes', 18),
+  ('rudiments', null, '10 Stroke Roll', 'Redoble de 10 Golpes', 19),
+  ('rudiments', null, '11 Stroke Roll', 'Redoble de 11 Golpes', 20),
+  ('rudiments', null, '13 Stroke Roll', 'Redoble de 13 Golpes', 21),
+  ('rudiments', null, '15 Stroke Roll', 'Redoble de 15 Golpes', 22),
+  ('rudiments', null, '17 Stroke Roll', 'Redoble de 17 Golpes', 23),
+  ('rudiments', null, 'Lesson 25', 'Lección 25', 24),
+  ('rudiments', null, 'Single Drag Tap', 'Drag Tap Simple', 25),
+  ('rudiments', null, 'Single Dragadiddle', 'Dragadiddle Simple', 26),
+  ('rudiments', null, 'Drag Paradiddle #1', 'Drag Paradiddle #1', 27),
+  ('rudiments', null, 'Drag Paradiddle #2', 'Drag Paradiddle #2', 28),
+  ('rudiments', null, 'Flammed Mill', 'Flammed Mill', 29),
+  ('rudiments', null, 'Swiss Army Triplet', 'Swiss Army Triplet', 30),
+  ('rudiments', null, 'Flamacue', 'Flamacue', 31),
+  ('rudiments', null, 'Triple Stroke Roll', 'Redoble Triple', 32),
+  ('rudiments', null, 'Flam Paradiddle', 'Flam Paradiddle', 33),
+  ('rudiments', null, 'Patafla-fla', 'Patafla-fla', 34),
+  ('rudiments', null, 'Double Drag Tap', 'Drag Tap Doble', 35),
+  ('rudiments', null, 'Flam Paradiddle-diddle', 'Flam Paradiddle-diddle', 36),
+  ('rudiments', null, 'Single Ratamacue', 'Ratamacue Simple', 37),
+  ('rudiments', null, 'Double Ratamacue', 'Ratamacue Doble', 38),
+  ('rudiments', null, 'Triple Ratamacue', 'Ratamacue Triple', 39),
+  ('rudiments', null, 'Inverted Flam Tap', 'Flam Tap Invertido', 40),
+  ('rudiments', null, 'Flam Drag', 'Flam Drag', 41),
+  ('exercises', null, 'Push Pull - Right Hand', 'Push Pull - Mano Derecha', 14),
+  ('exercises', null, 'Push Pull - Left Hand', 'Push Pull - Mano Izquierda', 15)
+on conflict (category, name_en) do nothing;
+
 -- Low-key group chat, capped to the most recent 50 messages per group so storage stays flat no
 -- matter how much a group chats over time (older messages are auto-deleted after each insert).
 create table if not exists public.group_messages (
