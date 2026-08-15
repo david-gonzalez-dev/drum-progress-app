@@ -438,3 +438,113 @@ from (
   from public.pinned_exercises
 ) sub
 where pe.user_id = sub.user_id and pe.exercise_en = sub.exercise_en;
+
+-- SECURITY FIX (audit findings #1 and #2):
+--
+-- 1) group_members had no real gate on joining -- the old "signed-in users can
+--    join groups" insert policy only checked auth.uid() = user_id, and "groups"
+--    was fully readable by every signed-in user (needed so a code could be
+--    looked up before joining existed). Combined, any signed-in user could list
+--    every group + invite code via `select * from groups` and self-insert into
+--    group_members for any group_id, completely bypassing the invite code and
+--    gaining read access to that group's shared practice logs (including
+--    private notes), chat and challenges.
+--    Fix: invite-code joins now go through a security-definer RPC that does the
+--    lookup and insert itself (bypassing RLS internally, same pattern as
+--    is_group_member() below), and the direct insert policy is narrowed to only
+--    the group's own creator adding themself right after creating it (matches
+--    the existing create-group flow). "groups" SELECT is narrowed to members
+--    (or the creator, so createGroup()'s insert().select() still returns the
+--    new row before the membership insert happens in the next request).
+--
+-- 2) Personal Challenges' anti-backdating check (see the "Anti-backdating"
+--    comment on isChallengeDayValid in page.tsx) trusted practice_logs.updated_at,
+--    but the touch_updated_at trigger only ran on UPDATE -- a client could set
+--    updated_at explicitly on a fresh INSERT and forge a "same-day" edit for any
+--    past date, instantly completing a challenge with fabricated history. The
+--    BPM-target branch had no such check at all.
+--    Fix: the trigger now also covers INSERT, and practice_sessions gets an
+--    equivalent server-controlled created_at via a new trigger, cross-checked
+--    by the app (see page.tsx's isChallengeDayValid).
+
+drop policy if exists "signed-in users can join groups" on public.group_members;
+create policy "creator can add themself when creating a group" on public.group_members for insert to authenticated with check (
+  auth.uid() = user_id and exists (select 1 from public.groups g where g.id = group_members.group_id and g.created_by = auth.uid())
+);
+
+drop policy if exists "signed-in users can view groups" on public.groups;
+create policy "members and creators can view their groups" on public.groups for select to authenticated using (
+  public.is_group_member(id) or created_by = auth.uid()
+);
+
+-- The only way left to join an existing group you didn't create: verifies the
+-- invite code server-side and inserts the membership row in one step.
+create or replace function public.join_group_by_code(p_code text)
+returns table (id uuid, name text, invite_code text, created_at timestamptz, created_by uuid)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target public.groups%rowtype;
+begin
+  select * into target from public.groups g where g.invite_code = upper(trim(p_code));
+  if not found then
+    return;
+  end if;
+  insert into public.group_members (group_id, user_id) values (target.id, auth.uid())
+  on conflict (group_id, user_id) do nothing;
+  return query select target.id, target.name, target.invite_code, target.created_at, target.created_by;
+end;
+$$;
+grant execute on function public.join_group_by_code(text) to authenticated;
+
+-- touch_updated_at now also covers INSERT, so a client can no longer set a
+-- forged updated_at on a brand-new (backdated) log row.
+drop trigger if exists practice_logs_touch_updated_at on public.practice_logs;
+create trigger practice_logs_touch_updated_at
+before insert or update on public.practice_logs
+for each row execute function public.touch_updated_at();
+
+-- practice_sessions gets the same server-controlled timestamp treatment for
+-- created_at, so a forged practiced_on can't be paired with a forged created_at
+-- to fake a same-day BPM-target challenge session.
+create or replace function public.lock_created_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.created_at = now();
+  return new;
+end;
+$$;
+drop trigger if exists practice_sessions_lock_created_at on public.practice_sessions;
+create trigger practice_sessions_lock_created_at
+before insert on public.practice_sessions
+for each row execute function public.lock_created_at();
+
+-- Confirmed via `select proacl from pg_proc where proname = 'join_group_by_code'` that
+-- `revoke ... from public` alone didn't remove anon's access: Supabase's public schema
+-- has ALTER DEFAULT PRIVILEGES set up to grant EXECUTE on every new function directly to
+-- anon/authenticated/service_role, not via the PUBLIC pseudo-role -- so anon had its own
+-- separate grant that "from public" never touched. Revoking from anon explicitly instead.
+-- join_group_by_code (added two migrations ago) was callable by fully unauthenticated
+-- requests, not just signed-in users. A valid code couldn't actually create a bogus
+-- membership (auth.uid() is null for an anon caller, and group_members.user_id is part
+-- of the primary key, so the insert would hard-fail) -- but it let someone with no
+-- account at all distinguish a real invite code from a fake one via the response.
+-- delete_group_as_creator is skipped -- per its own comment earlier in this file, it
+-- turned out to be unreliable on Supabase's API layer and was never actually deployed,
+-- so it doesn't exist on the live database; guarding on to_regprocedure so this
+-- migration doesn't fail if that ever changes.
+revoke execute on function public.join_group_by_code(text) from anon, public;
+revoke execute on function public.is_group_member(uuid) from anon, public;
+grant execute on function public.join_group_by_code(text) to authenticated;
+grant execute on function public.is_group_member(uuid) to authenticated;
+do $$
+begin
+  if to_regprocedure('public.delete_group_as_creator(uuid)') is not null then
+    execute 'revoke execute on function public.delete_group_as_creator(uuid) from anon, public';
+    execute 'grant execute on function public.delete_group_as_creator(uuid) to authenticated';
+  end if;
+end $$;

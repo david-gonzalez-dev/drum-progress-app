@@ -484,9 +484,12 @@ function challengeExerciseLabel(en: string, language: Lang) {
   return CHALLENGE_EXERCISE_OPTIONS.find((e) => e.en === en)?.[language] ?? en;
 }
 type ChallengeLogEntry = { minutes: number; items: string[]; customItems: string[]; updatedAt: string };
-function isChallengeDayValid(challenge: any, date: string, practiceSessions: { item_en: string; bpm: number; duration_minutes: number; practiced_on: string }[], logsCache: Record<string, ChallengeLogEntry>) {
+function isChallengeDayValid(challenge: any, date: string, practiceSessions: { item_en: string; bpm: number; duration_minutes: number; practiced_on: string; created_at: string }[], logsCache: Record<string, ChallengeLogEntry>) {
   if (challenge.target_bpm) {
-    const minutes = practiceSessions.filter((s) => s.item_en === challenge.exercise_en && s.practiced_on === date && s.bpm >= challenge.target_bpm).reduce((sum, s) => sum + s.duration_minutes, 0);
+    // Anti-backdating: same idea as the log-based check below, but against the session's own
+    // created_at (server-controlled, see the practice_sessions_lock_created_at trigger) instead of
+    // practiced_on, since a session has no separate "edited" timestamp to forge.
+    const minutes = practiceSessions.filter((s) => s.item_en === challenge.exercise_en && s.practiced_on === date && s.bpm >= challenge.target_bpm && s.created_at && localDateFromTimestamp(s.created_at) === date).reduce((sum, s) => sum + s.duration_minutes, 0);
     return minutes >= challenge.target_minutes;
   }
   const log = logsCache[date];
@@ -500,7 +503,7 @@ function isChallengeDayValid(challenge: any, date: string, practiceSessions: { i
   const share = log.minutes / tags.length;
   return share >= challenge.target_minutes;
 }
-function evaluateChallenge(challenge: any, practiceSessions: { item_en: string; bpm: number; duration_minutes: number; practiced_on: string }[], logsCache: Record<string, ChallengeLogEntry>) {
+function evaluateChallenge(challenge: any, practiceSessions: { item_en: string; bpm: number; duration_minutes: number; practiced_on: string; created_at: string }[], logsCache: Record<string, ChallengeLogEntry>) {
   const days: { date: string; valid: boolean | null }[] = [];
   for (let i = 0; i < challenge.length_days; i++) {
     const date = shiftDateKey(challenge.start_date, i);
@@ -594,7 +597,7 @@ export default function Home() {
   }
   const [practiceBpm, setPracticeBpm] = useState(100);
   const [pendingSessionMinutes, setPendingSessionMinutes] = useState(0);
-  const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; issues: string[]; notes: string | null }[]>([]);
+  const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; issues: string[]; notes: string | null; created_at: string }[]>([]);
   const [pinnedExercises, setPinnedExercises] = useState<string[]>([]);
   const [showPinManager, setShowPinManager] = useState(false);
 
@@ -629,7 +632,7 @@ export default function Home() {
       if (hydrateToday && todayLog) { setMinutes(String(todayLog.minutes)); setSeconds(String(todayLog.seconds)); setNotes(todayLog.notes); setEquipment(todayLog.equipment); setDrumsetMinutes(todayLog.drumsetMinutes != null ? String(todayLog.drumsetMinutes) : ""); setPadMinutes(todayLog.padMinutes != null ? String(todayLog.padMinutes) : ""); setCustomItems(todayLog.customItems); if (todayLog.items.length) setSelected(todayLog.items); }
     });
     supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,issues,notes,created_at,practice_exercises(name_en)").eq("user_id", currentUser.id).order("created_at").then(({ data }) => {
-      setPracticeSessions((data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en, bpm: row.bpm, rating: row.rating, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on, issues: row.issues ?? [], notes: row.notes ?? null })).filter((s: any) => s.item_en));
+      setPracticeSessions((data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en, bpm: row.bpm, rating: row.rating, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on, issues: row.issues ?? [], notes: row.notes ?? null, created_at: row.created_at })).filter((s: any) => s.item_en));
     });
     supabase.from("pinned_exercises").select("exercise_en").eq("user_id", currentUser.id).order("sort_order").then(({ data }) => {
       setPinnedExercises((data ?? []).map((row: any) => row.exercise_en));
@@ -714,7 +717,7 @@ export default function Home() {
     setCustomItems(newCustomItems);
     const isSplit = equipment === "both";
     await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, Number(seconds) || 0, newCustomItems);
-    setPracticeSessions((current) => [...current, { item_en: itemEn, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey, issues, notes: note || null }]);
+    setPracticeSessions((current) => [...current, { item_en: itemEn, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey, issues, notes: note || null, created_at: new Date().toISOString() }]);
     return true;
   }
   async function resetPracticeLevel(itemEn: string, bpm: number) {
@@ -1270,12 +1273,14 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   }
   async function joinGroup() {
     setBusy(true);
-    const { data, error } = await supabase.from("groups").select("id,name,invite_code,created_at,created_by").eq("invite_code", code.trim().toUpperCase()).maybeSingle();
-    if (error || !data) { setError(T.group.inviteNotFound); setBusy(false); return; }
-    const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id });
-    if (member.error && member.error.code !== "23505") { setError(member.error.message); setBusy(false); return; }
-    setGroups((current) => current.some((g) => g.id === data.id) ? current : [...current, data]);
-    setActiveGroupId(data.id);
+    // Looking up the group and inserting the membership row both happen server-side inside
+    // join_group_by_code (security definer), so the invite code is actually verified — the client
+    // can no longer join a group by guessing/enumerating group_id directly. See schema.sql.
+    const { data, error } = await supabase.rpc("join_group_by_code", { p_code: code.trim() });
+    const joined = data && data.length ? data[0] : null;
+    if (error || !joined) { setError(T.group.inviteNotFound); setBusy(false); return; }
+    setGroups((current) => current.some((g) => g.id === joined.id) ? current : [...current, joined]);
+    setActiveGroupId(joined.id);
     setAddingGroup(false); setMode("start"); setCode("");
     setBusy(false);
   }
@@ -1418,7 +1423,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     {groups.length > 0 && <button className="page-back" onClick={() => setAddingGroup(false)}>‹ {T.group.back}</button>}
     <div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? T.group.findCrew : mode === "create" ? T.group.startGroup : T.group.joinCrew}</h2>{mode === "start" ? <><p>{T.group.intro}</p><button className="primary" onClick={() => setMode("create")}>{T.group.createGroupBtn} <span>→</span></button><button className="secondary" onClick={() => setMode("join")}>{T.group.joinWithCode}</button></> : <><input className="group-input" value={mode === "create" ? name : code} onChange={e => mode === "create" ? setName(e.target.value) : setCode(e.target.value)} placeholder={mode === "create" ? T.group.groupNamePlaceholder : T.group.inviteCodePlaceholder}/><button className="primary" disabled={busy || !(mode === "create" ? name : code)} onClick={mode === "create" ? createGroup : joinGroup}>{busy ? T.group.pleaseWait : mode === "create" ? T.group.createGroup : T.group.joinGroup}</button><button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button></>}</div></section>;
 }
-function Progress({ practiceSessions, logs, user, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
+function Progress({ practiceSessions, logs, user, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const [wonChallenges, setWonChallenges] = useState<any[]>([]);
   useEffect(() => {
