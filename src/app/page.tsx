@@ -14,6 +14,7 @@ const SESSION_ISSUE_TAGS: { en: string; es: string }[] = [
   { en: "Messy dynamics", es: "Dinámica desordenada" },
   { en: "Stick slides", es: "La baqueta se resbala" },
   { en: "Index finger issue", es: "Problema con el dedo índice" },
+  { en: "Feels shaky", es: "Se siente inestable" },
 ];
 const PRACTICE_ITEMS = [
   { en: "Rudiments", es: "Rudimentos" },
@@ -146,9 +147,10 @@ const PRACTICE_TIERS = [
 ];
 const RATING_RANK: Record<string, number> = { not_ready: 1, tense: 2, almost: 3, comfortable: 4, mastered: 5 };
 const RATING_ORDER = ["not_ready", "tense", "almost", "comfortable", "mastered"];
+const RATINGS_NEEDING_NOTE = ["not_ready", "tense", "almost"];
 const RATING_COLOR: Record<string, string> = { not_ready: "#e2877d", tense: "#f6ad55", almost: "#f2c94c", comfortable: "#68d391", mastered: "#68d391" };
 const UNLOCK_MINUTES = 2;
-const MAX_PINNED_EXERCISES = 3;
+const MAX_PINNED_EXERCISES = 5;
 const RATING_ICON: Record<string, string> = { not_ready: "🔴", tense: "🟠", almost: "🟡", comfortable: "🟢", mastered: "⭐" };
 function qualifyingMinutesFor(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[], itemEn: string, targetBpm: number) {
   return sessions.filter((s) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum, s) => sum + s.duration_minutes, 0);
@@ -243,6 +245,8 @@ const translations = {
       backToBook: "Back to Practice Mode", couldNotSaveSession: "Could not save this session.",
       categoryRudiments: "Rudiments", categoryExercises: "Exercises", categoryRhythms: "Rhythms",
       pin: "Pin", pinned: "Pinned",
+      maxPinnedReached: (max: number) => `You can pin up to ${max} exercises. Unpin one first.`,
+      pinManagerEyebrow: (count: number, max: number) => `${count}/${max} PINNED`, pinManagerTitle: "Your Focus", pinManagerDone: "Done",
       quickTitle: "Quick Practice",
       trainTitle: "Train a Skill",
       categoryDescRudiments: "Build technique and control.", categoryDescExercises: "Improve with structured exercises.", categoryDescRhythms: "Grooves, styles and musical vocabulary.",
@@ -345,6 +349,8 @@ const translations = {
       backToBook: "Volver a Modo práctica", couldNotSaveSession: "No se pudo guardar esta sesión.",
       categoryRudiments: "Rudimentos", categoryExercises: "Ejercicios", categoryRhythms: "Ritmos",
       pin: "Fijar", pinned: "Fijado",
+      maxPinnedReached: (max: number) => `Puedes fijar hasta ${max} ejercicios. Quita uno primero.`,
+      pinManagerEyebrow: (count: number, max: number) => `${count}/${max} FIJADOS`, pinManagerTitle: "Tu enfoque", pinManagerDone: "Listo",
       quickTitle: "Práctica rápida",
       trainTitle: "Entrena una habilidad",
       categoryDescRudiments: "Desarrolla técnica y control.", categoryDescExercises: "Mejora con ejercicios estructurados.", categoryDescRhythms: "Grooves, estilos y vocabulario musical.",
@@ -503,8 +509,9 @@ export default function Home() {
   const [practiceExercise, setPracticeExercise] = useState<string | null>(null);
   const [practiceBpm, setPracticeBpm] = useState(100);
   const [pendingSessionMinutes, setPendingSessionMinutes] = useState(0);
-  const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[]>([]);
+  const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; issues: string[]; notes: string | null }[]>([]);
   const [pinnedExercises, setPinnedExercises] = useState<string[]>([]);
+  const [showPinManager, setShowPinManager] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setLoading(false); });
@@ -536,10 +543,10 @@ export default function Home() {
       const todayLog = nextLogs[dateKey];
       if (hydrateToday && todayLog) { setMinutes(String(todayLog.minutes)); setSeconds(String(todayLog.seconds)); setNotes(todayLog.notes); setEquipment(todayLog.equipment); setDrumsetMinutes(todayLog.drumsetMinutes != null ? String(todayLog.drumsetMinutes) : ""); setPadMinutes(todayLog.padMinutes != null ? String(todayLog.padMinutes) : ""); setCustomItems(todayLog.customItems); if (todayLog.items.length) setSelected(todayLog.items); }
     });
-    supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,practice_exercises(name_en)").eq("user_id", currentUser.id).then(({ data }) => {
-      setPracticeSessions((data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en, bpm: row.bpm, rating: row.rating, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on })).filter((s: any) => s.item_en));
+    supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,issues,notes,created_at,practice_exercises(name_en)").eq("user_id", currentUser.id).order("created_at").then(({ data }) => {
+      setPracticeSessions((data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en, bpm: row.bpm, rating: row.rating, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on, issues: row.issues ?? [], notes: row.notes ?? null })).filter((s: any) => s.item_en));
     });
-    supabase.from("pinned_exercises").select("exercise_en").eq("user_id", currentUser.id).then(({ data }) => {
+    supabase.from("pinned_exercises").select("exercise_en").eq("user_id", currentUser.id).order("sort_order").then(({ data }) => {
       setPinnedExercises((data ?? []).map((row: any) => row.exercise_en));
     });
   }
@@ -565,10 +572,28 @@ export default function Home() {
     if (pinnedExercises.includes(itemEn)) {
       await supabase.from("pinned_exercises").delete().eq("user_id", user.id).eq("exercise_en", itemEn);
       setPinnedExercises((current) => current.filter((en) => en !== itemEn));
-    } else {
-      await supabase.from("pinned_exercises").insert({ user_id: user.id, exercise_en: itemEn });
-      setPinnedExercises((current) => [...current, itemEn]);
+      return;
     }
+    if (pinnedExercises.length >= MAX_PINNED_EXERCISES) { setAuthError(T.practiceMode.maxPinnedReached(MAX_PINNED_EXERCISES)); return; }
+    const { error } = await supabase.from("pinned_exercises").insert({ user_id: user.id, exercise_en: itemEn, sort_order: pinnedExercises.length });
+    if (error) { setAuthError(error.message); return; }
+    setPinnedExercises((current) => [...current, itemEn]);
+    setShowPinManager(true);
+  }
+  async function unpinExercise(itemEn: string) {
+    if (!user) return;
+    await supabase.from("pinned_exercises").delete().eq("user_id", user.id).eq("exercise_en", itemEn);
+    setPinnedExercises((current) => current.filter((en) => en !== itemEn));
+  }
+  async function movePin(itemEn: string, direction: -1 | 1) {
+    if (!user) return;
+    const index = pinnedExercises.indexOf(itemEn);
+    const newIndex = index + direction;
+    if (index < 0 || newIndex < 0 || newIndex >= pinnedExercises.length) return;
+    const next = [...pinnedExercises];
+    [next[index], next[newIndex]] = [next[newIndex], next[index]];
+    setPinnedExercises(next);
+    await Promise.all(next.map((en, i) => supabase.from("pinned_exercises").update({ sort_order: i }).eq("user_id", user.id).eq("exercise_en", en)));
   }
   async function saveLogFor(targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[]) {
     if (!user) return false;
@@ -604,7 +629,7 @@ export default function Home() {
     setCustomItems(newCustomItems);
     const isSplit = equipment === "both";
     await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, Number(seconds) || 0, newCustomItems);
-    setPracticeSessions((current) => [...current, { item_en: itemEn, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey }]);
+    setPracticeSessions((current) => [...current, { item_en: itemEn, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey, issues, notes: note || null }]);
     return true;
   }
   async function resetPracticeLevel(itemEn: string, bpm: number) {
@@ -616,16 +641,16 @@ export default function Home() {
     setPracticeSessions((current) => current.filter((s) => !(s.item_en === itemEn && s.bpm === bpm)));
     return true;
   }
-  async function editSessionRating(itemEn: string, bpm: number, newRating: string) {
+  async function editSessionDetails(itemEn: string, bpm: number, newRating: string, issues: string[], note: string) {
     if (!user) return false;
     const { data: exerciseRow } = await supabase.from("practice_exercises").select("id").eq("name_en", itemEn).maybeSingle();
     if (!exerciseRow) return false;
     // Applies to every session logged at this level rather than just the latest one, since the app
-    // only ever displays a single aggregate rating per level (the best among them) — keeping every
-    // row in sync avoids a corrected rating silently getting overridden by an older, wrong one.
-    const { error } = await supabase.from("practice_sessions").update({ rating: newRating }).eq("user_id", user.id).eq("practice_exercise_id", exerciseRow.id).eq("bpm", bpm);
+    // only ever displays a single aggregate rating/note per level — keeping every row in sync avoids
+    // a correction silently getting overridden by an older, stale value.
+    const { error } = await supabase.from("practice_sessions").update({ rating: newRating, issues, notes: note || null }).eq("user_id", user.id).eq("practice_exercise_id", exerciseRow.id).eq("bpm", bpm);
     if (error) { setAuthError(error.message); return false; }
-    setPracticeSessions((current) => current.map((s) => (s.item_en === itemEn && s.bpm === bpm) ? { ...s, rating: newRating } : s));
+    setPracticeSessions((current) => current.map((s) => (s.item_en === itemEn && s.bpm === bpm) ? { ...s, rating: newRating, issues, notes: note || null } : s));
     return true;
   }
   async function resetPractice() {
@@ -664,7 +689,7 @@ export default function Home() {
   if (!user) return <Login error={authError} setError={setAuthError} />;
   return <main className="shell">
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionRating} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} onBack={() => setTab("today")} T={T} />}
@@ -672,7 +697,28 @@ export default function Home() {
     <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
+    {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onClose={() => setShowPinManager(false)} language={language} T={T} />}
   </main>;
+}
+function PinManagerModal({ pinnedExercises, onMove, onUnpin, onClose, language, T }: { pinnedExercises: string[]; onMove: (itemEn: string, direction: -1 | 1) => void; onUnpin: (itemEn: string) => void; onClose: () => void; language: Lang; T: any }) {
+  return <div className="modal modal-center" onClick={onClose}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
+    <p className="eyebrow">{T.practiceMode.pinManagerEyebrow(pinnedExercises.length, MAX_PINNED_EXERCISES)}</p>
+    <h2 className="edit-rating-title">{T.practiceMode.pinManagerTitle}</h2>
+    <div className="pin-manager-list">
+      {pinnedExercises.map((en, i) => {
+        const label = PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en;
+        return <div key={en} className="pin-manager-row">
+          <span className="pin-manager-name">{label}</span>
+          <div className="pin-manager-actions">
+            <button disabled={i === 0} onClick={() => onMove(en, -1)}>↑</button>
+            <button disabled={i === pinnedExercises.length - 1} onClick={() => onMove(en, 1)}>↓</button>
+            <button className="pin-manager-remove" onClick={() => onUnpin(en)}>✕</button>
+          </div>
+        </div>;
+      })}
+    </div>
+    <button className="save" onClick={onClose}>{T.practiceMode.pinManagerDone}</button>
+  </div></div>;
 }
 
 function Login({ error, setError }: { error: string; setError: (message: string) => void }) {
@@ -1526,9 +1572,29 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     await onResetLevel(exercise, targetBpm);
   }
   const [editingLevel, setEditingLevel] = useState<number | null>(null);
-  async function handleEditRating(newRating: string) {
-    if (!exercise || editingLevel === null) return;
-    await onEditRating(exercise, editingLevel, newRating);
+  const [editRating, setEditRating] = useState<string | null>(null);
+  const [editIssues, setEditIssues] = useState<string[]>([]);
+  const [editNote, setEditNote] = useState("");
+  function sessionDetailsAt(itemEn: string, targetBpm: number) {
+    const matches = sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm);
+    const last = matches[matches.length - 1];
+    return { issues: last?.issues ?? [], note: last?.notes ?? "" };
+  }
+  function openEditRating(level: number) {
+    if (!exercise) return;
+    const current = bestQualifyingRating(exercise, level) ?? bestRatingAny(exercise, level);
+    const details = sessionDetailsAt(exercise, level);
+    setEditRating(current);
+    setEditIssues(details.issues);
+    setEditNote(details.note);
+    setEditingLevel(level);
+  }
+  function toggleEditIssue(tagEn: string) {
+    setEditIssues((current) => current.includes(tagEn) ? current.filter((t) => t !== tagEn) : [...current, tagEn]);
+  }
+  async function saveEditRating() {
+    if (!exercise || editingLevel === null || !editRating) return;
+    await onEditRating(exercise, editingLevel, editRating, editIssues, editNote.trim());
     setEditingLevel(null);
   }
   async function handleResetPractice() {
@@ -1554,10 +1620,16 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     setSessionNote("");
     setStep("rate");
   }
-  async function submitRating() {
-    if (!exercise || !selectedRating) return;
-    await onLogSession(exercise, bpm, selectedRating, pendingMinutes, sessionIssues, sessionNote.trim());
+  async function submitRating(rating: string) {
+    if (!exercise) return;
+    await onLogSession(exercise, bpm, rating, pendingMinutes, sessionIssues, sessionNote.trim());
     setStep("detail");
+  }
+  function handleRatingTap(r: string) {
+    // Comfortable/mastered don't need an explanation, so they save immediately; the struggling
+    // ratings reveal the issue tags/note step first since that's when context is actually useful.
+    if (RATINGS_NEEDING_NOTE.includes(r)) setSelectedRating(r);
+    else submitRating(r);
   }
   function skipRating() {
     setStep("detail");
@@ -1729,7 +1801,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
                     <span className="rung-progress-label">{unlocked ? (rating === "mastered" ? "⭐" : "✓") : `${Math.min(totalMinutes, UNLOCK_MINUTES)}/${UNLOCK_MINUTES} min`}</span>
                   </div>
                 </button>
-                {hasHistory && <button className="rung-edit" onClick={() => setEditingLevel(level)}>✎</button>}
+                {hasHistory && <button className="rung-edit" onClick={() => openEditRating(level)}>✎</button>}
                 {hasHistory && <button className="rung-reset" onClick={() => handleReset(level)}>↺</button>}
               </div>;
             })}
@@ -1740,8 +1812,14 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         <p className="eyebrow">{editingLevel} BPM</p>
         <h2 className="edit-rating-title">{T.practiceMode.editRatingTitle}</h2>
         <div className="rating-grid">
-          {RATING_ORDER.map((r) => <button key={r} className={bestQualifyingRating(exercise, editingLevel) === r || bestRatingAny(exercise, editingLevel) === r ? `rating-btn ${r} selected` : `rating-btn ${r}`} onClick={() => handleEditRating(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
+          {RATING_ORDER.map((r) => <button key={r} className={editRating === r ? `rating-btn ${r} selected` : `rating-btn ${r}`} onClick={() => setEditRating(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
         </div>
+        {RATINGS_NEEDING_NOTE.includes(editRating ?? "") && <>
+          <label className="input-label issue-label">{T.practiceMode.issueLabel}</label>
+          <div className="chips">{SESSION_ISSUE_TAGS.map((tag) => <button key={tag.en} onClick={() => toggleEditIssue(tag.en)} className={editIssues.includes(tag.en) ? "chip selected" : "chip"}>{editIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div>
+          <textarea value={editNote} onChange={(e: any) => setEditNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
+        </>}
+        <button className="save" onClick={saveEditRating}>{T.practiceMode.saveRating}<span>→</span></button>
       </div></div>}
       <div className="legend">
         <span><i style={{ background: "#303531" }} />{T.practiceMode.notStarted}</span>
@@ -1765,13 +1843,13 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     return <section className="page">
       <header className="simple-head"><p className="eyebrow">{label} · {bpm} BPM</p><h1>{T.practiceMode.rateTitle}</h1><p className="rate-sub">{T.practiceMode.rateSubtitle(bpm)}</p></header>
       <div className="rating-grid">
-        {RATING_ORDER.map((r) => <button key={r} className={selectedRating === r ? `rating-btn ${r} selected` : `rating-btn ${r}`} onClick={() => setSelectedRating(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
+        {RATING_ORDER.map((r) => <button key={r} className={selectedRating === r ? `rating-btn ${r} selected` : `rating-btn ${r}`} onClick={() => handleRatingTap(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
       </div>
       {selectedRating && <div className="form-card">
-        <label className="input-label">{T.practiceMode.issueLabel}</label>
+        <label className="input-label issue-label">{T.practiceMode.issueLabel}</label>
         <div className="chips">{SESSION_ISSUE_TAGS.map((tag) => <button key={tag.en} onClick={() => toggleSessionIssue(tag.en)} className={sessionIssues.includes(tag.en) ? "chip selected" : "chip"}>{sessionIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div>
         <textarea value={sessionNote} onChange={(e: any) => setSessionNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
-        <button className="save" onClick={submitRating}>{T.practiceMode.saveRating}<span>→</span></button>
+        <button className="save" onClick={() => submitRating(selectedRating)}>{T.practiceMode.saveRating}<span>→</span></button>
       </div>}
       <button className="reset-practice" onClick={skipRating}>{T.practiceMode.skipRating}</button>
     </section>;

@@ -422,3 +422,19 @@ for each row execute function public.cap_group_messages();
 -- than just its BPM/rating.
 alter table public.practice_sessions add column if not exists notes text;
 alter table public.practice_sessions add column if not exists issues text[] not null default '{}';
+
+-- Added the "almost" rating (between tense and comfortable) to the app, but the original check
+-- constraint on practice_sessions.rating still only allowed the original 4 values.
+alter table public.practice_sessions drop constraint if exists practice_sessions_rating_check;
+alter table public.practice_sessions add constraint practice_sessions_rating_check check (rating in ('not_ready', 'tense', 'almost', 'comfortable', 'mastered'));
+
+-- Pinned exercises now support up to 5 (was 3) and a manual display order, set from the new pin
+-- manager popup. Backfill existing rows a sensible order based on when they were pinned.
+alter table public.pinned_exercises add column if not exists sort_order integer not null default 0;
+update public.pinned_exercises pe
+set sort_order = sub.rn - 1
+from (
+  select user_id, exercise_en, row_number() over (partition by user_id order by pinned_at) as rn
+  from public.pinned_exercises
+) sub
+where pe.user_id = sub.user_id and pe.exercise_en = sub.exercise_en;
