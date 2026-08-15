@@ -291,8 +291,8 @@ const translations = {
     personalChallenges: {
       title: "Personal Challenges", homeTitle: "PERSONAL CHALLENGES", subtitle: "Set a focused practice goal for yourself.",
       newChallenge: "+ New challenge", cancel: "Cancel",
-      exerciseLabel: "EXERCISE", minutesLabel: "MINUTES PER DAY", bpmLabel: "TARGET BPM (OPTIONAL)", bpmPlaceholder: "Any tempo",
-      lengthLabel: "CHALLENGE LENGTH (DAYS)", startChallenge: "Start challenge", pleaseWait: "Please wait...",
+      exerciseLabel: "Exercise", minutesLabel: "Minutes per day", bpmLabel: "Target BPM (optional)", bpmPlaceholder: "Any tempo",
+      lengthLabel: "Challenge length (days)", startChallenge: "Start challenge", pleaseWait: "Please wait...",
       noChallenges: "No personal challenges yet. Create one to build a focused practice habit.",
       challengeTitle: (exercise: string, days: number) => `${exercise} — ${days} Day Challenge`,
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practice ${minutes} min at ${bpm}+ BPM every day for ${days} consecutive days.` : `Practice ${minutes} min every day for ${days} consecutive days.`,
@@ -395,8 +395,8 @@ const translations = {
     personalChallenges: {
       title: "Retos personales", homeTitle: "RETOS PERSONALES", subtitle: "Ponte una meta de práctica enfocada.",
       newChallenge: "+ Nuevo reto", cancel: "Cancelar",
-      exerciseLabel: "EJERCICIO", minutesLabel: "MINUTOS POR DÍA", bpmLabel: "BPM OBJETIVO (OPCIONAL)", bpmPlaceholder: "Cualquier tempo",
-      lengthLabel: "DURACIÓN DEL RETO (DÍAS)", startChallenge: "Empezar reto", pleaseWait: "Un momento...",
+      exerciseLabel: "Ejercicio", minutesLabel: "Minutos por día", bpmLabel: "BPM objetivo (opcional)", bpmPlaceholder: "Cualquier tempo",
+      lengthLabel: "Duración del reto (días)", startChallenge: "Empezar reto", pleaseWait: "Un momento...",
       noChallenges: "Aún no tienes retos personales. Crea uno para desarrollar un hábito de práctica enfocado.",
       challengeTitle: (exercise: string, days: number) => `${exercise} — Reto de ${days} Días`,
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practica ${minutes} min a ${bpm}+ BPM cada día durante ${days} días consecutivos.` : `Practica ${minutes} min cada día durante ${days} días consecutivos.`,
