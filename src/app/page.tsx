@@ -864,7 +864,7 @@ function HomeChallenges({ user, practiceSessions, language, T }: any) {
     .filter((c) => c.status === "active");
   if (!active.length) return null;
   return <div className="home-pinned">
-    <span className="section-sublabel">{T.personalChallenges.homeTitle}</span>
+    <h2 className="home-title">{T.personalChallenges.homeTitle}</h2>
     {active.map((c) => <div key={c.id} className="home-pinned-row">
       <div className="home-pinned-head"><span className="home-pinned-name">{challengeExerciseLabel(c.exercise_en, language)}</span><span className="home-pinned-time">{T.personalChallenges.statusActive(c.completedCount, c.length_days)}</span></div>
       <div className="personal-challenge-dots home-challenge-dots">{c.days.map((d: any) => <i key={d.date} className={`pc-dot ${d.valid === true ? "hit" : d.valid === false ? "miss" : "pending"}`} />)}</div>
@@ -890,7 +890,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
     </div>
     <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} />
     {pinnedExercises.length > 0 && <div className="home-pinned">
-      <span className="section-sublabel home-pinned-title"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.progressPage.pinned}</span>
+      <h2 className="home-title home-pinned-title"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.progressPage.pinned}</h2>
       <div className="tier-strip tier-strip-header">
         {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
       </div>
@@ -912,7 +912,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
         </button>;
       })}
     </div>}
-    <div className="section-title"><h2>{T.calendar.title}</h2></div>
+    <div className="section-title"><h2 className="home-title">{T.calendar.title}</h2></div>
     <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} language={language} T={T} />
   </section>;
 }
@@ -2192,13 +2192,11 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     return tokens.map((token, i) => <span key={i} className={token.grace ? `sticking-letter ${token.hand.toLowerCase()} grace` : `sticking-letter ${token.hand.toLowerCase()}`}>{token.grace ? token.hand.toLowerCase() : token.hand}{token.count && token.count > 1 ? <sup>{token.count}</sup> : null}</span>);
   }
   if (lockTempo) {
-    const exerciseCategory = exerciseEn ? PRACTICE_EXERCISES.find((e) => e.en === exerciseEn)?.category : null;
     const sticking = exerciseEn ? EXERCISE_STICKING[exerciseEn] : null;
     return <div className="modal modal-center"><div className="metro metro-practice">
       <button className="close" onClick={close}>×</button>
       <p className="eyebrow">{T.practiceMode.title}</p>
       <div className="metro-exercise-head">
-        {exerciseCategory && <img src={CATEGORY_ICON_SRC[exerciseCategory]} alt="" className="metro-exercise-icon" />}
         <h2 className="metro-exercise-name">{exerciseLabel}</h2>
       </div>
       {sticking && <div className="sticking-panel">
