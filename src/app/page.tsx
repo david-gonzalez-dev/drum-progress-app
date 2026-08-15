@@ -284,7 +284,7 @@ const translations = {
     },
     progressPage: {
       eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", yourPractice: "YOUR PRACTICE",
-      noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS - Pinned exercises", generalPractice: "General Practice",
+      noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS", generalPractice: "General Practice",
       skillProgress: "SKILL PROGRESS", noSkillData: "Train an exercise's BPM levels to see your skill progress here.",
       achievements: "ACHIEVEMENTS", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
     },
@@ -388,7 +388,7 @@ const translations = {
     },
     progressPage: {
       eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", yourPractice: "TU PRÁCTICA",
-      noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE - Ejercicios fijados", generalPractice: "Práctica general",
+      noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE", generalPractice: "Práctica general",
       skillProgress: "PROGRESO TÉCNICO", noSkillData: "Entrena los niveles de BPM de un ejercicio para ver tu progreso técnico aquí.",
       achievements: "LOGROS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
     },
@@ -576,6 +576,13 @@ export default function Home() {
   const [practiceStep, setPracticeStep] = useState<"category" | "list" | "detail" | "session" | "rate">("category");
   const [practiceCategory, setPracticeCategory] = useState<string | null>(null);
   const [practiceExercise, setPracticeExercise] = useState<string | null>(null);
+  function openExerciseDetail(itemEn: string) {
+    const match = PRACTICE_EXERCISES.find((e) => e.en === itemEn);
+    setPracticeCategory(match?.category ?? null);
+    setPracticeExercise(itemEn);
+    setPracticeStep("detail");
+    setTab("practice");
+  }
   const [practiceBpm, setPracticeBpm] = useState(100);
   const [pendingSessionMinutes, setPendingSessionMinutes] = useState(0);
   const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; issues: string[]; notes: string | null }[]>([]);
@@ -757,7 +764,7 @@ export default function Home() {
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
   return <main className="shell">
-    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} displayName={displayName} language={language} T={T} />}
+    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
@@ -855,7 +862,7 @@ function HomeChallenges({ user, practiceSessions, language, T }: any) {
     </div>)}
   </div>;
 }
-function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, displayName, language, T }: any) {
+function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onOpenExercise, displayName, language, T }: any) {
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
   const goalAchieved = todayMinutes >= dailyGoal;
@@ -874,7 +881,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
     </div>
     <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} />
     {pinnedExercises.length > 0 && <div className="home-pinned">
-      <span className="section-sublabel">{T.progressPage.pinned}</span>
+      <span className="section-sublabel home-pinned-title"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.progressPage.pinned}</span>
       <div className="tier-strip tier-strip-header">
         {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
       </div>
@@ -883,15 +890,17 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
         const unlockedLevels = BPM_LEVELS.filter((level) => qualifyingMinutesFor(practiceSessions, en, level) >= UNLOCK_MINUTES);
         const bestBpm = unlockedLevels.length ? Math.max(...unlockedLevels) : null;
         const totalMinutes = practiceSessions.filter((s: any) => s.item_en === en).reduce((sum: number, s: any) => sum + s.duration_minutes, 0);
-        return <div key={en} className="home-pinned-row">
+        return <button key={en} className="home-pinned-row" onClick={() => onOpenExercise(en)}>
           <div className="home-pinned-head"><span className="home-pinned-name">{label}</span><span className="home-pinned-time">{formatMinutes(totalMinutes)}</span></div>
-          {unlockedLevels.length > 0 ? <div className="home-pinned-meta">
+          {unlockedLevels.length > 0 ? <>
             <span className="home-pinned-bpm">{bestBpm} BPM</span>
-            <div className="home-pinned-tiers">
-              {PRACTICE_TIERS.map((tier) => <div key={tier.key} className={tierIsSkipped(practiceSessions, en, tier) ? "home-pinned-tier-seg skipped" : "home-pinned-tier-seg"}><i style={{ width: `${tierIsSkipped(practiceSessions, en, tier) ? 100 : tierProgressFor(practiceSessions, en, tier)}%` }} /></div>)}
+            <div className="tier-strip home-pinned-tier-strip">
+              {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg">
+                <div className={tierIsSkipped(practiceSessions, en, tier) ? "seg-bar skipped" : "seg-bar"}><i style={{ width: `${tierIsSkipped(practiceSessions, en, tier) ? 100 : tierProgressFor(practiceSessions, en, tier)}%` }} /></div>
+              </div>)}
             </div>
-          </div> : <span className="home-pinned-bpm">{T.practiceMode.notStarted}</span>}
-        </div>;
+          </> : <span className="home-pinned-bpm">{T.practiceMode.notStarted}</span>}
+        </button>;
       })}
     </div>}
     <div className="section-title"><h2>{T.calendar.title}</h2></div>
