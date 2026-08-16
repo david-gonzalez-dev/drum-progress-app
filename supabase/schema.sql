@@ -641,3 +641,42 @@ create policy "own profile or shared-group members' profiles are visible" on pub
     where gm1.user_id = profiles.id and gm2.user_id = auth.uid()
   )
 );
+
+-- Dashboard convenience: adds the practicing user's name next to their data when
+-- browsing in Supabase Studio's Table Editor, instead of just a raw user_id. These
+-- live in a separate "reporting" schema (not "public") specifically so they are NOT
+-- reachable through the app's API -- Supabase only exposes the "public" schema to
+-- PostgREST by default, so these views are structurally invisible to the app and to
+-- anon/authenticated requests, no matter what. To browse them: in Supabase Studio's
+-- Table Editor, use the schema dropdown (top left, next to the Supabase logo) and
+-- switch it from "public" to "reporting".
+create schema if not exists reporting;
+revoke all on schema reporting from anon, authenticated;
+
+create or replace view reporting.practice_logs as
+select pl.*, p.name as user_name
+from public.practice_logs pl
+join public.profiles p on p.id = pl.user_id;
+
+create or replace view reporting.practice_sessions as
+select ps.*, p.name as user_name
+from public.practice_sessions ps
+join public.profiles p on p.id = ps.user_id;
+
+create or replace view reporting.personal_challenges as
+select pc.*, p.name as user_name
+from public.personal_challenges pc
+join public.profiles p on p.id = pc.user_id;
+
+create or replace view reporting.pinned_exercises as
+select pe.*, p.name as user_name
+from public.pinned_exercises pe
+join public.profiles p on p.id = pe.user_id;
+
+create or replace view reporting.group_messages as
+select gm.*, p.name as user_name, g.name as group_name
+from public.group_messages gm
+join public.profiles p on p.id = gm.user_id
+join public.groups g on g.id = gm.group_id;
+
+revoke all on all tables in schema reporting from anon, authenticated;
