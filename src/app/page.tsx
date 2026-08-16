@@ -907,7 +907,10 @@ function Login({ error, setError }: { error: string; setError: (message: string)
       return;
     }
     const result = mode === "login" ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password });
-    setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup") setError("Check your email to confirm your account, then sign in.");
+    // Supabase deliberately doesn't say whether an email is already registered (prevents
+    // an attacker from probing which emails have accounts), so signUp() "succeeds" with no
+    // error either way. The message below has to make sense for both cases.
+    setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup") setError("If this is a new account, check your email to confirm it. Already have an account with this email? Just log in instead.");
   }
   async function google() { setBusy(true); const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); if (oauthError) { setError(oauthError.message); setBusy(false); } }
   return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Build your daily drumming habit, one session at a time.</p><div className="auth-card">
@@ -2045,7 +2048,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
   return null;
 }
-function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; onBack: () => void; T: any }) {
+function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; onBack: () => void; T: any }) {
   const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [reminders, setReminders] = useState(false); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [saved, setSaved] = useState(false);
   const [newEmail, setNewEmail] = useState(""); const [emailBusy, setEmailBusy] = useState(false); const [emailMsg, setEmailMsg] = useState("");
   const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [passwordBusy, setPasswordBusy] = useState(false); const [passwordMsg, setPasswordMsg] = useState("");
@@ -2053,7 +2056,21 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
   useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,reminder_enabled,metronome_tone,show_days_this_year").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(row.daily_goal_minutes != null ? String(row.daily_goal_minutes) : ""); setLanguage(row.language); setReminders(row.reminder_enabled); if (row.metronome_tone) setTone(row.metronome_tone); if (row.show_days_this_year != null) setShowDaysThisYear(row.show_days_this_year); } }); supabase.from("profiles").select("color").eq("id", user.id).maybeSingle().then(({ data }) => { setColor(data?.color ?? null); }); }, [user]);
   // Goal is only included in the upsert when the field actually has a value -- leaving it
   // blank and saving other settings (name, language, etc.) shouldn't silently invent a goal.
-  async function saveSettings() { const profile = await supabase.from("profiles").upsert({ id: user.id, name, color }, { onConflict: "id" }); const goalValue = goal.trim() ? Number(goal) || null : null; const settingsRow: any = { user_id: user.id, language, reminder_enabled: reminders, metronome_tone: tone, show_days_this_year: showDaysThisYear }; if (goalValue != null) settingsRow.daily_goal_minutes = goalValue; const settings = await supabase.from("settings").upsert(settingsRow, { onConflict: "user_id" }); if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings."); else { onProfileNameSaved(name); onLanguageSaved(language); if (goalValue != null) onGoalSaved(goalValue); onMetronomeToneSaved(tone); onShowDaysThisYearSaved(showDaysThisYear); setSaved(true); setTimeout(() => setSaved(false), 1800); } }
+  async function saveSettings() {
+    const profile = await supabase.from("profiles").upsert({ id: user.id, name, color }, { onConflict: "id" });
+    const trimmed = goal.trim();
+    const parsedGoal = trimmed === "" ? null : Number(trimmed);
+    // "0" is a real, explicit choice (unlike `Number(goal) || null`, which wrongly treated
+    // it as falsy and silently dropped it). An empty field only counts as "clear the goal"
+    // if there WAS one to begin with -- otherwise it just means the user never touched it,
+    // and writing anything would fabricate a value they never chose.
+    const shouldWriteGoal = (parsedGoal === null ? dailyGoal !== null : !Number.isNaN(parsedGoal));
+    const settingsRow: any = { user_id: user.id, language, reminder_enabled: reminders, metronome_tone: tone, show_days_this_year: showDaysThisYear };
+    if (shouldWriteGoal) settingsRow.daily_goal_minutes = parsedGoal;
+    const settings = await supabase.from("settings").upsert(settingsRow, { onConflict: "user_id" });
+    if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings.");
+    else { onProfileNameSaved(name); onLanguageSaved(language); if (shouldWriteGoal) onGoalSaved(parsedGoal); onMetronomeToneSaved(tone); onShowDaysThisYearSaved(showDaysThisYear); setSaved(true); setTimeout(() => setSaved(false), 1800); }
+  }
   async function changeEmail() {
     if (!newEmail.trim()) return;
     setEmailBusy(true); setEmailMsg("");
