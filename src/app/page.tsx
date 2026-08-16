@@ -256,6 +256,7 @@ const translations = {
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${minutes} min on ${equipmentName}`,
       todaySummary: "TODAY'S SUMMARY", goalLabel: "GOAL", noPracticeYet: "No practice logged yet today.", secondsCarried: "extra (not counted in minutes yet)", other: "Other", otherPlaceholder: "What else did you practice?",
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
+      noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
     },
     calendar: {
       title: "CALENDAR", longestStreak: "Longest streak", daysThisYear: "Days this year",
@@ -332,6 +333,10 @@ const translations = {
       listIntroExercises: (min: number) => `Focused drills for coordination and control. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it, same as rudiments.`,
       listIntroRhythms: (min: number) => `Grooves and styles to build your musical vocabulary. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it and move up.`,
     },
+    onboarding: {
+      eyebrow: "WELCOME", exercisesTitle: "Pick your focus", goalTitle: "Daily practice goal",
+      continueBtn: "Continue", finishBtn: "Finish", skipBtn: "Skip for now",
+    },
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
       language: "LANGUAGE", reminders: "Daily practice reminders", showDaysThisYear: "Show \"days this year\" stat", on: "ON", off: "OFF", save: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR", autoColor: "Auto",
@@ -360,6 +365,7 @@ const translations = {
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${minutes} min en ${equipmentName}`,
       todaySummary: "RESUMEN DE HOY", goalLabel: "META", noPracticeYet: "Aún no has registrado práctica hoy.", secondsCarried: "extra (aún no contado en minutos)", other: "Otro", otherPlaceholder: "¿Qué más practicaste?",
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
+      noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
     },
     calendar: {
       title: "CALENDARIO", longestStreak: "Racha más larga", daysThisYear: "Días este año",
@@ -435,6 +441,10 @@ const translations = {
       listIntroRudiments: (min: number) => `Rudimentos estándar para una técnica limpia. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo antes de pasar al siguiente tempo.`,
       listIntroExercises: (min: number) => `Ejercicios enfocados en coordinación y control. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo, igual que con los rudimentos.`,
       listIntroRhythms: (min: number) => `Grooves y estilos para ampliar tu vocabulario musical. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo y subir de nivel.`,
+    },
+    onboarding: {
+      eyebrow: "BIENVENIDO", exercisesTitle: "Elige tu enfoque", goalTitle: "Meta diaria de práctica",
+      continueBtn: "Continuar", finishBtn: "Finalizar", skipBtn: "Omitir por ahora",
     },
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
@@ -581,7 +591,7 @@ export default function Home() {
   const [profileName, setProfileName] = useState("");
   const displayName = profileName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Drummer";
   const [language, setLanguage] = useState<Lang>("en");
-  const [dailyGoal, setDailyGoal] = useState(30);
+  const [dailyGoal, setDailyGoal] = useState<number | null>(null);
   const [metronomeTone, setMetronomeTone] = useState("click");
   const [showDaysThisYear, setShowDaysThisYear] = useState(true);
   const T = translations[language];
@@ -600,6 +610,7 @@ export default function Home() {
   const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; issues: string[]; notes: string | null; created_at: string }[]>([]);
   const [pinnedExercises, setPinnedExercises] = useState<string[]>([]);
   const [showPinManager, setShowPinManager] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setLoading(false); });
@@ -616,11 +627,14 @@ export default function Home() {
       setProfileName(fallbackName);
       supabase.from("profiles").upsert({ id: currentUser.id, name: fallbackName }, { onConflict: "id" }).then();
     });
-    supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year").eq("user_id", currentUser.id).maybeSingle().then(({ data }) => {
+    supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year, onboarded").eq("user_id", currentUser.id).maybeSingle().then(({ data }) => {
       if (data?.language === "es" || data?.language === "en") setLanguage(data.language);
-      if (data?.daily_goal_minutes) setDailyGoal(data.daily_goal_minutes);
+      if (data?.daily_goal_minutes != null) setDailyGoal(data.daily_goal_minutes);
       if (data?.metronome_tone) setMetronomeTone(data.metronome_tone);
       if (data?.show_days_this_year != null) setShowDaysThisYear(data.show_days_this_year);
+      // Only decide this on the initial load, not a background refetch (e.g. tab regaining focus) —
+      // otherwise an in-progress onboarding flow could get yanked back open mid-flow.
+      if (hydrateToday) setShowOnboarding(!data?.onboarded);
     });
     supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("user_id", currentUser.id).then(({ data }) => {
       const nextLogs: Record<string, Log> = {};
@@ -667,6 +681,25 @@ export default function Home() {
     if (error) { setAuthError(error.message); return; }
     setPinnedExercises((current) => [...current, itemEn]);
     setShowPinManager(true);
+  }
+  async function skipOnboarding() {
+    if (!user) return;
+    setShowOnboarding(false);
+    await supabase.from("settings").upsert({ user_id: user.id, onboarded: true }, { onConflict: "user_id" });
+  }
+  async function finishOnboarding(selectedExercises: string[], goalMinutes: number | null) {
+    if (!user) return;
+    setShowOnboarding(false);
+    if (selectedExercises.length) {
+      await Promise.all(selectedExercises.map((en, i) => supabase.from("pinned_exercises").insert({ user_id: user.id, exercise_en: en, sort_order: i })));
+      setPinnedExercises((current) => [...current, ...selectedExercises]);
+    }
+    // goalMinutes is only null when skipping with no prior goal to fall back to -- leave
+    // daily_goal_minutes untouched (still unset) rather than writing a fabricated number.
+    const settingsRow: any = { user_id: user.id, onboarded: true };
+    if (goalMinutes != null) settingsRow.daily_goal_minutes = goalMinutes;
+    await supabase.from("settings").upsert(settingsRow, { onConflict: "user_id" });
+    if (goalMinutes != null) setDailyGoal(goalMinutes);
   }
   async function unpinExercise(itemEn: string) {
     if (!user) return;
@@ -786,6 +819,7 @@ export default function Home() {
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
     {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onClose={() => setShowPinManager(false)} language={language} T={T} />}
+    {showOnboarding && <OnboardingModal currentGoal={dailyGoal} onSkip={skipOnboarding} onFinish={finishOnboarding} language={language} T={T} />}
   </main>;
 }
 function PinManagerModal({ pinnedExercises, onMove, onUnpin, onClose, language, T }: { pinnedExercises: string[]; onMove: (itemEn: string, direction: -1 | 1) => void; onUnpin: (itemEn: string) => void; onClose: () => void; language: Lang; T: any }) {
@@ -806,6 +840,59 @@ function PinManagerModal({ pinnedExercises, onMove, onUnpin, onClose, language, 
       })}
     </div>
     <button className="save" onClick={onClose}>{T.practiceMode.pinManagerDone}</button>
+  </div></div>;
+}
+
+function OnboardingModal({ currentGoal, onSkip, onFinish, language, T }: { currentGoal: number | null; onSkip: () => void; onFinish: (selected: string[], goalMinutes: number | null) => void; language: Lang; T: any }) {
+  const [step, setStep] = useState<"exercises" | "goal">("exercises");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [openCategories, setOpenCategories] = useState<string[]>([]);
+  // 30 here is just a suggested starting point shown in the input -- it's only ever
+  // saved if the user explicitly hits Finish. Skip leaves the goal genuinely unset.
+  const [goalInput, setGoalInput] = useState(String(currentGoal ?? 30));
+  function toggleExercise(en: string) {
+    setSelected((current) => current.includes(en) ? current.filter((v) => v !== en) : current.length >= MAX_PINNED_EXERCISES ? current : [...current, en]);
+  }
+  function toggleCategory(cat: string) {
+    setOpenCategories((current) => current.includes(cat) ? current.filter((c) => c !== cat) : [...current, cat]);
+  }
+  return <div className="modal modal-center" onClick={onSkip}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
+    <p className="eyebrow">{T.onboarding.eyebrow}</p>
+    {step === "exercises" ? <>
+      <h2 className="edit-rating-title">{T.onboarding.exercisesTitle}</h2>
+      <p className="onboard-count">{T.practiceMode.pinManagerEyebrow(selected.length, MAX_PINNED_EXERCISES)}</p>
+      <div className="onboard-exercise-list">
+        {PRACTICE_CATEGORIES.map((cat) => {
+          const isOpen = openCategories.includes(cat);
+          const catLabel = cat === "rudiments" ? T.practiceMode.categoryRudiments : T.practiceMode.categoryExercises;
+          const catItems = PRACTICE_EXERCISES.filter((e) => e.category === cat);
+          const selectedInCat = catItems.filter((e) => selected.includes(e.en)).length;
+          return <div key={cat} className="onboard-category">
+            <button type="button" className="collapsible-header" onClick={() => toggleCategory(cat)}>
+              <span className="ladder-label">{catLabel.toUpperCase()}{selectedInCat > 0 ? ` (${selectedInCat})` : ""}</span>
+              <span className={isOpen ? "collapse-chevron open" : "collapse-chevron"}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7.5l5 5 5-5" /></svg></span>
+            </button>
+            {isOpen && catItems.map((item) => {
+              const isSelected = selected.includes(item.en);
+              return <button key={item.en} type="button" className={isSelected ? "onboard-row selected" : "onboard-row"} onClick={() => toggleExercise(item.en)}>
+                <span className="onboard-row-name">{item[language as Lang]}</span>
+                {isSelected && <span className="onboard-check">✓</span>}
+              </button>;
+            })}
+          </div>;
+        })}
+      </div>
+      <button className="save" onClick={() => setStep("goal")}>{T.onboarding.continueBtn}</button>
+    </> : <>
+      <h2 className="edit-rating-title">{T.onboarding.goalTitle}</h2>
+      <div className="minutes-island">
+        <button className="minutes-step" onClick={() => setGoalInput(String(Math.max(5, (Number(goalInput) || 0) - 5)))}>-5</button>
+        <div className="minutes-value"><input inputMode="numeric" size={3} value={goalInput} onChange={(e: any) => setGoalInput(e.target.value.replace(/\D/g, ""))} /><span>{T.settings.minutes}</span></div>
+        <button className="minutes-step" onClick={() => setGoalInput(String((Number(goalInput) || 0) + 5))}>+5</button>
+      </div>
+      <button className="save" onClick={() => onFinish(selected, Number(goalInput) || currentGoal || 30)}>{T.onboarding.finishBtn}</button>
+      <button className="auth-switch" onClick={() => onFinish(selected, currentGoal)}>{T.onboarding.skipBtn}</button>
+    </>}
   </div></div>;
 }
 
@@ -877,15 +964,23 @@ function HomeChallenges({ user, practiceSessions, language, T }: any) {
 function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onOpenExercise, displayName, language, T }: any) {
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
-  const goalAchieved = todayMinutes >= dailyGoal;
-  const goalPct = Math.min(100, (todayMinutes / Math.max(1, dailyGoal)) * 100);
+  const goalAchieved = dailyGoal != null && todayMinutes >= dailyGoal;
+  const goalPct = dailyGoal != null ? Math.min(100, (todayMinutes / Math.max(1, dailyGoal)) * 100) : 0;
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   return <section className="page today">
     <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
     <div className="form-card stats-tile"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
     <div className="form-card">
       <label className="input-label">{T.today.todaySummary}</label>
-      <div className="goal-progress"><div className="goal-progress-label"><span>{T.today.goalLabel}</span><strong className={goalAchieved ? "achieved" : ""}>{todayMinutes}/{dailyGoal} min</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
+      {dailyGoal != null ? (
+        <div className="goal-progress"><div className="goal-progress-label"><span>{T.today.goalLabel}</span><strong className={goalAchieved ? "achieved" : ""}>{todayMinutes}/{dailyGoal} min</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
+      ) : (
+        <div className="no-goal-card">
+          <p className="no-goal-title">{T.today.noGoalTitle}</p>
+          <p className="no-goal-subtitle">{T.today.noGoalSubtitle}</p>
+          <button className="no-goal-btn" onClick={openSettings}>{T.today.noGoalBtn}</button>
+        </div>
+      )}
       {todayLog && todayLog.equipment && <span className="roster-equipment">{equipmentSplitLabel(todayLog.drumsetMinutes, todayLog.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(todayLog.equipment, T))}</span>}
       {todayLog && todayLog.seconds > 0 && <span className="roster-equipment">+{todayLog.seconds}s</span>}
       {todayLog && (todayLog.items.length > 0 || todayLog.customItems.length > 0) ? <div className="detail-chips">{todayLog.items.map((item: string) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{todayLog.customItems.map((item: string) => <em key={item}>{item}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>}
@@ -922,7 +1017,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
 
 type SaveLogFor = (targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[]) => Promise<boolean>;
 
-function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T }: { logs: Record<string, Log>; dailyGoal: number; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
+function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T }: { logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
   const today = new Date(); const [selectedDate, setSelectedDate] = useState(dateKey); const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1)); const year = viewDate.getFullYear(); const month = viewDate.getMonth(); const days = new Date(year, month + 1, 0).getDate(); const starts = (new Date(year, month, 1).getDay() + 6) % 7; const selectedLog = logs[selectedDate];
   const locale = language === "es" ? "es-ES" : "en-US";
   const [summaryDate, setSummaryDate] = useState<string | null>(null);
@@ -954,7 +1049,7 @@ function ConfirmModal({ message, onConfirm, onCancel, T }: { message: string; on
   </div>;
 }
 function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, confirm, roster }: {
-  date: string; log?: Log; dailyGoal: number; logs: Record<string, Log>; locale: string; language: Lang; T: any;
+  date: string; log?: Log; dailyGoal: number | null; logs: Record<string, Log>; locale: string; language: Lang; T: any;
   onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>;
   roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }>; currentUserId: string };
 }) {
@@ -984,7 +1079,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
           <strong className="ds-minutes">{log.minutes} {T.calendar.minPractised}{log.seconds > 0 ? ` +${log.seconds}s` : ""}{log.equipment ? ` - ${equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
           {(log.items.length > 0 || log.customItems.length > 0) && <div className="detail-chips">{log.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{log.customItems.map((item) => <em key={item}>{item}</em>)}</div>}
           {log.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
-          <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(log.minutes, dailyGoal)}</p>
+          {dailyGoal != null && <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(log.minutes, dailyGoal)}</p>}
           {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
         </> : <p className="hint">{T.calendar.noPracticeShort}</p>
       )}
@@ -1076,7 +1171,7 @@ function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date
 }
 function Stat({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><strong>{value}</strong></div>; }
 
-function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T }: { user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
+function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T }: { user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
   const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [groups, setGroups] = useState<any[]>([]); const [activeGroupId, setActiveGroupId] = useState<string | null>(null); const [addingGroup, setAddingGroup] = useState(false); const [busy, setBusy] = useState(false);
   const group = useMemo(() => groups.find((g) => g.id === activeGroupId) ?? null, [groups, activeGroupId]);
   const [groupLoading, setGroupLoading] = useState(true);
@@ -1950,13 +2045,15 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
   return null;
 }
-function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number; onGoalSaved: (goal: number) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; onBack: () => void; T: any }) {
-  const [name, setName] = useState(profileName); const [goal, setGoal] = useState(String(dailyGoal)); const [language, setLanguage] = useState<Lang>(currentLanguage); const [reminders, setReminders] = useState(false); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [saved, setSaved] = useState(false);
+function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; onBack: () => void; T: any }) {
+  const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [reminders, setReminders] = useState(false); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [saved, setSaved] = useState(false);
   const [newEmail, setNewEmail] = useState(""); const [emailBusy, setEmailBusy] = useState(false); const [emailMsg, setEmailMsg] = useState("");
   const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [passwordBusy, setPasswordBusy] = useState(false); const [passwordMsg, setPasswordMsg] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState(""); const [deleteBusy, setDeleteBusy] = useState(false);
-  useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,reminder_enabled,metronome_tone,show_days_this_year").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(String(row.daily_goal_minutes)); setLanguage(row.language); setReminders(row.reminder_enabled); if (row.metronome_tone) setTone(row.metronome_tone); if (row.show_days_this_year != null) setShowDaysThisYear(row.show_days_this_year); } }); supabase.from("profiles").select("color").eq("id", user.id).maybeSingle().then(({ data }) => { setColor(data?.color ?? null); }); }, [user]);
-  async function saveSettings() { const profile = await supabase.from("profiles").upsert({ id: user.id, name, color }, { onConflict: "id" }); const goalValue = Number(goal) || 30; const settings = await supabase.from("settings").upsert({ user_id: user.id, daily_goal_minutes: goalValue, language, reminder_enabled: reminders, metronome_tone: tone, show_days_this_year: showDaysThisYear }, { onConflict: "user_id" }); if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings."); else { onProfileNameSaved(name); onLanguageSaved(language); onGoalSaved(goalValue); onMetronomeToneSaved(tone); onShowDaysThisYearSaved(showDaysThisYear); setSaved(true); setTimeout(() => setSaved(false), 1800); } }
+  useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,reminder_enabled,metronome_tone,show_days_this_year").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(row.daily_goal_minutes != null ? String(row.daily_goal_minutes) : ""); setLanguage(row.language); setReminders(row.reminder_enabled); if (row.metronome_tone) setTone(row.metronome_tone); if (row.show_days_this_year != null) setShowDaysThisYear(row.show_days_this_year); } }); supabase.from("profiles").select("color").eq("id", user.id).maybeSingle().then(({ data }) => { setColor(data?.color ?? null); }); }, [user]);
+  // Goal is only included in the upsert when the field actually has a value -- leaving it
+  // blank and saving other settings (name, language, etc.) shouldn't silently invent a goal.
+  async function saveSettings() { const profile = await supabase.from("profiles").upsert({ id: user.id, name, color }, { onConflict: "id" }); const goalValue = goal.trim() ? Number(goal) || null : null; const settingsRow: any = { user_id: user.id, language, reminder_enabled: reminders, metronome_tone: tone, show_days_this_year: showDaysThisYear }; if (goalValue != null) settingsRow.daily_goal_minutes = goalValue; const settings = await supabase.from("settings").upsert(settingsRow, { onConflict: "user_id" }); if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings."); else { onProfileNameSaved(name); onLanguageSaved(language); if (goalValue != null) onGoalSaved(goalValue); onMetronomeToneSaved(tone); onShowDaysThisYearSaved(showDaysThisYear); setSaved(true); setTimeout(() => setSaved(false), 1800); } }
   async function changeEmail() {
     if (!newEmail.trim()) return;
     setEmailBusy(true); setEmailMsg("");
@@ -1992,7 +2089,7 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
   }
   return <section className="page"><button className="page-back" onClick={onBack}>‹ {T.nav.today}</button><header className="simple-head"><p className="eyebrow">{T.settings.makeItYours}</p><h1>{T.settings.title}</h1></header>
     <p className="settings-section-label">{T.settings.userSection}</p>
-    <div className="settings-form"><label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label><label>{T.settings.dailyGoal}<input inputMode="numeric" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setReminders(!reminders)}><span>{T.settings.reminders}</span><b className={reminders ? "on" : ""}>{reminders ? T.settings.on : T.settings.off}</b></button><button className="toggle-row" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span>{T.settings.showDaysThisYear}</span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
+    <div className="settings-form"><label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label><label>{T.settings.dailyGoal}<input inputMode="numeric" placeholder="30" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setReminders(!reminders)}><span>{T.settings.reminders}</span><b className={reminders ? "on" : ""}>{reminders ? T.settings.on : T.settings.off}</b></button><button className="toggle-row" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span>{T.settings.showDaysThisYear}</span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
     <p className="settings-section-label">{T.settings.accountSection}</p>
     <div className="settings-form account-settings">
       <label>{T.settings.changeEmail}<input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={T.settings.newEmailPlaceholder} /></label>

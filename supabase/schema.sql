@@ -680,3 +680,28 @@ join public.profiles p on p.id = gm.user_id
 join public.groups g on g.id = gm.group_id;
 
 revoke all on all tables in schema reporting from anon, authenticated;
+
+-- New-user onboarding: after signup, prompt for exercises to pin and a daily practice
+-- goal. Detected via settings.onboarded -- false (or no settings row at all yet) means
+-- "show the prompt", set true once the user finishes or explicitly skips it.
+alter table public.settings add column if not exists onboarded boolean not null default false;
+
+-- Backfill so existing users don't suddenly see the onboarding prompt: anyone who
+-- already has a settings row is clearly not new.
+update public.settings set onboarded = true where onboarded = false;
+
+-- Backfill users who predate this feature and never saved any settings at all (no row
+-- yet) -- give them a settings row already marked onboarded, same reasoning as above.
+insert into public.settings (user_id, onboarded)
+select p.id, true from public.profiles p
+where not exists (select 1 from public.settings s where s.user_id = p.id);
+
+-- daily_goal_minutes used to default to 30 for every account, even ones that never
+-- explicitly chose a goal -- meaning "no goal set yet" and "chose 30 on purpose" were
+-- indistinguishable, which is exactly what caused today's onboarding mess. Making the
+-- column genuinely nullable with no default: null now means "not chosen yet" for real,
+-- and the app shows a dedicated prompt on Home instead of a fabricated number. Existing
+-- rows are left untouched -- there's no way to tell who set 30 on purpose from here, so
+-- this only changes what happens for brand new users going forward.
+alter table public.settings alter column daily_goal_minutes drop default;
+alter table public.settings alter column daily_goal_minutes drop not null;
