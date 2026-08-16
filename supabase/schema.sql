@@ -705,3 +705,10 @@ where not exists (select 1 from public.settings s where s.user_id = p.id);
 -- this only changes what happens for brand new users going forward.
 alter table public.settings alter column daily_goal_minutes drop default;
 alter table public.settings alter column daily_goal_minutes drop not null;
+
+-- Removed the "Daily practice reminders" toggle from Settings -- it saved a boolean to
+-- reminder_enabled but nothing ever read it: no push notifications, no email reminders,
+-- no scheduled job of any kind actually used it. reminder_time was never wired up either
+-- (no UI ever set it). Dropping both now-orphaned columns.
+alter table public.settings drop column if exists reminder_enabled;
+alter table public.settings drop column if exists reminder_time;
