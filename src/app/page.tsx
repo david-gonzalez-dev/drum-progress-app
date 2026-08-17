@@ -15,6 +15,7 @@ const SESSION_ISSUE_TAGS: { en: string; es: string }[] = [
   { en: "Stick slides", es: "La baqueta se resbala" },
   { en: "Index finger issue", es: "Problema con el dedo índice" },
   { en: "Feels shaky", es: "Se siente inestable" },
+  { en: "Left hand", es: "Mano izquierda" },
 ];
 const PRACTICE_ITEMS = [
   { en: "Rudiments", es: "Rudimentos" },
@@ -318,6 +319,7 @@ const translations = {
       notStarted: "Not started", bpmLevels: "BPM LEVELS · TAP TO PRACTISE",
       inProgress: "In progress", unlockedLabel: "Unlocked", confirmResetLevel: (bpm: number) => `Reset your progress at ${bpm} BPM? This can't be undone.`,
       editRatingTitle: "Change rating", skippedLabel: "Skipped",
+      improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `🎉 Improved from ${from} to ${to} on ${exercise} · ${bpm} BPM in ${days} day${days === 1 ? "" : "s"}`,
       tierBeginner: "BEGINNER", tierIntermediate: "INTERMEDIATE", tierAdvanced: "ADVANCED", tierLegend: "LEGEND",
       ratingNotReady: "Not ready", ratingTense: "Tense", ratingAlmost: "Almost there", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
       rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Rate your session at ${bpm} BPM to save it.`, skipRating: "Skip, don't log this",
@@ -360,7 +362,7 @@ const translations = {
       start: "▶ Start", stop: "■ Stop", sessionComplete: "SESSION COMPLETE",
       addTimeQuestion: (label: string) => `Add ${label} to today's practice?`, addTimeTooShort: "Too short to log — adjust the timer above", sessionLasted: (time: string) => `Your metronome session lasted ${time}.`, minAbbr: "min", secAbbr: "sec",
       notNow: "Not now", addTime: "Add time",
-      timeSignature: "BEATS / BAR", subdivisionLabel: "CLICKS / BEAT",
+      timeSignature: "BEATS / BAR", subdivisionLabel: "CLICKS / BEAT", historyTitle: (n: number) => `HISTORY (${n})`,
     },
   },
   es: {
@@ -435,6 +437,7 @@ const translations = {
       notStarted: "Sin empezar", bpmLevels: "NIVELES DE BPM · TOCA PARA PRACTICAR",
       inProgress: "En progreso", unlockedLabel: "Desbloqueado", confirmResetLevel: (bpm: number) => `¿Reiniciar tu progreso a ${bpm} BPM? Esta acción no se puede deshacer.`,
       editRatingTitle: "Cambiar calificación", skippedLabel: "Omitido",
+      improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `🎉 Mejoraste de ${from} a ${to} en ${exercise} · ${bpm} BPM en ${days} día${days === 1 ? "" : "s"}`,
       tierBeginner: "PRINCIPIANTE", tierIntermediate: "INTERMEDIO", tierAdvanced: "AVANZADO", tierLegend: "LEYENDA",
       ratingNotReady: "No listo", ratingTense: "Con tensión", ratingAlmost: "Casi listo", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
       rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Califica tu sesión a ${bpm} BPM para guardarla.`, skipRating: "Omitir, no guardar esto",
@@ -477,7 +480,7 @@ const translations = {
       start: "▶ Iniciar", stop: "■ Detener", sessionComplete: "SESIÓN COMPLETA",
       addTimeQuestion: (label: string) => `¿Añadir ${label} a la práctica de hoy?`, addTimeTooShort: "Muy corto para registrar — ajusta el tiempo arriba", sessionLasted: (time: string) => `Tu sesión de metrónomo duró ${time}.`, minAbbr: "min", secAbbr: "seg",
       notNow: "Ahora no", addTime: "Añadir tiempo",
-      timeSignature: "TIEMPOS / COMPÁS", subdivisionLabel: "CLICS / TIEMPO",
+      timeSignature: "TIEMPOS / COMPÁS", subdivisionLabel: "CLICS / TIEMPO", historyTitle: (n: number) => `HISTORIAL (${n})`,
     },
   },
 } as const;
@@ -602,6 +605,7 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState("");
+  const [progressToast, setProgressToast] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const { current: streak, longest: longestStreak } = useMemo(() => calculateStreaks(logs, dateKey), [logs]);
   const daysThisYear = useMemo(() => Object.keys(logs).filter((key) => key.startsWith(dateKey.slice(0, 4)) && logs[key].minutes > 0).length, [logs]);
@@ -759,6 +763,21 @@ export default function Home() {
     const { data: exerciseRow } = await supabase.from("practice_exercises").select("id").eq("name_en", itemEn).maybeSingle();
     const { error } = await supabase.from("practice_sessions").insert({ user_id: user.id, practice_exercise_id: exerciseRow?.id ?? null, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey, issues, notes: note || null });
     if (error) { setAuthError(error.message); return false; }
+    // Celebrate a genuine new personal-best rating at this exact exercise + BPM (not just "better
+    // than last time", which could just mean re-reaching a level already hit before).
+    const priorSessions = practiceSessions.filter((s) => s.item_en === itemEn && s.bpm === bpm);
+    if (priorSessions.length > 0) {
+      const newRank = RATING_RANK[rating] ?? 0;
+      const priorBest = priorSessions.reduce((best, s) => (RATING_RANK[s.rating] ?? 0) > (RATING_RANK[best.rating] ?? 0) ? s : best, priorSessions[0]);
+      if (newRank > (RATING_RANK[priorBest.rating] ?? 0)) {
+        const ratingLabel: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
+        const earliestDate = priorSessions.reduce((min, s) => (s.practiced_on < min ? s.practiced_on : min), priorSessions[0].practiced_on);
+        const days = Math.max(1, Math.round((new Date(dateKey + "T12:00:00").getTime() - new Date(earliestDate + "T12:00:00").getTime()) / 86400000));
+        const exerciseLabel = PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.[language] ?? itemEn;
+        setProgressToast(T.practiceMode.improvedToast(ratingLabel[priorBest.rating] ?? priorBest.rating, ratingLabel[rating] ?? rating, exerciseLabel, bpm, days));
+        setTimeout(() => setProgressToast(""), 6000);
+      }
+    }
     const newMinutes = (Number(minutes) || 0) + durationMinutes;
     // practice_log_items only links against the flat quick-log catalog (practice_items), which BPM-ladder
     // exercise names don't always exist in — those go into custom_items instead so they still show up
@@ -838,6 +857,7 @@ export default function Home() {
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage language={language} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
+    {progressToast && <button className="progress-toast" onClick={() => setProgressToast("")}>{progressToast} ×</button>}
     <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
@@ -2066,7 +2086,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     return <section className="page">
       <div className="back-row"><button onClick={() => setStep("detail")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
-      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} exerciseEn={exercise} lockTempo T={T} />
+      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} exerciseEn={exercise} sessions={sessions} lockTempo language={language} T={T} />
     </section>;
   }
 
@@ -2179,7 +2199,7 @@ const TONE_PRESETS: Record<string, ToneDef> = {
 const TONE_KEYS = ["click", "beep", "wood", "clave"];
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], otherNote: string) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; language?: Lang; T: any }) {
+function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, sessions, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], otherNote: string) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; language?: Lang; T: any }) {
   const [bpm, setBpm] = useState(initialBpm ?? 100);
   const [playing, setPlaying] = useState(false);
   const [beatsPerBar, setBeatsPerBar] = useState(4);
@@ -2191,6 +2211,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   const [addItems, setAddItems] = useState<string[]>([]);
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherText, setOtherText] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const bpmRef = useRef(bpm);
   const beatsPerMeasureRef = useRef(beatsPerBar);
   const subdivisionRef = useRef(subdivision);
@@ -2352,6 +2373,12 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   }
   if (lockTempo) {
     const sticking = exerciseEn ? EXERCISE_STICKING[exerciseEn] : null;
+    // Every past rated session at this exact exercise + BPM, most recent first — lets you see
+    // "this used to be tense, now it's comfortable" at a glance. Collapsed by default and hidden
+    // entirely when there's nothing to show yet, so a fresh tempo doesn't add clutter.
+    const history = (sessions ?? []).filter((s) => s.item_en === exerciseEn && s.bpm === bpm).slice().sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8);
+    const locale = language === "es" ? "es-ES" : "en-US";
+    const historyRatingLabel: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
     return <div className="modal modal-center"><div className="metro metro-practice">
       <button className="close" onClick={close}>×</button>
       <p className="eyebrow">{T.practiceMode.title}</p>
@@ -2371,6 +2398,19 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <div className="tempo-simple"><span className="tempo-bpm-num">{bpm}</span><span className="tempo-bpm-unit">BPM</span></div>
       <div className="beat-dots">{Array.from({ length: beatsPerMeasure }).map((_, i) => <i key={i} className={playing && activeBeat === i ? "beat-dot active" : "beat-dot"} />)}</div>
       <div className="metronome-timer">{playing ? T.metronome.practiceTimer : T.metronome.sessionTime}<strong>{elapsedLabel}</strong></div>
+      {history.length > 0 && <div className="metro-history">
+        <button type="button" className="collapsible-header" onClick={() => setHistoryOpen(!historyOpen)}>
+          <span className="input-label checklist-label">{T.metronome.historyTitle(history.length)}</span>
+          <span className={historyOpen ? "collapse-chevron open" : "collapse-chevron"}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7.5l5 5 5-5" /></svg></span>
+        </button>
+        {historyOpen && <div className="admin-log-list metro-history-list">
+          {history.map((s, i) => <div key={i} className="admin-log-row">
+            <div className="admin-log-head"><span>{new Date(s.practiced_on + "T12:00:00").toLocaleDateString(locale, { month: "short", day: "numeric" })}</span><span>{RATING_ICON[s.rating]} {historyRatingLabel[s.rating] ?? s.rating}</span></div>
+            {s.issues && s.issues.length > 0 && <div className="detail-chips">{s.issues.map((issueEn) => <em key={issueEn}>{SESSION_ISSUE_TAGS.find((t) => t.en === issueEn)?.[language as Lang] ?? issueEn}</em>)}</div>}
+            {s.notes && <p className="today-notes">{s.notes}</p>}
+          </div>)}
+        </div>}
+      </div>}
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
       <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : `▶ ${T.metronome.startPractice}`}</button>
     </div></div>;

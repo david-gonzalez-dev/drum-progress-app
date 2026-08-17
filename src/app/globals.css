@@ -187,3 +187,7 @@ h2.home-title{font:700 21px 'Barlow Condensed';margin:0 0 13px;letter-spacing:.2
 .admin-log-head{display:flex;justify-content:space-between;align-items:baseline;font:600 14px 'DM Sans';color:#e7e9e6}
 .admin-log-head+.admin-log-head{margin-top:2px;font-weight:400;font-size:13px;color:#9aa19d}
 .admin-section-gap{margin-top:20px}
+.metro-history{margin-top:18px}
+.metro-history-list{margin-bottom:6px}
+.metro-history-list .today-notes{font-size:12px;margin:4px 0 0}
+.progress-toast{position:fixed;bottom:90px;left:20px;right:20px;z-index:5;background:#0f2a1c;border:1px solid #2f6b45;color:#c8f0d8;border-radius:11px;padding:12px;text-align:left;font:15px "DM Sans"}
