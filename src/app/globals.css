@@ -190,4 +190,6 @@ h2.home-title{font:700 21px 'Barlow Condensed';margin:0 0 13px;letter-spacing:.2
 .metro-history{margin-top:18px}
 .metro-history-list{margin-bottom:6px}
 .metro-history-list .today-notes{font-size:12px;margin:4px 0 0}
-.progress-toast{position:fixed;bottom:90px;left:20px;right:20px;z-index:5;background:#0f2a1c;border:1px solid #2f6b45;color:#c8f0d8;border-radius:11px;padding:12px;text-align:left;font:15px "DM Sans"}
+.progress-card{text-align:center;border-color:#472315;background:linear-gradient(155deg,#2d160b,#151311)}
+.progress-emoji{font-size:42px;line-height:1;margin-bottom:12px}
+.progress-message{font:700 19px 'Barlow Condensed';color:#f6f7f5;line-height:1.35;margin:0 0 22px}

@@ -319,7 +319,7 @@ const translations = {
       notStarted: "Not started", bpmLevels: "BPM LEVELS · TAP TO PRACTISE",
       inProgress: "In progress", unlockedLabel: "Unlocked", confirmResetLevel: (bpm: number) => `Reset your progress at ${bpm} BPM? This can't be undone.`,
       editRatingTitle: "Change rating", skippedLabel: "Skipped",
-      improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `🎉 Improved from ${from} to ${to} on ${exercise} · ${bpm} BPM in ${days} day${days === 1 ? "" : "s"}`,
+      improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `Improved from ${from} to ${to} on ${exercise} · ${bpm} BPM in ${days} day${days === 1 ? "" : "s"}`, niceBtn: "Nice!",
       tierBeginner: "BEGINNER", tierIntermediate: "INTERMEDIATE", tierAdvanced: "ADVANCED", tierLegend: "LEGEND",
       ratingNotReady: "Not ready", ratingTense: "Tense", ratingAlmost: "Almost there", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
       rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Rate your session at ${bpm} BPM to save it.`, skipRating: "Skip, don't log this",
@@ -437,7 +437,7 @@ const translations = {
       notStarted: "Sin empezar", bpmLevels: "NIVELES DE BPM · TOCA PARA PRACTICAR",
       inProgress: "En progreso", unlockedLabel: "Desbloqueado", confirmResetLevel: (bpm: number) => `¿Reiniciar tu progreso a ${bpm} BPM? Esta acción no se puede deshacer.`,
       editRatingTitle: "Cambiar calificación", skippedLabel: "Omitido",
-      improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `🎉 Mejoraste de ${from} a ${to} en ${exercise} · ${bpm} BPM en ${days} día${days === 1 ? "" : "s"}`,
+      improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `Mejoraste de ${from} a ${to} en ${exercise} · ${bpm} BPM en ${days} día${days === 1 ? "" : "s"}`, niceBtn: "¡Genial!",
       tierBeginner: "PRINCIPIANTE", tierIntermediate: "INTERMEDIO", tierAdvanced: "AVANZADO", tierLegend: "LEYENDA",
       ratingNotReady: "No listo", ratingTense: "Con tensión", ratingAlmost: "Casi listo", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
       rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Califica tu sesión a ${bpm} BPM para guardarla.`, skipRating: "Omitir, no guardar esto",
@@ -775,7 +775,6 @@ export default function Home() {
         const days = Math.max(1, Math.round((new Date(dateKey + "T12:00:00").getTime() - new Date(earliestDate + "T12:00:00").getTime()) / 86400000));
         const exerciseLabel = PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.[language] ?? itemEn;
         setProgressToast(T.practiceMode.improvedToast(ratingLabel[priorBest.rating] ?? priorBest.rating, ratingLabel[rating] ?? rating, exerciseLabel, bpm, days));
-        setTimeout(() => setProgressToast(""), 6000);
       }
     }
     const newMinutes = (Number(minutes) || 0) + durationMinutes;
@@ -857,7 +856,13 @@ export default function Home() {
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage language={language} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
-    {progressToast && <button className="progress-toast" onClick={() => setProgressToast("")}>{progressToast} ×</button>}
+    {progressToast && <div className="modal modal-center" onClick={() => setProgressToast("")}>
+      <div className="confirm-card progress-card" onClick={(e) => e.stopPropagation()}>
+        <div className="progress-emoji">🎉</div>
+        <p className="progress-message">{progressToast}</p>
+        <button className="save" onClick={() => setProgressToast("")}>{T.practiceMode.niceBtn}</button>
+      </div>
+    </div>}
     <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
