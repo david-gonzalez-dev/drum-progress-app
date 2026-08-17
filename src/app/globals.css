@@ -193,4 +193,5 @@ h2.home-title{font:700 21px 'Barlow Condensed';margin:0 0 13px;letter-spacing:.2
 .progress-card{text-align:center;border-color:#472315;background:linear-gradient(155deg,#2d160b,#151311)}
 .progress-emoji{font-size:42px;line-height:1;margin-bottom:12px}
 .progress-message{font:700 19px 'Barlow Condensed';color:#f6f7f5;line-height:1.35;margin:0 0 22px}
-.rung-struggled-flag{position:absolute;top:-7px;left:10px;font-size:12px;line-height:1;width:18px;height:18px;display:flex;align-items:center;justify-content:center;background:#1c211f;border:1px solid #303531;border-radius:50%}
+.rung-struggled-flag{position:absolute;top:-7px;left:10px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;background:#1c211f;border:1px solid #303531;border-radius:50%;color:#8d9690}
+.rung-struggled-flag svg{width:11px;height:11px}
