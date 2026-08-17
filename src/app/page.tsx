@@ -320,6 +320,7 @@ const translations = {
       inProgress: "In progress", unlockedLabel: "Unlocked", confirmResetLevel: (bpm: number) => `Reset your progress at ${bpm} BPM? This can't be undone.`,
       editRatingTitle: "Change rating", skippedLabel: "Skipped",
       improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `Improved from ${from} to ${to} on ${exercise} · ${bpm} BPM in ${days} day${days === 1 ? "" : "s"}`, niceBtn: "Nice!",
+      struggledFlagTitle: "You used to struggle at this tempo",
       tierBeginner: "BEGINNER", tierIntermediate: "INTERMEDIATE", tierAdvanced: "ADVANCED", tierLegend: "LEGEND",
       ratingNotReady: "Not ready", ratingTense: "Tense", ratingAlmost: "Almost there", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
       rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Rate your session at ${bpm} BPM to save it.`, skipRating: "Skip, don't log this",
@@ -438,6 +439,7 @@ const translations = {
       inProgress: "En progreso", unlockedLabel: "Desbloqueado", confirmResetLevel: (bpm: number) => `¿Reiniciar tu progreso a ${bpm} BPM? Esta acción no se puede deshacer.`,
       editRatingTitle: "Cambiar calificación", skippedLabel: "Omitido",
       improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `Mejoraste de ${from} a ${to} en ${exercise} · ${bpm} BPM en ${days} día${days === 1 ? "" : "s"}`, niceBtn: "¡Genial!",
+      struggledFlagTitle: "Antes te costaba este tempo",
       tierBeginner: "PRINCIPIANTE", tierIntermediate: "INTERMEDIO", tierAdvanced: "AVANZADO", tierLegend: "LEYENDA",
       ratingNotReady: "No listo", ratingTense: "Con tensión", ratingAlmost: "Casi listo", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
       rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Califica tu sesión a ${bpm} BPM para guardarla.`, skipRating: "Omitir, no guardar esto",
@@ -1809,6 +1811,12 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   function totalMinutesAny(itemEn: string, targetBpm: number) {
     return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm).reduce((sum: number, s: any) => sum + s.duration_minutes, 0);
   }
+  // A permanent history marker, not a current-state one -- stays true forever once a level has ever
+  // been rated not_ready/tense/almost, even after it's later unlocked. The point is being able to
+  // look at an unlocked, mastered level and still see "I used to struggle here."
+  function hasStruggledAt(itemEn: string, targetBpm: number) {
+    return sessions.some((s: any) => s.item_en === itemEn && s.bpm === targetBpm && RATINGS_NEEDING_NOTE.includes(s.rating));
+  }
   function exerciseStats(itemEn: string) {
     const unlockedLevels = BPM_LEVELS.filter((level) => isUnlocked(itemEn, level));
     const bestBpm = unlockedLevels.length ? Math.max(...unlockedLevels) : null;
@@ -2049,7 +2057,9 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
               const barColor = unlocked ? RATING_COLOR[rating ?? "comfortable"] : anyRating ? RATING_COLOR[anyRating] : "#ff6b1a";
               const skipped = !unlocked && totalMinutes === 0 && BPM_LEVELS.some((l) => l > level && isUnlocked(exercise, l));
               const stateClass = unlocked ? "unlocked" : totalMinutes > 0 ? "in-progress" : skipped ? "skipped" : "not-started";
+              const struggled = hasStruggledAt(exercise, level);
               return <div key={level} className={`rung ${stateClass}`}>
+                {struggled && <span className="rung-struggled-flag" title={T.practiceMode.struggledFlagTitle}>🚩</span>}
                 <button className="rung-tap" onClick={() => startSession(level)}>
                   <span className="bpm">{level}</span>
                   <div className="rung-progress">
