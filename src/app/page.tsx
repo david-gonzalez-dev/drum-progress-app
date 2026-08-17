@@ -257,6 +257,7 @@ const translations = {
       todaySummary: "TODAY'S SUMMARY", goalLabel: "GOAL", noPracticeYet: "No practice logged yet today.", secondsCarried: "extra (not counted in minutes yet)", other: "Other", otherPlaceholder: "What else did you practice?",
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
+      saveNoDetailsTitle: "What did you practice?", saveNoDetailsBody: (minutes: number) => `${minutes} min logged`, addDetailsBtn: "Add Practice Details", saveAnywayBtn: "Save Anyway",
     },
     calendar: {
       title: "CALENDAR", longestStreak: "Longest streak", daysThisYear: "Days this year",
@@ -366,6 +367,7 @@ const translations = {
       todaySummary: "RESUMEN DE HOY", goalLabel: "META", noPracticeYet: "Aún no has registrado práctica hoy.", secondsCarried: "extra (aún no contado en minutos)", other: "Otro", otherPlaceholder: "¿Qué más practicaste?",
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
+      saveNoDetailsTitle: "¿Qué practicaste?", saveNoDetailsBody: (minutes: number) => `${minutes} min registrados`, addDetailsBtn: "Añadir detalles", saveAnywayBtn: "Guardar de todas formas",
     },
     calendar: {
       title: "CALENDARIO", longestStreak: "Racha más larga", daysThisYear: "Días este año",
@@ -1051,6 +1053,18 @@ function ConfirmModal({ message, onConfirm, onCancel, T }: { message: string; on
     </div>
   </div>;
 }
+function SaveWithoutDetailsModal({ minutes, onDismiss, onAddDetails, onSaveAnyway, T }: { minutes: string; onDismiss: () => void; onAddDetails: () => void; onSaveAnyway: () => void; T: any }) {
+  return <div className="modal modal-center" onClick={onDismiss}>
+    <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
+      <h2 className="edit-rating-title">{T.today.saveNoDetailsTitle}</h2>
+      <p className="confirm-message">{T.today.saveNoDetailsBody(Number(minutes) || 0)}</p>
+      <div className="confirm-actions">
+        <button className="confirm-cancel" onClick={onSaveAnyway}>{T.today.saveAnywayBtn}</button>
+        <button className="confirm-danger" onClick={onAddDetails}>{T.today.addDetailsBtn}</button>
+      </div>
+    </div>
+  </div>;
+}
 function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, confirm, roster }: {
   date: string; log?: Log; dailyGoal: number | null; logs: Record<string, Log>; locale: string; language: Lang; T: any;
   onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>;
@@ -1713,6 +1727,10 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   const [notesOpen, setNotesOpen] = useState(false);
   const showNotes = notesOpen || !!notes;
   const [whatOpen, setWhatOpen] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  // Gentle nudge, not a blocker: only asks once, when nothing was selected at all. If they
+  // already picked something, save immediately like before.
+  function handleSaveClick() { if (selected.length === 0) setShowSaveConfirm(true); else save(); }
   const [selectedRating, setSelectedRating] = useState<string | null>(null);
   const [sessionIssues, setSessionIssues] = useState<string[]>([]);
   const [sessionNote, setSessionNote] = useState("");
@@ -1889,7 +1907,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
           </div>
           {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
         </>}
-        <button className={saved ? "save saved" : "save"} onClick={save}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
+        <button className={saved ? "save saved" : "save"} onClick={handleSaveClick}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
         <button className="reset-practice" onClick={handleResetPractice}>{T.today.resetPractice}</button>
       </div>
 
@@ -1910,6 +1928,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         })}
       </div>
       <PersonalChallenges user={user} practiceSessions={sessions} confirm={confirm} setError={setError} language={language} T={T} />
+      {showSaveConfirm && <SaveWithoutDetailsModal minutes={minutes} onDismiss={() => setShowSaveConfirm(false)} onAddDetails={() => { setShowSaveConfirm(false); setWhatOpen(true); }} onSaveAnyway={() => { setShowSaveConfirm(false); save(); }} T={T} />}
     </section>;
   }
 
