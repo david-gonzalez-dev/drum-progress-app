@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-type Tab = "today" | "practice" | "group" | "progress" | "settings";
+type Tab = "today" | "practice" | "group" | "progress" | "settings" | "admin";
 type Log = { minutes: number; seconds: number; items: string[]; customItems: string[]; notes: string; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null };
 type Lang = "en" | "es";
 
@@ -247,7 +247,7 @@ function renderTierSegBar(pct: number, skipped: boolean) {
 
 const translations = {
   en: {
-    nav: { today: "Home", practice: "Practice", group: "Group", progress: "Progress", settings: "Settings" },
+    nav: { today: "Home", practice: "Practice", group: "Group", progress: "Progress", settings: "Settings", admin: "Admin" },
     confirm: { cancel: "Cancel", confirm: "Confirm" },
     today: {
       heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", currentStreak: "Current streak", days: "days",
@@ -346,12 +346,13 @@ const translations = {
       changeEmail: "Change email", newEmailPlaceholder: "New email address", updateEmail: "Update email", emailChangeSent: "Check your new email to confirm the change.",
       changePassword: "Change password", newPasswordPlaceholder: "New password", confirmPasswordPlaceholder: "Confirm new password", updatePassword: "Update password", passwordChanged: "✓ Password updated", passwordMismatch: "Passwords don't match.", passwordTooShort: "Password must be at least 6 characters.",
       deleteAccount: "Delete account", deleteAccountWarning: "This permanently deletes your account and all your practice history. This can't be undone.", deleteAccountConfirmPrompt: (email: string) => `Type your email (${email}) to confirm:`, deleteAccountBtn: "Delete my account", deleteAccountBusy: "Deleting…", couldNotDeleteAccount: "Could not delete your account.",
-      adminSection: "ADMIN", viewUserActivity: "View User Activity",
     },
     admin: {
       title: "USER ACTIVITY", eyebrow: "ADMIN", noUsers: "No users yet.", neverPracticed: "Never practiced",
       dailyLogs: "DAILY LOGS", practiceSessions: "PRACTICE SESSIONS", noDailyLogs: "No daily logs yet.", noPracticeSessions: "No practice sessions yet.",
       minutesLabel: (n: number) => `${n} min`, notesPrefix: "Notes:",
+      totalUsers: "USERS", totalLogs: "TOTAL LOGS", totalMinutes: "TOTAL MIN",
+      mostLogsTitle: "MOST ACTIVE (BY LOGS)", mostMinutesTitle: "MOST MINUTES PRACTISED", logsCount: (n: number) => `${n} logs`, allUsersTitle: "ALL USERS",
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
@@ -363,7 +364,7 @@ const translations = {
     },
   },
   es: {
-    nav: { today: "Inicio", practice: "Práctica", group: "Grupo", progress: "Progreso", settings: "Ajustes" },
+    nav: { today: "Inicio", practice: "Práctica", group: "Grupo", progress: "Progreso", settings: "Ajustes", admin: "Admin" },
     confirm: { cancel: "Cancelar", confirm: "Confirmar" },
     today: {
       heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", currentStreak: "Racha actual", days: "días",
@@ -462,12 +463,13 @@ const translations = {
       changeEmail: "Cambiar correo electrónico", newEmailPlaceholder: "Nuevo correo electrónico", updateEmail: "Actualizar correo", emailChangeSent: "Revisa tu nuevo correo para confirmar el cambio.",
       changePassword: "Cambiar contraseña", newPasswordPlaceholder: "Nueva contraseña", confirmPasswordPlaceholder: "Confirmar nueva contraseña", updatePassword: "Actualizar contraseña", passwordChanged: "✓ Contraseña actualizada", passwordMismatch: "Las contraseñas no coinciden.", passwordTooShort: "La contraseña debe tener al menos 6 caracteres.",
       deleteAccount: "Eliminar cuenta", deleteAccountWarning: "Esto elimina tu cuenta y todo tu historial de práctica de forma permanente. Esta acción no se puede deshacer.", deleteAccountConfirmPrompt: (email: string) => `Escribe tu correo (${email}) para confirmar:`, deleteAccountBtn: "Eliminar mi cuenta", deleteAccountBusy: "Eliminando…", couldNotDeleteAccount: "No se pudo eliminar tu cuenta.",
-      adminSection: "ADMIN", viewUserActivity: "Ver actividad de usuarios",
     },
     admin: {
       title: "ACTIVIDAD DE USUARIOS", eyebrow: "ADMIN", noUsers: "Aún no hay usuarios.", neverPracticed: "Nunca practicó",
       dailyLogs: "REGISTROS DIARIOS", practiceSessions: "SESIONES DE PRÁCTICA", noDailyLogs: "Aún no hay registros diarios.", noPracticeSessions: "Aún no hay sesiones de práctica.",
       minutesLabel: (n: number) => `${n} min`, notesPrefix: "Notas:",
+      totalUsers: "USUARIOS", totalLogs: "REGISTROS TOTALES", totalMinutes: "MIN TOTALES",
+      mostLogsTitle: "MÁS ACTIVOS (POR REGISTROS)", mostMinutesTitle: "MÁS MINUTOS PRACTICADOS", logsCount: (n: number) => `${n} registros`, allUsersTitle: "TODOS LOS USUARIOS",
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
@@ -487,6 +489,7 @@ const NAV_ICONS: Record<Tab, React.ReactNode> = {
   group: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.2" cy="7" r="2.6" /><path d="M2.5 17c0-2.9 2.1-5 4.7-5s4.7 2.1 4.7 5" /><circle cx="14.5" cy="7.8" r="2.1" /><path d="M12.7 12.3c1.9.4 3.3 2.1 3.3 4.7" /></svg>,
   progress: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16.5V9.5M10 16.5V3.5M16 16.5v-6" /></svg>,
   settings: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>,
+  admin: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2.5l6 2.2v4.8c0 4-2.6 6.8-6 8-3.4-1.2-6-4-6-8V4.7l6-2.2z" /><path d="M7.3 10l1.9 1.9 3.5-3.9" /></svg>,
 };
 function formatLocalDate(year: number, monthIndex0based: number, day: number) {
   return `${year}-${String(monthIndex0based + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -626,7 +629,6 @@ export default function Home() {
   const [showPinManager, setShowPinManager] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setLoading(false); });
@@ -827,15 +829,16 @@ export default function Home() {
   if (passwordRecovery) return <ResetPassword onDone={() => setPasswordRecovery(false)} />;
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
-  if (showAdmin) return <main className="shell"><AdminPage onBack={() => setShowAdmin(false)} language={language} T={T} /></main>;
+  const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className="shell">
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
-    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} isAdmin={isAdmin} onOpenAdmin={() => setShowAdmin(true)} onBack={() => setTab("today")} T={T} />}
+    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} onBack={() => setTab("today")} T={T} />}
+    {tab === "admin" && isAdmin && <AdminPage language={language} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
-    <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
+    <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
     {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onClose={() => setShowPinManager(false)} language={language} T={T} />}
@@ -2085,7 +2088,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
   return null;
 }
-function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, isAdmin, onOpenAdmin, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; isAdmin: boolean; onOpenAdmin: () => void; onBack: () => void; T: any }) {
+function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; onBack: () => void; T: any }) {
   const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [saved, setSaved] = useState(false);
   const [newEmail, setNewEmail] = useState(""); const [emailBusy, setEmailBusy] = useState(false); const [emailMsg, setEmailMsg] = useState("");
   const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [passwordBusy, setPasswordBusy] = useState(false); const [passwordMsg, setPasswordMsg] = useState("");
@@ -2144,7 +2147,6 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
   return <section className="page"><button className="page-back" onClick={onBack}>‹ {T.nav.today}</button><header className="simple-head"><p className="eyebrow">{T.settings.makeItYours}</p><h1>{T.settings.title}</h1></header>
     <p className="settings-section-label">{T.settings.userSection}</p>
     <div className="settings-form"><label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label><label>{T.settings.dailyGoal}<input inputMode="numeric" placeholder="30" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span>{T.settings.showDaysThisYear}</span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
-    {isAdmin && <><p className="settings-section-label">{T.settings.adminSection}</p><button className="secondary-btn" onClick={onOpenAdmin}>{T.settings.viewUserActivity}</button></>}
     <p className="settings-section-label">{T.settings.accountSection}</p>
     <div className="settings-form account-settings">
       <label>{T.settings.changeEmail}<input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={T.settings.newEmailPlaceholder} /></label>
@@ -2393,8 +2395,8 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
       <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : T.metronome.start}</button>
     </>}
-  </div></div>; }function AdminPage({ onBack, language, T }: { onBack: () => void; language: Lang; T: any }) {
-  const [users, setUsers] = useState<{ id: string; name: string; email: string; last_active: string | null }[] | null>(null);
+  </div></div>; }function AdminPage({ language, T }: { language: Lang; T: any }) {
+  const [users, setUsers] = useState<{ id: string; name: string; email: string; last_active: string | null; total_logs: number; total_minutes: number }[] | null>(null);
   const [selected, setSelected] = useState<{ id: string; name: string; email: string } | null>(null);
   const [logs, setLogs] = useState<any[] | null>(null);
   const [sessions, setSessions] = useState<any[] | null>(null);
@@ -2444,10 +2446,43 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     </section>;
   }
 
+  const totalUsers = users?.length ?? 0;
+  const totalLogs = users?.reduce((sum, u) => sum + u.total_logs, 0) ?? 0;
+  const totalMinutes = users?.reduce((sum, u) => sum + u.total_minutes, 0) ?? 0;
+  const mostByLogs = (users ?? []).filter((u) => u.total_logs > 0).slice().sort((a, b) => b.total_logs - a.total_logs).slice(0, 5);
+  const mostByMinutes = (users ?? []).filter((u) => u.total_minutes > 0).slice().sort((a, b) => b.total_minutes - a.total_minutes).slice(0, 5);
+  const maxLogs = Math.max(1, ...mostByLogs.map((u) => u.total_logs));
+  const maxMinutes = Math.max(1, ...mostByMinutes.map((u) => u.total_minutes));
+
   return <section className="page">
-    <button className="page-back" onClick={onBack}>‹ {T.nav.settings}</button>
     <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
-    {users === null ? <p className="hint">…</p> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : (
+    {users === null ? <p className="hint">…</p> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : <>
+      <div className="stats">
+        <Stat label={T.admin.totalUsers} value={String(totalUsers)} />
+        <Stat label={T.admin.totalLogs} value={String(totalLogs)} />
+        <Stat label={T.admin.totalMinutes} value={String(totalMinutes)} />
+      </div>
+      {mostByLogs.length > 0 && <>
+        <span className="section-label">{T.admin.mostLogsTitle}</span>
+        <div className="leaderboard">
+          {mostByLogs.map((u, idx) => <div key={u.id} className="leaderboard-row">
+            <span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{u.name || u.email}</span>
+            <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(u.total_logs / maxLogs) * 100}%` }} /></div>
+            <span className="leaderboard-value">{T.admin.logsCount(u.total_logs)}</span>
+          </div>)}
+        </div>
+      </>}
+      {mostByMinutes.length > 0 && <>
+        <span className="section-label admin-section-gap">{T.admin.mostMinutesTitle}</span>
+        <div className="leaderboard">
+          {mostByMinutes.map((u, idx) => <div key={u.id} className="leaderboard-row">
+            <span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{u.name || u.email}</span>
+            <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(u.total_minutes / maxMinutes) * 100}%` }} /></div>
+            <span className="leaderboard-value">{T.admin.minutesLabel(u.total_minutes)}</span>
+          </div>)}
+        </div>
+      </>}
+      <span className="section-label admin-section-gap">{T.admin.allUsersTitle}</span>
       <div className="onboard-exercise-list">
         {users.map((u) => <button key={u.id} type="button" className="onboard-row admin-user-row" onClick={() => openUser(u)}>
           <div className="admin-user-info">
@@ -2457,6 +2492,6 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
           <span className="admin-user-last">{u.last_active ?? T.admin.neverPracticed}</span>
         </button>)}
       </div>
-    )}
+    </>}
   </section>;
 }

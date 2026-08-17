@@ -782,3 +782,38 @@ end;
 $$;
 revoke execute on function public.admin_list_users() from anon, public;
 grant execute on function public.admin_list_users() to authenticated;
+
+-- Admin dashboard: adds per-user total_logs/total_minutes so the admin screen can show
+-- "who logs the most" / "who practices the most" leaderboards, not just a plain list.
+-- Return columns changed, so this needs a drop + recreate (create or replace can't change
+-- a function's return type).
+drop function if exists public.admin_list_users();
+create function public.admin_list_users()
+returns table (id uuid, name text, email text, last_active date, total_logs bigint, total_minutes bigint)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized';
+  end if;
+  return query
+    select
+      p.id,
+      p.name,
+      u.email::text,
+      greatest(
+        (select max(pl.practiced_on) from public.practice_logs pl where pl.user_id = p.id),
+        (select max(ps.practiced_on) from public.practice_sessions ps where ps.user_id = p.id)
+      ) as last_active,
+      (select count(*) from public.practice_logs pl where pl.user_id = p.id) as total_logs,
+      coalesce((select sum(pl.minutes) from public.practice_logs pl where pl.user_id = p.id), 0)
+        + coalesce((select sum(ps.duration_minutes) from public.practice_sessions ps where ps.user_id = p.id), 0) as total_minutes
+    from public.profiles p
+    join auth.users u on u.id = p.id
+    order by last_active desc nulls last, p.name asc;
+end;
+$$;
+revoke execute on function public.admin_list_users() from anon, public;
+grant execute on function public.admin_list_users() to authenticated;
