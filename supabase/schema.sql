@@ -712,3 +712,73 @@ alter table public.settings alter column daily_goal_minutes drop not null;
 -- (no UI ever set it). Dropping both now-orphaned columns.
 alter table public.settings drop column if exists reminder_enabled;
 alter table public.settings drop column if exists reminder_time;
+
+-- Admin activity view: lets a designated admin account see when users have logged
+-- practice, without having to dig through the Supabase dashboard directly. Read-only --
+-- an admin can see everyone's activity but cannot edit or delete anyone else's data.
+--
+-- admin_users has no insert/update/delete policy at all (default-deny), so the only way
+-- to grant admin access is manually inserting a row via the Supabase SQL editor -- never
+-- from the app itself, and never something a user could grant themselves.
+create table if not exists public.admin_users (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.admin_users enable row level security;
+
+-- security definer + bypasses RLS internally, same pattern as is_group_member() --
+-- avoids the recursion that would happen if the admin_users select policy tried to
+-- query admin_users directly through RLS.
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as 'select exists (select 1 from public.admin_users where user_id = auth.uid());';
+revoke execute on function public.is_admin() from anon, public;
+grant execute on function public.is_admin() to authenticated;
+
+drop policy if exists "admins can view admin list" on public.admin_users;
+create policy "admins can view admin list" on public.admin_users for select to authenticated using (public.is_admin());
+
+-- Additive read-only policies -- OR'd with each table's existing policies, so nothing
+-- already working changes. Admins can now also SELECT (never insert/update/delete)
+-- any user's practice logs, practice sessions, or profile.
+drop policy if exists "admins can view all practice logs" on public.practice_logs;
+create policy "admins can view all practice logs" on public.practice_logs for select to authenticated using (public.is_admin());
+drop policy if exists "admins can view all practice sessions" on public.practice_sessions;
+create policy "admins can view all practice sessions" on public.practice_sessions for select to authenticated using (public.is_admin());
+drop policy if exists "admins can view all profiles" on public.profiles;
+create policy "admins can view all profiles" on public.profiles for select to authenticated using (public.is_admin());
+
+-- auth.users (email) isn't reachable through the normal client API at all -- this
+-- function is the one controlled, read-only way to surface it, and only to a verified
+-- admin (checked again inside the function itself, not just relying on the caller
+-- already being gated by the app's UI).
+create or replace function public.admin_list_users()
+returns table (id uuid, name text, email text, last_active date)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized';
+  end if;
+  return query
+    select
+      p.id,
+      p.name,
+      u.email::text,
+      greatest(
+        (select max(pl.practiced_on) from public.practice_logs pl where pl.user_id = p.id),
+        (select max(ps.practiced_on) from public.practice_sessions ps where ps.user_id = p.id)
+      ) as last_active
+    from public.profiles p
+    join auth.users u on u.id = p.id
+    order by last_active desc nulls last, p.name asc;
+end;
+$$;
+revoke execute on function public.admin_list_users() from anon, public;
+grant execute on function public.admin_list_users() to authenticated;

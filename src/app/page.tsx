@@ -346,6 +346,12 @@ const translations = {
       changeEmail: "Change email", newEmailPlaceholder: "New email address", updateEmail: "Update email", emailChangeSent: "Check your new email to confirm the change.",
       changePassword: "Change password", newPasswordPlaceholder: "New password", confirmPasswordPlaceholder: "Confirm new password", updatePassword: "Update password", passwordChanged: "✓ Password updated", passwordMismatch: "Passwords don't match.", passwordTooShort: "Password must be at least 6 characters.",
       deleteAccount: "Delete account", deleteAccountWarning: "This permanently deletes your account and all your practice history. This can't be undone.", deleteAccountConfirmPrompt: (email: string) => `Type your email (${email}) to confirm:`, deleteAccountBtn: "Delete my account", deleteAccountBusy: "Deleting…", couldNotDeleteAccount: "Could not delete your account.",
+      adminSection: "ADMIN", viewUserActivity: "View User Activity",
+    },
+    admin: {
+      title: "USER ACTIVITY", eyebrow: "ADMIN", noUsers: "No users yet.", neverPracticed: "Never practiced",
+      dailyLogs: "DAILY LOGS", practiceSessions: "PRACTICE SESSIONS", noDailyLogs: "No daily logs yet.", noPracticeSessions: "No practice sessions yet.",
+      minutesLabel: (n: number) => `${n} min`, notesPrefix: "Notes:",
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
@@ -456,6 +462,12 @@ const translations = {
       changeEmail: "Cambiar correo electrónico", newEmailPlaceholder: "Nuevo correo electrónico", updateEmail: "Actualizar correo", emailChangeSent: "Revisa tu nuevo correo para confirmar el cambio.",
       changePassword: "Cambiar contraseña", newPasswordPlaceholder: "Nueva contraseña", confirmPasswordPlaceholder: "Confirmar nueva contraseña", updatePassword: "Actualizar contraseña", passwordChanged: "✓ Contraseña actualizada", passwordMismatch: "Las contraseñas no coinciden.", passwordTooShort: "La contraseña debe tener al menos 6 caracteres.",
       deleteAccount: "Eliminar cuenta", deleteAccountWarning: "Esto elimina tu cuenta y todo tu historial de práctica de forma permanente. Esta acción no se puede deshacer.", deleteAccountConfirmPrompt: (email: string) => `Escribe tu correo (${email}) para confirmar:`, deleteAccountBtn: "Eliminar mi cuenta", deleteAccountBusy: "Eliminando…", couldNotDeleteAccount: "No se pudo eliminar tu cuenta.",
+      adminSection: "ADMIN", viewUserActivity: "Ver actividad de usuarios",
+    },
+    admin: {
+      title: "ACTIVIDAD DE USUARIOS", eyebrow: "ADMIN", noUsers: "Aún no hay usuarios.", neverPracticed: "Nunca practicó",
+      dailyLogs: "REGISTROS DIARIOS", practiceSessions: "SESIONES DE PRÁCTICA", noDailyLogs: "Aún no hay registros diarios.", noPracticeSessions: "Aún no hay sesiones de práctica.",
+      minutesLabel: (n: number) => `${n} min`, notesPrefix: "Notas:",
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
@@ -613,6 +625,8 @@ export default function Home() {
   const [pinnedExercises, setPinnedExercises] = useState<string[]>([]);
   const [showPinManager, setShowPinManager] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setLoading(false); });
@@ -653,6 +667,9 @@ export default function Home() {
     supabase.from("pinned_exercises").select("exercise_en").eq("user_id", currentUser.id).order("sort_order").then(({ data }) => {
       setPinnedExercises((data ?? []).map((row: any) => row.exercise_en));
     });
+    // is_admin() is security definer and checks the caller's own admin_users row
+    // server-side -- this can't be spoofed by the client either way.
+    supabase.rpc("is_admin").then(({ data }) => { setIsAdmin(!!data); });
   }
   useEffect(() => {
     if (!user) return;
@@ -810,12 +827,13 @@ export default function Home() {
   if (passwordRecovery) return <ResetPassword onDone={() => setPasswordRecovery(false)} />;
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
+  if (showAdmin) return <main className="shell"><AdminPage onBack={() => setShowAdmin(false)} language={language} T={T} /></main>;
   return <main className="shell">
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
-    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} onBack={() => setTab("today")} T={T} />}
+    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} isAdmin={isAdmin} onOpenAdmin={() => setShowAdmin(true)} onBack={() => setTab("today")} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     <nav className="bottom-nav">{NAV_TABS.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} language={language} T={T} />
@@ -2067,7 +2085,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
   return null;
 }
-function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; onBack: () => void; T: any }) {
+function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, isAdmin, onOpenAdmin, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; isAdmin: boolean; onOpenAdmin: () => void; onBack: () => void; T: any }) {
   const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [saved, setSaved] = useState(false);
   const [newEmail, setNewEmail] = useState(""); const [emailBusy, setEmailBusy] = useState(false); const [emailMsg, setEmailMsg] = useState("");
   const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [passwordBusy, setPasswordBusy] = useState(false); const [passwordMsg, setPasswordMsg] = useState("");
@@ -2126,6 +2144,7 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
   return <section className="page"><button className="page-back" onClick={onBack}>‹ {T.nav.today}</button><header className="simple-head"><p className="eyebrow">{T.settings.makeItYours}</p><h1>{T.settings.title}</h1></header>
     <p className="settings-section-label">{T.settings.userSection}</p>
     <div className="settings-form"><label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label><label>{T.settings.dailyGoal}<input inputMode="numeric" placeholder="30" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span>{T.settings.showDaysThisYear}</span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
+    {isAdmin && <><p className="settings-section-label">{T.settings.adminSection}</p><button className="secondary-btn" onClick={onOpenAdmin}>{T.settings.viewUserActivity}</button></>}
     <p className="settings-section-label">{T.settings.accountSection}</p>
     <div className="settings-form account-settings">
       <label>{T.settings.changeEmail}<input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={T.settings.newEmailPlaceholder} /></label>
@@ -2374,4 +2393,70 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
       <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : T.metronome.start}</button>
     </>}
-  </div></div>; }
+  </div></div>; }function AdminPage({ onBack, language, T }: { onBack: () => void; language: Lang; T: any }) {
+  const [users, setUsers] = useState<{ id: string; name: string; email: string; last_active: string | null }[] | null>(null);
+  const [selected, setSelected] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [logs, setLogs] = useState<any[] | null>(null);
+  const [sessions, setSessions] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    supabase.rpc("admin_list_users").then(({ data }) => { setUsers(data ?? []); });
+  }, []);
+
+  function openUser(u: { id: string; name: string; email: string }) {
+    setSelected(u);
+    setLogs(null);
+    setSessions(null);
+    supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }).then(({ data }) => {
+      setLogs((data ?? []).map((row: any) => ({
+        date: row.practiced_on, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes,
+        items: [...(row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean), ...(row.custom_items ?? [])],
+      })));
+    });
+    supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,practice_exercises(name_en)").eq("user_id", u.id).order("practiced_on", { ascending: false }).then(({ data }) => {
+      setSessions((data ?? []).map((row: any) => ({ date: row.practiced_on, exercise: row.practice_exercises?.name_en ?? "—", bpm: row.bpm, minutes: row.duration_minutes ?? 0 })));
+    });
+  }
+
+  if (selected) {
+    return <section className="page">
+      <button className="page-back" onClick={() => setSelected(null)}>‹ {T.admin.title}</button>
+      <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{selected.name || selected.email}</h1><p className="hint">{selected.email}</p></header>
+      <span className="ladder-label">{T.admin.dailyLogs}</span>
+      {logs === null ? <p className="hint">…</p> : logs.length === 0 ? <p className="hint">{T.admin.noDailyLogs}</p> : (
+        <div className="admin-log-list">
+          {logs.map((log, i) => <div key={i} className="admin-log-row">
+            <div className="admin-log-head"><span>{log.date}</span><span>{T.admin.minutesLabel(log.minutes)}{log.seconds > 0 ? ` +${log.seconds}s` : ""}</span></div>
+            {log.items.length > 0 && <div className="detail-chips">{log.items.map((item: string) => <em key={item}>{item}</em>)}</div>}
+            {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
+          </div>)}
+        </div>
+      )}
+      <span className="ladder-label admin-section-gap">{T.admin.practiceSessions}</span>
+      {sessions === null ? <p className="hint">…</p> : sessions.length === 0 ? <p className="hint">{T.admin.noPracticeSessions}</p> : (
+        <div className="admin-log-list">
+          {sessions.map((s, i) => <div key={i} className="admin-log-row">
+            <div className="admin-log-head"><span>{s.exercise}</span><span>{s.bpm} BPM</span></div>
+            <div className="admin-log-head"><span>{s.date}</span><span>{T.admin.minutesLabel(s.minutes)}</span></div>
+          </div>)}
+        </div>
+      )}
+    </section>;
+  }
+
+  return <section className="page">
+    <button className="page-back" onClick={onBack}>‹ {T.nav.settings}</button>
+    <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
+    {users === null ? <p className="hint">…</p> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : (
+      <div className="onboard-exercise-list">
+        {users.map((u) => <button key={u.id} type="button" className="onboard-row admin-user-row" onClick={() => openUser(u)}>
+          <div className="admin-user-info">
+            <span className="onboard-row-name">{u.name || u.email}</span>
+            <span className="admin-user-email">{u.email}</span>
+          </div>
+          <span className="admin-user-last">{u.last_active ?? T.admin.neverPracticed}</span>
+        </button>)}
+      </div>
+    )}
+  </section>;
+}
