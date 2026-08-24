@@ -258,7 +258,7 @@ const translations = {
       todaySummary: "TODAY'S SUMMARY", goalLabel: "GOAL", noPracticeYet: "No practice logged yet today.", secondsCarried: "extra (not counted in minutes yet)", other: "Other", otherPlaceholder: "What else did you practice?",
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
-      saveNoDetailsTitle: "What did you practice?", saveNoDetailsBody: (minutes: number) => `${minutes} min logged`, addDetailsBtn: "Add Practice Details", saveAnywayBtn: "Save Anyway",
+      saveNoDetailsTitle: "What did you practice?", saveNoDetailsBody: (minutes: number) => `Add at least one item to save your ${minutes} min`, addDetailsBtn: "Add Practice Details",
     },
     calendar: {
       title: "CALENDAR", longestStreak: "Longest streak", daysThisYear: "Days this year",
@@ -377,7 +377,7 @@ const translations = {
       todaySummary: "RESUMEN DE HOY", goalLabel: "META", noPracticeYet: "Aún no has registrado práctica hoy.", secondsCarried: "extra (aún no contado en minutos)", other: "Otro", otherPlaceholder: "¿Qué más practicaste?",
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
-      saveNoDetailsTitle: "¿Qué practicaste?", saveNoDetailsBody: (minutes: number) => `${minutes} min registrados`, addDetailsBtn: "Añadir detalles", saveAnywayBtn: "Guardar de todas formas",
+      saveNoDetailsTitle: "¿Qué practicaste?", saveNoDetailsBody: (minutes: number) => `Añade al menos un elemento para guardar tus ${minutes} min`, addDetailsBtn: "Añadir detalles",
     },
     calendar: {
       title: "CALENDARIO", longestStreak: "Racha más larga", daysThisYear: "Días este año",
@@ -1101,15 +1101,12 @@ function ConfirmModal({ message, onConfirm, onCancel, T }: { message: string; on
     </div>
   </div>;
 }
-function SaveWithoutDetailsModal({ minutes, onDismiss, onAddDetails, onSaveAnyway, T }: { minutes: string; onDismiss: () => void; onAddDetails: () => void; onSaveAnyway: () => void; T: any }) {
+function SaveWithoutDetailsModal({ minutes, onDismiss, onAddDetails, T }: { minutes: string; onDismiss: () => void; onAddDetails: () => void; T: any }) {
   return <div className="modal modal-center" onClick={onDismiss}>
     <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
       <h2 className="edit-rating-title">{T.today.saveNoDetailsTitle}</h2>
       <p className="confirm-message">{T.today.saveNoDetailsBody(Number(minutes) || 0)}</p>
-      <div className="confirm-actions">
-        <button className="confirm-cancel" onClick={onSaveAnyway}>{T.today.saveAnywayBtn}</button>
-        <button className="confirm-danger" onClick={onAddDetails}>{T.today.addDetailsBtn}</button>
-      </div>
+      <button className="save" onClick={onAddDetails}>{T.today.addDetailsBtn}</button>
     </div>
   </div>;
 }
@@ -1982,7 +1979,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         })}
       </div>
       <PersonalChallenges user={user} practiceSessions={sessions} confirm={confirm} setError={setError} language={language} T={T} />
-      {showSaveConfirm && <SaveWithoutDetailsModal minutes={minutes} onDismiss={() => setShowSaveConfirm(false)} onAddDetails={() => { setShowSaveConfirm(false); setWhatOpen(true); }} onSaveAnyway={() => { setShowSaveConfirm(false); save(); }} T={T} />}
+      {showSaveConfirm && <SaveWithoutDetailsModal minutes={minutes} onDismiss={() => setShowSaveConfirm(false)} onAddDetails={() => { setShowSaveConfirm(false); setWhatOpen(true); }} T={T} />}
     </section>;
   }
 
@@ -2437,10 +2434,10 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <h3>{addPromptSeconds > 0 ? T.metronome.addTimeQuestion(formatMinSecLabel(addPromptSeconds)) : T.metronome.addTimeTooShort}</h3>
       <p>{T.metronome.sessionLasted(elapsedLabel)}</p>
       <div className="add-time-adjust"><button onClick={() => nudgeAddPromptSeconds(-10)}>-10s</button><span className="add-time-value">{formatMMSS(addPromptSeconds)}</span><button onClick={() => nudgeAddPromptSeconds(10)}>+10s</button></div>
-      <span className="metro-section-label">{T.today.whatPractised} <em>{T.today.optional}</em></span>
+      <span className="metro-section-label">{T.today.whatPractised}</span>
       <div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggleAddItem(item.en)} className={addItems.includes(item.en) ? "chip selected" : "chip"}>{addItems.includes(item.en) && <b>✓</b>}{item[lang as Lang]}</button>)}<button onClick={() => setShowOtherInput((current) => !current)} className={showOtherInput ? "chip selected" : "chip"}>{showOtherInput && <b>✓</b>}{T.today.other}</button></div>
       {showOtherInput && <input className="other-input" value={otherText} onChange={(e) => setOtherText(e.target.value)} placeholder={T.today.otherPlaceholder} autoFocus />}
-      <div className="add-time-buttons"><button className="discard" onClick={discardTime}>{T.metronome.notNow}</button><button className="add" onClick={addTime} disabled={addPromptSeconds <= 0}>{T.metronome.addTime}</button></div>
+      <div className="add-time-buttons"><button className="discard" onClick={discardTime}>{T.metronome.notNow}</button><button className="add" onClick={addTime} disabled={addPromptSeconds <= 0 || (addItems.length === 0 && !(showOtherInput && otherText.trim()))}>{T.metronome.addTime}</button></div>
     </div> : <>
       <div className={playing ? "pulse playing" : "pulse"} style={{ animationDuration: `${60 / bpm}s` }}><span>{bpm}</span><small>BPM</small></div>
       <div className="beat-dots">{Array.from({ length: beatsPerMeasure }).map((_, i) => <i key={i} className={playing && activeBeat === i ? "beat-dot active" : "beat-dot"} />)}</div>
