@@ -258,7 +258,7 @@ const translations = {
       todaySummary: "TODAY'S SUMMARY", goalLabel: "GOAL", noPracticeYet: "No practice logged yet today.", secondsCarried: "extra (not counted in minutes yet)", other: "Other", otherPlaceholder: "What else did you practice?",
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
-      saveNoDetailsTitle: "What did you practice?", saveNoDetailsBody: (minutes: number) => `Add at least one item to save your ${minutes} min`, addDetailsBtn: "Add Practice Details",
+      saveNoDetailsTitle: "What did you practice?", saveNoDetailsBody: () => `Pick at least one.`, addDetailsBtn: "Add Practice Details",
     },
     calendar: {
       title: "CALENDAR", longestStreak: "Longest streak", daysThisYear: "Days this year",
@@ -377,7 +377,7 @@ const translations = {
       todaySummary: "RESUMEN DE HOY", goalLabel: "META", noPracticeYet: "Aún no has registrado práctica hoy.", secondsCarried: "extra (aún no contado en minutos)", other: "Otro", otherPlaceholder: "¿Qué más practicaste?",
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
-      saveNoDetailsTitle: "¿Qué practicaste?", saveNoDetailsBody: (minutes: number) => `Añade al menos un elemento para guardar tus ${minutes} min`, addDetailsBtn: "Añadir detalles",
+      saveNoDetailsTitle: "¿Qué practicaste?", saveNoDetailsBody: () => `Elige al menos uno.`, addDetailsBtn: "Añadir detalles",
     },
     calendar: {
       title: "CALENDARIO", longestStreak: "Racha más larga", daysThisYear: "Días este año",
@@ -1101,11 +1101,11 @@ function ConfirmModal({ message, onConfirm, onCancel, T }: { message: string; on
     </div>
   </div>;
 }
-function SaveWithoutDetailsModal({ minutes, onDismiss, onAddDetails, T }: { minutes: string; onDismiss: () => void; onAddDetails: () => void; T: any }) {
+function SaveWithoutDetailsModal({ onDismiss, onAddDetails, T }: { onDismiss: () => void; onAddDetails: () => void; T: any }) {
   return <div className="modal modal-center" onClick={onDismiss}>
     <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
       <h2 className="edit-rating-title">{T.today.saveNoDetailsTitle}</h2>
-      <p className="confirm-message">{T.today.saveNoDetailsBody(Number(minutes) || 0)}</p>
+      <p className="confirm-message">{T.today.saveNoDetailsBody()}</p>
       <button className="save" onClick={onAddDetails}>{T.today.addDetailsBtn}</button>
     </div>
   </div>;
@@ -1979,7 +1979,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         })}
       </div>
       <PersonalChallenges user={user} practiceSessions={sessions} confirm={confirm} setError={setError} language={language} T={T} />
-      {showSaveConfirm && <SaveWithoutDetailsModal minutes={minutes} onDismiss={() => setShowSaveConfirm(false)} onAddDetails={() => { setShowSaveConfirm(false); setWhatOpen(true); }} T={T} />}
+      {showSaveConfirm && <SaveWithoutDetailsModal onDismiss={() => setShowSaveConfirm(false)} onAddDetails={() => { setShowSaveConfirm(false); setWhatOpen(true); }} T={T} />}
     </section>;
   }
 
