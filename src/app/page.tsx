@@ -270,7 +270,7 @@ const translations = {
       noPractice: "No practice logged for this day. Log today's practice from the Today tab.", minPractised: "min practised",
       notesPlaceholder: "What did you practise that day?", saving: "Saving...",
       deleteEntry: "Delete entry", confirmDeleteEntry: "Delete this day's practice? This can't be undone.", couldNotDeleteEntry: "Could not delete this entry.",
-      goalMet: "🎯 Daily goal reached", goalMissed: (done: number, total: number) => `${done}/${total} min toward your goal`,
+      goalMet: "🎯 Daily goal reached", goalMissed: (done: string, total: string) => `${done} / ${total} toward your goal`,
       onEquipment: (label: string) => `On ${label}`,
       streakOnDay: (n: number) => `🔥 ${n}-day streak`, noPracticeShort: "No practice logged for this day.",
       editDay: "Edit this day", nothingToEdit: "+ Log practice for this day",
@@ -357,7 +357,7 @@ const translations = {
     admin: {
       title: "USER ACTIVITY", eyebrow: "ADMIN", noUsers: "No users yet.", neverPracticed: "Never practiced",
       dailyLogs: "DAILY LOGS", practiceSessions: "PRACTICE SESSIONS", noDailyLogs: "No daily logs yet.", noPracticeSessions: "No practice sessions yet.",
-      minutesLabel: (n: number) => `${n} min`, notesPrefix: "Notes:",
+      notesPrefix: "Notes:",
       totalUsers: "USERS", totalLogs: "TOTAL LOGS", totalMinutes: "TOTAL MIN",
       mostLogsTitle: "MOST ACTIVE (BY LOGS)", mostMinutesTitle: "MOST MINUTES PRACTISED", logsCount: (n: number) => `${n} logs`, allUsersTitle: "ALL USERS",
     },
@@ -390,7 +390,7 @@ const translations = {
       noPractice: "No hay práctica registrada para este día. Regístrala desde la pestaña Hoy.", minPractised: "min practicados",
       notesPlaceholder: "¿Qué practicaste ese día?", saving: "Guardando...",
       deleteEntry: "Eliminar entrada", confirmDeleteEntry: "¿Eliminar la práctica de este día? Esta acción no se puede deshacer.", couldNotDeleteEntry: "No se pudo eliminar esta entrada.",
-      goalMet: "🎯 Meta diaria alcanzada", goalMissed: (done: number, total: number) => `${done}/${total} min hacia tu meta`,
+      goalMet: "🎯 Meta diaria alcanzada", goalMissed: (done: string, total: string) => `${done} / ${total} hacia tu meta`,
       onEquipment: (label: string) => `Con ${label}`,
       streakOnDay: (n: number) => `🔥 Racha de ${n} días`, noPracticeShort: "No hay práctica registrada para este día.",
       editDay: "Editar este día", nothingToEdit: "+ Registrar práctica de este día",
@@ -477,7 +477,7 @@ const translations = {
     admin: {
       title: "ACTIVIDAD DE USUARIOS", eyebrow: "ADMIN", noUsers: "Aún no hay usuarios.", neverPracticed: "Nunca practicó",
       dailyLogs: "REGISTROS DIARIOS", practiceSessions: "SESIONES DE PRÁCTICA", noDailyLogs: "Aún no hay registros diarios.", noPracticeSessions: "Aún no hay sesiones de práctica.",
-      minutesLabel: (n: number) => `${n} min`, notesPrefix: "Notas:",
+      notesPrefix: "Notas:",
       totalUsers: "USUARIOS", totalLogs: "REGISTROS TOTALES", totalMinutes: "MIN TOTALES",
       mostLogsTitle: "MÁS ACTIVOS (POR REGISTROS)", mostMinutesTitle: "MÁS MINUTOS PRACTICADOS", logsCount: (n: number) => `${n} registros`, allUsersTitle: "TODOS LOS USUARIOS",
     },
@@ -1031,7 +1031,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
     <div className="form-card">
       <label className="input-label">{T.today.todaySummary}</label>
       {dailyGoal != null ? (
-        <div className="goal-progress"><div className="goal-progress-label"><span>{T.today.goalLabel}</span><strong className={goalAchieved ? "achieved" : ""}>{todayMinutes}/{dailyGoal} min</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
+        <div className="goal-progress"><div className="goal-progress-label"><span>{T.today.goalLabel}</span><strong className={goalAchieved ? "achieved" : ""}>{formatMinutes(todayMinutes)} / {formatMinutes(dailyGoal)}</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
       ) : (
         <div className="no-goal-card">
           <p className="no-goal-title">{T.today.noGoalTitle}</p>
@@ -1146,7 +1146,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
           <strong className="ds-minutes">{log.minutes} {T.calendar.minPractised}{log.seconds > 0 ? ` +${log.seconds}s` : ""}{log.equipment ? ` - ${equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
           {(log.items.length > 0 || log.customItems.length > 0) && <div className="detail-chips">{log.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{log.customItems.map((item) => <em key={item}>{item}</em>)}</div>}
           {log.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
-          {dailyGoal != null && <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(log.minutes, dailyGoal)}</p>}
+          {dailyGoal != null && <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(formatMinutes(log.minutes), formatMinutes(dailyGoal))}</p>}
           {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
         </> : <p className="hint">{T.calendar.noPracticeShort}</p>
       )}
@@ -2521,7 +2521,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       {logs === null ? <p className="hint">…</p> : logs.length === 0 ? <p className="hint">{T.admin.noDailyLogs}</p> : (
         <div className="admin-log-list">
           {logs.map((log, i) => <div key={i} className="admin-log-row">
-            <div className="admin-log-head"><span>{log.date}</span><span>{T.admin.minutesLabel(log.minutes)}{log.seconds > 0 ? ` +${log.seconds}s` : ""}</span></div>
+            <div className="admin-log-head"><span>{log.date}</span><span>{formatMinutes(log.minutes)}{log.seconds > 0 ? ` +${log.seconds}s` : ""}</span></div>
             {log.items.length > 0 && <div className="detail-chips">{log.items.map((item: string) => <em key={item}>{item}</em>)}</div>}
             {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
           </div>)}
@@ -2532,7 +2532,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
         <div className="admin-log-list">
           {sessions.map((s, i) => <div key={i} className="admin-log-row">
             <div className="admin-log-head"><span>{s.exercise}</span><span>{s.bpm} BPM</span></div>
-            <div className="admin-log-head"><span>{s.date}</span><span>{T.admin.minutesLabel(s.minutes)}</span></div>
+            <div className="admin-log-head"><span>{s.date}</span><span>{formatMinutes(s.minutes)}</span></div>
           </div>)}
         </div>
       )}
@@ -2553,7 +2553,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <div className="stats">
         <Stat label={T.admin.totalUsers} value={String(totalUsers)} />
         <Stat label={T.admin.totalLogs} value={String(totalLogs)} />
-        <Stat label={T.admin.totalMinutes} value={String(totalMinutes)} />
+        <Stat label={T.admin.totalMinutes} value={formatMinutes(totalMinutes)} />
       </div>
       {mostByLogs.length > 0 && <>
         <span className="section-label">{T.admin.mostLogsTitle}</span>
@@ -2571,7 +2571,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
           {mostByMinutes.map((u, idx) => <div key={u.id} className="leaderboard-row">
             <span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{u.name || u.email}</span>
             <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(u.total_minutes / maxMinutes) * 100}%` }} /></div>
-            <span className="leaderboard-value">{T.admin.minutesLabel(u.total_minutes)}</span>
+            <span className="leaderboard-value">{formatMinutes(u.total_minutes)}</span>
           </div>)}
         </div>
       </>}
