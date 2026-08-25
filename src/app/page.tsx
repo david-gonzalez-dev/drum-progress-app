@@ -28,6 +28,9 @@ const PRACTICE_ITEMS = [
   { en: "Rhythms", es: "Ritmos" },
   { en: "Permutations", es: "Permutaciones" },
 ];
+// Quick Practice's own top-level order (Rudiments renders separately as an expandable
+// picker, so it's excluded here) -- see the quickPracticeItems derivation in PracticeMode.
+const QUICK_PRACTICE_ITEM_ORDER = ["Rhythms", "Stick Control", "Coordination", "Bass Drum", "Permutations"];
 function practiceItemLabel(en: string, lang: Lang) {
   return PRACTICE_ITEMS.find((item) => item.en === en)?.[lang] ?? en;
 }
@@ -259,6 +262,7 @@ const translations = {
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
       saveNoDetailsTitle: "What did you practice?", saveNoDetailsBody: () => `Pick at least one.`, addDetailsBtn: "Add Practice Details",
+      rudiments: "Rudiments", searchRudiments: "Search rudiments...",
     },
     calendar: {
       title: "CALENDAR", longestStreak: "Longest streak", daysThisYear: "Days this year",
@@ -378,6 +382,7 @@ const translations = {
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
       saveNoDetailsTitle: "¿Qué practicaste?", saveNoDetailsBody: () => `Elige al menos uno.`, addDetailsBtn: "Añadir detalles",
+      rudiments: "Rudimentos", searchRudiments: "Buscar rudimentos...",
     },
     calendar: {
       title: "CALENDARIO", longestStreak: "Racha más larga", daysThisYear: "Días este año",
@@ -852,7 +857,7 @@ export default function Home() {
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className="shell">
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} onBack={() => setTab("today")} T={T} />}
@@ -1760,7 +1765,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, minutes, setMinutes, seconds, selected, toggle, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
+function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, minutes, setMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -1774,19 +1779,37 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   const [whatOpen, setWhatOpen] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   // Gentle nudge, not a blocker: only asks once, when nothing was selected at all. If they
-  // already picked something, save immediately like before.
-  function handleSaveClick() { if (selected.length === 0) setShowSaveConfirm(true); else save(); }
+  // already picked something -- including a specific rudiment, which saves via customItems
+  // rather than selected -- save immediately like before.
+  function handleSaveClick() { if (selected.length === 0 && customItems.length === 0) setShowSaveConfirm(true); else save(); }
   const [selectedRating, setSelectedRating] = useState<string | null>(null);
   const [sessionIssues, setSessionIssues] = useState<string[]>([]);
   const [sessionNote, setSessionNote] = useState("");
   function toggleSessionIssue(tagEn: string) {
     setSessionIssues((current) => current.includes(tagEn) ? current.filter((t) => t !== tagEn) : [...current, tagEn]);
   }
-  const sortedItems = useMemo(() => {
-    const freq: Record<string, number> = {};
-    Object.values(logs as Record<string, Log>).forEach((log) => { log.items.forEach((item) => { freq[item] = (freq[item] ?? 0) + 1; }); });
-    return [...PRACTICE_ITEMS].sort((a, b) => (freq[b.en] ?? 0) - (freq[a.en] ?? 0));
-  }, [logs]);
+  // Quick Practice's own curated, fixed order -- Rudiments renders separately as the
+  // expandable picker below, so it's excluded here along with the individual rudiments
+  // that used to be flat PRACTICE_ITEMS entries (Single/Double Strokes, Paradiddles),
+  // now reachable through that same picker instead of as their own top-level chips.
+  const quickPracticeItems = QUICK_PRACTICE_ITEM_ORDER.map((en) => PRACTICE_ITEMS.find((item) => item.en === en)).filter(Boolean) as { en: string; es: string }[];
+  // Reuses Practice Mode's own rudiment catalog directly -- no separate list to maintain,
+  // so anything added to Practice Mode's rudiments automatically shows up here too.
+  const rudimentExercises = useMemo(() => PRACTICE_EXERCISES.filter((e) => e.category === "rudiments"), []);
+  const [rudimentsOpen, setRudimentsOpen] = useState(false);
+  const [rudimentSearch, setRudimentSearch] = useState("");
+  const filteredRudiments = useMemo(() => {
+    const q = rudimentSearch.trim().toLowerCase();
+    if (!q) return rudimentExercises;
+    return rudimentExercises.filter((r) => r[language as Lang].toLowerCase().includes(q));
+  }, [rudimentExercises, rudimentSearch, language]);
+  // Specific rudiments aren't rows in the practice_items catalog table, so -- same as how
+  // BPM-ladder exercise names already get handled -- they're saved via customItems (free
+  // text) rather than selected (which requires a practice_items match).
+  function toggleRudiment(en: string) {
+    setCustomItems((current: string[]) => current.includes(en) ? current.filter((v: string) => v !== en) : [...current, en]);
+  }
+  const selectedRudimentsCount = customItems.filter((ci: string) => rudimentExercises.some((r) => r.en === ci)).length;
   function qualifyingMinutesAt(itemEn: string, targetBpm: number) {
     return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum: number, s: any) => sum + s.duration_minutes, 0);
   }
@@ -1948,9 +1971,27 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
           </div>
         )}
         {Number(seconds) > 0 && <p className="seconds-note">+{seconds}s {T.today.secondsCarried}</p>}
-        <button className="collapsible-header" onClick={() => setWhatOpen(!whatOpen)}><span className="input-label checklist-label"><span className="step-badge">2</span>{T.today.whatPractised}{!whatOpen && (selected.length > 0 || notes) ? ` (${[selected.length > 0 ? String(selected.length) : null, notes ? "+note" : null].filter(Boolean).join(" ")})` : ""}</span><span className={whatOpen ? "collapse-chevron open" : "collapse-chevron"}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7.5l5 5 5-5" /></svg></span></button>
+        <button className="collapsible-header" onClick={() => setWhatOpen(!whatOpen)}><span className="input-label checklist-label"><span className="step-badge">2</span>{T.today.whatPractised}{!whatOpen && (selected.length > 0 || selectedRudimentsCount > 0 || notes) ? ` (${[(selected.length + selectedRudimentsCount) > 0 ? String(selected.length + selectedRudimentsCount) : null, notes ? "+note" : null].filter(Boolean).join(" ")})` : ""}</span><span className={whatOpen ? "collapse-chevron open" : "collapse-chevron"}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7.5l5 5 5-5" /></svg></span></button>
         {whatOpen && <>
-          <div className="chips">{sortedItems.map((item: any) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language as Lang]}</button>)}</div>
+          <div className="chips">
+            <button type="button" className={selectedRudimentsCount > 0 ? "chip selected" : "chip"} onClick={() => setRudimentsOpen(!rudimentsOpen)}>
+              {selectedRudimentsCount > 0 && <b>✓</b>}{T.today.rudiments}{selectedRudimentsCount > 0 ? ` (${selectedRudimentsCount})` : ""}
+              <span className={rudimentsOpen ? "chip-caret open" : "chip-caret"}>▾</span>
+            </button>
+            {quickPracticeItems.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language as Lang]}</button>)}
+          </div>
+          {rudimentsOpen && <div className="rudiment-picker-body">
+            <input className="rudiment-search" value={rudimentSearch} onChange={(e: any) => setRudimentSearch(e.target.value)} placeholder={T.today.searchRudiments} />
+            <div className="onboard-exercise-list rudiment-list">
+              {filteredRudiments.map((r) => {
+                const isSelected = customItems.includes(r.en);
+                return <button key={r.en} type="button" className={isSelected ? "onboard-row selected" : "onboard-row"} onClick={() => toggleRudiment(r.en)}>
+                  <span className="onboard-row-name">{r[language as Lang]}</span>
+                  {isSelected && <span className="onboard-check">✓</span>}
+                </button>;
+              })}
+            </div>
+          </div>}
           <label className="input-label equipment-label">{T.today.equipment}</label>
           <div className="equipment-toggle">
             <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
