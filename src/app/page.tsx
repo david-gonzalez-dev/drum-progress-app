@@ -268,7 +268,7 @@ const translations = {
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
       whatDidYouPractiseTitle: "WHAT DID YOU PRACTISE?", whatDidYouPractiseSubtitle: "Pick at least one.", addOwnPlaceholder: "Add your own...", addOwnBtn: "Add",
-      rudiments: "Rudiments", searchRudiments: "Search rudiments...", books: "Books", myItems: "My Items", addOwnBookPlaceholder: "Add your own book...",
+      rudiments: "Rudiments", searchRudiments: "Search rudiments...", books: "Books", myItems: "My Items", addOwnBookPlaceholder: "Add your own book...", pickerDone: "Done",
     },
     calendar: {
       title: "CALENDAR", longestStreak: "Longest streak", daysThisYear: "Days this year",
@@ -388,7 +388,7 @@ const translations = {
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
       whatDidYouPractiseTitle: "¿QUÉ PRACTICASTE?", whatDidYouPractiseSubtitle: "Elige al menos uno.", addOwnPlaceholder: "Añade lo tuyo...", addOwnBtn: "Añadir",
-      rudiments: "Rudimentos", searchRudiments: "Buscar rudimentos...", books: "Libros", myItems: "Mis elementos", addOwnBookPlaceholder: "Añade tu propio libro...",
+      rudiments: "Rudimentos", searchRudiments: "Buscar rudimentos...", books: "Libros", myItems: "Mis elementos", addOwnBookPlaceholder: "Añade tu propio libro...", pickerDone: "Listo",
     },
     calendar: {
       title: "CALENDARIO", longestStreak: "Racha más larga", daysThisYear: "Días este año",
@@ -1146,11 +1146,11 @@ function ConfirmModal({ message, onConfirm, onCancel, T }: { message: string; on
 // Shared expandable pill+flyout used for Rudiments, Books, and My Items in Quick Practice's
 // save modal -- defined at module level (not inside PracticeMode) so its identity is stable
 // across renders and a controlled search/add input inside it doesn't lose focus on every keystroke.
-function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, searchValue, onSearchChange, searchPlaceholder, rows, addPlaceholder, addBtnLabel, addValue, onAddChange, onAdd }: {
+function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, searchValue, onSearchChange, searchPlaceholder, rows, addPlaceholder, addBtnLabel, addValue, onAddChange, onAdd, doneLabel }: {
   label: string; selectedCount: number; open: boolean; onToggleOpen: () => void;
   searchable?: boolean; searchValue?: string; onSearchChange?: (value: string) => void; searchPlaceholder?: string;
   rows: { key: string; label: string; selected: boolean; onToggle: () => void; onDelete?: () => void }[];
-  addPlaceholder?: string; addBtnLabel?: string; addValue?: string; onAddChange?: (value: string) => void; onAdd?: () => void;
+  addPlaceholder?: string; addBtnLabel?: string; addValue?: string; onAddChange?: (value: string) => void; onAdd?: () => void; doneLabel?: string;
 }) {
   return <div className="rudiment-chip-wrap">
     <button type="button" className={selectedCount > 0 ? "chip selected" : "chip"} onClick={onToggleOpen}>
@@ -1179,6 +1179,7 @@ function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, se
         <input value={addValue} onChange={(e) => onAddChange?.(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onAdd(); } }} placeholder={addPlaceholder} />
         <button type="button" className="custom-item-add" onClick={onAdd} disabled={!addValue?.trim()}>{addBtnLabel}</button>
       </div>}
+      <button type="button" className="picker-done" onClick={onToggleOpen}>{doneLabel}</button>
     </div>}
   </div>;
 }
@@ -2106,14 +2107,14 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         <div className="chips">
           <ChipDropdown label={T.today.rudiments} selectedCount={selectedRudimentsCount} open={rudimentsOpen} onToggleOpen={() => setRudimentsOpen(!rudimentsOpen)}
             searchable searchValue={rudimentSearch} onSearchChange={setRudimentSearch} searchPlaceholder={T.today.searchRudiments}
-            rows={filteredRudiments.map((r) => ({ key: r.en, label: r[language as Lang], selected: customItems.includes(r.en), onToggle: () => toggleRudiment(r.en) }))} />
+            rows={filteredRudiments.map((r) => ({ key: r.en, label: r[language as Lang], selected: customItems.includes(r.en), onToggle: () => toggleRudiment(r.en) }))} doneLabel={T.today.pickerDone} />
           {QUICK_PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language as Lang]}</button>)}
           <ChipDropdown label={T.today.books} selectedCount={selectedBooksCount} open={booksOpen} onToggleOpen={() => setBooksOpen(!booksOpen)}
             rows={allBooks.map((name: string) => ({ key: name, label: name, selected: customItems.includes(name), onToggle: () => toggleBook(name), onDelete: PRACTICE_BOOKS.includes(name) ? undefined : () => onRemoveUserItem("book", name) }))}
-            addValue={bookAddText} onAddChange={setBookAddText} onAdd={addBook} addPlaceholder={T.today.addOwnBookPlaceholder} addBtnLabel={T.today.addOwnBtn} />
+            addValue={bookAddText} onAddChange={setBookAddText} onAdd={addBook} addPlaceholder={T.today.addOwnBookPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
           <ChipDropdown label={T.today.myItems} selectedCount={selectedMyItemsCount} open={myItemsOpen} onToggleOpen={() => setMyItemsOpen(!myItemsOpen)}
             rows={userItems.map((name: string) => ({ key: name, label: name, selected: customItems.includes(name), onToggle: () => toggleMyItem(name), onDelete: () => onRemoveUserItem("item", name) }))}
-            addValue={myItemAddText} onAddChange={setMyItemAddText} onAdd={addMyItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} />
+            addValue={myItemAddText} onAddChange={setMyItemAddText} onAdd={addMyItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
         </div>
         {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
         <button className="save" onClick={handleModalSave} disabled={selected.length === 0 && customItems.length === 0}>{T.today.savePractice}<span>→</span></button>
@@ -2619,14 +2620,14 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <div className="chips">
         <ChipDropdown label={T.today.rudiments} selectedCount={selectedRudimentsCount} open={rudimentsOpen} onToggleOpen={() => setRudimentsOpen(!rudimentsOpen)}
           searchable searchValue={rudimentSearch} onSearchChange={setRudimentSearch} searchPlaceholder={T.today.searchRudiments}
-          rows={filteredRudiments.map((r) => ({ key: r.en, label: r[lang as Lang], selected: addCustomItems.includes(r.en), onToggle: () => toggleRudiment(r.en) }))} />
+          rows={filteredRudiments.map((r) => ({ key: r.en, label: r[lang as Lang], selected: addCustomItems.includes(r.en), onToggle: () => toggleRudiment(r.en) }))} doneLabel={T.today.pickerDone} />
         {QUICK_PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggleAddItem(item.en)} className={addItems.includes(item.en) ? "chip selected" : "chip"}>{addItems.includes(item.en) && <b>✓</b>}{item[lang as Lang]}</button>)}
         <ChipDropdown label={T.today.books} selectedCount={selectedBooksCount} open={booksOpen} onToggleOpen={() => setBooksOpen(!booksOpen)}
           rows={allBooks.map((name) => ({ key: name, label: name, selected: addCustomItems.includes(name), onToggle: () => toggleBook(name), onDelete: PRACTICE_BOOKS.includes(name) ? undefined : () => onRemoveUserItem?.("book", name) }))}
-          addValue={bookAddText} onAddChange={setBookAddText} onAdd={addBook} addPlaceholder={T.today.addOwnBookPlaceholder} addBtnLabel={T.today.addOwnBtn} />
+          addValue={bookAddText} onAddChange={setBookAddText} onAdd={addBook} addPlaceholder={T.today.addOwnBookPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
         <ChipDropdown label={T.today.myItems} selectedCount={selectedMyItemsCount} open={myItemsOpen} onToggleOpen={() => setMyItemsOpen(!myItemsOpen)}
           rows={(userItems ?? []).map((name) => ({ key: name, label: name, selected: addCustomItems.includes(name), onToggle: () => toggleMyItem(name), onDelete: () => onRemoveUserItem?.("item", name) }))}
-          addValue={myItemAddText} onAddChange={setMyItemAddText} onAdd={addMyItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} />
+          addValue={myItemAddText} onAddChange={setMyItemAddText} onAdd={addMyItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
       </div>
       <div className="add-time-buttons"><button className="discard" onClick={discardTime}>{T.metronome.notNow}</button><button className="add" onClick={addTime} disabled={addPromptSeconds <= 0 || (addItems.length === 0 && addCustomItems.length === 0)}>{T.metronome.addTime}</button></div>
     </div> : <>

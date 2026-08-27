@@ -210,3 +210,4 @@ h2.home-title{font:700 21px 'Barlow Condensed';margin:0 0 13px;letter-spacing:.2
 .custom-item-row input::placeholder{color:#747b76}
 .custom-item-add{flex-shrink:0;border:0;border-radius:10px;background:#ff6b1a;color:#250d02;font:700 15px 'DM Sans';padding:0 16px}
 .custom-item-add:disabled{opacity:.4}
+.picker-done{display:block;width:100%;margin-top:10px;border:1px solid #303632;background:#161918;color:#ff9b50;font:700 15px 'DM Sans';border-radius:10px;padding:10px;text-align:center}
