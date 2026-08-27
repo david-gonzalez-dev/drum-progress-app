@@ -344,8 +344,8 @@ const translations = {
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} PINNED`, pinManagerTitle: "Your Focus", pinManagerDone: "Done",
       quickTitle: "Quick Practice",
       trainTitle: "Skill Trainer",
-      listIntroRudiments: (min: number) => `${min} min per tempo to unlock the next level.`,
-      listIntroExercises: (min: number) => `${min} min per tempo to unlock the next level.`,
+      listIntroRudiments: (min: number) => `Practice for ${min} min at each tempo to unlock the next level.`,
+      listIntroExercises: (min: number) => `Practice for ${min} min at each tempo to unlock the next level.`,
       listIntroRhythms: (min: number) => `Grooves and styles to build your musical vocabulary. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it and move up.`,
     },
     onboarding: {
@@ -463,8 +463,8 @@ const translations = {
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} FIJADOS`, pinManagerTitle: "Tu enfoque", pinManagerDone: "Listo",
       quickTitle: "Práctica rápida",
       trainTitle: "Entrenador de habilidades",
-      listIntroRudiments: (min: number) => `${min} min por tempo para desbloquear el siguiente nivel.`,
-      listIntroExercises: (min: number) => `${min} min por tempo para desbloquear el siguiente nivel.`,
+      listIntroRudiments: (min: number) => `Practica ${min} min en cada tempo para desbloquear el siguiente nivel.`,
+      listIntroExercises: (min: number) => `Practica ${min} min en cada tempo para desbloquear el siguiente nivel.`,
       listIntroRhythms: (min: number) => `Grooves y estilos para ampliar tu vocabulario musical. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo y subir de nivel.`,
     },
     onboarding: {
