@@ -264,7 +264,7 @@ const translations = {
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", whatPractised: "ADD WHAT YOU PRACTISED",
       notes: "NOTES", notesPrefix: "Notes:", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} on ${equipmentName}`,
-      todaySummary: "TODAY'S SUMMARY", goalLabel: "GOAL", noPracticeYet: "No practice logged yet today.", secondsCarried: "extra (not counted in minutes yet)",
+      todaySummary: "TODAY", noPracticeYet: "No practice yet.", secondsCarried: "extra (not counted in minutes yet)",
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
       whatDidYouPractiseTitle: "WHAT DID YOU PRACTISE?", whatDidYouPractiseSubtitle: "Pick at least one.", addOwnPlaceholder: "Add your own...", addOwnBtn: "Add",
@@ -311,11 +311,11 @@ const translations = {
       achievements: "ACHIEVEMENTS", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
     },
     personalChallenges: {
-      title: "Personal Challenges", homeTitle: "PERSONAL CHALLENGES", subtitle: "Set a focused practice goal for yourself.",
+      title: "Personal Challenges", homeTitle: "PERSONAL CHALLENGES", subtitle: "Set your own practice goal.",
       newChallenge: "+ New challenge", cancel: "Cancel",
       exerciseLabel: "Exercise", minutesLabel: "Minutes per day", bpmLabel: "Target BPM (optional)", bpmPlaceholder: "Any tempo",
       lengthLabel: "Challenge length (days)", startChallenge: "Start challenge", pleaseWait: "Please wait...",
-      noChallenges: "No personal challenges yet. Create one to build a focused practice habit.",
+      noChallenges: "No personal challenges yet.",
       challengeTitle: (exercise: string, days: number) => `${exercise} — ${days} Day Challenge`,
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practice ${minutes} min at ${bpm}+ BPM every day for ${days} consecutive days.` : `Practice ${minutes} min every day for ${days} consecutive days.`,
       statusActive: (done: number, total: number) => `${done}/${total} days`, statusCompleted: "✓ Completed — achievement unlocked!", statusFailed: "Challenge failed. Want to start over?",
@@ -342,9 +342,8 @@ const translations = {
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} PINNED`, pinManagerTitle: "Your Focus", pinManagerDone: "Done",
       quickTitle: "Quick Practice",
       trainTitle: "Train a Skill",
-      categoryDescRudiments: "Build technique and control.", categoryDescExercises: "Improve with structured exercises.", categoryDescRhythms: "Grooves, styles and musical vocabulary.",
-      listIntroRudiments: (min: number) => `Standard rudiments for clean technique. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it before moving to the next tempo.`,
-      listIntroExercises: (min: number) => `Focused drills for coordination and control. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it, same as rudiments.`,
+      listIntroRudiments: (min: number) => `Practice for ${min} comfortable minutes at each tempo to unlock the next level.`,
+      listIntroExercises: (min: number) => `Practice for ${min} comfortable minutes at each tempo to unlock the next level.`,
       listIntroRhythms: (min: number) => `Grooves and styles to build your musical vocabulary. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it and move up.`,
     },
     onboarding: {
@@ -384,7 +383,7 @@ const translations = {
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", whatPractised: "AÑADE LO QUE PRACTICASTE",
       notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} en ${equipmentName}`,
-      todaySummary: "RESUMEN DE HOY", goalLabel: "META", noPracticeYet: "Aún no has registrado práctica hoy.", secondsCarried: "extra (aún no contado en minutos)",
+      todaySummary: "HOY", noPracticeYet: "Aún no hay práctica.", secondsCarried: "extra (aún no contado en minutos)",
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
       whatDidYouPractiseTitle: "¿QUÉ PRACTICASTE?", whatDidYouPractiseSubtitle: "Elige al menos uno.", addOwnPlaceholder: "Añade lo tuyo...", addOwnBtn: "Añadir",
@@ -431,11 +430,11 @@ const translations = {
       achievements: "LOGROS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
     },
     personalChallenges: {
-      title: "Retos personales", homeTitle: "RETOS PERSONALES", subtitle: "Ponte una meta de práctica enfocada.",
+      title: "Retos personales", homeTitle: "RETOS PERSONALES", subtitle: "Ponte tu propia meta de práctica.",
       newChallenge: "+ Nuevo reto", cancel: "Cancelar",
       exerciseLabel: "Ejercicio", minutesLabel: "Minutos por día", bpmLabel: "BPM objetivo (opcional)", bpmPlaceholder: "Cualquier tempo",
       lengthLabel: "Duración del reto (días)", startChallenge: "Empezar reto", pleaseWait: "Un momento...",
-      noChallenges: "Aún no tienes retos personales. Crea uno para desarrollar un hábito de práctica enfocado.",
+      noChallenges: "Aún no tienes retos personales.",
       challengeTitle: (exercise: string, days: number) => `${exercise} — Reto de ${days} Días`,
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practica ${minutes} min a ${bpm}+ BPM cada día durante ${days} días consecutivos.` : `Practica ${minutes} min cada día durante ${days} días consecutivos.`,
       statusActive: (done: number, total: number) => `${done}/${total} días`, statusCompleted: "✓ Completado — ¡logro desbloqueado!", statusFailed: "Reto fallido. ¿Quieres empezar de nuevo?",
@@ -462,9 +461,8 @@ const translations = {
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} FIJADOS`, pinManagerTitle: "Tu enfoque", pinManagerDone: "Listo",
       quickTitle: "Práctica rápida",
       trainTitle: "Entrena una habilidad",
-      categoryDescRudiments: "Desarrolla técnica y control.", categoryDescExercises: "Mejora con ejercicios estructurados.", categoryDescRhythms: "Grooves, estilos y vocabulario musical.",
-      listIntroRudiments: (min: number) => `Rudimentos estándar para una técnica limpia. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo antes de pasar al siguiente tempo.`,
-      listIntroExercises: (min: number) => `Ejercicios enfocados en coordinación y control. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo, igual que con los rudimentos.`,
+      listIntroRudiments: (min: number) => `Practica ${min} minutos cómodos en cada tempo para desbloquear el siguiente nivel.`,
+      listIntroExercises: (min: number) => `Practica ${min} minutos cómodos en cada tempo para desbloquear el siguiente nivel.`,
       listIntroRhythms: (min: number) => `Grooves y estilos para ampliar tu vocabulario musical. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo y subir de nivel.`,
     },
     onboarding: {
@@ -1065,10 +1063,10 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
   return <section className="page today">
     <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
     <div className="form-card stats-tile"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
-    <div className="form-card">
+    <div className="form-card today-goal-card">
       <label className="input-label">{T.today.todaySummary}</label>
       {dailyGoal != null ? (
-        <div className="goal-progress"><div className="goal-progress-label"><span>{T.today.goalLabel}</span><strong className={goalAchieved ? "achieved" : ""}>{formatMinutes(todayMinutes)} / {formatMinutes(dailyGoal)}</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
+        <div className="goal-progress"><div className="goal-progress-label"><strong className={goalAchieved ? "achieved" : ""}>{formatMinutes(todayMinutes)} / {formatMinutes(dailyGoal)}</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
       ) : (
         <div className="no-goal-card">
           <p className="no-goal-title">{T.today.noGoalTitle}</p>
@@ -1990,7 +1988,6 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   const RATING_LABEL: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const CATEGORY_LABEL: Record<string, string> = { rudiments: T.practiceMode.categoryRudiments, exercises: T.practiceMode.categoryExercises, rhythms: T.practiceMode.categoryRhythms };
-  const CATEGORY_DESC: Record<string, string> = { rudiments: T.practiceMode.categoryDescRudiments, exercises: T.practiceMode.categoryDescExercises, rhythms: T.practiceMode.categoryDescRhythms };
   function openCategory(cat: string) { setCategory(cat); setStep("list"); }
   function openExercise(itemEn: string) { setExercise(itemEn); setStep("detail"); }
   function startSession(targetBpm: number) { setBpm(targetBpm); setStep("session"); }
@@ -2043,7 +2040,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
       <div className="mode-header quick-header">
         <img src="/icons/lightning.png" alt="" className="mode-icon quick" />
         <div className="mode-copy"><h2>{T.practiceMode.quickTitle}</h2></div>
-        <button className="mode-action" onClick={openMetronome}>⌁ {T.today.metronome}</button>
+        <button className="mode-action metro-launch" onClick={openMetronome}>⌁ {T.today.metronome}</button>
       </div>
       <div className="form-card quick-start"><label className="input-label">{T.today.howLong}</label>
         {equipment === "both" ? (
@@ -2093,7 +2090,6 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
             <img src={CATEGORY_ICON_SRC[cat]} alt="" className="category-icon" />
             <div className="category-info">
               <p className="category-title">{CATEGORY_LABEL[cat]}</p>
-              <p className="category-desc">{CATEGORY_DESC[cat]}</p>
             </div>
             <span className="chev">›</span>
           </button>;
