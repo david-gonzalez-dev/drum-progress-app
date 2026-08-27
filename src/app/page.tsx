@@ -1159,7 +1159,7 @@ function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, se
       <div className="day-summary picker-window-card" onClick={(e) => e.stopPropagation()}>
         <button type="button" className="close" onClick={onToggleOpen}>×</button>
         <h2 className="edit-rating-title">{label}</h2>
-        {searchable && <input className="rudiment-search" value={searchValue} onChange={(e) => onSearchChange?.(e.target.value)} placeholder={searchPlaceholder} autoFocus />}
+        {searchable && <input className="rudiment-search" value={searchValue} onChange={(e) => onSearchChange?.(e.target.value)} placeholder={searchPlaceholder} />}
         <div className="onboard-exercise-list rudiment-list">
           {rows.map((r) => r.onDelete ? (
             <div key={r.key} className={r.selected ? "onboard-row selected" : "onboard-row"}>
