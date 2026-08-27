@@ -832,3 +832,13 @@ create table if not exists public.user_practice_items (
 alter table public.user_practice_items enable row level security;
 drop policy if exists "users manage their practice items" on public.user_practice_items;
 create policy "users manage their practice items" on public.user_practice_items for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Quick Practice / Day Editor elements: "Bass Drum" renamed to "Footwork" (a broader label for
+-- foot technique in general, not just the drum itself), plus two new elements. Renaming name_en
+-- on the existing row (rather than inserting a new one) keeps every already-logged session's
+-- item_id link intact -- only the displayed text changes.
+update public.practice_items set name_en = 'Footwork', name_es = 'Trabajo de pies' where slug = 'bass-drum';
+insert into public.practice_items (slug, name_en, name_es, sort_order) values
+  ('fills', 'Fills', 'Fills', 10),
+  ('songs', 'Songs', 'Canciones', 11)
+on conflict (slug) do nothing;

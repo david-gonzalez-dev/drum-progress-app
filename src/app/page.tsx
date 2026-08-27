@@ -24,13 +24,15 @@ const PRACTICE_ITEMS = [
   { en: "Paradiddles", es: "Paradiddles" },
   { en: "Stick Control", es: "Control de baquetas" },
   { en: "Coordination", es: "Coordinación" },
-  { en: "Bass Drum", es: "Bombo" },
+  { en: "Footwork", es: "Trabajo de pies" },
   { en: "Rhythms", es: "Ritmos" },
   { en: "Permutations", es: "Permutaciones" },
+  { en: "Fills", es: "Fills" },
+  { en: "Songs", es: "Canciones" },
 ];
 // Quick Practice's own top-level order (Rudiments renders separately as an expandable picker,
 // and Stick Control lives in the Books picker instead, so both are excluded here).
-const QUICK_PRACTICE_ITEM_ORDER = ["Rhythms", "Coordination", "Bass Drum", "Permutations"];
+const QUICK_PRACTICE_ITEM_ORDER = ["Rhythms", "Coordination", "Footwork", "Permutations", "Fills", "Songs"];
 // Shared between Quick Practice's card and the Metronome's free-play "Add Time" prompt so both
 // offer the exact same top-level chips.
 const QUICK_PRACTICE_ITEMS = QUICK_PRACTICE_ITEM_ORDER.map((en) => PRACTICE_ITEMS.find((item) => item.en === en)).filter(Boolean) as { en: string; es: string }[];
@@ -306,7 +308,7 @@ const translations = {
     },
     progressPage: {
       eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", yourPractice: "YOUR PRACTICE",
-      noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS", generalPractice: "General Practice",
+      noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS", generalPractice: "General Practice", seeMore: "See more", seeLess: "See less",
       skillProgress: "SKILL PROGRESS", noSkillData: "Train an exercise's BPM levels to see your skill progress here.",
       achievements: "ACHIEVEMENTS", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
     },
@@ -341,7 +343,7 @@ const translations = {
       maxPinnedReached: (max: number) => `You can pin up to ${max} exercises. Unpin one first.`,
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} PINNED`, pinManagerTitle: "Your Focus", pinManagerDone: "Done",
       quickTitle: "Quick Practice",
-      trainTitle: "Train a Skill",
+      trainTitle: "Skill Trainer",
       listIntroRudiments: (min: number) => `Practice for ${min} comfortable minutes at each tempo to unlock the next level.`,
       listIntroExercises: (min: number) => `Practice for ${min} comfortable minutes at each tempo to unlock the next level.`,
       listIntroRhythms: (min: number) => `Grooves and styles to build your musical vocabulary. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it and move up.`,
@@ -425,7 +427,7 @@ const translations = {
     },
     progressPage: {
       eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", yourPractice: "TU PRÁCTICA",
-      noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE", generalPractice: "Práctica general",
+      noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE", generalPractice: "Práctica general", seeMore: "Ver más", seeLess: "Ver menos",
       skillProgress: "PROGRESO TÉCNICO", noSkillData: "Entrena los niveles de BPM de un ejercicio para ver tu progreso técnico aquí.",
       achievements: "LOGROS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
     },
@@ -460,7 +462,7 @@ const translations = {
       maxPinnedReached: (max: number) => `Puedes fijar hasta ${max} ejercicios. Quita uno primero.`,
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} FIJADOS`, pinManagerTitle: "Tu enfoque", pinManagerDone: "Listo",
       quickTitle: "Práctica rápida",
-      trainTitle: "Entrena una habilidad",
+      trainTitle: "Entrenador de habilidades",
       listIntroRudiments: (min: number) => `Practica ${min} minutos cómodos en cada tempo para desbloquear el siguiente nivel.`,
       listIntroExercises: (min: number) => `Practica ${min} minutos cómodos en cada tempo para desbloquear el siguiente nivel.`,
       listIntroRhythms: (min: number) => `Grooves y estilos para ampliar tu vocabulario musical. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo y subir de nivel.`,
@@ -1657,6 +1659,9 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
 }
 function Progress({ practiceSessions, logs, user, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
+  const VISIBLE_LIMIT = 5;
+  const [showAllPractice, setShowAllPractice] = useState(false);
+  const [showAllSkill, setShowAllSkill] = useState(false);
   const [wonChallenges, setWonChallenges] = useState<any[]>([]);
   useEffect(() => {
     let cancelled = false;
@@ -1713,7 +1718,7 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
     {!totals.length ? <p className="hint">{T.progressPage.noData}</p> : <div className="progress-section">
       <span className="section-label">{T.progressPage.yourPractice}</span>
       <div className="minutes-chart">
-        {totals.map((t, idx) => <div key={t.en} className="minutes-row">
+        {(showAllPractice ? totals : totals.slice(0, VISIBLE_LIMIT)).map((t, idx) => <div key={t.en} className="minutes-row">
           <span className="minutes-rank">{idx + 1}</span>
           <div className="minutes-info">
             <span className="minutes-name">{t.label}</span>
@@ -1721,6 +1726,7 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
           </div>
         </div>)}
       </div>
+      {totals.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllPractice(!showAllPractice)}>{showAllPractice ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
     </div>}
     <div className="progress-section">
       <span className="section-label">{T.progressPage.skillProgress}</span>
@@ -1728,13 +1734,15 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
         {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
       </div>
       <div className="pinned-list">
-        {skillExercises.map((ex) => <div key={ex.en} className="pinned-card">
+        {(showAllSkill ? skillExercises : skillExercises.slice(0, VISIBLE_LIMIT)).map((ex) => <div key={ex.en} className="pinned-card">
           <div className="pinned-head"><span className="pinned-name">{ex.label}</span></div>
           <div className="tier-strip">
             {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg">{renderTierSegBar(tierProgressFor(practiceSessions, ex.en, tier), tierIsSkipped(practiceSessions, ex.en, tier))}</div>)}
           </div>
         </div>)}
-      </div></>}
+      </div>
+      {skillExercises.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSkill(!showAllSkill)}>{showAllSkill ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+      </>}
     </div>
     <div className="progress-section achievements-teaser">
       <span className="section-label">{T.progressPage.achievements}</span>
