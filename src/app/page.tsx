@@ -344,8 +344,8 @@ const translations = {
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} PINNED`, pinManagerTitle: "Your Focus", pinManagerDone: "Done",
       quickTitle: "Quick Practice",
       trainTitle: "Skill Trainer",
-      listIntroRudiments: (min: number) => `Practice for ${min} comfortable minutes at each tempo to unlock the next level.`,
-      listIntroExercises: (min: number) => `Practice for ${min} comfortable minutes at each tempo to unlock the next level.`,
+      listIntroRudiments: (min: number) => `${min} min per tempo to unlock the next level.`,
+      listIntroExercises: (min: number) => `${min} min per tempo to unlock the next level.`,
       listIntroRhythms: (min: number) => `Grooves and styles to build your musical vocabulary. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it and move up.`,
     },
     onboarding: {
@@ -463,8 +463,8 @@ const translations = {
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} FIJADOS`, pinManagerTitle: "Tu enfoque", pinManagerDone: "Listo",
       quickTitle: "Práctica rápida",
       trainTitle: "Entrenador de habilidades",
-      listIntroRudiments: (min: number) => `Practica ${min} minutos cómodos en cada tempo para desbloquear el siguiente nivel.`,
-      listIntroExercises: (min: number) => `Practica ${min} minutos cómodos en cada tempo para desbloquear el siguiente nivel.`,
+      listIntroRudiments: (min: number) => `${min} min por tempo para desbloquear el siguiente nivel.`,
+      listIntroExercises: (min: number) => `${min} min por tempo para desbloquear el siguiente nivel.`,
       listIntroRhythms: (min: number) => `Grooves y estilos para ampliar tu vocabulario musical. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo y subir de nivel.`,
     },
     onboarding: {
@@ -1077,7 +1077,6 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
         </div>
       )}
       {todayLog && todayLog.equipment && <span className="roster-equipment">{equipmentSplitLabel(todayLog.drumsetMinutes, todayLog.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(todayLog.equipment, T))}</span>}
-      {todayLog && todayLog.seconds > 0 && <span className="roster-equipment">+{todayLog.seconds}s</span>}
       {todayLog && (todayLog.items.length > 0 || todayLog.customItems.length > 0) ? <div className="detail-chips">{todayLog.items.map((item: string) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{todayLog.customItems.map((item: string) => <em key={item}>{item}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>}
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>
@@ -1126,7 +1125,7 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language
     <div className="calendar-card"><div className="cal-head"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=(logs[key]?.minutes ?? 0) > 0; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
     {selectedDate !== dateKey && <div className="day-detail"><span>{new Date(selectedDate + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
       {isFuture && <p>{T.calendar.futureDay}</p>}
-      {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{formatMinutes(selectedLog.minutes)} {T.calendar.minPractised}{selectedLog.seconds > 0 ? ` +${selectedLog.seconds}s` : ""}</strong><div className="detail-chips">{selectedLog.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{selectedLog.customItems.map((item) => <em key={item}>{item}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
+      {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{formatMinutes(selectedLog.minutes)} {T.calendar.minPractised}</strong><div className="detail-chips">{selectedLog.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{selectedLog.customItems.map((item) => <em key={item}>{item}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
     </div>}
     {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
       onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} />}
@@ -1207,7 +1206,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
         rosterRows && rosterRows.length ? <div className="challenge-ranking">{rosterRows.map((m) => <div key={m.id} className="roster-detail-row">
           <i style={{ width: 8, height: 8, borderRadius: "50%", background: m.color, flexShrink: 0, marginTop: 4 }} />
           <div className="roster-detail-info">
-            <div className="roster-detail-head"><span className="rank-name">{m.id === roster!.currentUserId ? T.group.you : m.name}</span><span className="rank-value">{formatMinutes(m.minutes)}{m.seconds > 0 ? ` +${m.seconds}s` : ""}</span></div>
+            <div className="roster-detail-head"><span className="rank-name">{m.id === roster!.currentUserId ? T.group.you : m.name}</span><span className="rank-value">{formatMinutes(m.minutes)}</span></div>
             {m.equipment && <span className="roster-equipment">{equipmentSplitLabel(m.drumsetMinutes, m.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(m.equipment, T))}</span>}
             {((m.items && m.items.length > 0) || (m.customItems && m.customItems.length > 0)) && <div className="detail-chips">{m.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{(m.customItems ?? []).map((item) => <em key={item}>{item}</em>)}</div>}
             {m.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {m.notes}</p>}
@@ -1215,7 +1214,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
         </div>)}</div> : <p className="hint">{T.group.noOnePractised}</p>
       ) : (
         hasPractice && log ? <>
-          <strong className="ds-minutes">{formatMinutes(log.minutes)} {T.calendar.minPractised}{log.seconds > 0 ? ` +${log.seconds}s` : ""}{log.equipment ? ` - ${equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
+          <strong className="ds-minutes">{formatMinutes(log.minutes)} {T.calendar.minPractised}{log.equipment ? ` - ${equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
           {(log.items.length > 0 || log.customItems.length > 0) && <div className="detail-chips">{log.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{log.customItems.map((item) => <em key={item}>{item}</em>)}</div>}
           {log.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
           {dailyGoal != null && <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(formatMinutes(log.minutes), formatMinutes(dailyGoal))}</p>}
@@ -2125,7 +2124,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
             addValue={myItemAddText} onAddChange={setMyItemAddText} onAdd={addMyItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
         </div>
         {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
-        <button className="save" onClick={handleModalSave} disabled={selected.length === 0 && customItems.length === 0}>{T.today.savePractice}<span>→</span></button>
+        <button className="save" onClick={handleModalSave} disabled={selected.length === 0 && customItems.length === 0}>{T.today.savePractice}</button>
       </div></div>}
     </section>;
   }
@@ -2680,7 +2679,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       {logs === null ? <p className="hint">…</p> : logs.length === 0 ? <p className="hint">{T.admin.noDailyLogs}</p> : (
         <div className="admin-log-list">
           {logs.map((log, i) => <div key={i} className="admin-log-row">
-            <div className="admin-log-head"><span>{log.date}</span><span>{formatMinutes(log.minutes)}{log.seconds > 0 ? ` +${log.seconds}s` : ""}</span></div>
+            <div className="admin-log-head"><span>{log.date}</span><span>{formatMinutes(log.minutes)}</span></div>
             {log.items.length > 0 && <div className="detail-chips">{log.items.map((item: string) => <em key={item}>{item}</em>)}</div>}
             {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
           </div>)}
