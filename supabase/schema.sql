@@ -817,3 +817,18 @@ end;
 $$;
 revoke execute on function public.admin_list_users() from anon, public;
 grant execute on function public.admin_list_users() to authenticated;
+
+-- Personal, sticky "what did you practice" items and method books a student types themselves,
+-- so they reappear as reusable pills in future sessions instead of being retyped every time.
+-- Separate from practice_exercises/practice_items since these are per-user free text, not a
+-- shared curated catalog.
+create table if not exists public.user_practice_items (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  kind text not null check (kind in ('item', 'book')),
+  name text not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, kind, name)
+);
+alter table public.user_practice_items enable row level security;
+drop policy if exists "users manage their practice items" on public.user_practice_items;
+create policy "users manage their practice items" on public.user_practice_items for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);

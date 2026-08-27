@@ -28,9 +28,15 @@ const PRACTICE_ITEMS = [
   { en: "Rhythms", es: "Ritmos" },
   { en: "Permutations", es: "Permutaciones" },
 ];
-// Quick Practice's own top-level order (Rudiments renders separately as an expandable
-// picker, so it's excluded here) -- see the quickPracticeItems derivation in PracticeMode.
-const QUICK_PRACTICE_ITEM_ORDER = ["Rhythms", "Stick Control", "Coordination", "Bass Drum", "Permutations"];
+// Quick Practice's own top-level order (Rudiments renders separately as an expandable picker,
+// and Stick Control lives in the Books picker instead, so both are excluded here).
+const QUICK_PRACTICE_ITEM_ORDER = ["Rhythms", "Coordination", "Bass Drum", "Permutations"];
+// Shared between Quick Practice's card and the Metronome's free-play "Add Time" prompt so both
+// offer the exact same top-level chips.
+const QUICK_PRACTICE_ITEMS = QUICK_PRACTICE_ITEM_ORDER.map((en) => PRACTICE_ITEMS.find((item) => item.en === en)).filter(Boolean) as { en: string; es: string }[];
+// Curated method-book titles offered in the Books picker -- proper nouns, so no translation.
+// Students can add their own on top of this list (stored per-user, see user_practice_items).
+const PRACTICE_BOOKS = ["Stick Control", "Syncopation", "4-Way Coordination", "Rhythmic Illusions", "150 Rudimental Solos"];
 function practiceItemLabel(en: string, lang: Lang) {
   return PRACTICE_ITEMS.find((item) => item.en === en)?.[lang] ?? en;
 }
@@ -258,11 +264,11 @@ const translations = {
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", whatPractised: "ADD WHAT YOU PRACTISED",
       notes: "NOTES", notesPrefix: "Notes:", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} on ${equipmentName}`,
-      todaySummary: "TODAY'S SUMMARY", goalLabel: "GOAL", noPracticeYet: "No practice logged yet today.", secondsCarried: "extra (not counted in minutes yet)", other: "Other", otherPlaceholder: "What else did you practice?",
+      todaySummary: "TODAY'S SUMMARY", goalLabel: "GOAL", noPracticeYet: "No practice logged yet today.", secondsCarried: "extra (not counted in minutes yet)",
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
-      saveNoDetailsTitle: "What did you practice?", saveNoDetailsBody: () => `Pick at least one.`, addDetailsBtn: "Add Practice Details",
-      rudiments: "Rudiments", searchRudiments: "Search rudiments...",
+      whatDidYouPractiseTitle: "WHAT DID YOU PRACTISE?", whatDidYouPractiseSubtitle: "Pick at least one.", addOwnPlaceholder: "Add your own...", addOwnBtn: "Add",
+      rudiments: "Rudiments", searchRudiments: "Search rudiments...", books: "Books", myItems: "My Items", addOwnBookPlaceholder: "Add your own book...",
     },
     calendar: {
       title: "CALENDAR", longestStreak: "Longest streak", daysThisYear: "Days this year",
@@ -378,11 +384,11 @@ const translations = {
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", whatPractised: "AÑADE LO QUE PRACTICASTE",
       notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} en ${equipmentName}`,
-      todaySummary: "RESUMEN DE HOY", goalLabel: "META", noPracticeYet: "Aún no has registrado práctica hoy.", secondsCarried: "extra (aún no contado en minutos)", other: "Otro", otherPlaceholder: "¿Qué más practicaste?",
+      todaySummary: "RESUMEN DE HOY", goalLabel: "META", noPracticeYet: "Aún no has registrado práctica hoy.", secondsCarried: "extra (aún no contado en minutos)",
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
-      saveNoDetailsTitle: "¿Qué practicaste?", saveNoDetailsBody: () => `Elige al menos uno.`, addDetailsBtn: "Añadir detalles",
-      rudiments: "Rudimentos", searchRudiments: "Buscar rudimentos...",
+      whatDidYouPractiseTitle: "¿QUÉ PRACTICASTE?", whatDidYouPractiseSubtitle: "Elige al menos uno.", addOwnPlaceholder: "Añade lo tuyo...", addOwnBtn: "Añadir",
+      rudiments: "Rudimentos", searchRudiments: "Buscar rudimentos...", books: "Libros", myItems: "Mis elementos", addOwnBookPlaceholder: "Añade tu propio libro...",
     },
     calendar: {
       title: "CALENDARIO", longestStreak: "Racha más larga", daysThisYear: "Días este año",
@@ -615,6 +621,14 @@ export default function Home() {
   const [progressToast, setProgressToast] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const { current: streak, longest: longestStreak } = useMemo(() => calculateStreaks(logs, dateKey), [logs]);
+  // Rudiments this student actually logs most often float to the top of the picker instead of
+  // making them scroll a long alphabetical-ish list every time -- "remembered" from their own
+  // saved history rather than a separate counter that could drift out of sync.
+  const sortedRudiments = useMemo(() => {
+    const counts: Record<string, number> = {};
+    Object.values(logs).forEach((log) => { (log.customItems ?? []).forEach((ci) => { counts[ci] = (counts[ci] ?? 0) + 1; }); });
+    return [...PRACTICE_EXERCISES.filter((e) => e.category === "rudiments")].sort((a, b) => (counts[b.en] ?? 0) - (counts[a.en] ?? 0));
+  }, [logs]);
   const daysThisYear = useMemo(() => Object.keys(logs).filter((key) => key.startsWith(dateKey.slice(0, 4)) && logs[key].minutes > 0).length, [logs]);
   const [profileName, setProfileName] = useState("");
   const displayName = profileName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Drummer";
@@ -637,6 +651,8 @@ export default function Home() {
   const [pendingSessionMinutes, setPendingSessionMinutes] = useState(0);
   const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; issues: string[]; notes: string | null; created_at: string }[]>([]);
   const [pinnedExercises, setPinnedExercises] = useState<string[]>([]);
+  const [userItems, setUserItems] = useState<string[]>([]);
+  const [userBooks, setUserBooks] = useState<string[]>([]);
   const [showPinManager, setShowPinManager] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -680,6 +696,10 @@ export default function Home() {
     supabase.from("pinned_exercises").select("exercise_en").eq("user_id", currentUser.id).order("sort_order").then(({ data }) => {
       setPinnedExercises((data ?? []).map((row: any) => row.exercise_en));
     });
+    supabase.from("user_practice_items").select("kind,name").eq("user_id", currentUser.id).order("created_at").then(({ data }) => {
+      setUserItems((data ?? []).filter((row: any) => row.kind === "item").map((row: any) => row.name));
+      setUserBooks((data ?? []).filter((row: any) => row.kind === "book").map((row: any) => row.name));
+    });
     // is_admin() is security definer and checks the caller's own admin_users row
     // server-side -- this can't be spoofed by the client either way.
     supabase.rpc("is_admin").then(({ data }) => { setIsAdmin(!!data); });
@@ -713,6 +733,23 @@ export default function Home() {
     if (error) { setAuthError(error.message); return; }
     setPinnedExercises((current) => [...current, itemEn]);
     setShowPinManager(true);
+  }
+  async function addUserPracticeItem(kind: "item" | "book", name: string) {
+    if (!user) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const { error } = await supabase.from("user_practice_items").insert({ user_id: user.id, kind, name: trimmed });
+    // A duplicate (already saved from another device/session) isn't a real error -- just adopt it locally.
+    if (error && error.code !== "23505") { setAuthError(error.message); return; }
+    if (kind === "item") setUserItems((current) => current.includes(trimmed) ? current : [...current, trimmed]);
+    else setUserBooks((current) => current.includes(trimmed) ? current : [...current, trimmed]);
+  }
+  async function removeUserPracticeItem(kind: "item" | "book", name: string) {
+    if (!user) return;
+    await supabase.from("user_practice_items").delete().eq("user_id", user.id).eq("kind", kind).eq("name", name);
+    if (kind === "item") setUserItems((current) => current.filter((v) => v !== name));
+    else setUserBooks((current) => current.filter((v) => v !== name));
+    setCustomItems((current) => current.filter((v) => v !== name));
   }
   async function skipOnboarding() {
     if (!user) return;
@@ -837,12 +874,12 @@ export default function Home() {
     if (ok) { setSaved(true); setTimeout(() => setSaved(false), 2200); }
   }
   function toggle(item: string) { setSelected((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
-  async function addMetronomePractice(addedSeconds: number, items: string[], otherNote: string) {
+  async function addMetronomePractice(addedSeconds: number, items: string[], addCustomItems: string[]) {
     const totalSeconds = (Number(minutes) || 0) * 60 + (Number(seconds) || 0) + addedSeconds;
     const newMinutes = Math.floor(totalSeconds / 60);
     const newSeconds = totalSeconds % 60;
     const newSelected = items.length ? Array.from(new Set([...selected, ...items])) : selected;
-    const newCustomItems = otherNote ? Array.from(new Set([...customItems, otherNote])) : customItems;
+    const newCustomItems = addCustomItems.length ? Array.from(new Set([...customItems, ...addCustomItems])) : customItems;
     setMinutes(String(newMinutes));
     setSeconds(String(newSeconds));
     setSelected(newSelected);
@@ -857,7 +894,7 @@ export default function Home() {
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className="shell">
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} onBack={() => setTab("today")} T={T} />}
@@ -871,7 +908,7 @@ export default function Home() {
       </div>
     </div>}
     <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
-    <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} language={language} T={T} />
+    <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
     {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onClose={() => setShowPinManager(false)} language={language} T={T} />}
     {showOnboarding && <OnboardingModal currentGoal={dailyGoal} onSkip={skipOnboarding} onFinish={finishOnboarding} language={language} T={T} />}
@@ -1106,13 +1143,43 @@ function ConfirmModal({ message, onConfirm, onCancel, T }: { message: string; on
     </div>
   </div>;
 }
-function SaveWithoutDetailsModal({ onDismiss, onAddDetails, T }: { onDismiss: () => void; onAddDetails: () => void; T: any }) {
-  return <div className="modal modal-center" onClick={onDismiss}>
-    <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
-      <h2 className="edit-rating-title">{T.today.saveNoDetailsTitle}</h2>
-      <p className="confirm-message">{T.today.saveNoDetailsBody()}</p>
-      <button className="save" onClick={onAddDetails}>{T.today.addDetailsBtn}</button>
-    </div>
+// Shared expandable pill+flyout used for Rudiments, Books, and My Items in Quick Practice's
+// save modal -- defined at module level (not inside PracticeMode) so its identity is stable
+// across renders and a controlled search/add input inside it doesn't lose focus on every keystroke.
+function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, searchValue, onSearchChange, searchPlaceholder, rows, addPlaceholder, addBtnLabel, addValue, onAddChange, onAdd }: {
+  label: string; selectedCount: number; open: boolean; onToggleOpen: () => void;
+  searchable?: boolean; searchValue?: string; onSearchChange?: (value: string) => void; searchPlaceholder?: string;
+  rows: { key: string; label: string; selected: boolean; onToggle: () => void; onDelete?: () => void }[];
+  addPlaceholder?: string; addBtnLabel?: string; addValue?: string; onAddChange?: (value: string) => void; onAdd?: () => void;
+}) {
+  return <div className="rudiment-chip-wrap">
+    <button type="button" className={selectedCount > 0 ? "chip selected" : "chip"} onClick={onToggleOpen}>
+      {selectedCount > 0 && <b>✓</b>}{label}{selectedCount > 0 ? ` (${selectedCount})` : ""}
+      <span className={open ? "chip-caret open" : "chip-caret"}>▾</span>
+    </button>
+    {open && <div className="rudiment-picker-body">
+      {searchable && <input className="rudiment-search" value={searchValue} onChange={(e) => onSearchChange?.(e.target.value)} placeholder={searchPlaceholder} />}
+      <div className="onboard-exercise-list rudiment-list">
+        {rows.map((r) => r.onDelete ? (
+          <div key={r.key} className={r.selected ? "onboard-row selected" : "onboard-row"}>
+            <button type="button" className="onboard-row-tap" onClick={r.onToggle}>
+              <span className="onboard-row-name">{r.label}</span>
+              {r.selected && <span className="onboard-check">✓</span>}
+            </button>
+            <button type="button" className="own-item-delete" onClick={r.onDelete}>✕</button>
+          </div>
+        ) : (
+          <button key={r.key} type="button" className={r.selected ? "onboard-row selected" : "onboard-row"} onClick={r.onToggle}>
+            <span className="onboard-row-name">{r.label}</span>
+            {r.selected && <span className="onboard-check">✓</span>}
+          </button>
+        ))}
+      </div>
+      {onAdd && <div className="custom-item-row">
+        <input value={addValue} onChange={(e) => onAddChange?.(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onAdd(); } }} placeholder={addPlaceholder} />
+        <button type="button" className="custom-item-add" onClick={onAdd} disabled={!addValue?.trim()}>{addBtnLabel}</button>
+      </div>}
+    </div>}
   </div>;
 }
 function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, confirm, roster }: {
@@ -1765,7 +1832,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, minutes, setMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
+function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, minutes, setMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -1776,27 +1843,33 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   function updatePadMinutes(value: string) { setPadMinutes(value); setMinutes(String((Number(drumsetMinutes) || 0) + (Number(value) || 0))); }
   const [notesOpen, setNotesOpen] = useState(false);
   const showNotes = notesOpen || !!notes;
-  const [whatOpen, setWhatOpen] = useState(false);
-  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
-  // Gentle nudge, not a blocker: only asks once, when nothing was selected at all. If they
-  // already picked something -- including a specific rudiment, which saves via customItems
-  // rather than selected -- save immediately like before.
-  function handleSaveClick() { if (selected.length === 0 && customItems.length === 0) setShowSaveConfirm(true); else save(); }
+  // The practice-element selector only exists inside this modal now -- Quick Practice's
+  // top-level card never shows it, so tapping Save Practice always opens it first.
+  const [showWhatModal, setShowWhatModal] = useState(false);
+  function handleSaveClick() { setShowWhatModal(true); }
+  function handleModalSave() {
+    if (selected.length === 0 && customItems.length === 0) return;
+    save();
+    setShowWhatModal(false);
+  }
   const [selectedRating, setSelectedRating] = useState<string | null>(null);
   const [sessionIssues, setSessionIssues] = useState<string[]>([]);
   const [sessionNote, setSessionNote] = useState("");
   function toggleSessionIssue(tagEn: string) {
     setSessionIssues((current) => current.includes(tagEn) ? current.filter((t) => t !== tagEn) : [...current, tagEn]);
   }
-  // Quick Practice's own curated, fixed order -- Rudiments renders separately as the
-  // expandable picker below, so it's excluded here along with the individual rudiments
-  // that used to be flat PRACTICE_ITEMS entries (Single/Double Strokes, Paradiddles),
-  // now reachable through that same picker instead of as their own top-level chips.
-  const quickPracticeItems = QUICK_PRACTICE_ITEM_ORDER.map((en) => PRACTICE_ITEMS.find((item) => item.en === en)).filter(Boolean) as { en: string; es: string }[];
   // Reuses Practice Mode's own rudiment catalog directly -- no separate list to maintain,
   // so anything added to Practice Mode's rudiments automatically shows up here too.
-  const rudimentExercises = useMemo(() => PRACTICE_EXERCISES.filter((e) => e.category === "rudiments"), []);
-  const [rudimentsOpen, setRudimentsOpen] = useState(false);
+  // Ordered by this student's own practice history (most-logged first) via sortedRudiments.
+  const rudimentExercises: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[] = sortedRudiments;
+  // Only one of the three dropdowns (Rudiments/Books/My Items) is open at a time -- opening
+  // one closes the others so their flyouts never stack on top of each other.
+  const [rudimentsOpen, setRudimentsOpenRaw] = useState(false);
+  const [booksOpen, setBooksOpenRaw] = useState(false);
+  const [myItemsOpen, setMyItemsOpenRaw] = useState(false);
+  function setRudimentsOpen(next: boolean) { setRudimentsOpenRaw(next); if (next) { setBooksOpenRaw(false); setMyItemsOpenRaw(false); } }
+  function setBooksOpen(next: boolean) { setBooksOpenRaw(next); if (next) { setRudimentsOpenRaw(false); setMyItemsOpenRaw(false); } }
+  function setMyItemsOpen(next: boolean) { setMyItemsOpenRaw(next); if (next) { setRudimentsOpenRaw(false); setBooksOpenRaw(false); } }
   const [rudimentSearch, setRudimentSearch] = useState("");
   const filteredRudiments = useMemo(() => {
     const q = rudimentSearch.trim().toLowerCase();
@@ -1810,6 +1883,36 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     setCustomItems((current: string[]) => current.includes(en) ? current.filter((v: string) => v !== en) : [...current, en]);
   }
   const selectedRudimentsCount = customItems.filter((ci: string) => rudimentExercises.some((r) => r.en === ci)).length;
+  // Method books: a curated list plus whatever this student has added themselves (sticky,
+  // saved to user_practice_items so it's still there next session). Selection is stored the
+  // same way as rudiments -- customItems, since book titles aren't in the practice_items catalog.
+  const [bookAddText, setBookAddText] = useState("");
+  const allBooks = useMemo(() => [...PRACTICE_BOOKS, ...userBooks.filter((b: string) => !PRACTICE_BOOKS.includes(b))], [userBooks]);
+  function toggleBook(name: string) {
+    setCustomItems((current: string[]) => current.includes(name) ? current.filter((v: string) => v !== name) : [...current, name]);
+  }
+  async function addBook() {
+    const trimmed = bookAddText.trim();
+    if (!trimmed) return;
+    if (!allBooks.includes(trimmed)) await onAddUserItem("book", trimmed);
+    setCustomItems((current: string[]) => current.includes(trimmed) ? current : [...current, trimmed]);
+    setBookAddText("");
+  }
+  const selectedBooksCount = customItems.filter((ci: string) => allBooks.includes(ci)).length;
+  // "My Items" -- anything else the student wants to log that isn't a rudiment or a book.
+  // Fully personal (no curated list), sticky the same way as books.
+  const [myItemAddText, setMyItemAddText] = useState("");
+  function toggleMyItem(name: string) {
+    setCustomItems((current: string[]) => current.includes(name) ? current.filter((v: string) => v !== name) : [...current, name]);
+  }
+  async function addMyItem() {
+    const trimmed = myItemAddText.trim();
+    if (!trimmed) return;
+    if (!userItems.includes(trimmed)) await onAddUserItem("item", trimmed);
+    setCustomItems((current: string[]) => current.includes(trimmed) ? current : [...current, trimmed]);
+    setMyItemAddText("");
+  }
+  const selectedMyItemsCount = customItems.filter((ci: string) => userItems.includes(ci)).length;
   function qualifyingMinutesAt(itemEn: string, targetBpm: number) {
     return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum: number, s: any) => sum + s.duration_minutes, 0);
   }
@@ -1941,7 +2044,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         <div className="mode-copy"><h2>{T.practiceMode.quickTitle}</h2></div>
         <button className="mode-action" onClick={openMetronome}>⌁ {T.today.metronome}</button>
       </div>
-      <div className="form-card quick-start"><label className="input-label"><span className="step-badge">1</span>{T.today.howLong}</label>
+      <div className="form-card quick-start"><label className="input-label">{T.today.howLong}</label>
         {equipment === "both" ? (
           <div className="split-minutes">
             <div className="split-minutes-field">
@@ -1971,35 +2074,11 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
           </div>
         )}
         {Number(seconds) > 0 && <p className="seconds-note">+{seconds}s {T.today.secondsCarried}</p>}
-        <button className="collapsible-header" onClick={() => setWhatOpen(!whatOpen)}><span className="input-label checklist-label"><span className="step-badge">2</span>{T.today.whatPractised}{!whatOpen && (selected.length > 0 || selectedRudimentsCount > 0 || notes) ? ` (${[(selected.length + selectedRudimentsCount) > 0 ? String(selected.length + selectedRudimentsCount) : null, notes ? "+note" : null].filter(Boolean).join(" ")})` : ""}</span><span className={whatOpen ? "collapse-chevron open" : "collapse-chevron"}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7.5l5 5 5-5" /></svg></span></button>
-        {whatOpen && <>
-          <div className="chips">
-            <button type="button" className={selectedRudimentsCount > 0 ? "chip selected" : "chip"} onClick={() => setRudimentsOpen(!rudimentsOpen)}>
-              {selectedRudimentsCount > 0 && <b>✓</b>}{T.today.rudiments}{selectedRudimentsCount > 0 ? ` (${selectedRudimentsCount})` : ""}
-              <span className={rudimentsOpen ? "chip-caret open" : "chip-caret"}>▾</span>
-            </button>
-            {quickPracticeItems.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language as Lang]}</button>)}
-          </div>
-          {rudimentsOpen && <div className="rudiment-picker-body">
-            <input className="rudiment-search" value={rudimentSearch} onChange={(e: any) => setRudimentSearch(e.target.value)} placeholder={T.today.searchRudiments} />
-            <div className="onboard-exercise-list rudiment-list">
-              {filteredRudiments.map((r) => {
-                const isSelected = customItems.includes(r.en);
-                return <button key={r.en} type="button" className={isSelected ? "onboard-row selected" : "onboard-row"} onClick={() => toggleRudiment(r.en)}>
-                  <span className="onboard-row-name">{r[language as Lang]}</span>
-                  {isSelected && <span className="onboard-check">✓</span>}
-                </button>;
-              })}
-            </div>
-          </div>}
-          <label className="input-label equipment-label">{T.today.equipment}</label>
-          <div className="equipment-toggle">
-            <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
-            <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("pad")}>{T.today.pad}</button>
-          </div>
-          {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
-        </>}
-        <button className={saved ? "save saved" : "save"} onClick={handleSaveClick}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
+        <div className="equipment-toggle">
+          <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
+          <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("pad")}>{T.today.pad}</button>
+        </div>
+        <button className={saved ? "save saved" : "save"} onClick={handleSaveClick} disabled={(Number(minutes) || 0) <= 0}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
         <button className="reset-practice" onClick={handleResetPractice}>{T.today.resetPractice}</button>
       </div>
 
@@ -2020,7 +2099,25 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         })}
       </div>
       <PersonalChallenges user={user} practiceSessions={sessions} confirm={confirm} setError={setError} language={language} T={T} />
-      {showSaveConfirm && <SaveWithoutDetailsModal onDismiss={() => setShowSaveConfirm(false)} onAddDetails={() => { setShowSaveConfirm(false); setWhatOpen(true); }} T={T} />}
+      {showWhatModal && <div className="modal modal-center" onClick={() => setShowWhatModal(false)}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
+        <button className="close" onClick={() => setShowWhatModal(false)}>×</button>
+        <h2 className="edit-rating-title">{T.today.whatDidYouPractiseTitle}</h2>
+        <p className="confirm-message">{T.today.whatDidYouPractiseSubtitle}</p>
+        <div className="chips">
+          <ChipDropdown label={T.today.rudiments} selectedCount={selectedRudimentsCount} open={rudimentsOpen} onToggleOpen={() => setRudimentsOpen(!rudimentsOpen)}
+            searchable searchValue={rudimentSearch} onSearchChange={setRudimentSearch} searchPlaceholder={T.today.searchRudiments}
+            rows={filteredRudiments.map((r) => ({ key: r.en, label: r[language as Lang], selected: customItems.includes(r.en), onToggle: () => toggleRudiment(r.en) }))} />
+          {QUICK_PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language as Lang]}</button>)}
+          <ChipDropdown label={T.today.books} selectedCount={selectedBooksCount} open={booksOpen} onToggleOpen={() => setBooksOpen(!booksOpen)}
+            rows={allBooks.map((name: string) => ({ key: name, label: name, selected: customItems.includes(name), onToggle: () => toggleBook(name), onDelete: PRACTICE_BOOKS.includes(name) ? undefined : () => onRemoveUserItem("book", name) }))}
+            addValue={bookAddText} onAddChange={setBookAddText} onAdd={addBook} addPlaceholder={T.today.addOwnBookPlaceholder} addBtnLabel={T.today.addOwnBtn} />
+          <ChipDropdown label={T.today.myItems} selectedCount={selectedMyItemsCount} open={myItemsOpen} onToggleOpen={() => setMyItemsOpen(!myItemsOpen)}
+            rows={userItems.map((name: string) => ({ key: name, label: name, selected: customItems.includes(name), onToggle: () => toggleMyItem(name), onDelete: () => onRemoveUserItem("item", name) }))}
+            addValue={myItemAddText} onAddChange={setMyItemAddText} onAdd={addMyItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} />
+        </div>
+        {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
+        <button className="save" onClick={handleModalSave} disabled={selected.length === 0 && customItems.length === 0}>{T.today.savePractice}<span>→</span></button>
+      </div></div>}
     </section>;
   }
 
@@ -2252,7 +2349,7 @@ const TONE_PRESETS: Record<string, ToneDef> = {
 const TONE_KEYS = ["click", "beep", "wood", "clave"];
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, sessions, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], otherNote: string) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; language?: Lang; T: any }) {
+function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, sessions, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; onSessionEnd?: (minutes: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; language?: Lang; T: any }) {
   const [bpm, setBpm] = useState(initialBpm ?? 100);
   const [playing, setPlaying] = useState(false);
   const [beatsPerBar, setBeatsPerBar] = useState(4);
@@ -2262,8 +2359,51 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   const [showAddPrompt, setShowAddPrompt] = useState(false);
   const [addPromptSeconds, setAddPromptSeconds] = useState(0);
   const [addItems, setAddItems] = useState<string[]>([]);
-  const [showOtherInput, setShowOtherInput] = useState(false);
-  const [otherText, setOtherText] = useState("");
+  // Rudiments/Books/My Items selections for the free-play "what did you practice" prompt --
+  // same picker as Quick Practice's save modal, kept local until addTime() hands it off.
+  const [addCustomItems, setAddCustomItems] = useState<string[]>([]);
+  const [rudimentsOpen, setRudimentsOpenRaw] = useState(false);
+  const [booksOpen, setBooksOpenRaw] = useState(false);
+  const [myItemsOpen, setMyItemsOpenRaw] = useState(false);
+  function setRudimentsOpen(next: boolean) { setRudimentsOpenRaw(next); if (next) { setBooksOpenRaw(false); setMyItemsOpenRaw(false); } }
+  function setBooksOpen(next: boolean) { setBooksOpenRaw(next); if (next) { setRudimentsOpenRaw(false); setMyItemsOpenRaw(false); } }
+  function setMyItemsOpen(next: boolean) { setMyItemsOpenRaw(next); if (next) { setRudimentsOpenRaw(false); setBooksOpenRaw(false); } }
+  const [rudimentSearch, setRudimentSearch] = useState("");
+  const rudimentExercises = sortedRudiments ?? [];
+  const filteredRudiments = useMemo(() => {
+    const q = rudimentSearch.trim().toLowerCase();
+    if (!q) return rudimentExercises;
+    return rudimentExercises.filter((r) => r[(language ?? "en") as Lang].toLowerCase().includes(q));
+  }, [rudimentExercises, rudimentSearch, language]);
+  function toggleRudiment(en: string) {
+    setAddCustomItems((current) => current.includes(en) ? current.filter((v) => v !== en) : [...current, en]);
+  }
+  const selectedRudimentsCount = addCustomItems.filter((ci) => rudimentExercises.some((r) => r.en === ci)).length;
+  const [bookAddText, setBookAddText] = useState("");
+  const allBooks = useMemo(() => [...PRACTICE_BOOKS, ...(userBooks ?? []).filter((b) => !PRACTICE_BOOKS.includes(b))], [userBooks]);
+  function toggleBook(name: string) {
+    setAddCustomItems((current) => current.includes(name) ? current.filter((v) => v !== name) : [...current, name]);
+  }
+  async function addBook() {
+    const trimmed = bookAddText.trim();
+    if (!trimmed) return;
+    if (!allBooks.includes(trimmed)) await onAddUserItem?.("book", trimmed);
+    setAddCustomItems((current) => current.includes(trimmed) ? current : [...current, trimmed]);
+    setBookAddText("");
+  }
+  const selectedBooksCount = addCustomItems.filter((ci) => allBooks.includes(ci)).length;
+  const [myItemAddText, setMyItemAddText] = useState("");
+  function toggleMyItem(name: string) {
+    setAddCustomItems((current) => current.includes(name) ? current.filter((v) => v !== name) : [...current, name]);
+  }
+  async function addMyItem() {
+    const trimmed = myItemAddText.trim();
+    if (!trimmed) return;
+    if (!(userItems ?? []).includes(trimmed)) await onAddUserItem?.("item", trimmed);
+    setAddCustomItems((current) => current.includes(trimmed) ? current : [...current, trimmed]);
+    setMyItemAddText("");
+  }
+  const selectedMyItemsCount = addCustomItems.filter((ci) => (userItems ?? []).includes(ci)).length;
   const [historyOpen, setHistoryOpen] = useState(false);
   const bpmRef = useRef(bpm);
   const beatsPerMeasureRef = useRef(beatsPerBar);
@@ -2398,7 +2538,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     clearBeatTimeouts();
     if (elapsed > 0) {
       if (onSessionEnd) onSessionEnd(Math.max(1, Math.round(elapsed / 60)));
-      else { setAddPromptSeconds(elapsed); setAddItems([]); setShowOtherInput(false); setOtherText(""); setShowAddPrompt(true); }
+      else { setAddPromptSeconds(elapsed); setAddItems([]); setAddCustomItems([]); setRudimentsOpenRaw(false); setBooksOpenRaw(false); setMyItemsOpenRaw(false); setShowAddPrompt(true); }
     }
   }
   function tapTempo() {
@@ -2413,7 +2553,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     }
     lastTapRef.current = now;
   }
-  function addTime() { if (addPromptSeconds <= 0) return; onAddPractice?.(addPromptSeconds, addItems, showOtherInput ? otherText.trim() : ""); setShowAddPrompt(false); setElapsed(0); close(); }
+  function addTime() { if (addPromptSeconds <= 0) return; onAddPractice?.(addPromptSeconds, addItems, addCustomItems); setShowAddPrompt(false); setElapsed(0); close(); }
   function discardTime() { setShowAddPrompt(false); setElapsed(0); }
   function nudgeAddPromptSeconds(delta: number) { setAddPromptSeconds((current) => Math.max(0, current + delta)); }
   function toggleAddItem(item: string) { setAddItems((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
@@ -2476,9 +2616,19 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <p>{T.metronome.sessionLasted(elapsedLabel)}</p>
       <div className="add-time-adjust"><button onClick={() => nudgeAddPromptSeconds(-10)}>-10s</button><span className="add-time-value">{formatMMSS(addPromptSeconds)}</span><button onClick={() => nudgeAddPromptSeconds(10)}>+10s</button></div>
       <span className="metro-section-label">{T.today.whatPractised}</span>
-      <div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggleAddItem(item.en)} className={addItems.includes(item.en) ? "chip selected" : "chip"}>{addItems.includes(item.en) && <b>✓</b>}{item[lang as Lang]}</button>)}<button onClick={() => setShowOtherInput((current) => !current)} className={showOtherInput ? "chip selected" : "chip"}>{showOtherInput && <b>✓</b>}{T.today.other}</button></div>
-      {showOtherInput && <input className="other-input" value={otherText} onChange={(e) => setOtherText(e.target.value)} placeholder={T.today.otherPlaceholder} autoFocus />}
-      <div className="add-time-buttons"><button className="discard" onClick={discardTime}>{T.metronome.notNow}</button><button className="add" onClick={addTime} disabled={addPromptSeconds <= 0 || (addItems.length === 0 && !(showOtherInput && otherText.trim()))}>{T.metronome.addTime}</button></div>
+      <div className="chips">
+        <ChipDropdown label={T.today.rudiments} selectedCount={selectedRudimentsCount} open={rudimentsOpen} onToggleOpen={() => setRudimentsOpen(!rudimentsOpen)}
+          searchable searchValue={rudimentSearch} onSearchChange={setRudimentSearch} searchPlaceholder={T.today.searchRudiments}
+          rows={filteredRudiments.map((r) => ({ key: r.en, label: r[lang as Lang], selected: addCustomItems.includes(r.en), onToggle: () => toggleRudiment(r.en) }))} />
+        {QUICK_PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggleAddItem(item.en)} className={addItems.includes(item.en) ? "chip selected" : "chip"}>{addItems.includes(item.en) && <b>✓</b>}{item[lang as Lang]}</button>)}
+        <ChipDropdown label={T.today.books} selectedCount={selectedBooksCount} open={booksOpen} onToggleOpen={() => setBooksOpen(!booksOpen)}
+          rows={allBooks.map((name) => ({ key: name, label: name, selected: addCustomItems.includes(name), onToggle: () => toggleBook(name), onDelete: PRACTICE_BOOKS.includes(name) ? undefined : () => onRemoveUserItem?.("book", name) }))}
+          addValue={bookAddText} onAddChange={setBookAddText} onAdd={addBook} addPlaceholder={T.today.addOwnBookPlaceholder} addBtnLabel={T.today.addOwnBtn} />
+        <ChipDropdown label={T.today.myItems} selectedCount={selectedMyItemsCount} open={myItemsOpen} onToggleOpen={() => setMyItemsOpen(!myItemsOpen)}
+          rows={(userItems ?? []).map((name) => ({ key: name, label: name, selected: addCustomItems.includes(name), onToggle: () => toggleMyItem(name), onDelete: () => onRemoveUserItem?.("item", name) }))}
+          addValue={myItemAddText} onAddChange={setMyItemAddText} onAdd={addMyItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} />
+      </div>
+      <div className="add-time-buttons"><button className="discard" onClick={discardTime}>{T.metronome.notNow}</button><button className="add" onClick={addTime} disabled={addPromptSeconds <= 0 || (addItems.length === 0 && addCustomItems.length === 0)}>{T.metronome.addTime}</button></div>
     </div> : <>
       <div className={playing ? "pulse playing" : "pulse"} style={{ animationDuration: `${60 / bpm}s` }}><span>{bpm}</span><small>BPM</small></div>
       <div className="beat-dots">{Array.from({ length: beatsPerMeasure }).map((_, i) => <i key={i} className={playing && activeBeat === i ? "beat-dot active" : "beat-dot"} />)}</div>
