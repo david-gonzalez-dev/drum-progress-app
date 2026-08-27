@@ -842,3 +842,12 @@ insert into public.practice_items (slug, name_en, name_es, sort_order) values
   ('fills', 'Fills', 'Fills', 10),
   ('songs', 'Songs', 'Canciones', 11)
 on conflict (slug) do nothing;
+
+-- Admin dashboard bug: the admin could already see a user's practice_logs rows (minutes, date,
+-- custom_items) but not their resolved practice_log_items -- that table's only policy scoped
+-- select to the log's own owner, with no admin bypass, so flat "what did you practice" tags
+-- saved via the practice_items catalog (Rhythms, Coordination, etc., anything picked through
+-- `selected` rather than customItems) silently disappeared from the admin's per-user log view.
+-- Additive, same pattern as the other admin read policies -- doesn't narrow the existing one.
+drop policy if exists "admins can view all practice log items" on public.practice_log_items;
+create policy "admins can view all practice log items" on public.practice_log_items for select to authenticated using (public.is_admin());
