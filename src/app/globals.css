@@ -6,7 +6,7 @@
 .ex-row{width:100%;text-align:left;background:#121413;border:1px solid #222724;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;color:#f6f7f5;font-family:inherit}
 .ex-row+.ex-row{margin-top:10px}
 .ex-row .info{flex:1;min-width:0}
-.ex-row .name{font:700 18px 'DM Sans';margin:0 0 6px}
+.ex-row .name{font:400 17px 'DM Sans';margin:0 0 6px}
 .ex-row .meta{display:flex;align-items:center;gap:8px;font-size:14px;color:#9aa19d}
 .ex-row .best-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .ex-row .track{flex:1;max-width:90px;height:5px;background:#1c211f;border-radius:99px;overflow:hidden}

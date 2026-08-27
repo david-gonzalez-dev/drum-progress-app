@@ -2022,12 +2022,12 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     return <button className="ex-row" onClick={() => openExercise(item.en)}>
       <div className="info">
         <p className="name">{item[language as Lang]}</p>
-        {stats.unlocked > 0 ? <div className="meta">
+        {stats.unlocked > 0 && <div className="meta">
           <span className="best-dot" style={{ background: RATING_COLOR[stats.bestRating ?? ""] }} />
           <span>{stats.bestBpm} BPM</span>
           <div className="track"><i style={{ width: `${(stats.unlocked / BPM_LEVELS.length) * 100}%` }} /></div>
           <span className="frac">{stats.unlocked}/{BPM_LEVELS.length}</span>
-        </div> : <div className="meta"><span>{T.practiceMode.notStarted}</span></div>}
+        </div>}
       </div>
       <span className="chev">›</span>
     </button>;
