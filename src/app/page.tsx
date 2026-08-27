@@ -1150,36 +1150,40 @@ function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, se
   rows: { key: string; label: string; selected: boolean; onToggle: () => void; onDelete?: () => void }[];
   addPlaceholder?: string; addBtnLabel?: string; addValue?: string; onAddChange?: (value: string) => void; onAdd?: () => void; doneLabel?: string;
 }) {
-  return <div className="rudiment-chip-wrap">
+  return <>
     <button type="button" className={selectedCount > 0 ? "chip selected" : "chip"} onClick={onToggleOpen}>
       {selectedCount > 0 && <b>✓</b>}{label}{selectedCount > 0 ? ` (${selectedCount})` : ""}
-      <span className={open ? "chip-caret open" : "chip-caret"}>▾</span>
+      <span className="chip-caret">▾</span>
     </button>
-    {open && <div className="rudiment-picker-body">
-      {searchable && <input className="rudiment-search" value={searchValue} onChange={(e) => onSearchChange?.(e.target.value)} placeholder={searchPlaceholder} />}
-      <div className="onboard-exercise-list rudiment-list">
-        {rows.map((r) => r.onDelete ? (
-          <div key={r.key} className={r.selected ? "onboard-row selected" : "onboard-row"}>
-            <button type="button" className="onboard-row-tap" onClick={r.onToggle}>
+    {open && <div className="modal modal-center picker-window" onClick={onToggleOpen}>
+      <div className="day-summary picker-window-card" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="close" onClick={onToggleOpen}>×</button>
+        <h2 className="edit-rating-title">{label}</h2>
+        {searchable && <input className="rudiment-search" value={searchValue} onChange={(e) => onSearchChange?.(e.target.value)} placeholder={searchPlaceholder} autoFocus />}
+        <div className="onboard-exercise-list rudiment-list">
+          {rows.map((r) => r.onDelete ? (
+            <div key={r.key} className={r.selected ? "onboard-row selected" : "onboard-row"}>
+              <button type="button" className="onboard-row-tap" onClick={r.onToggle}>
+                <span className="onboard-row-name">{r.label}</span>
+                {r.selected && <span className="onboard-check">✓</span>}
+              </button>
+              <button type="button" className="own-item-delete" onClick={r.onDelete}>✕</button>
+            </div>
+          ) : (
+            <button key={r.key} type="button" className={r.selected ? "onboard-row selected" : "onboard-row"} onClick={r.onToggle}>
               <span className="onboard-row-name">{r.label}</span>
               {r.selected && <span className="onboard-check">✓</span>}
             </button>
-            <button type="button" className="own-item-delete" onClick={r.onDelete}>✕</button>
-          </div>
-        ) : (
-          <button key={r.key} type="button" className={r.selected ? "onboard-row selected" : "onboard-row"} onClick={r.onToggle}>
-            <span className="onboard-row-name">{r.label}</span>
-            {r.selected && <span className="onboard-check">✓</span>}
-          </button>
-        ))}
+          ))}
+        </div>
+        {onAdd && <div className="custom-item-row">
+          <input value={addValue} onChange={(e) => onAddChange?.(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onAdd(); } }} placeholder={addPlaceholder} />
+          <button type="button" className="custom-item-add" onClick={onAdd} disabled={!addValue?.trim()}>{addBtnLabel}</button>
+        </div>}
+        <button type="button" className="save" onClick={onToggleOpen}>{doneLabel}</button>
       </div>
-      {onAdd && <div className="custom-item-row">
-        <input value={addValue} onChange={(e) => onAddChange?.(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onAdd(); } }} placeholder={addPlaceholder} />
-        <button type="button" className="custom-item-add" onClick={onAdd} disabled={!addValue?.trim()}>{addBtnLabel}</button>
-      </div>}
-      <button type="button" className="picker-done" onClick={onToggleOpen}>{doneLabel}</button>
     </div>}
-  </div>;
+  </>;
 }
 function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, confirm, roster }: {
   date: string; log?: Log; dailyGoal: number | null; logs: Record<string, Log>; locale: string; language: Lang; T: any;
