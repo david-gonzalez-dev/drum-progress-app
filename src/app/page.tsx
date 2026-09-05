@@ -363,10 +363,12 @@ const translations = {
     },
     admin: {
       title: "USER ACTIVITY", eyebrow: "ADMIN", noUsers: "No users yet.", neverPracticed: "Never practiced",
-      dailyLogs: "DAILY LOGS", practiceSessions: "PRACTICE SESSIONS", noDailyLogs: "No daily logs yet.", noPracticeSessions: "No practice sessions yet.",
+      dailyLogs: "DAILY LOGS", practiceSessions: "SKILL TRAINER SESSIONS", noDailyLogs: "No daily logs yet.", noPracticeSessions: "No skill trainer sessions yet.",
       notesPrefix: "Notes:",
-      totalUsers: "USERS", totalLogs: "TOTAL LOGS", totalMinutes: "TOTAL MIN",
-      mostLogsTitle: "MOST ACTIVE (BY LOGS)", mostMinutesTitle: "MOST MINUTES PRACTISED", logsCount: (n: number) => `${n} logs`, allUsersTitle: "ALL USERS",
+      usersLabel: (n: number) => n === 1 ? "USER" : "USERS",
+      totalMinutesLabel: "total", totalLogsLabel: "logs", focusLabel: "FOCUS", mostPracticedLabel: "MOST PRACTICED",
+      metronomeBadge: "Metronome", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Quick entry",
+      mostMinutesTitle: "MOST MINUTES PRACTISED", allUsersTitle: "ALL USERS",
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
@@ -482,10 +484,12 @@ const translations = {
     },
     admin: {
       title: "ACTIVIDAD DE USUARIOS", eyebrow: "ADMIN", noUsers: "Aún no hay usuarios.", neverPracticed: "Nunca practicó",
-      dailyLogs: "REGISTROS DIARIOS", practiceSessions: "SESIONES DE PRÁCTICA", noDailyLogs: "Aún no hay registros diarios.", noPracticeSessions: "Aún no hay sesiones de práctica.",
+      dailyLogs: "REGISTROS DIARIOS", practiceSessions: "SESIONES DE ENTRENADOR DE HABILIDADES", noDailyLogs: "Aún no hay registros diarios.", noPracticeSessions: "Aún no hay sesiones de entrenador de habilidades.",
       notesPrefix: "Notas:",
-      totalUsers: "USUARIOS", totalLogs: "REGISTROS TOTALES", totalMinutes: "MIN TOTALES",
-      mostLogsTitle: "MÁS ACTIVOS (POR REGISTROS)", mostMinutesTitle: "MÁS MINUTOS PRACTICADOS", logsCount: (n: number) => `${n} registros`, allUsersTitle: "TODOS LOS USUARIOS",
+      usersLabel: (n: number) => n === 1 ? "USUARIO" : "USUARIOS",
+      totalMinutesLabel: "total", totalLogsLabel: "registros", focusLabel: "ENFOQUE", mostPracticedLabel: "MÁS PRACTICADO",
+      metronomeBadge: "Metrónomo", skillTrainerBadge: "Entrenador de habilidades", quickEntryBadge: "Entrada rápida",
+      mostMinutesTitle: "MÁS MINUTOS PRACTICADOS", allUsersTitle: "TODOS LOS USUARIOS",
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
@@ -785,9 +789,12 @@ export default function Home() {
     setPinnedExercises(next);
     await Promise.all(next.map((en, i) => supabase.from("pinned_exercises").update({ sort_order: i }).eq("user_id", user.id).eq("exercise_en", en)));
   }
-  async function saveLogFor(targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[]) {
+  async function saveLogFor(targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[], targetUsedMetronome?: boolean) {
     if (!user) return false;
-    const { data: log, error } = await supabase.from("practice_logs").upsert({ user_id: user.id, practiced_on: targetDate, minutes: targetMinutes, seconds: targetSeconds ?? 0, notes: targetNotes, equipment: targetEquipment, drumset_minutes: targetDrumsetMinutes ?? null, pad_minutes: targetPadMinutes ?? null, custom_items: targetCustomItems ?? [] }, { onConflict: "user_id,practiced_on" }).select().single();
+    // used_metronome is only ever included (and only ever true) when a metronome session
+    // actually contributed to this save -- omitted otherwise so a later plain edit can't
+    // clobber an earlier metronome session's flag back to false.
+    const { data: log, error } = await supabase.from("practice_logs").upsert({ user_id: user.id, practiced_on: targetDate, minutes: targetMinutes, seconds: targetSeconds ?? 0, notes: targetNotes, equipment: targetEquipment, drumset_minutes: targetDrumsetMinutes ?? null, pad_minutes: targetPadMinutes ?? null, custom_items: targetCustomItems ?? [], ...(targetUsedMetronome ? { used_metronome: true } : {}) }, { onConflict: "user_id,practiced_on" }).select().single();
     if (error || !log) { setAuthError(error?.message ?? "Could not save your practice."); return false; }
     const { data: itemRows } = await supabase.from("practice_items").select("id,name_en").in("name_en", targetItems);
     await supabase.from("practice_log_items").delete().eq("log_id", log.id);
@@ -885,7 +892,7 @@ export default function Home() {
     setSelected(newSelected);
     setCustomItems(newCustomItems);
     const isSplit = equipment === "both";
-    await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, newSeconds, newCustomItems);
+    await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, newSeconds, newCustomItems, true);
   }
   async function signOut() { await supabase.auth.signOut(); }
   if (passwordRecovery) return <ResetPassword onDone={() => setPasswordRecovery(false)} />;
@@ -1077,7 +1084,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
         </div>
       )}
       {todayLog && todayLog.equipment && <span className="roster-equipment">{equipmentSplitLabel(todayLog.drumsetMinutes, todayLog.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(todayLog.equipment, T))}</span>}
-      {todayLog && (todayLog.items.length > 0 || todayLog.customItems.length > 0) ? <div className="detail-chips">{todayLog.items.map((item: string) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{todayLog.customItems.map((item: string) => <em key={item}>{item}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>}
+      {todayLog && (todayLog.items.length > 0 || todayLog.customItems.length > 0) ? <div className="detail-chips">{Array.from(new Set([...todayLog.items, ...todayLog.customItems])).map((item: string) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>}
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>
     <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} />
@@ -1125,7 +1132,7 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language
     <div className="calendar-card"><div className="cal-head"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=(logs[key]?.minutes ?? 0) > 0; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
     {selectedDate !== dateKey && <div className="day-detail"><span>{new Date(selectedDate + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
       {isFuture && <p>{T.calendar.futureDay}</p>}
-      {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{formatMinutes(selectedLog.minutes)} {T.calendar.minPractised}</strong><div className="detail-chips">{selectedLog.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{selectedLog.customItems.map((item) => <em key={item}>{item}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
+      {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{formatMinutes(selectedLog.minutes)} {T.calendar.minPractised}</strong><div className="detail-chips">{Array.from(new Set([...selectedLog.items, ...selectedLog.customItems])).map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
     </div>}
     {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
       onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} />}
@@ -1208,14 +1215,14 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
           <div className="roster-detail-info">
             <div className="roster-detail-head"><span className="rank-name">{m.id === roster!.currentUserId ? T.group.you : m.name}</span><span className="rank-value">{formatMinutes(m.minutes)}</span></div>
             {m.equipment && <span className="roster-equipment">{equipmentSplitLabel(m.drumsetMinutes, m.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(m.equipment, T))}</span>}
-            {((m.items && m.items.length > 0) || (m.customItems && m.customItems.length > 0)) && <div className="detail-chips">{m.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{(m.customItems ?? []).map((item) => <em key={item}>{item}</em>)}</div>}
+            {((m.items && m.items.length > 0) || (m.customItems && m.customItems.length > 0)) && <div className="detail-chips">{Array.from(new Set([...(m.items ?? []), ...(m.customItems ?? [])])).map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>}
             {m.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {m.notes}</p>}
           </div>
         </div>)}</div> : <p className="hint">{T.group.noOnePractised}</p>
       ) : (
         hasPractice && log ? <>
           <strong className="ds-minutes">{formatMinutes(log.minutes)} {T.calendar.minPractised}{log.equipment ? ` - ${equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
-          {(log.items.length > 0 || log.customItems.length > 0) && <div className="detail-chips">{log.items.map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}{log.customItems.map((item) => <em key={item}>{item}</em>)}</div>}
+          {(log.items.length > 0 || log.customItems.length > 0) && <div className="detail-chips">{Array.from(new Set([...log.items, ...log.customItems])).map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>}
           {log.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
           {dailyGoal != null && <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(formatMinutes(log.minutes), formatMinutes(dailyGoal))}</p>}
           {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
@@ -2651,6 +2658,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   const [selected, setSelected] = useState<{ id: string; name: string; email: string } | null>(null);
   const [logs, setLogs] = useState<any[] | null>(null);
   const [sessions, setSessions] = useState<any[] | null>(null);
+  const [pinned, setPinned] = useState<string[] | null>(null);
 
   useEffect(() => {
     supabase.rpc("admin_list_users").then(({ data }) => { setUsers(data ?? []); });
@@ -2660,29 +2668,67 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     setSelected(u);
     setLogs(null);
     setSessions(null);
-    supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }).then(({ data }) => {
+    setPinned(null);
+    supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,used_metronome,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }).then(({ data }) => {
       setLogs((data ?? []).map((row: any) => ({
-        date: row.practiced_on, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes,
-        items: [...(row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean), ...(row.custom_items ?? [])],
+        date: row.practiced_on, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes, usedMetronome: !!row.used_metronome,
+        items: Array.from(new Set([...(row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean), ...(row.custom_items ?? [])])),
       })));
     });
     supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,practice_exercises(name_en)").eq("user_id", u.id).order("practiced_on", { ascending: false }).then(({ data }) => {
       setSessions((data ?? []).map((row: any) => ({ date: row.practiced_on, exercise: row.practice_exercises?.name_en ?? "—", bpm: row.bpm, minutes: row.duration_minutes ?? 0 })));
     });
+    supabase.from("pinned_exercises").select("exercise_en").eq("user_id", u.id).order("sort_order").then(({ data }) => {
+      setPinned((data ?? []).map((row: any) => row.exercise_en));
+    });
   }
 
   if (selected) {
+    const skillTrainerDates = new Set((sessions ?? []).map((s) => s.date));
+    const selectedUserRow = users?.find((u) => u.id === selected.id);
+    const logsByDate: Record<string, Log> = Object.fromEntries((logs ?? []).map((l) => [l.date, { minutes: l.minutes } as Log]));
+    const { current: userStreak, longest: userLongestStreak } = calculateStreaks(logsByDate, dateKey);
+    // "Most practiced" is by how many distinct days each exercise/element shows up, combining
+    // Skill Trainer sessions and Quick Practice's flat item tags -- a simple, honest frequency
+    // count rather than mixing incompatible minute totals across two very different data shapes.
+    const practiceFrequency: Record<string, number> = {};
+    (sessions ?? []).forEach((s) => { practiceFrequency[s.exercise] = (practiceFrequency[s.exercise] ?? 0) + 1; });
+    (logs ?? []).forEach((l) => { l.items.forEach((item: string) => { practiceFrequency[item] = (practiceFrequency[item] ?? 0) + 1; }); });
+    const mostPracticed = Object.entries(practiceFrequency).sort((a, b) => b[1] - a[1]).slice(0, 5);
     return <section className="page">
       <button className="page-back" onClick={() => setSelected(null)}>‹ {T.admin.title}</button>
       <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{selected.name || selected.email}</h1><p className="hint">{selected.email}</p></header>
+      <div className="admin-summary-card">
+        <div className="stats stats-2">
+          <Stat label={T.today.currentStreak} value={`${userStreak} ${T.today.days}`} />
+          <Stat label={T.calendar.longestStreak} value={`${userLongestStreak} ${T.today.days}`} />
+        </div>
+        {selectedUserRow && <p className="admin-summary-total">{formatMinutes(selectedUserRow.total_minutes)} {T.admin.totalMinutesLabel} · {selectedUserRow.total_logs} {T.admin.totalLogsLabel}</p>}
+        {pinned && pinned.length > 0 && <>
+          <span className="admin-summary-label">{T.admin.focusLabel}</span>
+          <div className="chips">{pinned.map((en) => <span key={en} className="chip">{PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en}</span>)}</div>
+        </>}
+        {mostPracticed.length > 0 && <>
+          <span className="admin-summary-label">{T.admin.mostPracticedLabel}</span>
+          <div className="chips">{mostPracticed.map(([name, count]) => <span key={name} className="chip">{practiceItemLabel(name, language)} · {count}</span>)}</div>
+        </>}
+      </div>
       <span className="ladder-label">{T.admin.dailyLogs}</span>
       {logs === null ? <p className="hint">…</p> : logs.length === 0 ? <p className="hint">{T.admin.noDailyLogs}</p> : (
         <div className="admin-log-list">
-          {logs.map((log, i) => <div key={i} className="admin-log-row">
-            <div className="admin-log-head"><span>{log.date}</span><span>{formatMinutes(log.minutes)}</span></div>
-            {log.items.length > 0 && <div className="detail-chips">{log.items.map((item: string) => <em key={item}>{item}</em>)}</div>}
-            {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
-          </div>)}
+          {logs.map((log, i) => {
+            const usedSkillTrainer = skillTrainerDates.has(log.date);
+            return <div key={i} className="admin-log-row">
+              <div className="admin-log-head"><span>{log.date}</span><span>{formatMinutes(log.minutes)}</span></div>
+              <div className="admin-badge-row">
+                {log.usedMetronome && <span className="admin-source-label">⌁ {T.admin.metronomeBadge}</span>}
+                {usedSkillTrainer && <span className="admin-source-label">🎯 {T.admin.skillTrainerBadge}</span>}
+                {!log.usedMetronome && !usedSkillTrainer && <span className="admin-source-label admin-source-muted">✎ {T.admin.quickEntryBadge}</span>}
+              </div>
+              {log.items.length > 0 && <div className="detail-chips">{log.items.map((item: string) => <em key={item}>{item}</em>)}</div>}
+              {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
+            </div>;
+          })}
         </div>
       )}
       <span className="ladder-label admin-section-gap">{T.admin.practiceSessions}</span>
@@ -2698,37 +2744,47 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   }
 
   const totalUsers = users?.length ?? 0;
-  const totalLogs = users?.reduce((sum, u) => sum + u.total_logs, 0) ?? 0;
   const totalMinutes = users?.reduce((sum, u) => sum + u.total_minutes, 0) ?? 0;
-  const mostByLogs = (users ?? []).filter((u) => u.total_logs > 0).slice().sort((a, b) => b.total_logs - a.total_logs).slice(0, 5);
   const mostByMinutes = (users ?? []).filter((u) => u.total_minutes > 0).slice().sort((a, b) => b.total_minutes - a.total_minutes).slice(0, 5);
-  const maxLogs = Math.max(1, ...mostByLogs.map((u) => u.total_logs));
   const maxMinutes = Math.max(1, ...mostByMinutes.map((u) => u.total_minutes));
+  // A fixed, validated 5-hue categorical set (dark-mode step of the reference palette) --
+  // one color per top user, reused identically between the donut segments and the
+  // leaderboard rows below so the two visuals read as one story, not two separate lists.
+  const DONUT_COLORS = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181"];
+  const donutOthers = Math.max(0, totalMinutes - mostByMinutes.reduce((sum, u) => sum + u.total_minutes, 0));
+  const donutSlices = [
+    ...mostByMinutes.map((u, i) => ({ id: u.id, value: u.total_minutes, color: DONUT_COLORS[i] })),
+    ...(donutOthers > 0 ? [{ id: "__others__", value: donutOthers, color: "#3a413c" }] : []),
+  ];
+  const donutTotal = donutSlices.reduce((sum, d) => sum + d.value, 0) || 1;
+  const RADIUS = 52, CIRCUMFERENCE = 2 * Math.PI * RADIUS, GAP = 3;
+  let donutCursor = 0;
+  const donutArcs = donutSlices.map((d) => {
+    const length = Math.max(0, (d.value / donutTotal) * CIRCUMFERENCE - GAP);
+    const arc = { ...d, dasharray: `${length} ${CIRCUMFERENCE - length}`, dashoffset: -donutCursor };
+    donutCursor += (d.value / donutTotal) * CIRCUMFERENCE;
+    return arc;
+  });
 
   return <section className="page">
     <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
     {users === null ? <p className="hint">…</p> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : <>
-      <div className="stats">
-        <Stat label={T.admin.totalUsers} value={String(totalUsers)} />
-        <Stat label={T.admin.totalLogs} value={String(totalLogs)} />
-        <Stat label={T.admin.totalMinutes} value={formatMinutes(totalMinutes)} />
-      </div>
-      {mostByLogs.length > 0 && <>
-        <span className="section-label">{T.admin.mostLogsTitle}</span>
-        <div className="leaderboard">
-          {mostByLogs.map((u, idx) => <div key={u.id} className="leaderboard-row">
-            <span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{u.name || u.email}</span>
-            <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(u.total_logs / maxLogs) * 100}%` }} /></div>
-            <span className="leaderboard-value">{T.admin.logsCount(u.total_logs)}</span>
-          </div>)}
+      <div className="admin-donut-wrap">
+        <svg viewBox="0 0 120 120" className="admin-donut">
+          <circle cx="60" cy="60" r={RADIUS} fill="none" stroke="#1c211f" strokeWidth="14" />
+          {donutArcs.map((a) => <circle key={a.id} cx="60" cy="60" r={RADIUS} fill="none" stroke={a.color} strokeWidth="14" strokeDasharray={a.dasharray} strokeDashoffset={a.dashoffset} transform="rotate(-90 60 60)" />)}
+        </svg>
+        <div className="admin-donut-center">
+          <strong>{totalUsers}</strong>
+          <span>{T.admin.usersLabel(totalUsers)}</span>
         </div>
-      </>}
+      </div>
       {mostByMinutes.length > 0 && <>
-        <span className="section-label admin-section-gap">{T.admin.mostMinutesTitle}</span>
+        <span className="section-label">{T.admin.mostMinutesTitle}</span>
         <div className="leaderboard">
           {mostByMinutes.map((u, idx) => <div key={u.id} className="leaderboard-row">
-            <span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{u.name || u.email}</span>
-            <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(u.total_minutes / maxMinutes) * 100}%` }} /></div>
+            <span className="leaderboard-name"><i className="admin-legend-dot" style={{ background: DONUT_COLORS[idx] }} />{u.name || u.email}</span>
+            <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(u.total_minutes / maxMinutes) * 100}%`, background: DONUT_COLORS[idx] }} /></div>
             <span className="leaderboard-value">{formatMinutes(u.total_minutes)}</span>
           </div>)}
         </div>

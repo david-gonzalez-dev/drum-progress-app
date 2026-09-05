@@ -851,3 +851,14 @@ on conflict (slug) do nothing;
 -- Additive, same pattern as the other admin read policies -- doesn't narrow the existing one.
 drop policy if exists "admins can view all practice log items" on public.practice_log_items;
 create policy "admins can view all practice log items" on public.practice_log_items for select to authenticated using (public.is_admin());
+
+-- Lets the admin tell whether a day's Quick Practice minutes came from a metronome
+-- free-play session or were just typed in manually -- previously indistinguishable
+-- since both paths wrote to the same practice_logs row/columns.
+alter table public.practice_logs add column if not exists used_metronome boolean not null default false;
+
+-- Admin per-user summary now shows pinned exercises ("Your Focus"); pinned_exercises had
+-- only owner-scoped access, no admin bypass -- additive, same pattern as the other admin
+-- read policies.
+drop policy if exists "admins can view all pinned exercises" on public.pinned_exercises;
+create policy "admins can view all pinned exercises" on public.pinned_exercises for select to authenticated using (public.is_admin());
