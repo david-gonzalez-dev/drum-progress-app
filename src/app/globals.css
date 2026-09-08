@@ -94,6 +94,7 @@
 .ladder-tier-divider::before,.ladder-tier-divider::after{content:"";flex:1;height:1px;background:#242925}
 .ladder-tier-divider span{font-size:12px;letter-spacing:1px;color:#8d9690;font-weight:700;white-space:nowrap}
 .rung{width:100%;display:flex;align-items:center;gap:8px;background:#121413;border:1px solid #222724;border-radius:14px;padding:10px 13px;position:relative;color:#f6f7f5}
+.rung.just-practiced{border-color:#ff6b1a;box-shadow:0 0 0 1px #ff6b1a,0 0 18px -4px #ff6b1a99}
 .rung-tap{flex:1;min-width:0;text-align:left;display:flex;align-items:center;gap:12px;background:transparent;border:0;color:inherit;font-family:inherit;padding:0}
 .rung .bpm{font:800 22px 'Barlow Condensed';width:34px;flex-shrink:0}
 .rung.not-started .bpm{color:#565c58}

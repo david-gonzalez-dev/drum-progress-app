@@ -1973,6 +1973,19 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     if (!(await confirm(T.practiceMode.confirmResetLevel(targetBpm)))) return;
     await onResetLevel(exercise, targetBpm);
   }
+  // Remembers which tempo was just practiced so the ladder can scroll back to it and highlight
+  // it -- otherwise returning from a session lands back at the top of a potentially long list,
+  // and it's easy to lose track of which rung you just came from.
+  const [justPracticedLevel, setJustPracticedLevel] = useState<number | null>(null);
+  const rungRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  useEffect(() => {
+    if (step !== "detail" || justPracticedLevel === null) return;
+    rungRefs.current[justPracticedLevel]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [step, justPracticedLevel]);
+  // Covers entry paths that land on this exercise's ladder without going through this
+  // component's own openExercise (e.g. tapping a pinned exercise on Home) -- without this,
+  // a stale highlight from a different exercise could wrongly appear on a matching BPM here.
+  useEffect(() => { setJustPracticedLevel(null); }, [exercise]);
   const [editingLevel, setEditingLevel] = useState<number | null>(null);
   const [editRating, setEditRating] = useState<string | null>(null);
   const [editIssues, setEditIssues] = useState<string[]>([]);
@@ -2007,11 +2020,12 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const CATEGORY_LABEL: Record<string, string> = { rudiments: T.practiceMode.categoryRudiments, exercises: T.practiceMode.categoryExercises, rhythms: T.practiceMode.categoryRhythms };
   function openCategory(cat: string) { setCategory(cat); setStep("list"); }
-  function openExercise(itemEn: string) { setExercise(itemEn); setStep("detail"); }
-  function startSession(targetBpm: number) { setBpm(targetBpm); setStep("session"); }
+  function openExercise(itemEn: string) { setJustPracticedLevel(null); setExercise(itemEn); setStep("detail"); }
+  function startSession(targetBpm: number) { setJustPracticedLevel(null); setBpm(targetBpm); setStep("session"); }
   async function handleSessionEnd(sessionMinutes: number) {
     if (exercise && bestQualifyingRating(exercise, bpm) === "mastered") {
       await onLogSession(exercise, bpm, "mastered", sessionMinutes);
+      setJustPracticedLevel(bpm);
       setStep("detail");
       return;
     }
@@ -2024,6 +2038,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   async function submitRating(rating: string) {
     if (!exercise) return;
     await onLogSession(exercise, bpm, rating, pendingMinutes, sessionIssues, sessionNote.trim());
+    setJustPracticedLevel(bpm);
     setStep("detail");
   }
   function handleRatingTap(r: string) {
@@ -2033,6 +2048,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     else submitRating(r);
   }
   function skipRating() {
+    setJustPracticedLevel(bpm);
     setStep("detail");
   }
   function ExerciseRow({ item }: { item: { en: string; es: string } }) {
@@ -2208,7 +2224,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
               const skipped = !unlocked && totalMinutes === 0 && BPM_LEVELS.some((l) => l > level && isUnlocked(exercise, l));
               const stateClass = unlocked ? "unlocked" : totalMinutes > 0 ? "in-progress" : skipped ? "skipped" : "not-started";
               const struggled = hasStruggledAt(exercise, level);
-              return <div key={level} className={`rung ${stateClass}`}>
+              return <div key={level} ref={(el) => { rungRefs.current[level] = el; }} className={`rung ${stateClass}${justPracticedLevel === level ? " just-practiced" : ""}`}>
                 {struggled && <span className="rung-struggled-flag" title={T.practiceMode.struggledFlagTitle}><svg viewBox="0 0 20 20" fill="currentColor"><rect x="4" y="2" width="1.6" height="16" rx="0.8" /><path d="M6.2 3L16 6.5 6.2 10V3z" /></svg></span>}
                 <button className="rung-tap" onClick={() => startSession(level)}>
                   <span className="bpm">{level}</span>
