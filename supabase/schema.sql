@@ -862,3 +862,116 @@ alter table public.practice_logs add column if not exists used_metronome boolean
 -- read policies.
 drop policy if exists "admins can view all pinned exercises" on public.pinned_exercises;
 create policy "admins can view all pinned exercises" on public.pinned_exercises for select to authenticated using (public.is_admin());
+
+-- Teacher-awarded points + Kid Mode. Points are an event log (not a mutable counter) so a
+-- correction is a visible audit entry ("-1, reason: duplicate award") rather than a silent
+-- edit, matching how practice_logs/practice_sessions already work in this schema.
+create table if not exists public.point_awards (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  awarded_by uuid not null references public.profiles(id),
+  amount integer not null check (amount <> 0),
+  reason text,
+  created_at timestamptz not null default now()
+);
+alter table public.point_awards enable row level security;
+drop policy if exists "users view their own point awards" on public.point_awards;
+create policy "users view their own point awards" on public.point_awards for select to authenticated using (auth.uid() = user_id);
+drop policy if exists "admins can view all point awards" on public.point_awards;
+create policy "admins can view all point awards" on public.point_awards for select to authenticated using (public.is_admin());
+
+-- Per-student Kid Mode, set by the admin only (see admin_set_kid_mode below), never self-toggled.
+alter table public.settings add column if not exists kid_mode boolean not null default false;
+
+-- The only path that can ever insert a point award -- checks is_admin() internally so no
+-- blanket write policy is needed on the table itself.
+create or replace function public.admin_award_points(target_user_id uuid, points_amount integer, points_reason text default null)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized';
+  end if;
+  insert into public.point_awards (user_id, awarded_by, amount, reason) values (target_user_id, auth.uid(), points_amount, points_reason);
+end;
+$$;
+revoke execute on function public.admin_award_points(uuid, integer, text) from anon, public;
+grant execute on function public.admin_award_points(uuid, integer, text) to authenticated;
+
+-- Touches only kid_mode (via insert ... on conflict do update set kid_mode = ...) so admin can
+-- never accidentally change a student's language/goal/etc while flipping this.
+create or replace function public.admin_set_kid_mode(target_user_id uuid, enabled boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized';
+  end if;
+  insert into public.settings (user_id, kid_mode) values (target_user_id, enabled)
+  on conflict (user_id) do update set kid_mode = excluded.kid_mode;
+end;
+$$;
+revoke execute on function public.admin_set_kid_mode(uuid, boolean) from anon, public;
+grant execute on function public.admin_set_kid_mode(uuid, boolean) to authenticated;
+
+-- Student-facing leaderboard: returns only name + aggregate total (never the raw reason/
+-- awarded_by columns) so a student's "why" notes stay private between them and the teacher.
+create or replace function public.points_leaderboard()
+returns table (id uuid, name text, total_points bigint)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select p.id, p.name, coalesce(sum(pa.amount), 0) as total_points
+  from public.profiles p left join public.point_awards pa on pa.user_id = p.id
+  group by p.id, p.name order by total_points desc, p.name asc;
+$$;
+revoke execute on function public.points_leaderboard() from anon, public;
+grant execute on function public.points_leaderboard() to authenticated;
+
+-- Per-student "Point Game" opt-in, set by the admin only (see admin_set_points_enabled
+-- below), never self-toggled. Off by default so new students don't show up ranked with
+-- 0 points until the admin decides to include them in the game.
+alter table public.settings add column if not exists points_enabled boolean not null default false;
+
+create or replace function public.admin_set_points_enabled(target_user_id uuid, enabled boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized';
+  end if;
+  insert into public.settings (user_id, points_enabled) values (target_user_id, enabled)
+  on conflict (user_id) do update set points_enabled = excluded.points_enabled;
+end;
+$$;
+revoke execute on function public.admin_set_points_enabled(uuid, boolean) from anon, public;
+grant execute on function public.admin_set_points_enabled(uuid, boolean) to authenticated;
+
+-- Redefine the leaderboard to only rank students the admin has opted into the point game.
+create or replace function public.points_leaderboard()
+returns table (id uuid, name text, total_points bigint)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select p.id, p.name, coalesce(sum(pa.amount), 0) as total_points
+  from public.profiles p
+  join public.settings s on s.user_id = p.id
+  left join public.point_awards pa on pa.user_id = p.id
+  where s.points_enabled = true
+  group by p.id, p.name order by total_points desc, p.name asc;
+$$;
+revoke execute on function public.points_leaderboard() from anon, public;
+grant execute on function public.points_leaderboard() to authenticated;

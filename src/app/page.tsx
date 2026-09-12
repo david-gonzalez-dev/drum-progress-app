@@ -84,63 +84,63 @@ const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; 
 
 const PRACTICE_CATEGORIES = ["rudiments", "exercises"] as const;
 const CATEGORY_ICON_SRC: Record<string, string> = { rudiments: "/icons/rudiments.png", exercises: "/icons/exercises.png", rhythms: "/icons/rhythms.png" };
-const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string }[] = [
-  { category: "rudiments", subcategory: null, en: "Single Strokes", es: "Golpes simples" },
-  { category: "rudiments", subcategory: null, en: "Double Strokes", es: "Golpes dobles" },
-  { category: "rudiments", subcategory: null, en: "Single Paradiddle", es: "Paradiddle simple" },
-  { category: "rudiments", subcategory: null, en: "Double Paradiddle", es: "Paradiddle doble" },
-  { category: "rudiments", subcategory: null, en: "Triple Paradiddle", es: "Paradiddle triple" },
-  { category: "rudiments", subcategory: null, en: "Paradiddle-Diddle", es: "Paradiddle-diddle" },
-  { category: "rudiments", subcategory: null, en: "Flam", es: "Flam" },
-  { category: "rudiments", subcategory: null, en: "Flam Accent", es: "Flam acentuado" },
-  { category: "rudiments", subcategory: null, en: "Flam Tap", es: "Flam tap" },
-  { category: "rudiments", subcategory: null, en: "Drag", es: "Drag" },
-  { category: "rudiments", subcategory: null, en: "Ratamacue", es: "Ratamacue" },
-  { category: "rudiments", subcategory: null, en: "Single Strokes Four", es: "Golpes Simples Cuatro" },
-  { category: "rudiments", subcategory: null, en: "Single Strokes Seven", es: "Golpes Simples Siete" },
-  { category: "rudiments", subcategory: null, en: "5 Stroke Roll", es: "Redoble de 5 Golpes" },
-  { category: "rudiments", subcategory: null, en: "6 Stroke Roll", es: "Redoble de 6 Golpes" },
-  { category: "rudiments", subcategory: null, en: "7 Stroke Roll", es: "Redoble de 7 Golpes" },
-  { category: "rudiments", subcategory: null, en: "9 Stroke Roll", es: "Redoble de 9 Golpes" },
-  { category: "rudiments", subcategory: null, en: "10 Stroke Roll", es: "Redoble de 10 Golpes" },
-  { category: "rudiments", subcategory: null, en: "11 Stroke Roll", es: "Redoble de 11 Golpes" },
-  { category: "rudiments", subcategory: null, en: "13 Stroke Roll", es: "Redoble de 13 Golpes" },
-  { category: "rudiments", subcategory: null, en: "15 Stroke Roll", es: "Redoble de 15 Golpes" },
-  { category: "rudiments", subcategory: null, en: "17 Stroke Roll", es: "Redoble de 17 Golpes" },
-  { category: "rudiments", subcategory: null, en: "Lesson 25", es: "Lección 25" },
-  { category: "rudiments", subcategory: null, en: "Single Drag Tap", es: "Drag Tap Simple" },
-  { category: "rudiments", subcategory: null, en: "Single Dragadiddle", es: "Dragadiddle Simple" },
-  { category: "rudiments", subcategory: null, en: "Drag Paradiddle #1", es: "Drag Paradiddle #1" },
-  { category: "rudiments", subcategory: null, en: "Drag Paradiddle #2", es: "Drag Paradiddle #2" },
-  { category: "rudiments", subcategory: null, en: "Flammed Mill", es: "Flammed Mill" },
-  { category: "rudiments", subcategory: null, en: "Swiss Army Triplet", es: "Swiss Army Triplet" },
-  { category: "rudiments", subcategory: null, en: "Flamacue", es: "Flamacue" },
-  { category: "rudiments", subcategory: null, en: "Triple Stroke Roll", es: "Redoble Triple" },
-  { category: "rudiments", subcategory: null, en: "Flam Paradiddle", es: "Flam Paradiddle" },
-  { category: "rudiments", subcategory: null, en: "Patafla-fla", es: "Patafla-fla" },
-  { category: "rudiments", subcategory: null, en: "Double Drag Tap", es: "Drag Tap Doble" },
-  { category: "rudiments", subcategory: null, en: "Flam Paradiddle-diddle", es: "Flam Paradiddle-diddle" },
-  { category: "rudiments", subcategory: null, en: "Single Ratamacue", es: "Ratamacue Simple" },
-  { category: "rudiments", subcategory: null, en: "Double Ratamacue", es: "Ratamacue Doble" },
-  { category: "rudiments", subcategory: null, en: "Triple Ratamacue", es: "Ratamacue Triple" },
-  { category: "rudiments", subcategory: null, en: "Inverted Flam Tap", es: "Flam Tap Invertido" },
-  { category: "rudiments", subcategory: null, en: "Flam Drag", es: "Flam Drag" },
-  { category: "exercises", subcategory: null, en: "Push Pull - Right Hand", es: "Push Pull - Mano Derecha" },
-  { category: "exercises", subcategory: null, en: "Push Pull - Left Hand", es: "Push Pull - Mano Izquierda" },
-  { category: "exercises", subcategory: null, en: "Heel Down, 8th Notes", es: "Talón abajo, corcheas" },
-  { category: "exercises", subcategory: null, en: "Heel Up, 8th Notes", es: "Talón arriba, corcheas" },
-  { category: "exercises", subcategory: null, en: "Slide Technique, 8th Notes", es: "Técnica de deslizamiento, corcheas" },
-  { category: "exercises", subcategory: null, en: "Double Bass Drum", es: "Doble bombo" },
-  { category: "exercises", subcategory: null, en: "Flow, 16th Notes", es: "Flow, semicorcheas" },
-  { category: "exercises", subcategory: null, en: "RLKK", es: "RLKK" },
-  { category: "exercises", subcategory: null, en: "RKKL", es: "RKKL" },
-  { category: "exercises", subcategory: null, en: "KKRL", es: "KKRL" },
-  { category: "exercises", subcategory: null, en: "KRLK", es: "KRLK" },
-  { category: "exercises", subcategory: null, en: "RLLK", es: "RLLK" },
-  { category: "exercises", subcategory: null, en: "R L L (Triplets)", es: "R L L (Tresillos)" },
-  { category: "exercises", subcategory: null, en: "Finger Technique (Single-Handed)", es: "Técnica de dedos (una mano)" },
-  { category: "exercises", subcategory: null, en: "16th Note Single Strokes Around the Set", es: "Golpes simples en semicorcheas alrededor de la batería" },
-  { category: "exercises", subcategory: null, en: "Hi-Hat Pedal 8th Notes", es: "Pedal de hi-hat en corcheas" },
+const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string; difficulty: "core" | "advanced" }[] = [
+  { category: "rudiments", subcategory: null, en: "Single Strokes", es: "Golpes simples", difficulty: "core" },
+  { category: "rudiments", subcategory: null, en: "Double Strokes", es: "Golpes dobles", difficulty: "core" },
+  { category: "rudiments", subcategory: null, en: "Single Paradiddle", es: "Paradiddle simple", difficulty: "core" },
+  { category: "rudiments", subcategory: null, en: "Double Paradiddle", es: "Paradiddle doble", difficulty: "core" },
+  { category: "rudiments", subcategory: null, en: "Triple Paradiddle", es: "Paradiddle triple", difficulty: "core" },
+  { category: "rudiments", subcategory: null, en: "Paradiddle-Diddle", es: "Paradiddle-diddle", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Flam", es: "Flam", difficulty: "core" },
+  { category: "rudiments", subcategory: null, en: "Flam Accent", es: "Flam acentuado", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Flam Tap", es: "Flam tap", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Drag", es: "Drag", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Ratamacue", es: "Ratamacue", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Single Strokes Four", es: "Golpes Simples Cuatro", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Single Strokes Seven", es: "Golpes Simples Siete", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "5 Stroke Roll", es: "Redoble de 5 Golpes", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "6 Stroke Roll", es: "Redoble de 6 Golpes", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "7 Stroke Roll", es: "Redoble de 7 Golpes", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "9 Stroke Roll", es: "Redoble de 9 Golpes", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "10 Stroke Roll", es: "Redoble de 10 Golpes", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "11 Stroke Roll", es: "Redoble de 11 Golpes", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "13 Stroke Roll", es: "Redoble de 13 Golpes", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "15 Stroke Roll", es: "Redoble de 15 Golpes", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "17 Stroke Roll", es: "Redoble de 17 Golpes", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Lesson 25", es: "Lección 25", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Single Drag Tap", es: "Drag Tap Simple", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Single Dragadiddle", es: "Dragadiddle Simple", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Drag Paradiddle #1", es: "Drag Paradiddle #1", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Drag Paradiddle #2", es: "Drag Paradiddle #2", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Flammed Mill", es: "Flammed Mill", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Swiss Army Triplet", es: "Swiss Army Triplet", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Flamacue", es: "Flamacue", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Triple Stroke Roll", es: "Redoble Triple", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Flam Paradiddle", es: "Flam Paradiddle", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Patafla-fla", es: "Patafla-fla", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Double Drag Tap", es: "Drag Tap Doble", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Flam Paradiddle-diddle", es: "Flam Paradiddle-diddle", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Single Ratamacue", es: "Ratamacue Simple", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Double Ratamacue", es: "Ratamacue Doble", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Triple Ratamacue", es: "Ratamacue Triple", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Inverted Flam Tap", es: "Flam Tap Invertido", difficulty: "advanced" },
+  { category: "rudiments", subcategory: null, en: "Flam Drag", es: "Flam Drag", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "Push Pull - Right Hand", es: "Push Pull - Mano Derecha", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "Push Pull - Left Hand", es: "Push Pull - Mano Izquierda", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "Heel Down, 8th Notes", es: "Talón abajo, corcheas", difficulty: "core" },
+  { category: "exercises", subcategory: null, en: "Heel Up, 8th Notes", es: "Talón arriba, corcheas", difficulty: "core" },
+  { category: "exercises", subcategory: null, en: "Slide Technique, 8th Notes", es: "Técnica de deslizamiento, corcheas", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "Double Bass Drum", es: "Doble bombo", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "Flow, 16th Notes", es: "Flow, semicorcheas", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "RLKK", es: "RLKK", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "RKKL", es: "RKKL", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "KKRL", es: "KKRL", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "KRLK", es: "KRLK", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "RLLK", es: "RLLK", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "R L L (Triplets)", es: "R L L (Tresillos)", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "Finger Technique (Single-Handed)", es: "Técnica de dedos (una mano)", difficulty: "core" },
+  { category: "exercises", subcategory: null, en: "16th Note Single Strokes Around the Set", es: "Golpes simples en semicorcheas alrededor de la batería", difficulty: "core" },
+  { category: "exercises", subcategory: null, en: "Hi-Hat Pedal 8th Notes", es: "Pedal de hi-hat en corcheas", difficulty: "advanced" },
 ];
 // Structured sticking data for the Practice Mode metronome's sticking panel. A token is one stroke:
 // hand ("R"/"L"), an optional grace flag (soft pre-stroke for flams/drags, rendered smaller/dimmer),
@@ -262,7 +262,7 @@ const translations = {
     nav: { today: "Home", practice: "Practice", group: "Group", progress: "Progress", settings: "Settings", admin: "Admin" },
     confirm: { cancel: "Cancel", confirm: "Confirm" },
     today: {
-      heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", currentStreak: "Current streak", days: "days",
+      heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", currentStreak: "Current streak", days: "days", pointsTitle: "POINTS",
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", practiceTimeHeading: "PRACTICE TIME", whatPractised: "ADD WHAT YOU PRACTISED",
       notes: "NOTES", notesPrefix: "Notes:", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} on ${equipmentName}`,
@@ -349,14 +349,15 @@ const translations = {
       listIntroRhythms: (min: number) => `Grooves and styles to build your musical vocabulary. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it and move up.`,
     },
     onboarding: {
-      eyebrow: "WELCOME", exercisesTitle: "Pick your focus", goalTitle: "Daily practice goal",
+      eyebrow: "WELCOME", exercisesTitle: "Pick your focus", goalTitle: "Daily practice goal", modeTitle: "Choose your content library",
       continueBtn: "Continue", finishBtn: "Finish", skipBtn: "Skip for now",
     },
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
       language: "LANGUAGE", showDaysThisYear: "Show \"days this year\" stat", on: "ON", off: "OFF", save: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR", autoColor: "Auto",
       metronomeTone: "METRONOME TONE", toneNames: { click: "Click", beep: "Beep", wood: "Wood", clave: "Clave" },
-      userSection: "USER", accountSection: "ACCOUNT SETTINGS", pleaseWait: "Please wait...",
+      profileSection: "PROFILE", practiceSection: "PRACTICE", preferencesSection: "PREFERENCES", accountSection: "ACCOUNT SETTINGS", pleaseWait: "Please wait...",
+      libraryLabel: "CONTENT LIBRARY", libraryFull: "Full Library", libraryEssentials: "Essentials", libraryHint: "Essentials shows a shorter, beginner-friendly list of rudiments and exercises. You can change this anytime.",
       changeEmail: "Change email", newEmailPlaceholder: "New email address", updateEmail: "Update email", emailChangeSent: "Check your new email to confirm the change.",
       changePassword: "Change password", newPasswordPlaceholder: "New password", confirmPasswordPlaceholder: "Confirm new password", updatePassword: "Update password", passwordChanged: "✓ Password updated", passwordMismatch: "Passwords don't match.", passwordTooShort: "Password must be at least 6 characters.",
       deleteAccount: "Delete account", deleteAccountWarning: "This permanently deletes your account and all your practice history. This can't be undone.", deleteAccountConfirmPrompt: (email: string) => `Type your email (${email}) to confirm:`, deleteAccountBtn: "Delete my account", deleteAccountBusy: "Deleting…", couldNotDeleteAccount: "Could not delete your account.",
@@ -366,9 +367,10 @@ const translations = {
       dailyLogs: "DAILY LOGS", practiceSessions: "SKILL TRAINER SESSIONS", noDailyLogs: "No daily logs yet.", noPracticeSessions: "No skill trainer sessions yet.",
       notesPrefix: "Notes:",
       usersLabel: (n: number) => n === 1 ? "USER" : "USERS",
-      totalMinutesLabel: "total", totalLogsLabel: "logs", focusLabel: "FOCUS", mostPracticedLabel: "MOST PRACTICED",
+      totalMinutesLabel: "total", totalLogsLabel: "logs", totalPracticeLabel: "Total practice", focusLabel: "FOCUS", mostPracticedLabel: "MOST PRACTICED",
+      pointsLabel: "POINTS", awardHint: "Award or remove points", reasonPlaceholder: "Reason", awardBtn: "Award", modeLabel: "MODE", modeStandard: "Full Library", modeBeginner: "Essentials", pointGameLabel: "POINT GAME", pointGameOn: "On", pointGameOff: "Off", pointsHistory: "POINTS HISTORY", noPoints: "No points awarded yet.",
       metronomeBadge: "Metronome", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Quick entry",
-      mostMinutesTitle: "MOST MINUTES PRACTISED", allUsersTitle: "ALL USERS",
+      mostMinutesTitle: "MOST PRACTICE TIME", allUsersTitle: "ALL USERS",
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
@@ -383,7 +385,7 @@ const translations = {
     nav: { today: "Inicio", practice: "Práctica", group: "Grupo", progress: "Progreso", settings: "Ajustes", admin: "Admin" },
     confirm: { cancel: "Cancelar", confirm: "Confirmar" },
     today: {
-      heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", currentStreak: "Racha actual", days: "días",
+      heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", currentStreak: "Racha actual", days: "días", pointsTitle: "PUNTOS",
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", practiceTimeHeading: "TIEMPO DE PRÁCTICA", whatPractised: "AÑADE LO QUE PRACTICASTE",
       notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} en ${equipmentName}`,
@@ -470,14 +472,15 @@ const translations = {
       listIntroRhythms: (min: number) => `Grooves y estilos para ampliar tu vocabulario musical. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo y subir de nivel.`,
     },
     onboarding: {
-      eyebrow: "BIENVENIDO", exercisesTitle: "Elige tu enfoque", goalTitle: "Meta diaria de práctica",
+      eyebrow: "BIENVENIDO", exercisesTitle: "Elige tu enfoque", goalTitle: "Meta diaria de práctica", modeTitle: "Elige tu biblioteca de contenido",
       continueBtn: "Continuar", finishBtn: "Finalizar", skipBtn: "Omitir por ahora",
     },
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
       language: "IDIOMA", showDaysThisYear: "Mostrar estadística \"días este año\"", on: "SÍ", off: "NO", save: "Guardar ajustes", saved: "✓ Ajustes guardados", logout: "Cerrar sesión", calendarColor: "COLOR DEL CALENDARIO DE GRUPO", autoColor: "Auto",
       metronomeTone: "SONIDO DEL METRÓNOMO", toneNames: { click: "Click", beep: "Bip", wood: "Madera", clave: "Clave" },
-      userSection: "USUARIO", accountSection: "AJUSTES DE CUENTA", pleaseWait: "Un momento...",
+      profileSection: "PERFIL", practiceSection: "PRÁCTICA", preferencesSection: "PREFERENCIAS", accountSection: "AJUSTES DE CUENTA", pleaseWait: "Un momento...",
+      libraryLabel: "BIBLIOTECA DE CONTENIDO", libraryFull: "Biblioteca Completa", libraryEssentials: "Esenciales", libraryHint: "Esenciales muestra una lista más corta y sencilla de rudimentos y ejercicios. Puedes cambiarlo cuando quieras.",
       changeEmail: "Cambiar correo electrónico", newEmailPlaceholder: "Nuevo correo electrónico", updateEmail: "Actualizar correo", emailChangeSent: "Revisa tu nuevo correo para confirmar el cambio.",
       changePassword: "Cambiar contraseña", newPasswordPlaceholder: "Nueva contraseña", confirmPasswordPlaceholder: "Confirmar nueva contraseña", updatePassword: "Actualizar contraseña", passwordChanged: "✓ Contraseña actualizada", passwordMismatch: "Las contraseñas no coinciden.", passwordTooShort: "La contraseña debe tener al menos 6 caracteres.",
       deleteAccount: "Eliminar cuenta", deleteAccountWarning: "Esto elimina tu cuenta y todo tu historial de práctica de forma permanente. Esta acción no se puede deshacer.", deleteAccountConfirmPrompt: (email: string) => `Escribe tu correo (${email}) para confirmar:`, deleteAccountBtn: "Eliminar mi cuenta", deleteAccountBusy: "Eliminando…", couldNotDeleteAccount: "No se pudo eliminar tu cuenta.",
@@ -487,9 +490,10 @@ const translations = {
       dailyLogs: "REGISTROS DIARIOS", practiceSessions: "SESIONES DE ENTRENADOR DE HABILIDADES", noDailyLogs: "Aún no hay registros diarios.", noPracticeSessions: "Aún no hay sesiones de entrenador de habilidades.",
       notesPrefix: "Notas:",
       usersLabel: (n: number) => n === 1 ? "USUARIO" : "USUARIOS",
-      totalMinutesLabel: "total", totalLogsLabel: "registros", focusLabel: "ENFOQUE", mostPracticedLabel: "MÁS PRACTICADO",
+      totalMinutesLabel: "total", totalLogsLabel: "registros", totalPracticeLabel: "Práctica total", focusLabel: "ENFOQUE", mostPracticedLabel: "MÁS PRACTICADO",
+      pointsLabel: "PUNTOS", awardHint: "Otorgar o quitar puntos", reasonPlaceholder: "Motivo", awardBtn: "Dar", modeLabel: "MODO", modeStandard: "Biblioteca Completa", modeBeginner: "Esenciales", pointGameLabel: "JUEGO DE PUNTOS", pointGameOn: "Activado", pointGameOff: "Desactivado", pointsHistory: "HISTORIAL DE PUNTOS", noPoints: "Aún no se han otorgado puntos.",
       metronomeBadge: "Metrónomo", skillTrainerBadge: "Entrenador de habilidades", quickEntryBadge: "Entrada rápida",
-      mostMinutesTitle: "MÁS MINUTOS PRACTICADOS", allUsersTitle: "TODOS LOS USUARIOS",
+      mostMinutesTitle: "MÁS TIEMPO DE PRÁCTICA", allUsersTitle: "TODOS LOS USUARIOS",
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
@@ -640,6 +644,12 @@ export default function Home() {
   const [dailyGoal, setDailyGoal] = useState<number | null>(null);
   const [metronomeTone, setMetronomeTone] = useState("click");
   const [showDaysThisYear, setShowDaysThisYear] = useState(true);
+  // Set by the admin only (see admin_set_kid_mode), never self-toggled -- hides advanced
+  // rudiments/exercises from Skill Trainer for this student.
+  const [kidMode, setKidMode] = useState(false);
+  // Also admin-only (see admin_set_points_enabled) -- whether this student is opted into
+  // the teacher-run point game and its ranking, on Home.
+  const [pointsEnabled, setPointsEnabled] = useState(false);
   const T = translations[language];
   const [practiceStep, setPracticeStep] = useState<"category" | "list" | "detail" | "session" | "rate">("category");
   const [practiceCategory, setPracticeCategory] = useState<string | null>(null);
@@ -676,11 +686,13 @@ export default function Home() {
       setProfileName(fallbackName);
       supabase.from("profiles").upsert({ id: currentUser.id, name: fallbackName }, { onConflict: "id" }).then();
     });
-    supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year, onboarded").eq("user_id", currentUser.id).maybeSingle().then(({ data }) => {
+    supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year, onboarded, kid_mode, points_enabled").eq("user_id", currentUser.id).maybeSingle().then(({ data }) => {
       if (data?.language === "es" || data?.language === "en") setLanguage(data.language);
       if (data?.daily_goal_minutes != null) setDailyGoal(data.daily_goal_minutes);
       if (data?.metronome_tone) setMetronomeTone(data.metronome_tone);
       if (data?.show_days_this_year != null) setShowDaysThisYear(data.show_days_this_year);
+      setKidMode(!!data?.kid_mode);
+      setPointsEnabled(!!data?.points_enabled);
       // Only decide this on the initial load, not a background refetch (e.g. tab regaining focus) —
       // otherwise an in-progress onboarding flow could get yanked back open mid-flow.
       if (hydrateToday) setShowOnboarding(!data?.onboarded);
@@ -725,6 +737,15 @@ export default function Home() {
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [user]);
+  const didMountTabEffect = useRef(false);
+  useEffect(() => {
+    // Refetch settings (kid_mode, points_enabled, etc.) on every tab switch -- otherwise an
+    // admin change made to your own account (e.g. toggling Mode on yourself while testing)
+    // stays stale in this session until the browser tab loses and regains focus.
+    if (!didMountTabEffect.current) { didMountTabEffect.current = true; return; }
+    if (user) loadUserData(user, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
   async function togglePin(itemEn: string) {
     if (!user) return;
     if (pinnedExercises.includes(itemEn)) {
@@ -760,7 +781,7 @@ export default function Home() {
     setShowOnboarding(false);
     await supabase.from("settings").upsert({ user_id: user.id, onboarded: true }, { onConflict: "user_id" });
   }
-  async function finishOnboarding(selectedExercises: string[], goalMinutes: number | null) {
+  async function finishOnboarding(selectedExercises: string[], goalMinutes: number | null, kidModeChoice: boolean) {
     if (!user) return;
     setShowOnboarding(false);
     if (selectedExercises.length) {
@@ -769,10 +790,11 @@ export default function Home() {
     }
     // goalMinutes is only null when skipping with no prior goal to fall back to -- leave
     // daily_goal_minutes untouched (still unset) rather than writing a fabricated number.
-    const settingsRow: any = { user_id: user.id, onboarded: true };
+    const settingsRow: any = { user_id: user.id, onboarded: true, kid_mode: kidModeChoice };
     if (goalMinutes != null) settingsRow.daily_goal_minutes = goalMinutes;
     await supabase.from("settings").upsert(settingsRow, { onConflict: "user_id" });
     if (goalMinutes != null) setDailyGoal(goalMinutes);
+    setKidMode(kidModeChoice);
   }
   async function unpinExercise(itemEn: string) {
     if (!user) return;
@@ -900,11 +922,11 @@ export default function Home() {
   if (!user) return <Login error={authError} setError={setAuthError} />;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className="shell">
-    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} displayName={displayName} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
-    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} onBack={() => setTab("today")} T={T} />}
+    {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage language={language} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     {progressToast && <div className="modal modal-center" onClick={() => setProgressToast("")}>
@@ -942,13 +964,15 @@ function PinManagerModal({ pinnedExercises, onMove, onUnpin, onClose, language, 
   </div></div>;
 }
 
-function OnboardingModal({ currentGoal, onSkip, onFinish, language, T }: { currentGoal: number | null; onSkip: () => void; onFinish: (selected: string[], goalMinutes: number | null) => void; language: Lang; T: any }) {
-  const [step, setStep] = useState<"exercises" | "goal">("exercises");
+function OnboardingModal({ currentGoal, onSkip, onFinish, language, T }: { currentGoal: number | null; onSkip: () => void; onFinish: (selected: string[], goalMinutes: number | null, kidMode: boolean) => void; language: Lang; T: any }) {
+  const [step, setStep] = useState<"exercises" | "goal" | "mode">("exercises");
   const [selected, setSelected] = useState<string[]>([]);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   // 30 here is just a suggested starting point shown in the input -- it's only ever
   // saved if the user explicitly hits Finish. Skip leaves the goal genuinely unset.
   const [goalInput, setGoalInput] = useState(String(currentGoal ?? 30));
+  const [finalGoal, setFinalGoal] = useState<number | null>(currentGoal);
+  const [kidModeChoice, setKidModeChoice] = useState(false);
   function toggleExercise(en: string) {
     setSelected((current) => current.includes(en) ? current.filter((v) => v !== en) : current.length >= MAX_PINNED_EXERCISES ? current : [...current, en]);
   }
@@ -982,15 +1006,23 @@ function OnboardingModal({ currentGoal, onSkip, onFinish, language, T }: { curre
         })}
       </div>
       <button className="save" onClick={() => setStep("goal")}>{T.onboarding.continueBtn}</button>
-    </> : <>
+    </> : step === "goal" ? <>
       <h2 className="edit-rating-title">{T.onboarding.goalTitle}</h2>
       <div className="minutes-island">
         <button className="minutes-step" onClick={() => setGoalInput(String(Math.max(5, (Number(goalInput) || 0) - 5)))}>-5</button>
         <div className="minutes-value"><input inputMode="numeric" size={3} value={goalInput} onChange={(e: any) => setGoalInput(e.target.value.replace(/\D/g, ""))} /><span>{T.settings.minutes}</span></div>
         <button className="minutes-step" onClick={() => setGoalInput(String((Number(goalInput) || 0) + 5))}>+5</button>
       </div>
-      <button className="save" onClick={() => onFinish(selected, Number(goalInput) || currentGoal || 30)}>{T.onboarding.finishBtn}</button>
-      <button className="auth-switch" onClick={() => onFinish(selected, currentGoal)}>{T.onboarding.skipBtn}</button>
+      <button className="save" onClick={() => { setFinalGoal(Number(goalInput) || currentGoal || 30); setStep("mode"); }}>{T.onboarding.continueBtn}</button>
+      <button className="auth-switch" onClick={() => { setFinalGoal(currentGoal); setStep("mode"); }}>{T.onboarding.skipBtn}</button>
+    </> : <>
+      <h2 className="edit-rating-title">{T.onboarding.modeTitle}</h2>
+      <p className="settings-neutral-hint">{T.settings.libraryHint}</p>
+      <div className="equipment-toggle onboard-mode-toggle">
+        <button type="button" className={!kidModeChoice ? "equipment-option selected" : "equipment-option"} onClick={() => setKidModeChoice(false)}>{T.settings.libraryFull}</button>
+        <button type="button" className={kidModeChoice ? "equipment-option selected" : "equipment-option"} onClick={() => setKidModeChoice(true)}>{T.settings.libraryEssentials}</button>
+      </div>
+      <button className="save" onClick={() => onFinish(selected, finalGoal, kidModeChoice)}>{T.onboarding.finishBtn}</button>
     </>}
   </div></div>;
 }
@@ -1034,6 +1066,29 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
   return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Choose a new password for your account.</p><div className="auth-card"><h2>Set a new password</h2><input type="password" placeholder="New password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? "Please wait..." : "Update password"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
+function PointsLeaderboard({ user, pointsEnabled, T }: any) {
+  const [rows, setRows] = useState<{ id: string; name: string; total_points: number }[] | null>(null);
+  useEffect(() => {
+    if (!pointsEnabled) return;
+    supabase.rpc("points_leaderboard").then(({ data }) => setRows(data ?? []));
+  }, [pointsEnabled]);
+  // Hidden entirely for students the admin hasn't opted into the point game, and stays
+  // hidden until at least one point has actually been awarded anywhere -- an all-zero
+  // leaderboard on a brand new feature would read as broken, not motivating.
+  if (!pointsEnabled || !rows || !rows.some((r) => r.total_points !== 0)) return null;
+  const topRows = rows.slice(0, 5);
+  const maxPoints = Math.max(1, ...topRows.map((r) => r.total_points));
+  return <div className="form-card">
+    <span className="section-label">{T.today.pointsTitle}</span>
+    <div className="leaderboard">
+      {topRows.map((r, idx) => <div key={r.id} className="leaderboard-row">
+        <span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{r.id === user.id ? T.group.you : r.name}</span>
+        <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${Math.max(0, Math.min(100, (r.total_points / maxPoints) * 100))}%` }} /></div>
+        <span className="leaderboard-value">{r.total_points}</span>
+      </div>)}
+    </div>
+  </div>;
+}
 function HomeChallenges({ user, practiceSessions, language, T }: any) {
   const [challenges, setChallenges] = useState<any[]>([]);
   const [logsCache, setLogsCache] = useState<Record<string, ChallengeLogEntry>>({});
@@ -1063,7 +1118,7 @@ function HomeChallenges({ user, practiceSessions, language, T }: any) {
     </div>)}
   </div>;
 }
-function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onOpenExercise, displayName, language, T }: any) {
+function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onOpenExercise, displayName, language, T }: any) {
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
   const goalAchieved = dailyGoal != null && todayMinutes >= dailyGoal;
@@ -1072,6 +1127,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
   return <section className="page today">
     <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
     <div className="form-card stats-tile"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
+    <PointsLeaderboard user={user} pointsEnabled={pointsEnabled} T={T} />
     <div className="form-card today-goal-card">
       <label className="input-label">{T.today.todaySummary}</label>
       {dailyGoal != null ? (
@@ -1849,7 +1905,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, minutes, setMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
+function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, kidMode, minutes, setMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -2153,7 +2209,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
 
   if (step === "list" && category) {
-    const items = PRACTICE_EXERCISES.filter((e) => e.category === category);
+    const items = PRACTICE_EXERCISES.filter((e) => e.category === category && (!kidMode || e.difficulty !== "advanced"));
     const LIST_INTRO: Record<string, string> = { rudiments: T.practiceMode.listIntroRudiments(UNLOCK_MINUTES), exercises: T.practiceMode.listIntroExercises(UNLOCK_MINUTES), rhythms: T.practiceMode.listIntroRhythms(UNLOCK_MINUTES) };
     function lastPracticedDate(itemEn: string): string | null {
       let latest: string | null = null;
@@ -2289,12 +2345,12 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
   return null;
 }
-function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; onBack: () => void; T: any }) {
-  const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [saved, setSaved] = useState(false);
+function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, kidMode: currentKidMode, onKidModeSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; kidMode: boolean; onKidModeSaved: (value: boolean) => void; onBack: () => void; T: any }) {
+  const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [kidMode, setKidMode] = useState(currentKidMode); const [saved, setSaved] = useState(false);
   const [newEmail, setNewEmail] = useState(""); const [emailBusy, setEmailBusy] = useState(false); const [emailMsg, setEmailMsg] = useState("");
   const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [passwordBusy, setPasswordBusy] = useState(false); const [passwordMsg, setPasswordMsg] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState(""); const [deleteBusy, setDeleteBusy] = useState(false);
-  useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,metronome_tone,show_days_this_year").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(row.daily_goal_minutes != null ? String(row.daily_goal_minutes) : ""); setLanguage(row.language); if (row.metronome_tone) setTone(row.metronome_tone); if (row.show_days_this_year != null) setShowDaysThisYear(row.show_days_this_year); } }); supabase.from("profiles").select("color").eq("id", user.id).maybeSingle().then(({ data }) => { setColor(data?.color ?? null); }); }, [user]);
+  useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,metronome_tone,show_days_this_year,kid_mode").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(row.daily_goal_minutes != null ? String(row.daily_goal_minutes) : ""); setLanguage(row.language); if (row.metronome_tone) setTone(row.metronome_tone); if (row.show_days_this_year != null) setShowDaysThisYear(row.show_days_this_year); setKidMode(!!row.kid_mode); } }); supabase.from("profiles").select("color").eq("id", user.id).maybeSingle().then(({ data }) => { setColor(data?.color ?? null); }); }, [user]);
   // Goal is only included in the upsert when the field actually has a value -- leaving it
   // blank and saving other settings (name, language, etc.) shouldn't silently invent a goal.
   async function saveSettings() {
@@ -2306,11 +2362,11 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
     // if there WAS one to begin with -- otherwise it just means the user never touched it,
     // and writing anything would fabricate a value they never chose.
     const shouldWriteGoal = (parsedGoal === null ? dailyGoal !== null : !Number.isNaN(parsedGoal));
-    const settingsRow: any = { user_id: user.id, language, metronome_tone: tone, show_days_this_year: showDaysThisYear };
+    const settingsRow: any = { user_id: user.id, language, metronome_tone: tone, show_days_this_year: showDaysThisYear, kid_mode: kidMode };
     if (shouldWriteGoal) settingsRow.daily_goal_minutes = parsedGoal;
     const settings = await supabase.from("settings").upsert(settingsRow, { onConflict: "user_id" });
     if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings.");
-    else { onProfileNameSaved(name); onLanguageSaved(language); if (shouldWriteGoal) onGoalSaved(parsedGoal); onMetronomeToneSaved(tone); onShowDaysThisYearSaved(showDaysThisYear); setSaved(true); setTimeout(() => setSaved(false), 1800); }
+    else { onProfileNameSaved(name); onLanguageSaved(language); if (shouldWriteGoal) onGoalSaved(parsedGoal); onMetronomeToneSaved(tone); onShowDaysThisYearSaved(showDaysThisYear); onKidModeSaved(kidMode); setSaved(true); setTimeout(() => setSaved(false), 1800); }
   }
   async function changeEmail() {
     if (!newEmail.trim()) return;
@@ -2346,8 +2402,18 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
     await supabase.auth.signOut();
   }
   return <section className="page"><button className="page-back" onClick={onBack}>‹ {T.nav.today}</button><header className="simple-head"><p className="eyebrow">{T.settings.makeItYours}</p><h1>{T.settings.title}</h1></header>
-    <p className="settings-section-label">{T.settings.userSection}</p>
-    <div className="settings-form"><label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label><label>{T.settings.dailyGoal}<input inputMode="numeric" placeholder="30" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span>{T.settings.showDaysThisYear}</span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
+    <p className="settings-section-label">{T.settings.profileSection}</p>
+    <div className="settings-form">
+      <label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label>
+    </div>
+    <p className="settings-section-label">{T.settings.practiceSection}</p>
+    <div className="settings-form">
+      <label>{T.settings.dailyGoal}<input inputMode="numeric" placeholder="30" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label>
+      <label>{T.settings.libraryLabel}<div className="equipment-toggle"><button type="button" className={!kidMode ? "equipment-option selected" : "equipment-option"} onClick={() => setKidMode(false)}>{T.settings.libraryFull}</button><button type="button" className={kidMode ? "equipment-option selected" : "equipment-option"} onClick={() => setKidMode(true)}>{T.settings.libraryEssentials}</button></div></label>
+      <p className="settings-neutral-hint">{T.settings.libraryHint}</p>
+    </div>
+    <p className="settings-section-label">{T.settings.preferencesSection}</p>
+    <div className="settings-form"><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span>{T.settings.showDaysThisYear}</span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
     <p className="settings-section-label">{T.settings.accountSection}</p>
     <div className="settings-form account-settings">
       <label>{T.settings.changeEmail}<input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={T.settings.newEmailPlaceholder} /></label>
@@ -2675,16 +2741,31 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   const [logs, setLogs] = useState<any[] | null>(null);
   const [sessions, setSessions] = useState<any[] | null>(null);
   const [pinned, setPinned] = useState<string[] | null>(null);
+  const [points, setPoints] = useState<{ id: string; amount: number; reason: string | null; created_at: string }[] | null>(null);
+  const [kidMode, setKidMode] = useState(false);
+  const [pointsEnabled, setPointsEnabled] = useState(false);
+  const [awardAmount, setAwardAmount] = useState("1");
+  const [awardReason, setAwardReason] = useState("");
+  const [awarding, setAwarding] = useState(false);
 
   useEffect(() => {
     supabase.rpc("admin_list_users").then(({ data }) => { setUsers(data ?? []); });
   }, []);
+
+  function fetchPoints(userId: string) {
+    supabase.from("point_awards").select("id,amount,reason,created_at").eq("user_id", userId).order("created_at", { ascending: false }).then(({ data }) => {
+      setPoints(data ?? []);
+    });
+  }
 
   function openUser(u: { id: string; name: string; email: string }) {
     setSelected(u);
     setLogs(null);
     setSessions(null);
     setPinned(null);
+    setPoints(null);
+    setKidMode(false);
+    setPointsEnabled(false);
     supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,used_metronome,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }).then(({ data }) => {
       setLogs((data ?? []).map((row: any) => ({
         date: row.practiced_on, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes, usedMetronome: !!row.used_metronome,
@@ -2697,6 +2778,30 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     supabase.from("pinned_exercises").select("exercise_en").eq("user_id", u.id).order("sort_order").then(({ data }) => {
       setPinned((data ?? []).map((row: any) => row.exercise_en));
     });
+    supabase.from("settings").select("kid_mode, points_enabled").eq("user_id", u.id).maybeSingle().then(({ data }) => {
+      setKidMode(!!data?.kid_mode);
+      setPointsEnabled(!!data?.points_enabled);
+    });
+    fetchPoints(u.id);
+  }
+  async function awardPoints(amount: number, reason: string | null) {
+    if (!selected || !amount) return;
+    setAwarding(true);
+    await supabase.rpc("admin_award_points", { target_user_id: selected.id, points_amount: amount, points_reason: reason });
+    setAwardAmount("1");
+    setAwardReason("");
+    setAwarding(false);
+    fetchPoints(selected.id);
+  }
+  async function setKidModeValue(enabled: boolean) {
+    if (!selected || enabled === kidMode) return;
+    setKidMode(enabled);
+    await supabase.rpc("admin_set_kid_mode", { target_user_id: selected.id, enabled });
+  }
+  async function setPointsEnabledValue(enabled: boolean) {
+    if (!selected || enabled === pointsEnabled) return;
+    setPointsEnabled(enabled);
+    await supabase.rpc("admin_set_points_enabled", { target_user_id: selected.id, enabled });
   }
 
   if (selected) {
@@ -2711,23 +2816,59 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     (sessions ?? []).forEach((s) => { practiceFrequency[s.exercise] = (practiceFrequency[s.exercise] ?? 0) + 1; });
     (logs ?? []).forEach((l) => { l.items.forEach((item: string) => { practiceFrequency[item] = (practiceFrequency[item] ?? 0) + 1; }); });
     const mostPracticed = Object.entries(practiceFrequency).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const maxPracticeCount = Math.max(1, ...mostPracticed.map(([, count]) => count));
     return <section className="page">
       <button className="page-back" onClick={() => setSelected(null)}>‹ {T.admin.title}</button>
-      <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{selected.name || selected.email}</h1><p className="hint">{selected.email}</p></header>
+      <header className="simple-head"><h1>{selected.name || selected.email}</h1><p className="hint">{selected.email}</p></header>
       <div className="admin-summary-card">
-        <div className="stats stats-2">
-          <Stat label={T.today.currentStreak} value={`${userStreak} ${T.today.days}`} />
-          <Stat label={T.calendar.longestStreak} value={`${userLongestStreak} ${T.today.days}`} />
+        <div className="admin-stats-row">
+          <div className="admin-stat"><span>{T.today.currentStreak}</span><strong>{userStreak} {T.today.days}</strong></div>
+          <div className="admin-stat"><span>{T.calendar.longestStreak}</span><strong>{userLongestStreak} {T.today.days}</strong></div>
+          {selectedUserRow && <div className="admin-stat"><span>{T.admin.totalPracticeLabel}</span><strong>{formatMinutes(selectedUserRow.total_minutes)}</strong><em>{selectedUserRow.total_logs} {T.admin.totalLogsLabel}</em></div>}
         </div>
-        {selectedUserRow && <p className="admin-summary-total">{formatMinutes(selectedUserRow.total_minutes)} {T.admin.totalMinutesLabel} · {selectedUserRow.total_logs} {T.admin.totalLogsLabel}</p>}
-        {pinned && pinned.length > 0 && <>
-          <span className="admin-summary-label">{T.admin.focusLabel}</span>
-          <div className="chips">{pinned.map((en) => <span key={en} className="chip">{PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en}</span>)}</div>
-        </>}
-        {mostPracticed.length > 0 && <>
+        {pinned && pinned.length > 0 && <div className="admin-profile-section">
+          <span className="admin-summary-label admin-focus-label"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.admin.focusLabel}</span>
+          <div className="chips admin-focus-chips">{pinned.map((en) => <span key={en} className="chip">{PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en}</span>)}</div>
+        </div>}
+        {mostPracticed.length > 0 && <div className="admin-profile-section">
           <span className="admin-summary-label">{T.admin.mostPracticedLabel}</span>
-          <div className="chips">{mostPracticed.map(([name, count]) => <span key={name} className="chip">{practiceItemLabel(name, language)} · {count}</span>)}</div>
-        </>}
+          <div className="admin-rank-list">
+            {mostPracticed.map(([name, count], i) => <div key={name} className="admin-rank-row">
+              <span className="admin-rank-num">{i + 1}</span>
+              <span className="admin-rank-name">{practiceItemLabel(name, language)}</span>
+              <div className="admin-rank-bar-track"><div className="admin-rank-bar" style={{ width: `${Math.max(8, (count / maxPracticeCount) * 100)}%` }} /></div>
+              <span className="admin-rank-count">{count}</span>
+            </div>)}
+          </div>
+        </div>}
+      </div>
+      <div className="admin-controls-card">
+        <span className="admin-summary-label">{T.admin.pointsLabel}</span>
+        <p className="admin-points-total">{points ? points.reduce((sum, p) => sum + p.amount, 0) : 0}</p>
+        <span className="admin-controls-hint">{T.admin.awardHint}</span>
+        <div className="admin-award-row">
+          <button type="button" className="minutes-step" onClick={() => awardPoints(-1, null)} disabled={awarding}>−1</button>
+          <button type="button" className="minutes-step" onClick={() => awardPoints(1, null)} disabled={awarding}>+1</button>
+          <input className="admin-award-amount" inputMode="numeric" size={3} value={awardAmount} onChange={(e) => setAwardAmount(e.target.value.replace(/[^-\d]/g, ""))} />
+          <input className="admin-award-reason" value={awardReason} onChange={(e) => setAwardReason(e.target.value)} placeholder={T.admin.reasonPlaceholder} />
+          <button type="button" className="custom-item-add" onClick={() => awardPoints(Number(awardAmount), awardReason.trim() || null)} disabled={awarding || !Number(awardAmount)}>{T.admin.awardBtn}</button>
+        </div>
+        <div className="admin-settings-list">
+          <div className="admin-settings-row">
+            <span>{T.admin.pointGameLabel}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={!pointsEnabled ? "selected" : ""} onClick={() => setPointsEnabledValue(false)}>{T.admin.pointGameOff}</button>
+              <button type="button" className={pointsEnabled ? "selected" : ""} onClick={() => setPointsEnabledValue(true)}>{T.admin.pointGameOn}</button>
+            </div>
+          </div>
+          <div className="admin-settings-row">
+            <span>{T.admin.modeLabel}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={!kidMode ? "selected" : ""} onClick={() => setKidModeValue(false)}>{T.admin.modeStandard}</button>
+              <button type="button" className={kidMode ? "selected" : ""} onClick={() => setKidModeValue(true)}>{T.admin.modeBeginner}</button>
+            </div>
+          </div>
+        </div>
       </div>
       <span className="ladder-label">{T.admin.dailyLogs}</span>
       {logs === null ? <p className="hint">…</p> : logs.length === 0 ? <p className="hint">{T.admin.noDailyLogs}</p> : (
@@ -2735,8 +2876,9 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
           {logs.map((log, i) => {
             const usedSkillTrainer = skillTrainerDates.has(log.date);
             return <div key={i} className="admin-log-row">
-              <div className="admin-log-head"><span>{log.date}</span><span>{formatMinutes(log.minutes)}</span></div>
-              <div className="admin-badge-row">
+              <div className="admin-log-line">
+                <span className="admin-log-date">{log.date}</span>
+                <span className="admin-log-duration">{formatMinutes(log.minutes)}</span>
                 {log.usedMetronome && <span className="admin-source-label">⌁ {T.admin.metronomeBadge}</span>}
                 {usedSkillTrainer && <span className="admin-source-label">🎯 {T.admin.skillTrainerBadge}</span>}
                 {!log.usedMetronome && !usedSkillTrainer && <span className="admin-source-label admin-source-muted">✎ {T.admin.quickEntryBadge}</span>}
@@ -2753,6 +2895,15 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
           {sessions.map((s, i) => <div key={i} className="admin-log-row">
             <div className="admin-log-head"><span>{s.exercise}</span><span>{s.bpm} BPM</span></div>
             <div className="admin-log-head"><span>{s.date}</span><span>{formatMinutes(s.minutes)}</span></div>
+          </div>)}
+        </div>
+      )}
+      <span className="ladder-label admin-section-gap">{T.admin.pointsHistory}</span>
+      {points === null ? <p className="hint">…</p> : points.length === 0 ? <p className="hint">{T.admin.noPoints}</p> : (
+        <div className="admin-log-list">
+          {points.map((p) => <div key={p.id} className="admin-log-row">
+            <div className="admin-log-head"><span>{p.created_at.slice(0, 10)}</span><span className={p.amount > 0 ? "admin-points-positive" : "admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span></div>
+            {p.reason && <p className="today-notes">{p.reason}</p>}
           </div>)}
         </div>
       )}
@@ -2785,32 +2936,33 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   return <section className="page">
     <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
     {users === null ? <p className="hint">…</p> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : <>
-      <div className="admin-donut-wrap">
-        <svg viewBox="0 0 120 120" className="admin-donut">
-          <circle cx="60" cy="60" r={RADIUS} fill="none" stroke="#1c211f" strokeWidth="14" />
-          {donutArcs.map((a) => <circle key={a.id} cx="60" cy="60" r={RADIUS} fill="none" stroke={a.color} strokeWidth="14" strokeDasharray={a.dasharray} strokeDashoffset={a.dashoffset} transform="rotate(-90 60 60)" />)}
-        </svg>
-        <div className="admin-donut-center">
-          <strong>{totalUsers}</strong>
-          <span>{T.admin.usersLabel(totalUsers)}</span>
+      <div className="admin-overview-row">
+        <div className="admin-donut-wrap">
+          <svg viewBox="0 0 120 120" className="admin-donut">
+            <circle cx="60" cy="60" r={RADIUS} fill="none" stroke="#1c211f" strokeWidth="14" />
+            {donutArcs.map((a) => <circle key={a.id} cx="60" cy="60" r={RADIUS} fill="none" stroke={a.color} strokeWidth="14" strokeDasharray={a.dasharray} strokeDashoffset={a.dashoffset} transform="rotate(-90 60 60)" />)}
+          </svg>
+          <div className="admin-donut-center">
+            <strong>{totalUsers}</strong>
+            <span>{T.admin.usersLabel(totalUsers)}</span>
+          </div>
         </div>
+        {mostByMinutes.length > 0 && <div className="admin-overview-leaderboard">
+          <span className="section-label">{T.admin.mostMinutesTitle}</span>
+          <div className="leaderboard">
+            {mostByMinutes.map((u, idx) => <div key={u.id} className="leaderboard-row">
+              <span className="leaderboard-name"><i className="admin-legend-dot" style={{ background: DONUT_COLORS[idx] }} />{u.name || u.email}</span>
+              <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(u.total_minutes / maxMinutes) * 100}%`, background: DONUT_COLORS[idx] }} /></div>
+              <span className="leaderboard-value">{formatMinutes(u.total_minutes)}</span>
+            </div>)}
+          </div>
+        </div>}
       </div>
-      {mostByMinutes.length > 0 && <>
-        <span className="section-label">{T.admin.mostMinutesTitle}</span>
-        <div className="leaderboard">
-          {mostByMinutes.map((u, idx) => <div key={u.id} className="leaderboard-row">
-            <span className="leaderboard-name"><i className="admin-legend-dot" style={{ background: DONUT_COLORS[idx] }} />{u.name || u.email}</span>
-            <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(u.total_minutes / maxMinutes) * 100}%`, background: DONUT_COLORS[idx] }} /></div>
-            <span className="leaderboard-value">{formatMinutes(u.total_minutes)}</span>
-          </div>)}
-        </div>
-      </>}
       <span className="section-label admin-section-gap">{T.admin.allUsersTitle}</span>
       <div className="onboard-exercise-list">
         {users.map((u) => <button key={u.id} type="button" className="onboard-row admin-user-row" onClick={() => openUser(u)}>
           <div className="admin-user-info">
-            <span className="onboard-row-name">{u.name || u.email}</span>
-            <span className="admin-user-email">{u.email}</span>
+            <span className="onboard-row-name">{u.name || u.email}{u.name && <span className="admin-user-email-inline"> - {u.email}</span>}</span>
           </div>
           <span className="admin-user-last">{u.last_active ?? T.admin.neverPracticed}</span>
         </button>)}
