@@ -244,6 +244,7 @@ h2.home-title{font:700 21px 'Barlow Condensed';margin:0 0 13px;letter-spacing:.2
 .admin-points-negative{color:#e2877d}
 .admin-settings-list{display:flex;flex-direction:column;gap:11px;padding-top:14px;border-top:1px solid #1c211f}
 .admin-settings-row{display:flex;justify-content:space-between;align-items:center}
+.admin-exclude-row{margin-bottom:18px}
 .admin-settings-row>span{color:#9aa19d;font-size:14px}
 .admin-mini-toggle{display:flex;gap:3px;background:#191c1a;border-radius:99px;padding:3px}
 .admin-mini-toggle button{border:0;background:transparent;color:#8d9690;font:600 12px 'DM Sans';padding:6px 12px;border-radius:99px}

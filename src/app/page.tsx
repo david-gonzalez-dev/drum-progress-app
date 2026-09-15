@@ -370,7 +370,7 @@ const translations = {
       totalMinutesLabel: "total", totalLogsLabel: "logs", totalPracticeLabel: "Total practice", focusLabel: "FOCUS", mostPracticedLabel: "MOST PRACTICED",
       pointsLabel: "POINTS", awardHint: "Award or remove points", reasonPlaceholder: "Reason", awardBtn: "Award", modeLabel: "MODE", modeStandard: "Full Library", modeBeginner: "Essentials", pointGameLabel: "POINT GAME", pointGameOn: "On", pointGameOff: "Off", pointsHistory: "POINTS HISTORY", noPoints: "No points awarded yet.",
       metronomeBadge: "Metronome", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Quick entry",
-      mostMinutesTitle: "MOST PRACTICE TIME", allUsersTitle: "ALL USERS",
+      mostMinutesTitle: "MOST PRACTICE TIME", allUsersTitle: "ALL USERS", excludeSelfLabel: "Exclude my account from stats",
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
@@ -493,7 +493,7 @@ const translations = {
       totalMinutesLabel: "total", totalLogsLabel: "registros", totalPracticeLabel: "Práctica total", focusLabel: "ENFOQUE", mostPracticedLabel: "MÁS PRACTICADO",
       pointsLabel: "PUNTOS", awardHint: "Otorgar o quitar puntos", reasonPlaceholder: "Motivo", awardBtn: "Dar", modeLabel: "MODO", modeStandard: "Biblioteca Completa", modeBeginner: "Esenciales", pointGameLabel: "JUEGO DE PUNTOS", pointGameOn: "Activado", pointGameOff: "Desactivado", pointsHistory: "HISTORIAL DE PUNTOS", noPoints: "Aún no se han otorgado puntos.",
       metronomeBadge: "Metrónomo", skillTrainerBadge: "Entrenador de habilidades", quickEntryBadge: "Entrada rápida",
-      mostMinutesTitle: "MÁS TIEMPO DE PRÁCTICA", allUsersTitle: "TODOS LOS USUARIOS",
+      mostMinutesTitle: "MÁS TIEMPO DE PRÁCTICA", allUsersTitle: "TODOS LOS USUARIOS", excludeSelfLabel: "Excluir mi cuenta de las estadísticas",
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
@@ -927,7 +927,7 @@ export default function Home() {
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
-    {tab === "admin" && isAdmin && <AdminPage language={language} T={T} />}
+    {tab === "admin" && isAdmin && <AdminPage user={user} language={language} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     {progressToast && <div className="modal modal-center" onClick={() => setProgressToast("")}>
       <div className="confirm-card progress-card" onClick={(e) => e.stopPropagation()}>
@@ -2735,8 +2735,12 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
       <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : T.metronome.start}</button>
     </>}
-  </div></div>; }function AdminPage({ language, T }: { language: Lang; T: any }) {
+  </div></div>; }function AdminPage({ user, language, T }: { user: any; language: Lang; T: any }) {
   const [users, setUsers] = useState<{ id: string; name: string; email: string; last_active: string | null; total_logs: number; total_minutes: number }[] | null>(null);
+  // A personal viewing preference for the admin, not app data -- remembered locally per
+  // browser rather than in the database, so it doesn't need its own settings column.
+  const [excludeSelf, setExcludeSelf] = useState(() => typeof window !== "undefined" && localStorage.getItem("admin_exclude_self") === "1");
+  useEffect(() => { try { localStorage.setItem("admin_exclude_self", excludeSelf ? "1" : "0"); } catch {} }, [excludeSelf]);
   const [selected, setSelected] = useState<{ id: string; name: string; email: string } | null>(null);
   const [logs, setLogs] = useState<any[] | null>(null);
   const [sessions, setSessions] = useState<any[] | null>(null);
@@ -2910,9 +2914,10 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     </section>;
   }
 
-  const totalUsers = users?.length ?? 0;
-  const totalMinutes = users?.reduce((sum, u) => sum + u.total_minutes, 0) ?? 0;
-  const mostByMinutes = (users ?? []).filter((u) => u.total_minutes > 0).slice().sort((a, b) => b.total_minutes - a.total_minutes).slice(0, 5);
+  const statsUsers = excludeSelf && user ? (users ?? []).filter((u) => u.id !== user.id) : (users ?? []);
+  const totalUsers = statsUsers.length;
+  const totalMinutes = statsUsers.reduce((sum, u) => sum + u.total_minutes, 0);
+  const mostByMinutes = statsUsers.filter((u) => u.total_minutes > 0).slice().sort((a, b) => b.total_minutes - a.total_minutes).slice(0, 5);
   const maxMinutes = Math.max(1, ...mostByMinutes.map((u) => u.total_minutes));
   // A fixed, validated 5-hue categorical set (dark-mode step of the reference palette) --
   // one color per top user, reused identically between the donut segments and the
@@ -2936,6 +2941,13 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   return <section className="page">
     <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
     {users === null ? <p className="hint">…</p> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : <>
+      {user && <div className="admin-settings-row admin-exclude-row">
+        <span>{T.admin.excludeSelfLabel}</span>
+        <div className="admin-mini-toggle">
+          <button type="button" className={!excludeSelf ? "selected" : ""} onClick={() => setExcludeSelf(false)}>{T.settings.off}</button>
+          <button type="button" className={excludeSelf ? "selected" : ""} onClick={() => setExcludeSelf(true)}>{T.settings.on}</button>
+        </div>
+      </div>}
       <div className="admin-overview-row">
         <div className="admin-donut-wrap">
           <svg viewBox="0 0 120 120" className="admin-donut">
