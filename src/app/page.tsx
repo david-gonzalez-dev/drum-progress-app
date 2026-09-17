@@ -669,14 +669,9 @@ export default function Home() {
   const [adminResetKey, setAdminResetKey] = useState(0);
   function openExerciseDetail(itemEn: string) {
     const match = PRACTICE_EXERCISES.find((e) => e.en === itemEn);
-    const matchCategory = match?.category ?? null;
-    setPracticeCategory(matchCategory);
+    setPracticeCategory(match?.category ?? null);
     setPracticeExercise(itemEn);
     setPracticeStep("detail");
-    // Jumping here straight from Home (e.g. a pinned-exercise chip) skips PracticeMode's own
-    // pushState calls, so this needs its own entry -- otherwise the browser's history could be
-    // left pointing at a stale step from an earlier, unrelated Skill Trainer visit.
-    history.pushState({ tab: "practice", practiceStep: "detail", practiceCategory: matchCategory, practiceExercise: itemEn }, "");
     setTab("practice");
   }
   const [practiceBpm, setPracticeBpm] = useState(100);
@@ -764,45 +759,6 @@ export default function Home() {
     if (user) loadUserData(user, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
-  useEffect(() => {
-    // Skill Trainer's category/list/detail/session screens are plain React state, not real
-    // browser navigation, so a phone's swipe-back gesture had nothing to step through and would
-    // just leave the app. This gives that gesture something to act on: each forward step pushes
-    // a history entry, and this listener restores the practice step a swipe-back (or the browser's
-    // own back button) lands on.
-    // If a real navigation state already exists (e.g. the page just reloaded because of a
-    // bfcache restore below, or the user manually refreshed mid-navigation), hydrate from it
-    // instead of stomping it back to a hardcoded baseline -- otherwise every reload silently
-    // resets tab/step back to Home, no matter what history actually said.
-    const existing = history.state as { tab?: Tab; practiceStep?: string; practiceCategory?: string | null; practiceExercise?: string | null } | null;
-    if (existing?.practiceStep) {
-      setTab(existing.tab ?? "today");
-      setPracticeStep(existing.practiceStep as any);
-      setPracticeCategory(existing.practiceCategory ?? null);
-      setPracticeExercise(existing.practiceExercise ?? null);
-    } else {
-      history.replaceState({ tab: "today", practiceStep: "category", practiceCategory: null, practiceExercise: null }, "");
-    }
-    function handlePopState(e: PopStateEvent) {
-      const s = e.state as { tab?: Tab; practiceStep?: string; practiceCategory?: string | null; practiceExercise?: string | null } | null;
-      if (s?.tab) setTab(s.tab);
-      setPracticeStep((s?.practiceStep as any) ?? "category");
-      setPracticeCategory(s?.practiceCategory ?? null);
-      setPracticeExercise(s?.practiceExercise ?? null);
-    }
-    window.addEventListener("popstate", handlePopState);
-    // A swipe-back on iOS Safari (and some other browsers) often restores the page from the
-    // back-forward cache instead of firing a normal popstate the app can react to -- an entire
-    // frozen snapshot of the DOM/React state from BEFORE the user ever switched tabs, which reads
-    // as "swiping back from Rudiments jumps all the way to Home" since that's what the page looked
-    // like when the snapshot was taken. Forcing a reload on a persisted pageshow discards that
-    // stale snapshot in favor of a fresh load that reads the current (correct) history state.
-    function handlePageShow(e: PageTransitionEvent) {
-      if (e.persisted) location.reload();
-    }
-    window.addEventListener("pageshow", handlePageShow);
-    return () => { window.removeEventListener("popstate", handlePopState); window.removeEventListener("pageshow", handlePageShow); };
-  }, []);
   async function togglePin(itemEn: string) {
     if (!user) return;
     if (pinnedExercises.includes(itemEn)) {
@@ -1437,6 +1393,10 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [groups, setGroups] = useState<any[]>([]); const [activeGroupId, setActiveGroupId] = useState<string | null>(null); const [addingGroup, setAddingGroup] = useState(false); const [busy, setBusy] = useState(false);
   const group = useMemo(() => groups.find((g) => g.id === activeGroupId) ?? null, [groups, activeGroupId]);
   const [groupLoading, setGroupLoading] = useState(true);
+  // groupLoading only covers "which group is active" -- members/totals/daysTotals fetch
+  // separately once a group is known, and all start out as empty arrays, so without this the
+  // leaderboard/time-card briefly render with nothing in them before the real data arrives.
+  const [groupDetailLoading, setGroupDetailLoading] = useState(true);
   const [members, setMembers] = useState<{ id: string; name: string; color: string }[]>([]);
   const [totals, setTotals] = useState<{ id: string; name: string; total: number }[]>([]);
   const [daysTotals, setDaysTotals] = useState<{ id: string; name: string; days: number; totalDays: number }[]>([]);
@@ -1475,29 +1435,36 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     });
   }, [user]);
   useEffect(() => {
-    if (!group) { setMembers([]); setTotals([]); setDaysTotals([]); setChallenges([]); return; }
-    supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", group.id).order("user_id").then(({ data }) => {
+    if (!group) { setMembers([]); setTotals([]); setDaysTotals([]); setChallenges([]); setGroupDetailLoading(false); return; }
+    setGroupDetailLoading(true);
+    supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", group.id).order("user_id").then(async ({ data }) => {
       const memberList = (data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) }));
       setMembers(memberList);
       const memberIds = memberList.map((m) => m.id);
-      if (!memberIds.length) return;
+      if (!memberIds.length) { setGroupDetailLoading(false); return; }
       const since = String(group.created_at).slice(0, 10);
-      supabase.from("practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since).then(({ data: logRows }) => {
-        const sums: Record<string, number> = {};
-        (logRows ?? []).forEach((row: any) => { sums[row.user_id] = (sums[row.user_id] ?? 0) + row.minutes; });
-        setTotals(memberList.map((m) => ({ ...m, total: sums[m.id] ?? 0 })).sort((a, b) => b.total - a.total));
-      });
       const yearStart = `${dateKey.slice(0, 4)}-01-01`;
       const yearEnd = `${dateKey.slice(0, 4)}-12-31`;
-      supabase.from("practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd).then(({ data: yearRows }) => {
-        const daySets: Record<string, Set<string>> = {};
-        (yearRows ?? []).forEach((row: any) => {
-          if (row.minutes <= 0) return;
-          if (!daySets[row.user_id]) daySets[row.user_id] = new Set();
-          daySets[row.user_id].add(row.practiced_on);
-        });
-        setDaysTotals(memberList.map((m) => ({ ...m, days: daySets[m.id]?.size ?? 0, totalDays: 365 })).sort((a, b) => b.days - a.days));
-      });
+      // Both queries run in parallel (as before) -- Promise.all just gives a single, reliable
+      // "both are done" signal to clear the loading state on, instead of racing two independent
+      // .then() callbacks that could otherwise clear it before the slower one finishes.
+      await Promise.all([
+        supabase.from("practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since).then(({ data: logRows }) => {
+          const sums: Record<string, number> = {};
+          (logRows ?? []).forEach((row: any) => { sums[row.user_id] = (sums[row.user_id] ?? 0) + row.minutes; });
+          setTotals(memberList.map((m) => ({ ...m, total: sums[m.id] ?? 0 })).sort((a, b) => b.total - a.total));
+        }),
+        supabase.from("practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd).then(({ data: yearRows }) => {
+          const daySets: Record<string, Set<string>> = {};
+          (yearRows ?? []).forEach((row: any) => {
+            if (row.minutes <= 0) return;
+            if (!daySets[row.user_id]) daySets[row.user_id] = new Set();
+            daySets[row.user_id].add(row.practiced_on);
+          });
+          setDaysTotals(memberList.map((m) => ({ ...m, days: daySets[m.id]?.size ?? 0, totalDays: 365 })).sort((a, b) => b.days - a.days));
+        }),
+      ]);
+      setGroupDetailLoading(false);
     });
   }, [group]);
   useEffect(() => { loadChallenges(); }, [group, members]);
@@ -1668,6 +1635,10 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   }
   if (groupLoading) return <section className="page"><p className="hint">…</p></section>;
   if (!addingGroup && group) {
+    if (groupDetailLoading) return <section className="page">
+      <header className="simple-head group-head"><div><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></div></header>
+      <p className="hint">…</p>
+    </section>;
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
@@ -2136,28 +2107,14 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   const RATING_LABEL: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const CATEGORY_LABEL: Record<string, string> = { rudiments: T.practiceMode.categoryRudiments, exercises: T.practiceMode.categoryExercises, rhythms: T.practiceMode.categoryRhythms };
-  // Each forward step pushes a real browser history entry so a phone's swipe-back gesture (or
-  // the browser's own back button) has something to act on -- see the popstate listener in Home.
-  // "rate" replaces the "session" entry instead of pushing its own, since it's really a sub-state
-  // of the same session (swiping back from either should land on "detail", not on the just-ended
-  // session screen).
-  function openCategory(cat: string) {
-    setCategory(cat); setStep("list");
-    history.pushState({ tab: "practice", practiceStep: "list", practiceCategory: cat, practiceExercise: null }, "");
-  }
-  function openExercise(itemEn: string) {
-    setJustPracticedLevel(null); setExercise(itemEn); setStep("detail");
-    history.pushState({ tab: "practice", practiceStep: "detail", practiceCategory: category, practiceExercise: itemEn }, "");
-  }
-  function startSession(targetBpm: number) {
-    setJustPracticedLevel(null); setBpm(targetBpm); setStep("session");
-    history.pushState({ tab: "practice", practiceStep: "session", practiceCategory: category, practiceExercise: exercise }, "");
-  }
+  function openCategory(cat: string) { setCategory(cat); setStep("list"); }
+  function openExercise(itemEn: string) { setJustPracticedLevel(null); setExercise(itemEn); setStep("detail"); }
+  function startSession(targetBpm: number) { setJustPracticedLevel(null); setBpm(targetBpm); setStep("session"); }
   async function handleSessionEnd(sessionMinutes: number) {
     if (exercise && bestQualifyingRating(exercise, bpm) === "mastered") {
       await onLogSession(exercise, bpm, "mastered", sessionMinutes);
       setJustPracticedLevel(bpm);
-      history.back();
+      setStep("detail");
       return;
     }
     setPendingMinutes(sessionMinutes);
@@ -2165,13 +2122,12 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     setSessionIssues([]);
     setSessionNote("");
     setStep("rate");
-    history.replaceState({ tab: "practice", practiceStep: "rate", practiceCategory: category, practiceExercise: exercise }, "");
   }
   async function submitRating(rating: string) {
     if (!exercise) return;
     await onLogSession(exercise, bpm, rating, pendingMinutes, sessionIssues, sessionNote.trim());
     setJustPracticedLevel(bpm);
-    history.back();
+    setStep("detail");
   }
   function handleRatingTap(r: string) {
     // Comfortable/mastered don't need an explanation, so they save immediately; the struggling
@@ -2181,7 +2137,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
   function skipRating() {
     setJustPracticedLevel(bpm);
-    history.back();
+    setStep("detail");
   }
   function ExerciseRow({ item }: { item: { en: string; es: string } }) {
     const stats = exerciseStats(item.en);
@@ -2315,7 +2271,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
       </div>)}</>;
     }
     return <section className="page">
-      <div className="back-row"><button onClick={() => history.back()}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL[category]}</h2></div></div>
+      <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL[category]}</h2></div></div>
       <p className="category-list-intro">{LIST_INTRO[category]}</p>
       {listBody}
     </section>;
@@ -2326,7 +2282,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     const isPinned = pinnedExercises.includes(exercise);
     return <section className="page">
-      <div className="back-row"><button onClick={() => history.back()}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2></div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
+      <div className="back-row"><button onClick={() => setStep("list")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2></div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
       <div className="level-card">
         <div className="badge">{stats.bestRating ? RATING_ICON[stats.bestRating] : "🥁"}</div>
         <div>
@@ -2399,8 +2355,8 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   if (step === "session" && exercise) {
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     return <section className="page">
-      <div className="back-row"><button onClick={() => history.back()}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
-      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => history.back()} tone={metronomeTone} exerciseLabel={label} exerciseEn={exercise} sessions={sessions} lockTempo language={language} T={T} />
+      <div className="back-row"><button onClick={() => setStep("detail")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
+      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} exerciseEn={exercise} sessions={sessions} lockTempo language={language} T={T} />
     </section>;
   }
 
