@@ -664,6 +664,9 @@ export default function Home() {
   const [practiceStep, setPracticeStep] = useState<"category" | "list" | "detail" | "session" | "rate">("category");
   const [practiceCategory, setPracticeCategory] = useState<string | null>(null);
   const [practiceExercise, setPracticeExercise] = useState<string | null>(null);
+  // Bumped to force AdminPage to remount (dropping back to its user list) when the admin nav
+  // icon is tapped again while already inside a specific student's detail page.
+  const [adminResetKey, setAdminResetKey] = useState(0);
   function openExerciseDetail(itemEn: string) {
     const match = PRACTICE_EXERCISES.find((e) => e.en === itemEn);
     const matchCategory = match?.category ?? null;
@@ -767,7 +770,19 @@ export default function Home() {
     // just leave the app. This gives that gesture something to act on: each forward step pushes
     // a history entry, and this listener restores the practice step a swipe-back (or the browser's
     // own back button) lands on.
-    history.replaceState({ tab: "today", practiceStep: "category", practiceCategory: null, practiceExercise: null }, "");
+    // If a real navigation state already exists (e.g. the page just reloaded because of a
+    // bfcache restore below, or the user manually refreshed mid-navigation), hydrate from it
+    // instead of stomping it back to a hardcoded baseline -- otherwise every reload silently
+    // resets tab/step back to Home, no matter what history actually said.
+    const existing = history.state as { tab?: Tab; practiceStep?: string; practiceCategory?: string | null; practiceExercise?: string | null } | null;
+    if (existing?.practiceStep) {
+      setTab(existing.tab ?? "today");
+      setPracticeStep(existing.practiceStep as any);
+      setPracticeCategory(existing.practiceCategory ?? null);
+      setPracticeExercise(existing.practiceExercise ?? null);
+    } else {
+      history.replaceState({ tab: "today", practiceStep: "category", practiceCategory: null, practiceExercise: null }, "");
+    }
     function handlePopState(e: PopStateEvent) {
       const s = e.state as { tab?: Tab; practiceStep?: string; practiceCategory?: string | null; practiceExercise?: string | null } | null;
       if (s?.tab) setTab(s.tab);
@@ -973,7 +988,7 @@ export default function Home() {
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
-    {tab === "admin" && isAdmin && <AdminPage user={user} language={language} T={T} />}
+    {tab === "admin" && isAdmin && <AdminPage key={adminResetKey} user={user} language={language} T={T} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     {progressToast && <div className="modal modal-center" onClick={() => setProgressToast("")}>
       <div className="confirm-card progress-card" onClick={(e) => e.stopPropagation()}>
@@ -982,7 +997,7 @@ export default function Home() {
         <button className="save" onClick={() => setProgressToast("")}>{T.practiceMode.niceBtn}</button>
       </div>
     </div>}
-    <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
+    <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
     {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onClose={() => setShowPinManager(false)} language={language} T={T} />}
@@ -1651,7 +1666,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       setActiveGroupId(next[0]?.id ?? null);
     }
   }
-  if (groupLoading) return <section className="page" />;
+  if (groupLoading) return <section className="page"><p className="hint">…</p></section>;
   if (!addingGroup && group) {
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -2879,6 +2894,16 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   }
 
   if (selected) {
+    // Show a lightweight loading state instead of the full stats cards while the fetches kicked
+    // off by openUser() are still in flight -- otherwise this briefly renders every stat as zero
+    // (via the `?? []` fallbacks below) before the real numbers pop in, which reads as a glitch.
+    if (logs === null || sessions === null || points === null) {
+      return <section className="page">
+        <button className="page-back" onClick={() => setSelected(null)}>‹ {T.admin.title}</button>
+        <header className="simple-head"><h1>{selected.name || selected.email}</h1><p className="hint">{selected.email}</p></header>
+        <p className="hint">…</p>
+      </section>;
+    }
     const skillTrainerDates = new Set((sessions ?? []).map((s) => s.date));
     const selectedUserRow = users?.find((u) => u.id === selected.id);
     const logsByDate: Record<string, Log> = Object.fromEntries((logs ?? []).map((l) => [l.date, { minutes: l.minutes } as Log]));
