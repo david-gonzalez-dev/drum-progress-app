@@ -673,7 +673,7 @@ export default function Home() {
     // Jumping here straight from Home (e.g. a pinned-exercise chip) skips PracticeMode's own
     // pushState calls, so this needs its own entry -- otherwise the browser's history could be
     // left pointing at a stale step from an earlier, unrelated Skill Trainer visit.
-    history.pushState({ practiceStep: "detail", practiceCategory: matchCategory, practiceExercise: itemEn }, "");
+    history.pushState({ tab: "practice", practiceStep: "detail", practiceCategory: matchCategory, practiceExercise: itemEn }, "");
     setTab("practice");
   }
   const [practiceBpm, setPracticeBpm] = useState(100);
@@ -767,15 +767,26 @@ export default function Home() {
     // just leave the app. This gives that gesture something to act on: each forward step pushes
     // a history entry, and this listener restores the practice step a swipe-back (or the browser's
     // own back button) lands on.
-    history.replaceState({ practiceStep: "category", practiceCategory: null, practiceExercise: null }, "");
+    history.replaceState({ tab: "today", practiceStep: "category", practiceCategory: null, practiceExercise: null }, "");
     function handlePopState(e: PopStateEvent) {
-      const s = e.state as { practiceStep?: string; practiceCategory?: string | null; practiceExercise?: string | null } | null;
+      const s = e.state as { tab?: Tab; practiceStep?: string; practiceCategory?: string | null; practiceExercise?: string | null } | null;
+      if (s?.tab) setTab(s.tab);
       setPracticeStep((s?.practiceStep as any) ?? "category");
       setPracticeCategory(s?.practiceCategory ?? null);
       setPracticeExercise(s?.practiceExercise ?? null);
     }
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    // A swipe-back on iOS Safari (and some other browsers) often restores the page from the
+    // back-forward cache instead of firing a normal popstate the app can react to -- an entire
+    // frozen snapshot of the DOM/React state from BEFORE the user ever switched tabs, which reads
+    // as "swiping back from Rudiments jumps all the way to Home" since that's what the page looked
+    // like when the snapshot was taken. Forcing a reload on a persisted pageshow discards that
+    // stale snapshot in favor of a fresh load that reads the current (correct) history state.
+    function handlePageShow(e: PageTransitionEvent) {
+      if (e.persisted) location.reload();
+    }
+    window.addEventListener("pageshow", handlePageShow);
+    return () => { window.removeEventListener("popstate", handlePopState); window.removeEventListener("pageshow", handlePageShow); };
   }, []);
   async function togglePin(itemEn: string) {
     if (!user) return;
@@ -2117,15 +2128,15 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   // session screen).
   function openCategory(cat: string) {
     setCategory(cat); setStep("list");
-    history.pushState({ practiceStep: "list", practiceCategory: cat, practiceExercise: null }, "");
+    history.pushState({ tab: "practice", practiceStep: "list", practiceCategory: cat, practiceExercise: null }, "");
   }
   function openExercise(itemEn: string) {
     setJustPracticedLevel(null); setExercise(itemEn); setStep("detail");
-    history.pushState({ practiceStep: "detail", practiceCategory: category, practiceExercise: itemEn }, "");
+    history.pushState({ tab: "practice", practiceStep: "detail", practiceCategory: category, practiceExercise: itemEn }, "");
   }
   function startSession(targetBpm: number) {
     setJustPracticedLevel(null); setBpm(targetBpm); setStep("session");
-    history.pushState({ practiceStep: "session", practiceCategory: category, practiceExercise: exercise }, "");
+    history.pushState({ tab: "practice", practiceStep: "session", practiceCategory: category, practiceExercise: exercise }, "");
   }
   async function handleSessionEnd(sessionMinutes: number) {
     if (exercise && bestQualifyingRating(exercise, bpm) === "mastered") {
@@ -2139,7 +2150,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     setSessionIssues([]);
     setSessionNote("");
     setStep("rate");
-    history.replaceState({ practiceStep: "rate", practiceCategory: category, practiceExercise: exercise }, "");
+    history.replaceState({ tab: "practice", practiceStep: "rate", practiceCategory: category, practiceExercise: exercise }, "");
   }
   async function submitRating(rating: string) {
     if (!exercise) return;
