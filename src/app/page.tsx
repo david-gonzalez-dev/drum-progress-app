@@ -266,7 +266,7 @@ const translations = {
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", practiceTimeHeading: "PRACTICE TIME", whatPractised: "ADD WHAT YOU PRACTISED",
       notes: "NOTES", notesPrefix: "Notes:", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} on ${equipmentName}`,
-      todaySummary: "TODAY", noPracticeYet: "No practice yet.", secondsCarried: "extra (not counted in minutes yet)",
+      todaySummary: "TODAY", noPracticeYet: "No practice yet.", secondsCarried: "extra (not counted in minutes yet)", todaySoFar: (total: string) => `${total} already logged today, this adds on top`,
       resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
       whatDidYouPractiseTitle: "WHAT DID YOU PRACTISE?", whatDidYouPractiseSubtitle: "Pick at least one.", addOwnPlaceholder: "Add your own...", addOwnBtn: "Add",
@@ -371,6 +371,8 @@ const translations = {
       pointsLabel: "POINTS", awardHint: "Award or remove points", reasonPlaceholder: "Reason", awardBtn: "Award", modeLabel: "MODE", modeStandard: "Full Library", modeBeginner: "Essentials", pointGameLabel: "POINT GAME", pointGameOn: "On", pointGameOff: "Off", pointsHistory: "POINTS HISTORY", noPoints: "No points awarded yet.",
       metronomeBadge: "Metronome", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Quick entry",
       mostMinutesTitle: "MOST PRACTICE TIME", allUsersTitle: "ALL USERS", excludeSelfLabel: "Exclude my account from stats",
+      statsRangeLabel: "Time range", statsRangeAll: "All", statsRangeMonth: "Month", statsRangeYear: "Year",
+      skillProgressLabel: "SKILL PROGRESS",
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
@@ -389,7 +391,7 @@ const translations = {
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", practiceTimeHeading: "TIEMPO DE PRÁCTICA", whatPractised: "AÑADE LO QUE PRACTICASTE",
       notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} en ${equipmentName}`,
-      todaySummary: "HOY", noPracticeYet: "Aún no hay práctica.", secondsCarried: "extra (aún no contado en minutos)",
+      todaySummary: "HOY", noPracticeYet: "Aún no hay práctica.", secondsCarried: "extra (aún no contado en minutos)", todaySoFar: (total: string) => `${total} ya registrados hoy, esto se suma`,
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
       whatDidYouPractiseTitle: "¿QUÉ PRACTICASTE?", whatDidYouPractiseSubtitle: "Elige al menos uno.", addOwnPlaceholder: "Añade lo tuyo...", addOwnBtn: "Añadir",
@@ -494,6 +496,8 @@ const translations = {
       pointsLabel: "PUNTOS", awardHint: "Otorgar o quitar puntos", reasonPlaceholder: "Motivo", awardBtn: "Dar", modeLabel: "MODO", modeStandard: "Biblioteca Completa", modeBeginner: "Esenciales", pointGameLabel: "JUEGO DE PUNTOS", pointGameOn: "Activado", pointGameOff: "Desactivado", pointsHistory: "HISTORIAL DE PUNTOS", noPoints: "Aún no se han otorgado puntos.",
       metronomeBadge: "Metrónomo", skillTrainerBadge: "Entrenador de habilidades", quickEntryBadge: "Entrada rápida",
       mostMinutesTitle: "MÁS TIEMPO DE PRÁCTICA", allUsersTitle: "TODOS LOS USUARIOS", excludeSelfLabel: "Excluir mi cuenta de las estadísticas",
+      statsRangeLabel: "Rango de tiempo", statsRangeAll: "Todo", statsRangeMonth: "Mes", statsRangeYear: "Año",
+      skillProgressLabel: "PROGRESO DE HABILIDADES",
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
@@ -520,6 +524,8 @@ function formatLocalDate(year: number, monthIndex0based: number, day: number) {
 }
 const now = new Date();
 const dateKey = formatLocalDate(now.getFullYear(), now.getMonth(), now.getDate());
+const monthStartKey = formatLocalDate(now.getFullYear(), now.getMonth(), 1);
+const yearStartKey = formatLocalDate(now.getFullYear(), 0, 1);
 
 function shiftDateKey(key: string, days: number) {
   const [year, month, day] = key.split("-").map(Number);
@@ -610,6 +616,10 @@ export default function Home() {
   const [tab, setTab] = useState<Tab>("today");
   const [minutes, setMinutes] = useState("0");
   const [seconds, setSeconds] = useState("0");
+  // Quick Practice's own entry field -- how much to ADD right now, always starting back at 0,
+  // kept separate from `minutes` (today's real running total, which Skill Trainer sessions add
+  // to automatically) so the two never fight over the same editable number.
+  const [quickAddMinutes, setQuickAddMinutes] = useState("0");
   const [customItems, setCustomItems] = useState<string[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
@@ -656,9 +666,14 @@ export default function Home() {
   const [practiceExercise, setPracticeExercise] = useState<string | null>(null);
   function openExerciseDetail(itemEn: string) {
     const match = PRACTICE_EXERCISES.find((e) => e.en === itemEn);
-    setPracticeCategory(match?.category ?? null);
+    const matchCategory = match?.category ?? null;
+    setPracticeCategory(matchCategory);
     setPracticeExercise(itemEn);
     setPracticeStep("detail");
+    // Jumping here straight from Home (e.g. a pinned-exercise chip) skips PracticeMode's own
+    // pushState calls, so this needs its own entry -- otherwise the browser's history could be
+    // left pointing at a stale step from an earlier, unrelated Skill Trainer visit.
+    history.pushState({ practiceStep: "detail", practiceCategory: matchCategory, practiceExercise: itemEn }, "");
     setTab("practice");
   }
   const [practiceBpm, setPracticeBpm] = useState(100);
@@ -746,6 +761,22 @@ export default function Home() {
     if (user) loadUserData(user, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
+  useEffect(() => {
+    // Skill Trainer's category/list/detail/session screens are plain React state, not real
+    // browser navigation, so a phone's swipe-back gesture had nothing to step through and would
+    // just leave the app. This gives that gesture something to act on: each forward step pushes
+    // a history entry, and this listener restores the practice step a swipe-back (or the browser's
+    // own back button) lands on.
+    history.replaceState({ practiceStep: "category", practiceCategory: null, practiceExercise: null }, "");
+    function handlePopState(e: PopStateEvent) {
+      const s = e.state as { practiceStep?: string; practiceCategory?: string | null; practiceExercise?: string | null } | null;
+      setPracticeStep((s?.practiceStep as any) ?? "category");
+      setPracticeCategory(s?.practiceCategory ?? null);
+      setPracticeExercise(s?.practiceExercise ?? null);
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
   async function togglePin(itemEn: string) {
     if (!user) return;
     if (pinnedExercises.includes(itemEn)) {
@@ -889,6 +920,7 @@ export default function Home() {
   async function resetPractice() {
     if (logs[dateKey]) await deleteLogFor(dateKey);
     setMinutes("0");
+    setQuickAddMinutes("0");
     setSeconds("0");
     setSelected([]);
     setCustomItems([]);
@@ -899,8 +931,11 @@ export default function Home() {
   }
   async function save() {
     const isSplit = equipment === "both";
-    const ok = await saveLogFor(dateKey, Number(minutes) || 0, selected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, Number(seconds) || 0, customItems);
-    if (ok) { setSaved(true); setTimeout(() => setSaved(false), 2200); }
+    // Quick Practice always ADDS its entered amount onto whatever's already logged today
+    // (e.g. from Skill Trainer sessions) instead of overwriting the day's total outright.
+    const newTotal = (Number(minutes) || 0) + (Number(quickAddMinutes) || 0);
+    const ok = await saveLogFor(dateKey, newTotal, selected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, Number(seconds) || 0, customItems);
+    if (ok) { setMinutes(String(newTotal)); setQuickAddMinutes("0"); setSaved(true); setTimeout(() => setSaved(false), 2200); }
   }
   function toggle(item: string) { setSelected((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
   async function addMetronomePractice(addedSeconds: number, items: string[], addCustomItems: string[]) {
@@ -923,7 +958,7 @@ export default function Home() {
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className="shell">
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
@@ -1905,7 +1940,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, kidMode, minutes, setMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
+function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -2075,14 +2110,28 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   const RATING_LABEL: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const CATEGORY_LABEL: Record<string, string> = { rudiments: T.practiceMode.categoryRudiments, exercises: T.practiceMode.categoryExercises, rhythms: T.practiceMode.categoryRhythms };
-  function openCategory(cat: string) { setCategory(cat); setStep("list"); }
-  function openExercise(itemEn: string) { setJustPracticedLevel(null); setExercise(itemEn); setStep("detail"); }
-  function startSession(targetBpm: number) { setJustPracticedLevel(null); setBpm(targetBpm); setStep("session"); }
+  // Each forward step pushes a real browser history entry so a phone's swipe-back gesture (or
+  // the browser's own back button) has something to act on -- see the popstate listener in Home.
+  // "rate" replaces the "session" entry instead of pushing its own, since it's really a sub-state
+  // of the same session (swiping back from either should land on "detail", not on the just-ended
+  // session screen).
+  function openCategory(cat: string) {
+    setCategory(cat); setStep("list");
+    history.pushState({ practiceStep: "list", practiceCategory: cat, practiceExercise: null }, "");
+  }
+  function openExercise(itemEn: string) {
+    setJustPracticedLevel(null); setExercise(itemEn); setStep("detail");
+    history.pushState({ practiceStep: "detail", practiceCategory: category, practiceExercise: itemEn }, "");
+  }
+  function startSession(targetBpm: number) {
+    setJustPracticedLevel(null); setBpm(targetBpm); setStep("session");
+    history.pushState({ practiceStep: "session", practiceCategory: category, practiceExercise: exercise }, "");
+  }
   async function handleSessionEnd(sessionMinutes: number) {
     if (exercise && bestQualifyingRating(exercise, bpm) === "mastered") {
       await onLogSession(exercise, bpm, "mastered", sessionMinutes);
       setJustPracticedLevel(bpm);
-      setStep("detail");
+      history.back();
       return;
     }
     setPendingMinutes(sessionMinutes);
@@ -2090,12 +2139,13 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     setSessionIssues([]);
     setSessionNote("");
     setStep("rate");
+    history.replaceState({ practiceStep: "rate", practiceCategory: category, practiceExercise: exercise }, "");
   }
   async function submitRating(rating: string) {
     if (!exercise) return;
     await onLogSession(exercise, bpm, rating, pendingMinutes, sessionIssues, sessionNote.trim());
     setJustPracticedLevel(bpm);
-    setStep("detail");
+    history.back();
   }
   function handleRatingTap(r: string) {
     // Comfortable/mastered don't need an explanation, so they save immediately; the struggling
@@ -2105,7 +2155,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
   function skipRating() {
     setJustPracticedLevel(bpm);
-    setStep("detail");
+    history.back();
   }
   function ExerciseRow({ item }: { item: { en: string; es: string } }) {
     const stats = exerciseStats(item.en);
@@ -2154,19 +2204,20 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
           </div>
         ) : (
           <div className="minutes-island">
-            <button className="minutes-step" onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 5)))}>-5</button>
-            <button className="minutes-step" onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 1)))}>-1</button>
-            <div className="minutes-value"><input inputMode="numeric" size={3} value={minutes} onChange={(e: any) => setMinutes(e.target.value.replace(/\D/g, ""))}/><span>min</span></div>
-            <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1</button>
-            <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5</button>
+            <button className="minutes-step" onClick={() => setQuickAddMinutes(String(Math.max(0, (Number(quickAddMinutes) || 0) - 5)))}>-5</button>
+            <button className="minutes-step" onClick={() => setQuickAddMinutes(String(Math.max(0, (Number(quickAddMinutes) || 0) - 1)))}>-1</button>
+            <div className="minutes-value"><input inputMode="numeric" size={3} value={quickAddMinutes} onChange={(e: any) => setQuickAddMinutes(e.target.value.replace(/\D/g, ""))}/><span>min</span></div>
+            <button className="minutes-step" onClick={() => setQuickAddMinutes(String((Number(quickAddMinutes) || 0) + 1))}>+1</button>
+            <button className="minutes-step" onClick={() => setQuickAddMinutes(String((Number(quickAddMinutes) || 0) + 5))}>+5</button>
           </div>
         )}
         {Number(seconds) > 0 && <p className="seconds-note">+{seconds}s {T.today.secondsCarried}</p>}
+        {equipment !== "both" && Number(minutes) > 0 && <p className="quick-add-today-note">{T.today.todaySoFar(formatMinutes(Number(minutes)))}</p>}
         <div className="equipment-toggle">
           <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
           <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("pad")}>{T.today.pad}</button>
         </div>
-        <button className={saved ? "save saved" : "save"} onClick={handleSaveClick} disabled={(Number(minutes) || 0) <= 0}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
+        <button className={saved ? "save saved" : "save"} onClick={handleSaveClick} disabled={equipment === "both" ? (Number(drumsetMinutes) || 0) + (Number(padMinutes) || 0) <= 0 : (Number(quickAddMinutes) || 0) <= 0}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
         <button className="reset-practice" onClick={handleResetPractice}>{T.today.resetPractice}</button>
       </div>
 
@@ -2238,7 +2289,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
       </div>)}</>;
     }
     return <section className="page">
-      <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL[category]}</h2></div></div>
+      <div className="back-row"><button onClick={() => history.back()}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL[category]}</h2></div></div>
       <p className="category-list-intro">{LIST_INTRO[category]}</p>
       {listBody}
     </section>;
@@ -2249,7 +2300,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     const isPinned = pinnedExercises.includes(exercise);
     return <section className="page">
-      <div className="back-row"><button onClick={() => setStep("list")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2></div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
+      <div className="back-row"><button onClick={() => history.back()}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2></div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
       <div className="level-card">
         <div className="badge">{stats.bestRating ? RATING_ICON[stats.bestRating] : "🥁"}</div>
         <div>
@@ -2322,8 +2373,8 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   if (step === "session" && exercise) {
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     return <section className="page">
-      <div className="back-row"><button onClick={() => setStep("detail")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
-      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} exerciseEn={exercise} sessions={sessions} lockTempo language={language} T={T} />
+      <div className="back-row"><button onClick={() => history.back()}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
+      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => history.back()} tone={metronomeTone} exerciseLabel={label} exerciseEn={exercise} sessions={sessions} lockTempo language={language} T={T} />
     </section>;
   }
 
@@ -2741,6 +2792,14 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   // browser rather than in the database, so it doesn't need its own settings column.
   const [excludeSelf, setExcludeSelf] = useState(() => typeof window !== "undefined" && localStorage.getItem("admin_exclude_self") === "1");
   useEffect(() => { try { localStorage.setItem("admin_exclude_self", excludeSelf ? "1" : "0"); } catch {} }, [excludeSelf]);
+  const [statsRange, setStatsRange] = useState<"all" | "month" | "year">("all");
+  // Every user's raw daily logs, fetched once -- admin already has read access to everyone's
+  // practice_logs (see the existing admin RLS policy), so month/year totals are just a client-side
+  // sum over a date range instead of needing a second parameterized RPC.
+  const [allLogs, setAllLogs] = useState<{ user_id: string; practiced_on: string; minutes: number }[] | null>(null);
+  useEffect(() => {
+    supabase.from("practice_logs").select("user_id,practiced_on,minutes").then(({ data }) => setAllLogs(data ?? []));
+  }, []);
   const [selected, setSelected] = useState<{ id: string; name: string; email: string } | null>(null);
   const [logs, setLogs] = useState<any[] | null>(null);
   const [sessions, setSessions] = useState<any[] | null>(null);
@@ -2777,7 +2836,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       })));
     });
     supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,practice_exercises(name_en)").eq("user_id", u.id).order("practiced_on", { ascending: false }).then(({ data }) => {
-      setSessions((data ?? []).map((row: any) => ({ date: row.practiced_on, exercise: row.practice_exercises?.name_en ?? "—", bpm: row.bpm, minutes: row.duration_minutes ?? 0 })));
+      setSessions((data ?? []).map((row: any) => ({ date: row.practiced_on, practiced_on: row.practiced_on, exercise: row.practice_exercises?.name_en ?? "—", item_en: row.practice_exercises?.name_en ?? "", bpm: row.bpm, rating: row.rating, minutes: row.duration_minutes ?? 0, duration_minutes: row.duration_minutes ?? 0 })));
     });
     supabase.from("pinned_exercises").select("exercise_en").eq("user_id", u.id).order("sort_order").then(({ data }) => {
       setPinned((data ?? []).map((row: any) => row.exercise_en));
@@ -2813,14 +2872,37 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     const selectedUserRow = users?.find((u) => u.id === selected.id);
     const logsByDate: Record<string, Log> = Object.fromEntries((logs ?? []).map((l) => [l.date, { minutes: l.minutes } as Log]));
     const { current: userStreak, longest: userLongestStreak } = calculateStreaks(logsByDate, dateKey);
-    // "Most practiced" is by how many distinct days each exercise/element shows up, combining
-    // Skill Trainer sessions and Quick Practice's flat item tags -- a simple, honest frequency
-    // count rather than mixing incompatible minute totals across two very different data shapes.
-    const practiceFrequency: Record<string, number> = {};
-    (sessions ?? []).forEach((s) => { practiceFrequency[s.exercise] = (practiceFrequency[s.exercise] ?? 0) + 1; });
-    (logs ?? []).forEach((l) => { l.items.forEach((item: string) => { practiceFrequency[item] = (practiceFrequency[item] ?? 0) + 1; }); });
-    const mostPracticed = Object.entries(practiceFrequency).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    // "Most practiced" is by actual minutes, same approach as the student's own Progress page:
+    // Skill Trainer sessions carry exact per-exercise minutes; a Quick Practice day's total (minus
+    // whatever that day's Skill Trainer sessions already account for) is split evenly across
+    // whichever items were tagged that day. Untagged leftover minutes are skipped rather than
+    // bucketed into a generic entry, so the ranking stays focused on named things they practiced.
+    const practiceMinutes: Record<string, number> = {};
+    const structuredMinutesByDay: Record<string, number> = {};
+    (sessions ?? []).forEach((s) => {
+      practiceMinutes[s.exercise] = (practiceMinutes[s.exercise] ?? 0) + s.minutes;
+      structuredMinutesByDay[s.date] = (structuredMinutesByDay[s.date] ?? 0) + s.minutes;
+    });
+    (logs ?? []).forEach((l) => {
+      const leftover = Math.max(0, l.minutes - (structuredMinutesByDay[l.date] ?? 0));
+      if (leftover <= 0 || l.items.length === 0) return;
+      const share = leftover / l.items.length;
+      l.items.forEach((item: string) => { practiceMinutes[item] = (practiceMinutes[item] ?? 0) + share; });
+    });
+    const mostPracticed = Object.entries(practiceMinutes)
+      .map(([name, minutes]) => [name, Math.round(minutes)] as [string, number])
+      .filter(([, minutes]) => minutes > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
     const maxPracticeCount = Math.max(1, ...mostPracticed.map(([, count]) => count));
+    // Same tempo-ladder progress already shown to the student on their own Progress page --
+    // reused here instead of a new chart, so a teacher sees exactly what the student sees.
+    const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
+    const practicedEnSet = new Set((sessions ?? []).map((s) => s.item_en).filter(Boolean));
+    const skillExercises = PRACTICE_EXERCISES
+      .filter((e) => practicedEnSet.has(e.en))
+      .map((e) => ({ en: e.en, label: e[language as Lang], unlockedCount: BPM_LEVELS.filter((level) => qualifyingMinutesFor(sessions ?? [], e.en, level) >= UNLOCK_MINUTES).length }))
+      .sort((a, b) => b.unlockedCount - a.unlockedCount || a.label.localeCompare(b.label));
     return <section className="page">
       <button className="page-back" onClick={() => setSelected(null)}>‹ {T.admin.title}</button>
       <header className="simple-head"><h1>{selected.name || selected.email}</h1><p className="hint">{selected.email}</p></header>
@@ -2841,11 +2923,25 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
               <span className="admin-rank-num">{i + 1}</span>
               <span className="admin-rank-name">{practiceItemLabel(name, language)}</span>
               <div className="admin-rank-bar-track"><div className="admin-rank-bar" style={{ width: `${Math.max(8, (count / maxPracticeCount) * 100)}%` }} /></div>
-              <span className="admin-rank-count">{count}</span>
+              <span className="admin-rank-count">{formatMinutes(count)}</span>
             </div>)}
           </div>
         </div>}
       </div>
+      {skillExercises.length > 0 && <div className="admin-summary-card">
+        <span className="admin-summary-label">{T.admin.skillProgressLabel}</span>
+        <div className="tier-strip tier-strip-header admin-skill-header">
+          {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
+        </div>
+        <div className="pinned-list admin-skill-list">
+          {skillExercises.map((ex) => <div key={ex.en} className="pinned-card admin-skill-row">
+            <div className="pinned-head"><span className="pinned-name">{ex.label}</span></div>
+            <div className="tier-strip">
+              {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg">{renderTierSegBar(tierProgressFor(sessions ?? [], ex.en, tier), tierIsSkipped(sessions ?? [], ex.en, tier))}</div>)}
+            </div>
+          </div>)}
+        </div>
+      </div>}
       <div className="admin-controls-card">
         <span className="admin-summary-label">{T.admin.pointsLabel}</span>
         <p className="admin-points-total">{points ? points.reduce((sum, p) => sum + p.amount, 0) : 0}</p>
@@ -2914,7 +3010,16 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     </section>;
   }
 
-  const statsUsers = excludeSelf && user ? (users ?? []).filter((u) => u.id !== user.id) : (users ?? []);
+  // "All time" totals come straight from admin_list_users(); month/year totals are recomputed
+  // from the raw logs instead, since the RPC only ever returns lifetime figures.
+  const rangeStartKey = statsRange === "month" ? monthStartKey : statsRange === "year" ? yearStartKey : null;
+  const rangedUsers = rangeStartKey && allLogs
+    ? (users ?? []).map((u) => {
+        const inRange = allLogs.filter((l) => l.user_id === u.id && l.practiced_on >= rangeStartKey);
+        return { ...u, total_minutes: inRange.reduce((sum, l) => sum + l.minutes, 0), total_logs: inRange.length };
+      })
+    : (users ?? []);
+  const statsUsers = excludeSelf && user ? rangedUsers.filter((u) => u.id !== user.id) : rangedUsers;
   const totalUsers = statsUsers.length;
   const totalMinutes = statsUsers.reduce((sum, u) => sum + u.total_minutes, 0);
   const mostByMinutes = statsUsers.filter((u) => u.total_minutes > 0).slice().sort((a, b) => b.total_minutes - a.total_minutes).slice(0, 5);
@@ -2941,6 +3046,14 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   return <section className="page">
     <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
     {users === null ? <p className="hint">…</p> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : <>
+      <div className="admin-settings-row admin-exclude-row">
+        <span>{T.admin.statsRangeLabel}</span>
+        <div className="admin-mini-toggle">
+          <button type="button" className={statsRange === "all" ? "selected" : ""} onClick={() => setStatsRange("all")}>{T.admin.statsRangeAll}</button>
+          <button type="button" className={statsRange === "month" ? "selected" : ""} onClick={() => setStatsRange("month")}>{T.admin.statsRangeMonth}</button>
+          <button type="button" className={statsRange === "year" ? "selected" : ""} onClick={() => setStatsRange("year")}>{T.admin.statsRangeYear}</button>
+        </div>
+      </div>
       {user && <div className="admin-settings-row admin-exclude-row">
         <span>{T.admin.excludeSelfLabel}</span>
         <div className="admin-mini-toggle">
