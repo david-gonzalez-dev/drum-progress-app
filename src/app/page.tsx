@@ -1393,10 +1393,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [groups, setGroups] = useState<any[]>([]); const [activeGroupId, setActiveGroupId] = useState<string | null>(null); const [addingGroup, setAddingGroup] = useState(false); const [busy, setBusy] = useState(false);
   const group = useMemo(() => groups.find((g) => g.id === activeGroupId) ?? null, [groups, activeGroupId]);
   const [groupLoading, setGroupLoading] = useState(true);
-  // groupLoading only covers "which group is active" -- members/totals/daysTotals fetch
-  // separately once a group is known, and all start out as empty arrays, so without this the
-  // leaderboard/time-card briefly render with nothing in them before the real data arrives.
-  const [groupDetailLoading, setGroupDetailLoading] = useState(true);
   const [members, setMembers] = useState<{ id: string; name: string; color: string }[]>([]);
   const [totals, setTotals] = useState<{ id: string; name: string; total: number }[]>([]);
   const [daysTotals, setDaysTotals] = useState<{ id: string; name: string; days: number; totalDays: number }[]>([]);
@@ -1426,46 +1422,62 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     { ...CHALLENGE_PRESETS[2], label: T.group.presetSessions3weekly },
     { ...CHALLENGE_PRESETS[3], label: T.group.presetDaily5x20 },
   ];
-  useEffect(() => {
-    supabase.from("group_members").select("groups(id,name,invite_code,created_at,created_by)").eq("user_id", user.id).order("joined_at", { ascending: true }).then(({ data }) => {
-      const list = (data ?? []).map((row: any) => row.groups).filter(Boolean);
-      setGroups(list);
-      setActiveGroupId((current) => (current && list.some((g: any) => g.id === current)) ? current : (list[0]?.id ?? null));
-      setGroupLoading(false);
-    });
-  }, [user]);
-  useEffect(() => {
-    if (!group) { setMembers([]); setTotals([]); setDaysTotals([]); setChallenges([]); setGroupDetailLoading(false); return; }
-    setGroupDetailLoading(true);
-    supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", group.id).order("user_id").then(async ({ data }) => {
-      const memberList = (data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) }));
-      setMembers(memberList);
-      const memberIds = memberList.map((m) => m.id);
-      if (!memberIds.length) { setGroupDetailLoading(false); return; }
-      const since = String(group.created_at).slice(0, 10);
+  // Fetches one group's members/leaderboard/days-practiced data, WITHOUT clearing the previous
+  // group's data first -- callers only swap the state once the new data has actually arrived, so
+  // switching groups (or the very first load) never shows an in-between empty state.
+  async function loadGroupDetail(targetGroup: any) {
+    if (!targetGroup) { setMembers([]); setTotals([]); setDaysTotals([]); return; }
+    const { data } = await supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", targetGroup.id).order("user_id");
+    const memberList = (data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) }));
+    const memberIds = memberList.map((m: any) => m.id);
+    let totalsResult: any[] = [];
+    let daysTotalsResult: any[] = [];
+    if (memberIds.length) {
+      const since = String(targetGroup.created_at).slice(0, 10);
       const yearStart = `${dateKey.slice(0, 4)}-01-01`;
       const yearEnd = `${dateKey.slice(0, 4)}-12-31`;
-      // Both queries run in parallel (as before) -- Promise.all just gives a single, reliable
-      // "both are done" signal to clear the loading state on, instead of racing two independent
-      // .then() callbacks that could otherwise clear it before the slower one finishes.
-      await Promise.all([
-        supabase.from("practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since).then(({ data: logRows }) => {
-          const sums: Record<string, number> = {};
-          (logRows ?? []).forEach((row: any) => { sums[row.user_id] = (sums[row.user_id] ?? 0) + row.minutes; });
-          setTotals(memberList.map((m) => ({ ...m, total: sums[m.id] ?? 0 })).sort((a, b) => b.total - a.total));
-        }),
-        supabase.from("practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd).then(({ data: yearRows }) => {
-          const daySets: Record<string, Set<string>> = {};
-          (yearRows ?? []).forEach((row: any) => {
-            if (row.minutes <= 0) return;
-            if (!daySets[row.user_id]) daySets[row.user_id] = new Set();
-            daySets[row.user_id].add(row.practiced_on);
-          });
-          setDaysTotals(memberList.map((m) => ({ ...m, days: daySets[m.id]?.size ?? 0, totalDays: 365 })).sort((a, b) => b.days - a.days));
-        }),
+      const [logsRes, yearRes] = await Promise.all([
+        supabase.from("practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since),
+        supabase.from("practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd),
       ]);
-      setGroupDetailLoading(false);
-    });
+      const sums: Record<string, number> = {};
+      (logsRes.data ?? []).forEach((row: any) => { sums[row.user_id] = (sums[row.user_id] ?? 0) + row.minutes; });
+      totalsResult = memberList.map((m: any) => ({ ...m, total: sums[m.id] ?? 0 })).sort((a: any, b: any) => b.total - a.total);
+      const daySets: Record<string, Set<string>> = {};
+      (yearRes.data ?? []).forEach((row: any) => {
+        if (row.minutes <= 0) return;
+        if (!daySets[row.user_id]) daySets[row.user_id] = new Set();
+        daySets[row.user_id].add(row.practiced_on);
+      });
+      daysTotalsResult = memberList.map((m: any) => ({ ...m, days: daySets[m.id]?.size ?? 0, totalDays: 365 })).sort((a: any, b: any) => b.days - a.days);
+    }
+    setMembers(memberList);
+    setTotals(totalsResult);
+    setDaysTotals(daysTotalsResult);
+  }
+  useEffect(() => {
+    // Combines the groups list and the active group's detail into one continuous fetch chain
+    // (rather than two separate effects/round trips) and only reveals the screen once both are
+    // done, instead of showing the groups list first and then the leaderboard popping in after.
+    (async () => {
+      const { data } = await supabase.from("group_members").select("groups(id,name,invite_code,created_at,created_by)").eq("user_id", user.id).order("joined_at", { ascending: true });
+      const list = (data ?? []).map((row: any) => row.groups).filter(Boolean);
+      const nextId = (activeGroupId && list.some((g: any) => g.id === activeGroupId)) ? activeGroupId : (list[0]?.id ?? null);
+      await loadGroupDetail(list.find((g: any) => g.id === nextId) ?? null);
+      setGroups(list);
+      setActiveGroupId(nextId);
+      setGroupLoading(false);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    })();
+  }, [user]);
+  // Runs on every later group SWITCH (the mount guard skips the initial run, already handled
+  // above). loadGroupDetail doesn't clear the old group's data until the new data is ready, so
+  // switching groups swaps directly to the new leaderboard instead of flashing empty in between.
+  const didMountGroupSwitch = useRef(false);
+  useEffect(() => {
+    if (!didMountGroupSwitch.current) { didMountGroupSwitch.current = true; return; }
+    if (!group) { setMembers([]); setTotals([]); setDaysTotals([]); setChallenges([]); return; }
+    loadGroupDetail(group);
   }, [group]);
   useEffect(() => { loadChallenges(); }, [group, members]);
   async function loadMessages() {
@@ -1635,10 +1647,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   }
   if (groupLoading) return <section className="page"><p className="hint">…</p></section>;
   if (!addingGroup && group) {
-    if (groupDetailLoading) return <section className="page">
-      <header className="simple-head group-head"><div><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></div></header>
-      <p className="hint">…</p>
-    </section>;
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
@@ -2803,31 +2811,27 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     });
   }
 
-  function openUser(u: { id: string; name: string; email: string }) {
+  async function openUser(u: { id: string; name: string; email: string }) {
+    // Fetch everything first and only switch the screen once it's all here, instead of
+    // switching immediately and filling in data as each request lands -- the in-between state
+    // (a page with nothing on it yet) is exactly the flash this was designed to avoid.
+    const [logsRes, sessionsRes, pinnedRes, settingsRes, pointsRes] = await Promise.all([
+      supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,used_metronome,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }),
+      supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,practice_exercises(name_en)").eq("user_id", u.id).order("practiced_on", { ascending: false }),
+      supabase.from("pinned_exercises").select("exercise_en").eq("user_id", u.id).order("sort_order"),
+      supabase.from("settings").select("kid_mode, points_enabled").eq("user_id", u.id).maybeSingle(),
+      supabase.from("point_awards").select("id,amount,reason,created_at").eq("user_id", u.id).order("created_at", { ascending: false }),
+    ]);
+    setLogs((logsRes.data ?? []).map((row: any) => ({
+      date: row.practiced_on, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes, usedMetronome: !!row.used_metronome,
+      items: Array.from(new Set([...(row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean), ...(row.custom_items ?? [])])),
+    })));
+    setSessions((sessionsRes.data ?? []).map((row: any) => ({ date: row.practiced_on, practiced_on: row.practiced_on, exercise: row.practice_exercises?.name_en ?? "—", item_en: row.practice_exercises?.name_en ?? "", bpm: row.bpm, rating: row.rating, minutes: row.duration_minutes ?? 0, duration_minutes: row.duration_minutes ?? 0 })));
+    setPinned((pinnedRes.data ?? []).map((row: any) => row.exercise_en));
+    setKidMode(!!settingsRes.data?.kid_mode);
+    setPointsEnabled(!!settingsRes.data?.points_enabled);
+    setPoints(pointsRes.data ?? []);
     setSelected(u);
-    setLogs(null);
-    setSessions(null);
-    setPinned(null);
-    setPoints(null);
-    setKidMode(false);
-    setPointsEnabled(false);
-    supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,used_metronome,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }).then(({ data }) => {
-      setLogs((data ?? []).map((row: any) => ({
-        date: row.practiced_on, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes, usedMetronome: !!row.used_metronome,
-        items: Array.from(new Set([...(row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean), ...(row.custom_items ?? [])])),
-      })));
-    });
-    supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,practice_exercises(name_en)").eq("user_id", u.id).order("practiced_on", { ascending: false }).then(({ data }) => {
-      setSessions((data ?? []).map((row: any) => ({ date: row.practiced_on, practiced_on: row.practiced_on, exercise: row.practice_exercises?.name_en ?? "—", item_en: row.practice_exercises?.name_en ?? "", bpm: row.bpm, rating: row.rating, minutes: row.duration_minutes ?? 0, duration_minutes: row.duration_minutes ?? 0 })));
-    });
-    supabase.from("pinned_exercises").select("exercise_en").eq("user_id", u.id).order("sort_order").then(({ data }) => {
-      setPinned((data ?? []).map((row: any) => row.exercise_en));
-    });
-    supabase.from("settings").select("kid_mode, points_enabled").eq("user_id", u.id).maybeSingle().then(({ data }) => {
-      setKidMode(!!data?.kid_mode);
-      setPointsEnabled(!!data?.points_enabled);
-    });
-    fetchPoints(u.id);
   }
   async function awardPoints(amount: number, reason: string | null) {
     if (!selected || !amount) return;
