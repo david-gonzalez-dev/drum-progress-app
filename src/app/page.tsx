@@ -298,7 +298,7 @@ const translations = {
       goalMet: "🎯 Daily goal reached", goalMissed: (done: string, total: string) => `${done} / ${total} toward your goal`,
       onEquipment: (label: string) => `On ${label}`,
       streakOnDay: (n: number) => `🔥 ${n}-day streak`, noPracticeShort: "No practice logged for this day.",
-      editDay: "Edit this day", nothingToEdit: "+ Log practice for this day",
+      editDay: "Edit this day", nothingToEdit: "+ Log practice for this day", todayBtn: "Today",
     },
     group: {
       yourCrew: "YOUR CREW", youreIn: "You're in.", inviteMsg: "Invite drummers with this code:", copyInvite: "Copy invite code",
@@ -391,6 +391,13 @@ const translations = {
       mostMinutesTitle: "MOST PRACTICE TIME", allUsersTitle: "ALL USERS", excludeSelfLabel: "Exclude my account from stats",
       statsRangeLabel: "Time range", statsRangeAll: "All", statsRangeMonth: "Month", statsRangeYear: "Year",
       skillProgressLabel: "SKILL PROGRESS",
+      monthlyPracticeLabel: "MONTHLY PRACTICE", achievementsLabel: "ACHIEVEMENTS", noAchievements: "No achievements yet.",
+      historyBtn: "History", hideHistoryBtn: "Hide history",
+      speedLabel: "SPEED BY EXERCISE", speedHint: "Highest BPM each student has played comfortably, over time.",
+      speedNoData: "No sessions logged for this exercise yet.", speedNotQualified: "Practising, not yet at a steady speed:",
+      speedBpmSuffix: "BPM",
+      improvementsLabel: "RECENT IMPROVEMENTS", improvementsEmpty: "No tempo improvements yet.",
+      improvedMsg: (name: string, exercise: string, bpm: number) => `${name} improved ${exercise} to ${bpm} BPM`,
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
@@ -424,7 +431,7 @@ const translations = {
       goalMet: "🎯 Meta diaria alcanzada", goalMissed: (done: string, total: string) => `${done} / ${total} hacia tu meta`,
       onEquipment: (label: string) => `Con ${label}`,
       streakOnDay: (n: number) => `🔥 Racha de ${n} días`, noPracticeShort: "No hay práctica registrada para este día.",
-      editDay: "Editar este día", nothingToEdit: "+ Registrar práctica de este día",
+      editDay: "Editar este día", nothingToEdit: "+ Registrar práctica de este día", todayBtn: "Hoy",
     },
     group: {
       yourCrew: "TU GRUPO", youreIn: "Ya estás dentro.", inviteMsg: "Invita a otros bateristas con este código:", copyInvite: "Copiar código de invitación",
@@ -517,6 +524,13 @@ const translations = {
       mostMinutesTitle: "MÁS TIEMPO DE PRÁCTICA", allUsersTitle: "TODOS LOS USUARIOS", excludeSelfLabel: "Excluir mi cuenta de las estadísticas",
       statsRangeLabel: "Rango de tiempo", statsRangeAll: "Todo", statsRangeMonth: "Mes", statsRangeYear: "Año",
       skillProgressLabel: "PROGRESO DE HABILIDADES",
+      monthlyPracticeLabel: "PRÁCTICA MENSUAL", achievementsLabel: "LOGROS", noAchievements: "Aún no hay logros.",
+      historyBtn: "Historial", hideHistoryBtn: "Ocultar historial",
+      speedLabel: "VELOCIDAD POR EJERCICIO", speedHint: "El BPM más alto que cada estudiante ha tocado con soltura, a lo largo del tiempo.",
+      speedNoData: "Aún no hay sesiones registradas para este ejercicio.", speedNotQualified: "Practicando, aún sin una velocidad estable:",
+      speedBpmSuffix: "BPM",
+      improvementsLabel: "MEJORAS RECIENTES", improvementsEmpty: "Aún no hay mejoras de tempo.",
+      improvedMsg: (name: string, exercise: string, bpm: number) => `${name} mejoró ${exercise} a ${bpm} BPM`,
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
@@ -1227,15 +1241,21 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language
     setSelectedDate(key);
     if (key < dateKey) setSummaryDate(key);
   }
+  function goToToday() {
+    setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelectedDate(dateKey);
+  }
   const isFuture = selectedDate > dateKey;
+  const isTodayView = month === today.getMonth() && year === today.getFullYear() && selectedDate === dateKey;
   return <>
-    <div className="calendar-card"><div className="cal-head"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=(logs[key]?.minutes ?? 0) > 0; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
+    <div className="calendar-card"><div className="cal-head"><div className="cal-nav"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div>{!isTodayView && <button type="button" className="cal-today-btn" onClick={goToToday}>{T.calendar.todayBtn}</button>}</div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=(logs[key]?.minutes ?? 0) > 0; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
     {selectedDate !== dateKey && <div className="day-detail"><span>{new Date(selectedDate + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
       {isFuture && <p>{T.calendar.futureDay}</p>}
       {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{formatMinutes(selectedLog.minutes)} {T.calendar.minPractised}</strong><div className="detail-chips">{Array.from(new Set([...selectedLog.items, ...selectedLog.customItems])).map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
     </div>}
     {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
-      onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} />}
+      onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm}
+      onNavigateDay={(delta) => setSummaryDate((current) => current ? shiftDateKey(current, delta) : current)} />}
   </>;
 }
 function ConfirmModal({ message, onConfirm, onCancel, T }: { message: string; onConfirm: () => void; onCancel: () => void; T: any }) {
@@ -1293,21 +1313,25 @@ function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, se
     </div>}
   </>;
 }
-function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, confirm, roster }: {
+function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, confirm, roster, onNavigateDay }: {
   date: string; log?: Log; dailyGoal: number | null; logs: Record<string, Log>; locale: string; language: Lang; T: any;
   onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>;
   roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }>; currentUserId: string };
+  onNavigateDay?: (delta: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const streakHere = calculateStreaks(logs, date).current;
   const hasPractice = !!log && log.minutes > 0;
   const rosterRows = roster ? roster.members.filter((m) => (roster.dayLogs[m.id]?.minutes ?? 0) > 0).map((m) => ({ ...m, ...roster.dayLogs[m.id] })).sort((a, b) => b.minutes - a.minutes) : null;
-  return <div className="modal modal-center" onClick={onClose}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
-    <button className="close" onClick={onClose}>×</button>
+  return <div className="modal modal-center" onClick={onClose}><div className="day-summary day-editor-modal" onClick={(e) => e.stopPropagation()}>
     <div className="ds-head">
       {editing && <button className="ds-back" onClick={() => setEditing(false)}>‹</button>}
+      {!editing && onNavigateDay && <button type="button" className="ds-day-nav" onClick={() => onNavigateDay(-1)}>‹</button>}
       <span className="eyebrow">{new Date(date + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
+      {!editing && onNavigateDay && <button type="button" className="ds-day-nav" onClick={() => onNavigateDay(1)} disabled={date >= dateKey}>›</button>}
+      <button className="close" onClick={onClose}>×</button>
     </div>
+    <div className="day-summary-body">
     {editing ? <DayEditor key={date} date={date} log={log} onSave={onSave} onDelete={onDelete} confirm={confirm} language={language} T={T} /> : <>
       {roster ? (
         rosterRows && rosterRows.length ? <div className="challenge-ranking">{rosterRows.map((m) => <div key={m.id} className="roster-detail-row">
@@ -1330,6 +1354,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
       )}
       <button className="secondary" onClick={() => setEditing(true)}>{hasPractice ? T.calendar.editDay : T.calendar.nothingToEdit}</button>
     </>}
+    </div>
   </div></div>;
 }
 
@@ -1342,6 +1367,9 @@ function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date
   const [padMinutes, setPadMinutes] = useState(log?.padMinutes != null ? String(log.padMinutes) : "");
   const [notesOpen, setNotesOpen] = useState(false);
   const showNotes = notesOpen || !!notes;
+  // Collapsed by default so the popup fits on screen -- open automatically if this entry
+  // already has items picked, so editing an existing day doesn't hide its own selections.
+  const [itemsOpen, setItemsOpen] = useState((log?.items ?? []).length > 0);
   const [hasEntry, setHasEntry] = useState(!!log);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -1391,7 +1419,7 @@ function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date
         </div>
       </div>
     ) : (
-      <div className="minutes-island">
+      <div className="minutes-island compact">
         <button className="minutes-step" onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 5)))}>-5</button>
         <button className="minutes-step" onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 1)))}>-1</button>
         <div className="minutes-value"><input inputMode="numeric" size={3} value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} /><span>min</span></div>
@@ -1401,8 +1429,11 @@ function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date
     )}
     </div>
     <div className="form-card">
-    <label className="input-label checklist-label">{T.today.whatPractised}</label>
-    <div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language]}</button>)}</div>
+    <button type="button" className="collapsible-header" onClick={() => setItemsOpen(!itemsOpen)}>
+      <span className="input-label checklist-label">{T.today.whatPractised}{selected.length > 0 ? ` (${selected.length})` : ""}</span>
+      <span className={itemsOpen ? "collapse-chevron open" : "collapse-chevron"}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7.5l5 5 5-5" /></svg></span>
+    </button>
+    {itemsOpen && <div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language]}</button>)}</div>}
     <label className="input-label equipment-label">{T.today.equipment}</label>
     <div className="equipment-toggle">
       <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
@@ -1717,7 +1748,8 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       </div></div>
       {summaryDayKey && <DaySummaryModal date={summaryDayKey} log={logs[summaryDayKey]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
         onClose={() => setSummaryDayKey(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm}
-        roster={{ members, dayLogs: dayDetailLogs, currentUserId: user.id }} />}
+        roster={{ members, dayLogs: dayDetailLogs, currentUserId: user.id }}
+        onNavigateDay={(delta) => setSummaryDayKey((current) => current ? shiftDateKey(current, delta) : current)} />}
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span><button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button></div>
         {showNewChallenge && <div className="challenge-form">
@@ -2843,8 +2875,74 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   // sum over a date range instead of needing a second parameterized RPC.
   const [allLogs, setAllLogs] = useState<{ user_id: string; practiced_on: string; minutes: number }[] | null>(null);
   useEffect(() => {
-    supabase.from("practice_logs").select("user_id,practiced_on,minutes").then(({ data }) => setAllLogs(data ?? []));
+    // Supabase caps a single request at 1000 rows -- across every user's logs combined, that
+    // cap can be hit well before any one user's full history is covered, which silently
+    // truncated Month/Year totals for whichever users' rows fell past row 1000 (their "All"
+    // total, computed server-side by admin_list_users(), stayed correct while Month/Year,
+    // computed client-side from this truncated list, came out wrong). Page through in batches
+    // of 1000 until a batch comes back short, so the full table is always loaded.
+    async function loadAllLogs() {
+      const PAGE_SIZE = 1000;
+      let all: { user_id: string; practiced_on: string; minutes: number }[] = [];
+      let from = 0;
+      while (true) {
+        const { data } = await supabase.from("practice_logs").select("user_id,practiced_on,minutes").range(from, from + PAGE_SIZE - 1);
+        all = all.concat(data ?? []);
+        if (!data || data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      setAllLogs(all);
+    }
+    loadAllLogs();
   }, []);
+  // Cross-student speed comparison: which exercise's Skill Trainer sessions to chart, and the
+  // raw sessions (every student) for that one exercise -- re-fetched only when the exercise
+  // picker changes, so switching exercises doesn't require reloading everything.
+  const [speedExercise, setSpeedExercise] = useState<string>(PRACTICE_EXERCISES[0].en);
+  const [speedSessions, setSpeedSessions] = useState<{ user_id: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSpeedSessions() {
+      setSpeedSessions(null);
+      const { data: exerciseRow } = await supabase.from("practice_exercises").select("id").eq("name_en", speedExercise).maybeSingle();
+      if (!exerciseRow) { if (!cancelled) setSpeedSessions([]); return; }
+      const PAGE_SIZE = 1000;
+      let all: { user_id: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[] = [];
+      let from = 0;
+      while (true) {
+        const { data } = await supabase.from("practice_sessions").select("user_id,bpm,rating,duration_minutes,practiced_on").eq("practice_exercise_id", exerciseRow.id).order("practiced_on").range(from, from + PAGE_SIZE - 1);
+        all = all.concat(data ?? []);
+        if (!data || data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      if (!cancelled) setSpeedSessions(all);
+    }
+    loadSpeedSessions();
+    return () => { cancelled = true; };
+  }, [speedExercise]);
+  // "Recent improvements" board: every student's tempo-unlock history across every exercise,
+  // fetched once (not per-exercise like the speed chart above) so the board can show the most
+  // recent unlock regardless of which exercise it happened on.
+  const [allExerciseNames, setAllExerciseNames] = useState<Record<string, string> | null>(null);
+  const [allSpeedSessions, setAllSpeedSessions] = useState<{ user_id: string; practice_exercise_id: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[] | null>(null);
+  useEffect(() => {
+    async function loadAll() {
+      const { data: exerciseRows } = await supabase.from("practice_exercises").select("id,name_en");
+      setAllExerciseNames(Object.fromEntries((exerciseRows ?? []).map((r: any) => [r.id, r.name_en])));
+      const PAGE_SIZE = 1000;
+      let all: { user_id: string; practice_exercise_id: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[] = [];
+      let from = 0;
+      while (true) {
+        const { data } = await supabase.from("practice_sessions").select("user_id,practice_exercise_id,bpm,rating,duration_minutes,practiced_on").order("practiced_on").range(from, from + PAGE_SIZE - 1);
+        all = all.concat(data ?? []);
+        if (!data || data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      setAllSpeedSessions(all);
+    }
+    loadAll();
+  }, []);
+  const [showAllImprovements, setShowAllImprovements] = useState(false);
   const [selected, setSelected] = useState<{ id: string; name: string; email: string } | null>(null);
   const [logs, setLogs] = useState<any[] | null>(null);
   const [sessions, setSessions] = useState<any[] | null>(null);
@@ -2858,6 +2956,8 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [showAllSessions, setShowAllSessions] = useState(false);
   const [showAllPoints, setShowAllPoints] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [wonChallenges, setWonChallenges] = useState<any[]>([]);
   const [awardAmount, setAwardAmount] = useState("1");
   const [awardReason, setAwardReason] = useState("");
   const [awarding, setAwarding] = useState(false);
@@ -2876,12 +2976,13 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     // Fetch everything first and only switch the screen once it's all here, instead of
     // switching immediately and filling in data as each request lands -- the in-between state
     // (a page with nothing on it yet) is exactly the flash this was designed to avoid.
-    const [logsRes, sessionsRes, pinnedRes, settingsRes, pointsRes] = await Promise.all([
+    const [logsRes, sessionsRes, pinnedRes, settingsRes, pointsRes, challengesRes] = await Promise.all([
       supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,used_metronome,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }),
-      supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,practice_exercises(name_en)").eq("user_id", u.id).order("practiced_on", { ascending: false }),
+      supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,created_at,practice_exercises(name_en)").eq("user_id", u.id).order("practiced_on", { ascending: false }),
       supabase.from("pinned_exercises").select("exercise_en").eq("user_id", u.id).order("sort_order"),
       supabase.from("settings").select("kid_mode, points_enabled").eq("user_id", u.id).maybeSingle(),
       supabase.from("point_awards").select("id,amount,reason,created_at").eq("user_id", u.id).order("created_at", { ascending: false }),
+      supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date").eq("user_id", u.id),
     ]);
     setLogs((logsRes.data ?? []).map((row: any) => ({
       date: row.practiced_on, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes, usedMetronome: !!row.used_metronome,
@@ -2892,9 +2993,19 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     setKidMode(!!settingsRes.data?.kid_mode);
     setPointsEnabled(!!settingsRes.data?.points_enabled);
     setPoints(pointsRes.data ?? []);
+    const challengesList = challengesRes.data ?? [];
+    if (challengesList.length) {
+      const earliestStart = challengesList.reduce((min: string, c: any) => (c.start_date < min ? c.start_date : min), challengesList[0].start_date);
+      const sessionsForEval = (sessionsRes.data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en ?? "", bpm: row.bpm, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on, created_at: row.created_at }));
+      const logsCache = await fetchChallengeLogsCache(u.id, earliestStart);
+      setWonChallenges(challengesList.filter((c: any) => evaluateChallenge(c, sessionsForEval, logsCache).status === "completed"));
+    } else {
+      setWonChallenges([]);
+    }
     setShowAllLogs(false);
     setShowAllSessions(false);
     setShowAllPoints(false);
+    setShowHistory(false);
     setSelected(u);
   }
   async function awardPoints(amount: number, reason: string | null) {
@@ -2964,31 +3075,77 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       .filter((e) => practicedEnSet.has(e.en))
       .map((e) => ({ en: e.en, label: e[language as Lang], unlockedCount: bpmLevelsFor(e.en).filter((level) => qualifyingMinutesFor(sessions ?? [], e.en, level) >= UNLOCK_MINUTES).length }))
       .sort((a, b) => b.unlockedCount - a.unlockedCount || a.label.localeCompare(b.label));
+    // Monthly practice graph: trailing 6 calendar months (zero-filled), summed straight from
+    // the already-fetched daily logs -- no extra query needed.
+    const monthlyData: { key: string; label: string; minutes: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthlyData.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString(language === "es" ? "es" : "en", { month: "short" }), minutes: 0 });
+    }
+    const monthlyByKey: Record<string, { key: string; label: string; minutes: number }> = Object.fromEntries(monthlyData.map((m) => [m.key, m]));
+    (logs ?? []).forEach((l) => { const bucket = monthlyByKey[l.date.slice(0, 7)]; if (bucket) bucket.minutes += l.minutes; });
+    const maxMonthly = Math.max(1, ...monthlyData.map((m) => m.minutes));
     return <section className="page">
       <button className="page-back" onClick={() => setSelected(null)}>‹ {T.admin.title}</button>
       <header className="simple-head"><h1>{selected.name || selected.email}</h1><p className="hint">{selected.email}</p></header>
+
       <div className="admin-summary-card">
         <div className="admin-stats-row">
           <div className="admin-stat"><span>{T.today.currentStreak}</span><strong>{userStreak} {T.today.days}</strong></div>
           <div className="admin-stat"><span>{T.calendar.longestStreak}</span><strong>{userLongestStreak} {T.today.days}</strong></div>
           {selectedUserRow && <div className="admin-stat"><span>{T.admin.totalPracticeLabel}</span><strong>{formatMinutes(selectedUserRow.total_minutes)}</strong><em>{selectedUserRow.total_logs} {T.admin.totalLogsLabel}</em></div>}
         </div>
-        {pinned && pinned.length > 0 && <div className="admin-profile-section">
-          <span className="admin-summary-label admin-focus-label"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.admin.focusLabel}</span>
-          <div className="chips admin-focus-chips">{pinned.map((en) => <span key={en} className="chip">{PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en}</span>)}</div>
-        </div>}
-        {mostPracticed.length > 0 && <div className="admin-profile-section">
-          <span className="admin-summary-label">{T.admin.mostPracticedLabel}</span>
-          <div className="admin-rank-list">
-            {mostPracticed.map(([name, count], i) => <div key={name} className="admin-rank-row">
-              <span className="admin-rank-num">{i + 1}</span>
-              <span className="admin-rank-name">{practiceItemLabel(name, language)}</span>
-              <div className="admin-rank-bar-track"><div className="admin-rank-bar" style={{ width: `${Math.max(8, (count / maxPracticeCount) * 100)}%` }} /></div>
-              <span className="admin-rank-count">{formatMinutes(count)}</span>
+      </div>
+
+      <div className="admin-summary-card">
+        <span className="admin-summary-label">{T.admin.monthlyPracticeLabel}</span>
+        <div className="monthly-chart">
+          <div className="monthly-chart-bars">
+            {monthlyData.map((m) => <div key={m.key} className="monthly-bar-col">
+              <span className="monthly-bar-value">{m.minutes > 0 ? formatMinutes(m.minutes) : ""}</span>
+              <div className="monthly-bar-track"><div className="monthly-bar" style={{ height: `${Math.max(m.minutes > 0 ? 4 : 0, (m.minutes / maxMonthly) * 100)}%` }} /></div>
+              <span className="monthly-bar-label">{m.label}</span>
             </div>)}
           </div>
+        </div>
+      </div>
+
+      {mostPracticed.length > 0 && <div className="admin-summary-card">
+        <span className="admin-summary-label">{T.admin.mostPracticedLabel}</span>
+        <div className="admin-rank-list">
+          {mostPracticed.map(([name, count], i) => <div key={name} className="admin-rank-row">
+            <span className="admin-rank-num">{i + 1}</span>
+            <span className="admin-rank-name">{practiceItemLabel(name, language)}</span>
+            <div className="admin-rank-bar-track"><div className="admin-rank-bar" style={{ width: `${Math.max(8, (count / maxPracticeCount) * 100)}%` }} /></div>
+            <span className="admin-rank-count">{formatMinutes(count)}</span>
+          </div>)}
+        </div>
+      </div>}
+
+      <div className="admin-summary-card">
+        <span className="admin-summary-label">{T.admin.achievementsLabel}</span>
+        {wonChallenges.length === 0 ? <p className="hint admin-achievements-empty">{T.admin.noAchievements}</p> : <div className="trophy-list">
+          {wonChallenges.map((c) => <span key={c.id} className="trophy-chip">🏆 {T.personalChallenges.challengeTitle(challengeExerciseLabel(c.exercise_en, language), c.length_days)}</span>)}
         </div>}
       </div>
+
+      {pointsEnabled && <div className="admin-controls-card">
+        <span className="admin-summary-label">{T.admin.pointsLabel}</span>
+        <p className="admin-points-total">{points ? points.reduce((sum, p) => sum + p.amount, 0) : 0}</p>
+        <span className="admin-controls-hint">{T.admin.awardHint}</span>
+        <div className="admin-award-row">
+          <button type="button" className="minutes-step" onClick={() => awardPoints(-1, null)} disabled={awarding}>−1</button>
+          <button type="button" className="minutes-step" onClick={() => awardPoints(1, null)} disabled={awarding}>+1</button>
+          <input className="admin-award-amount" inputMode="numeric" size={3} value={awardAmount} onChange={(e) => setAwardAmount(e.target.value.replace(/[^-\d]/g, ""))} />
+          <input className="admin-award-reason" value={awardReason} onChange={(e) => setAwardReason(e.target.value)} placeholder={T.admin.reasonPlaceholder} />
+          <button type="button" className="custom-item-add" onClick={() => awardPoints(Number(awardAmount), awardReason.trim() || null)} disabled={awarding || !Number(awardAmount)}>{T.admin.awardBtn}</button>
+        </div>
+      </div>}
+
+      {pinned && pinned.length > 0 && <div className="admin-summary-card admin-section-gap">
+        <span className="admin-summary-label admin-focus-label"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.admin.focusLabel}</span>
+        <div className="chips admin-focus-chips">{pinned.map((en) => <span key={en} className="chip">{PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en}</span>)}</div>
+      </div>}
       {skillExercises.length > 0 && <div className="admin-summary-card">
         <span className="admin-summary-label">{T.admin.skillProgressLabel}</span>
         <div className="tier-strip tier-strip-header admin-skill-header">
@@ -3004,16 +3161,6 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
         </div>
       </div>}
       <div className="admin-controls-card">
-        <span className="admin-summary-label">{T.admin.pointsLabel}</span>
-        <p className="admin-points-total">{points ? points.reduce((sum, p) => sum + p.amount, 0) : 0}</p>
-        <span className="admin-controls-hint">{T.admin.awardHint}</span>
-        <div className="admin-award-row">
-          <button type="button" className="minutes-step" onClick={() => awardPoints(-1, null)} disabled={awarding}>−1</button>
-          <button type="button" className="minutes-step" onClick={() => awardPoints(1, null)} disabled={awarding}>+1</button>
-          <input className="admin-award-amount" inputMode="numeric" size={3} value={awardAmount} onChange={(e) => setAwardAmount(e.target.value.replace(/[^-\d]/g, ""))} />
-          <input className="admin-award-reason" value={awardReason} onChange={(e) => setAwardReason(e.target.value)} placeholder={T.admin.reasonPlaceholder} />
-          <button type="button" className="custom-item-add" onClick={() => awardPoints(Number(awardAmount), awardReason.trim() || null)} disabled={awarding || !Number(awardAmount)}>{T.admin.awardBtn}</button>
-        </div>
         <div className="admin-settings-list">
           <div className="admin-settings-row">
             <span>{T.admin.pointGameLabel}</span>
@@ -3031,56 +3178,67 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
           </div>
         </div>
       </div>
-      <span className="ladder-label">{T.admin.dailyLogs}</span>
-      {logs === null ? <p className="hint">…</p> : logs.length === 0 ? <p className="hint">{T.admin.noDailyLogs}</p> : (<>
-        <div className="admin-log-list">
-          {(showAllLogs ? logs : logs.slice(0, ADMIN_HISTORY_LIMIT)).map((log, i) => {
-            const usedSkillTrainer = skillTrainerDates.has(log.date);
-            return <div key={i} className="admin-log-row">
-              <div className="admin-log-line">
-                <span className="admin-log-date">{log.date}</span>
-                <span className="admin-log-duration">{formatMinutes(log.minutes)}</span>
-                {log.usedMetronome && <span className="admin-source-label">⌁ {T.admin.metronomeBadge}</span>}
-                {usedSkillTrainer && <span className="admin-source-label">🎯 {T.admin.skillTrainerBadge}</span>}
-                {!log.usedMetronome && !usedSkillTrainer && <span className="admin-source-label admin-source-muted">✎ {T.admin.quickEntryBadge}</span>}
-              </div>
-              {log.items.length > 0 && <div className="detail-chips">{log.items.map((item: string) => <em key={item}>{item}</em>)}</div>}
-              {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
-            </div>;
-          })}
-        </div>
-        {logs.length > ADMIN_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllLogs(!showAllLogs)}>{showAllLogs ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
-      </>)}
-      <span className="ladder-label admin-section-gap">{T.admin.practiceSessions}</span>
-      {sessions === null ? <p className="hint">…</p> : sessions.length === 0 ? <p className="hint">{T.admin.noPracticeSessions}</p> : (<>
-        <div className="admin-log-list">
-          {(showAllSessions ? sessions : sessions.slice(0, ADMIN_HISTORY_LIMIT)).map((s, i) => <div key={i} className="admin-log-row">
-            <div className="admin-log-head"><span>{s.exercise}</span><span>{s.bpm} BPM</span></div>
-            <div className="admin-log-head"><span>{s.date}</span><span>{formatMinutes(s.minutes)}</span></div>
-          </div>)}
-        </div>
-        {sessions.length > ADMIN_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSessions(!showAllSessions)}>{showAllSessions ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
-      </>)}
-      <span className="ladder-label admin-section-gap">{T.admin.pointsHistory}</span>
-      {points === null ? <p className="hint">…</p> : points.length === 0 ? <p className="hint">{T.admin.noPoints}</p> : (<>
-        <div className="admin-log-list">
-          {(showAllPoints ? points : points.slice(0, ADMIN_HISTORY_LIMIT)).map((p) => <div key={p.id} className="admin-log-row">
-            <div className="admin-log-head"><span>{p.created_at.slice(0, 10)}</span><span className={p.amount > 0 ? "admin-points-positive" : "admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span></div>
-            {p.reason && <p className="today-notes">{p.reason}</p>}
-          </div>)}
-        </div>
-        {points.length > ADMIN_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllPoints(!showAllPoints)}>{showAllPoints ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
-      </>)}
+
+      <button type="button" className="see-more-btn admin-history-toggle" onClick={() => setShowHistory(!showHistory)}>{showHistory ? T.admin.hideHistoryBtn : T.admin.historyBtn}</button>
+      {showHistory && <>
+        <span className="ladder-label">{T.admin.dailyLogs}</span>
+        {logs === null ? <p className="hint">…</p> : logs.length === 0 ? <p className="hint">{T.admin.noDailyLogs}</p> : (<>
+          <div className="admin-log-list">
+            {(showAllLogs ? logs : logs.slice(0, ADMIN_HISTORY_LIMIT)).map((log, i) => {
+              const usedSkillTrainer = skillTrainerDates.has(log.date);
+              return <div key={i} className="admin-log-row">
+                <div className="admin-log-line">
+                  <span className="admin-log-date">{log.date}</span>
+                  <span className="admin-log-duration">{formatMinutes(log.minutes)}</span>
+                  {log.usedMetronome && <span className="admin-source-label">⌁ {T.admin.metronomeBadge}</span>}
+                  {usedSkillTrainer && <span className="admin-source-label">🎯 {T.admin.skillTrainerBadge}</span>}
+                  {!log.usedMetronome && !usedSkillTrainer && <span className="admin-source-label admin-source-muted">✎ {T.admin.quickEntryBadge}</span>}
+                </div>
+                {log.items.length > 0 && <div className="detail-chips">{log.items.map((item: string) => <em key={item}>{item}</em>)}</div>}
+                {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
+              </div>;
+            })}
+          </div>
+          {logs.length > ADMIN_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllLogs(!showAllLogs)}>{showAllLogs ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+        </>)}
+        <span className="ladder-label admin-section-gap">{T.admin.practiceSessions}</span>
+        {sessions === null ? <p className="hint">…</p> : sessions.length === 0 ? <p className="hint">{T.admin.noPracticeSessions}</p> : (<>
+          <div className="admin-log-list">
+            {(showAllSessions ? sessions : sessions.slice(0, ADMIN_HISTORY_LIMIT)).map((s, i) => <div key={i} className="admin-log-row">
+              <div className="admin-log-head"><span>{s.exercise}</span><span>{s.bpm} BPM</span></div>
+              <div className="admin-log-head"><span>{s.date}</span><span>{formatMinutes(s.minutes)}</span></div>
+            </div>)}
+          </div>
+          {sessions.length > ADMIN_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSessions(!showAllSessions)}>{showAllSessions ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+        </>)}
+        <span className="ladder-label admin-section-gap">{T.admin.pointsHistory}</span>
+        {points === null ? <p className="hint">…</p> : points.length === 0 ? <p className="hint">{T.admin.noPoints}</p> : (<>
+          <div className="admin-log-list">
+            {(showAllPoints ? points : points.slice(0, ADMIN_HISTORY_LIMIT)).map((p) => <div key={p.id} className="admin-log-row">
+              <div className="admin-log-head"><span>{p.created_at.slice(0, 10)}</span><span className={p.amount > 0 ? "admin-points-positive" : "admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span></div>
+              {p.reason && <p className="today-notes">{p.reason}</p>}
+            </div>)}
+          </div>
+          {points.length > ADMIN_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllPoints(!showAllPoints)}>{showAllPoints ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+        </>)}
+      </>}
     </section>;
   }
 
   // "All time" totals come straight from admin_list_users(); month/year totals are recomputed
   // from the raw logs instead, since the RPC only ever returns lifetime figures.
+  // A day's practice_logs.minutes is already the FULL total for that day, inclusive of any
+  // Skill Trainer session time logged that day (see the identical "leftover = log.minutes -
+  // structuredMinutesByDay" pattern used for "most practiced" both here and on the student's
+  // own Progress page) -- practice_sessions rows are a structured breakdown of part of that
+  // total, not additional time on top of it. admin_list_users() used to add session minutes
+  // on top of log minutes, double-counting that overlap and inflating "All"; fixed there too
+  // (see schema.sql), so this must stay logs-only to match.
   const rangeStartKey = statsRange === "month" ? monthStartKey : statsRange === "year" ? yearStartKey : null;
   const rangedUsers = rangeStartKey && allLogs
     ? (users ?? []).map((u) => {
-        const inRange = allLogs.filter((l) => l.user_id === u.id && l.practiced_on >= rangeStartKey);
-        return { ...u, total_minutes: inRange.reduce((sum, l) => sum + l.minutes, 0), total_logs: inRange.length };
+        const inRangeLogs = allLogs.filter((l) => l.user_id === u.id && l.practiced_on >= rangeStartKey);
+        return { ...u, total_minutes: inRangeLogs.reduce((sum, l) => sum + l.minutes, 0), total_logs: inRangeLogs.length };
       })
     : (users ?? []);
   const statsUsers = excludeSelf && user ? rangedUsers.filter((u) => u.id !== user.id) : rangedUsers;
@@ -3106,6 +3264,97 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     donutCursor += (d.value / donutTotal) * CIRCUMFERENCE;
     return arc;
   });
+
+  // Cross-student speed chart: for the selected exercise, each student's line tracks the
+  // highest BPM they've logged enough comfortable/mastered minutes at (same UNLOCK_MINUTES
+  // threshold used everywhere else in the app) -- as of each date they practiced, giving a
+  // step line that only rises. A student with sessions but no qualifying BPM yet is listed
+  // separately rather than drawn as a flat line at zero, which would misread as "the slowest".
+  const SPEED_COLORS = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#8b5cf6", "#4dd0c4", "#c9a24a"];
+  const speedLevels = bpmLevelsFor(speedExercise);
+  type SpeedPoint = { date: string; bpm: number };
+  const speedLines: { id: string; name: string; points: SpeedPoint[]; currentBpm: number; totalMinutes: number }[] = [];
+  const speedUnqualified: { id: string; name: string; totalMinutes: number }[] = [];
+  if (speedSessions && speedSessions.length > 0) {
+    const byUser: Record<string, typeof speedSessions> = {};
+    speedSessions.forEach((s) => { (byUser[s.user_id] ??= []).push(s); });
+    Object.entries(byUser).forEach(([uid, sess]) => {
+      if (excludeSelf && user && uid === user.id) return;
+      const dates = Array.from(new Set(sess.map((s) => s.practiced_on))).sort();
+      const qualifyingByBpm: Record<number, number> = {};
+      const points: SpeedPoint[] = [];
+      let totalMinutes = 0;
+      dates.forEach((date) => {
+        sess.filter((s) => s.practiced_on === date).forEach((s) => {
+          totalMinutes += s.duration_minutes;
+          if (s.rating === "comfortable" || s.rating === "mastered") qualifyingByBpm[s.bpm] = (qualifyingByBpm[s.bpm] ?? 0) + s.duration_minutes;
+        });
+        const unlocked = speedLevels.filter((l) => (qualifyingByBpm[l] ?? 0) >= UNLOCK_MINUTES);
+        if (unlocked.length) points.push({ date, bpm: Math.max(...unlocked) });
+      });
+      const meta = (users ?? []).find((u) => u.id === uid);
+      const name = meta?.name || meta?.email || uid;
+      if (points.length) speedLines.push({ id: uid, name, points, currentBpm: points[points.length - 1].bpm, totalMinutes });
+      else speedUnqualified.push({ id: uid, name, totalMinutes });
+    });
+    speedLines.sort((a, b) => b.currentBpm - a.currentBpm);
+  }
+  const SPEED_W = 320, SPEED_H = 170, SPEED_PAD_L = 32, SPEED_PAD_R = 10, SPEED_PAD_T = 12, SPEED_PAD_B = 24;
+  const speedMinBpm = speedLevels[0], speedMaxBpm = speedLevels[speedLevels.length - 1];
+  const speedAllDates = speedLines.flatMap((l) => l.points.map((p) => p.date));
+  const speedMinDate = speedAllDates.length ? speedAllDates.reduce((a, b) => (a < b ? a : b)) : dateKey;
+  const speedMinTime = new Date(speedMinDate + "T00:00:00").getTime();
+  const speedMaxTime = new Date(dateKey + "T00:00:00").getTime();
+  const speedTimeSpan = Math.max(1, speedMaxTime - speedMinTime);
+  function speedXFromTime(t: number) { return SPEED_PAD_L + ((t - speedMinTime) / speedTimeSpan) * (SPEED_W - SPEED_PAD_L - SPEED_PAD_R); }
+  function speedX(date: string) { return speedXFromTime(new Date(date + "T00:00:00").getTime()); }
+  function speedY(bpm: number) { const frac = (bpm - speedMinBpm) / Math.max(1, speedMaxBpm - speedMinBpm); return SPEED_PAD_T + (1 - frac) * (SPEED_H - SPEED_PAD_T - SPEED_PAD_B); }
+  const speedLocale = language === "es" ? "es-ES" : "en-US";
+  const speedXTicks = Array.from(new Set([speedMinTime, speedMinTime + Math.round(speedTimeSpan / 2), speedMaxTime]));
+  function speedPath(points: SpeedPoint[]) {
+    const extended = points[points.length - 1].date !== dateKey ? [...points, { date: dateKey, bpm: points[points.length - 1].bpm }] : points;
+    let d = `M ${speedX(extended[0].date)} ${speedY(extended[0].bpm)}`;
+    for (let i = 1; i < extended.length; i++) d += ` H ${speedX(extended[i].date)} V ${speedY(extended[i].bpm)}`;
+    return d;
+  }
+
+  // Recent Improvements board: every (student, exercise) pair's tempo-unlock history, across
+  // ALL exercises (not just the one picked above) -- same qualifying logic as the speed chart,
+  // but flattened into a single "X unlocked Y BPM on Z" feed, most recent first. The very
+  // first unlock counts as an improvement too (going from "nothing" to a qualifying speed).
+  const IMPROVEMENTS_LIMIT = 5;
+  type ImprovementEvent = { key: string; name: string; exerciseEn: string; bpm: number; date: string };
+  const improvements: ImprovementEvent[] = [];
+  if (allSpeedSessions && allExerciseNames) {
+    const byUserExercise: Record<string, typeof allSpeedSessions> = {};
+    allSpeedSessions.forEach((s) => {
+      if (excludeSelf && user && s.user_id === user.id) return;
+      const key = `${s.user_id}::${s.practice_exercise_id}`;
+      (byUserExercise[key] ??= []).push(s);
+    });
+    Object.entries(byUserExercise).forEach(([key, sess]) => {
+      const [uid, exerciseId] = key.split("::");
+      const exerciseEn = allExerciseNames[exerciseId];
+      if (!exerciseEn) return;
+      const levels = bpmLevelsFor(exerciseEn);
+      const dates = Array.from(new Set(sess.map((s) => s.practiced_on))).sort();
+      const qualifyingByBpm: Record<number, number> = {};
+      let previousHighest: number | null = null;
+      const meta = (users ?? []).find((u) => u.id === uid);
+      const name = meta?.name || meta?.email || uid;
+      dates.forEach((date) => {
+        sess.filter((s) => s.practiced_on === date).forEach((s) => {
+          if (s.rating === "comfortable" || s.rating === "mastered") qualifyingByBpm[s.bpm] = (qualifyingByBpm[s.bpm] ?? 0) + s.duration_minutes;
+        });
+        const unlocked = levels.filter((l) => (qualifyingByBpm[l] ?? 0) >= UNLOCK_MINUTES);
+        const highest = unlocked.length ? Math.max(...unlocked) : null;
+        if (highest !== null && highest !== previousHighest) improvements.push({ key: `${key}::${date}`, name, exerciseEn, bpm: highest, date });
+        previousHighest = highest;
+      });
+    });
+    improvements.sort((a, b) => b.date.localeCompare(a.date));
+  }
+  const visibleImprovements = showAllImprovements ? improvements : improvements.slice(0, IMPROVEMENTS_LIMIT);
 
   return <section className="page">
     <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
@@ -3147,6 +3396,60 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
           </div>
         </div>}
       </div>
+
+      <div className="admin-summary-card admin-section-gap">
+        <span className="admin-summary-label">{T.admin.improvementsLabel}</span>
+        {allSpeedSessions === null ? <p className="hint">…</p> : improvements.length === 0 ? <p className="hint speed-empty">{T.admin.improvementsEmpty}</p> : <>
+          <div className="admin-log-list admin-log-list-compact">
+            {visibleImprovements.map((ev) => <div key={ev.key} className="admin-log-row improvement-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="improvement-icon"><path d="M3 17l6-6 4 4 8-8" /><path d="M15 7h6v6" /></svg>
+              <span className="improvement-text">{T.admin.improvedMsg(ev.name, PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language as Lang] ?? ev.exerciseEn, ev.bpm)}</span>
+              <span className="improvement-date">{ev.date}</span>
+            </div>)}
+          </div>
+          {improvements.length > IMPROVEMENTS_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllImprovements(!showAllImprovements)}>{showAllImprovements ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+        </>}
+      </div>
+
+      <div className="admin-summary-card admin-section-gap">
+        <span className="admin-summary-label">{T.admin.speedLabel}</span>
+        <p className="admin-controls-hint">{T.admin.speedHint}</p>
+        <select className="subdivision-select speed-select" value={speedExercise} onChange={(e) => setSpeedExercise(e.target.value)}>
+          {PRACTICE_CATEGORIES.map((cat) => <optgroup key={cat} label={cat === "rudiments" ? T.practiceMode.categoryRudiments : T.practiceMode.categoryExercises}>
+            {PRACTICE_EXERCISES.filter((e) => e.category === cat).map((e) => <option key={e.en} value={e.en}>{e[language as Lang]}</option>)}
+          </optgroup>)}
+        </select>
+        {speedSessions === null ? <p className="hint">…</p> : speedLines.length === 0 && speedUnqualified.length === 0 ? <p className="hint speed-empty">{T.admin.speedNoData}</p> : <>
+          {speedLines.length > 0 && <svg viewBox={`0 0 ${SPEED_W} ${SPEED_H}`} className="speed-chart">
+            {[speedMinBpm, Math.round((speedMinBpm + speedMaxBpm) / 2), speedMaxBpm].map((l) => <g key={l}>
+              <line x1={SPEED_PAD_L} x2={SPEED_W - SPEED_PAD_R} y1={speedY(l)} y2={speedY(l)} className="speed-gridline" />
+              <text x={SPEED_PAD_L - 6} y={speedY(l) + 3} textAnchor="end" className="speed-gridline-label">{l}</text>
+            </g>)}
+            <line x1={SPEED_PAD_L} x2={SPEED_W - SPEED_PAD_R} y1={SPEED_H - SPEED_PAD_B} y2={SPEED_H - SPEED_PAD_B} className="speed-axis-line" />
+            {speedXTicks.map((t, i) => <text key={t} x={speedXFromTime(t)} y={SPEED_H - 6} textAnchor={i === 0 ? "start" : i === speedXTicks.length - 1 ? "end" : "middle"} className="speed-axis-label">{new Date(t).toLocaleDateString(speedLocale, { month: "short", day: "numeric" })}</text>)}
+            {speedLines.map((line, idx) => {
+              const color = SPEED_COLORS[idx % SPEED_COLORS.length];
+              const last = line.points[line.points.length - 1];
+              return <g key={line.id}>
+                <path d={speedPath(line.points)} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx={speedX(dateKey)} cy={speedY(last.bpm)} r="4" fill={color} />
+              </g>;
+            })}
+          </svg>}
+          <div className="speed-legend">
+            {speedLines.map((line, idx) => <div key={line.id} className="speed-legend-row">
+              <span className="speed-legend-name"><i className="admin-legend-dot" style={{ background: SPEED_COLORS[idx % SPEED_COLORS.length] }} />{line.name}</span>
+              <span className="speed-legend-bpm">{line.currentBpm} {T.admin.speedBpmSuffix}</span>
+              <span className="speed-legend-minutes">{formatMinutes(line.totalMinutes)}</span>
+            </div>)}
+          </div>
+          {speedUnqualified.length > 0 && <div className="speed-unqualified">
+            <span className="speed-unqualified-label">{T.admin.speedNotQualified}</span>
+            {speedUnqualified.map((u) => <span key={u.id} className="speed-unqualified-name">{u.name} ({formatMinutes(u.totalMinutes)})</span>)}
+          </div>}
+        </>}
+      </div>
+
       <span className="section-label admin-section-gap">{T.admin.allUsersTitle}</span>
       <div className="onboard-exercise-list">
         {users.map((u) => <button key={u.id} type="button" className="onboard-row admin-user-row" onClick={() => openUser(u)}>

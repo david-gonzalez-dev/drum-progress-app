@@ -975,3 +975,42 @@ as $$
 $$;
 revoke execute on function public.points_leaderboard() from anon, public;
 grant execute on function public.points_leaderboard() to authenticated;
+
+-- Lets admin read every student's personal challenges, needed for the Achievements section
+-- on the admin per-student report (trophy chips for completed challenges).
+drop policy if exists "admins can view all personal challenges" on public.personal_challenges;
+create policy "admins can view all personal challenges" on public.personal_challenges for select to authenticated using (public.is_admin());
+
+-- Fix admin_list_users()'s total_minutes: it was adding Skill Trainer session minutes on top
+-- of daily-log minutes, but a day's practice_logs.minutes is already the FULL total for that
+-- day (Skill Trainer time gets folded into it -- see the app's own "leftover = log.minutes -
+-- structuredMinutesByDay" logic used for "most practiced"). Adding session minutes on top
+-- double-counted that overlap and inflated every student's "All time" total.
+create or replace function public.admin_list_users()
+returns table (id uuid, name text, email text, last_active date, total_logs bigint, total_minutes bigint)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized';
+  end if;
+  return query
+    select
+      p.id,
+      p.name,
+      u.email::text,
+      greatest(
+        (select max(pl.practiced_on) from public.practice_logs pl where pl.user_id = p.id),
+        (select max(ps.practiced_on) from public.practice_sessions ps where ps.user_id = p.id)
+      ) as last_active,
+      (select count(*) from public.practice_logs pl where pl.user_id = p.id) as total_logs,
+      coalesce((select sum(pl.minutes) from public.practice_logs pl where pl.user_id = p.id), 0) as total_minutes
+    from public.profiles p
+    join auth.users u on u.id = p.id
+    order by last_active desc nulls last, p.name asc;
+end;
+$$;
+revoke execute on function public.admin_list_users() from anon, public;
+grant execute on function public.admin_list_users() to authenticated;
