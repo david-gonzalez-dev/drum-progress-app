@@ -144,9 +144,8 @@
 .metro-exercise-name{font:500 23px/1.25 'Barlow Condensed';margin:0;letter-spacing:.2px}
 .sticking-panel{margin:16px 0 2px}
 .sticking-label{display:block;font:600 12px 'DM Sans';letter-spacing:1.3px;color:#8d9690;margin-bottom:8px}
-.sticking-pill{display:flex;justify-content:center;align-items:baseline;row-gap:8px;column-gap:12px;flex-wrap:wrap;background:#161918;border:1px solid #2c312e;border-radius:16px;padding:12px 16px}
+.sticking-pill{display:flex;flex-direction:column;align-items:center;gap:8px;background:#161918;border:1px solid #2c312e;border-radius:16px;padding:12px 16px}
 .sticking-side{display:flex;align-items:baseline;gap:12px;flex-wrap:nowrap}
-.sticking-sep{font:600 18px 'DM Sans';color:#565c58}
 .sticking-letter{font:600 22px 'DM Sans';color:#e7e9e6}
 .sticking-letter sup{font-size:13px;font-weight:700;margin-left:1px}
 .sticking-letter.grace{font-size:15px;opacity:.62}
@@ -216,6 +215,7 @@ h2.home-title{font:700 21px 'Barlow Condensed';margin:0 0 13px;letter-spacing:.2
 .admin-overview-leaderboard .leaderboard-name{width:auto;max-width:74px;font-size:13px}
 .admin-overview-leaderboard .leaderboard-value{width:auto;font-size:12px}
 .admin-source-label{font:700 11px 'DM Sans';letter-spacing:.7px;text-transform:uppercase;color:#c9a68a}
+.subdivision-badge{display:inline-block;background:#1c211f;color:#9aa19d;font:700 12px 'DM Sans';letter-spacing:.5px;text-transform:uppercase;padding:5px 11px;border-radius:99px;margin:-8px 0 18px}
 .admin-source-label.admin-source-muted{color:#6d746f}
 .admin-summary-card,.admin-controls-card{background:#121413;border:1px solid #222724;border-radius:18px;padding:18px;margin-bottom:16px}
 .admin-stats-row{display:flex;justify-content:space-between;gap:10px}
