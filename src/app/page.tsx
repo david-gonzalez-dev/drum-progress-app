@@ -751,46 +751,56 @@ export default function Home() {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
-  function loadUserData(currentUser: any, hydrateToday = true) {
+  async function loadUserData(currentUser: any, hydrateToday = true, isRetry = false) {
     const fallbackName = currentUser.user_metadata?.full_name ?? currentUser.email?.split("@")[0] ?? "Drummer";
-    supabase.from("profiles").select("name").eq("id", currentUser.id).maybeSingle().then(({ data }) => {
-      if (data?.name) { setProfileName(data.name); return; }
+    // is_admin() is security definer and checks the caller's own admin_users row
+    // server-side -- this can't be spoofed by the client either way. Kept out of the
+    // retry group below since worst case it just self-corrects on the next successful load.
+    supabase.rpc("is_admin").then(({ data }) => { setIsAdmin(!!data); });
+    const [profileRes, settingsRes, logsRes, sessionsRes, pinnedRes, itemsRes] = await Promise.all([
+      supabase.from("profiles").select("name").eq("id", currentUser.id).maybeSingle(),
+      supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year, onboarded, kid_mode, points_enabled").eq("user_id", currentUser.id).maybeSingle(),
+      supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("user_id", currentUser.id),
+      supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,issues,notes,created_at,practice_exercises(name_en)").eq("user_id", currentUser.id).order("created_at"),
+      supabase.from("pinned_exercises").select("exercise_en").eq("user_id", currentUser.id).order("sort_order"),
+      supabase.from("user_practice_items").select("kind,name").eq("user_id", currentUser.id).order("created_at"),
+    ]);
+    // A transient failure here (e.g. the phone just woke up and the network/auth session hasn't
+    // caught up yet) used to fall straight through to `data ?? []`/`?? {}`, silently wiping the
+    // whole app back to a "brand new account" look -- including re-opening onboarding, since a
+    // failed settings fetch reads as "not onboarded" -- until the user manually refreshed. One
+    // short retry covers that common case; if it fails twice in a row, bail out and leave
+    // whatever was already on screen rather than blanking it out.
+    if ([profileRes, settingsRes, logsRes, sessionsRes, pinnedRes, itemsRes].some((r) => r.error)) {
+      if (!isRetry) setTimeout(() => loadUserData(currentUser, hydrateToday, true), 1500);
+      return;
+    }
+    if (profileRes.data?.name) { setProfileName(profileRes.data.name); }
+    else {
       setProfileName(fallbackName);
       supabase.from("profiles").upsert({ id: currentUser.id, name: fallbackName }, { onConflict: "id" }).then();
-    });
-    supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year, onboarded, kid_mode, points_enabled").eq("user_id", currentUser.id).maybeSingle().then(({ data }) => {
-      if (data?.language === "es" || data?.language === "en") setLanguage(data.language);
-      if (data?.daily_goal_minutes != null) setDailyGoal(data.daily_goal_minutes);
-      if (data?.metronome_tone) setMetronomeTone(data.metronome_tone);
-      if (data?.show_days_this_year != null) setShowDaysThisYear(data.show_days_this_year);
-      setKidMode(!!data?.kid_mode);
-      setPointsEnabled(!!data?.points_enabled);
-      // Only decide this on the initial load, not a background refetch (e.g. tab regaining focus) —
-      // otherwise an in-progress onboarding flow could get yanked back open mid-flow.
-      if (hydrateToday) setShowOnboarding(!data?.onboarded);
-    });
-    supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("user_id", currentUser.id).then(({ data }) => {
-      const nextLogs: Record<string, Log> = {};
-      (data ?? []).forEach((row: any) => { nextLogs[row.practiced_on] = { minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes ?? "", equipment: row.equipment ?? null, drumsetMinutes: row.drumset_minutes ?? null, padMinutes: row.pad_minutes ?? null, customItems: row.custom_items ?? [], items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) }; });
-      setLogs(nextLogs);
-      // Only hydrate the in-progress Quick Practice form from today's saved log on first load —
-      // a background refetch (e.g. after the tab regains focus) shouldn't clobber unsaved edits.
-      const todayLog = nextLogs[dateKey];
-      if (hydrateToday && todayLog) { setMinutes(String(todayLog.minutes)); setSeconds(String(todayLog.seconds)); setNotes(todayLog.notes); setEquipment(todayLog.equipment); setDrumsetMinutes(todayLog.drumsetMinutes != null ? String(todayLog.drumsetMinutes) : ""); setPadMinutes(todayLog.padMinutes != null ? String(todayLog.padMinutes) : ""); setCustomItems(todayLog.customItems); if (todayLog.items.length) setSelected(todayLog.items); }
-    });
-    supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,issues,notes,created_at,practice_exercises(name_en)").eq("user_id", currentUser.id).order("created_at").then(({ data }) => {
-      setPracticeSessions((data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en, bpm: row.bpm, rating: row.rating, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on, issues: row.issues ?? [], notes: row.notes ?? null, created_at: row.created_at })).filter((s: any) => s.item_en));
-    });
-    supabase.from("pinned_exercises").select("exercise_en").eq("user_id", currentUser.id).order("sort_order").then(({ data }) => {
-      setPinnedExercises((data ?? []).map((row: any) => row.exercise_en));
-    });
-    supabase.from("user_practice_items").select("kind,name").eq("user_id", currentUser.id).order("created_at").then(({ data }) => {
-      setUserItems((data ?? []).filter((row: any) => row.kind === "item").map((row: any) => row.name));
-      setUserBooks((data ?? []).filter((row: any) => row.kind === "book").map((row: any) => row.name));
-    });
-    // is_admin() is security definer and checks the caller's own admin_users row
-    // server-side -- this can't be spoofed by the client either way.
-    supabase.rpc("is_admin").then(({ data }) => { setIsAdmin(!!data); });
+    }
+    const settingsData = settingsRes.data;
+    if (settingsData?.language === "es" || settingsData?.language === "en") setLanguage(settingsData.language);
+    if (settingsData?.daily_goal_minutes != null) setDailyGoal(settingsData.daily_goal_minutes);
+    if (settingsData?.metronome_tone) setMetronomeTone(settingsData.metronome_tone);
+    if (settingsData?.show_days_this_year != null) setShowDaysThisYear(settingsData.show_days_this_year);
+    setKidMode(!!settingsData?.kid_mode);
+    setPointsEnabled(!!settingsData?.points_enabled);
+    // Only decide this on the initial load, not a background refetch (e.g. tab regaining focus) —
+    // otherwise an in-progress onboarding flow could get yanked back open mid-flow.
+    if (hydrateToday) setShowOnboarding(!settingsData?.onboarded);
+    const nextLogs: Record<string, Log> = {};
+    (logsRes.data ?? []).forEach((row: any) => { nextLogs[row.practiced_on] = { minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes ?? "", equipment: row.equipment ?? null, drumsetMinutes: row.drumset_minutes ?? null, padMinutes: row.pad_minutes ?? null, customItems: row.custom_items ?? [], items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) }; });
+    setLogs(nextLogs);
+    // Only hydrate the in-progress Quick Practice form from today's saved log on first load —
+    // a background refetch (e.g. after the tab regains focus) shouldn't clobber unsaved edits.
+    const todayLog = nextLogs[dateKey];
+    if (hydrateToday && todayLog) { setMinutes(String(todayLog.minutes)); setSeconds(String(todayLog.seconds)); setNotes(todayLog.notes); setEquipment(todayLog.equipment); setDrumsetMinutes(todayLog.drumsetMinutes != null ? String(todayLog.drumsetMinutes) : ""); setPadMinutes(todayLog.padMinutes != null ? String(todayLog.padMinutes) : ""); setCustomItems(todayLog.customItems); if (todayLog.items.length) setSelected(todayLog.items); }
+    setPracticeSessions((sessionsRes.data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en, bpm: row.bpm, rating: row.rating, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on, issues: row.issues ?? [], notes: row.notes ?? null, created_at: row.created_at })).filter((s: any) => s.item_en));
+    setPinnedExercises((pinnedRes.data ?? []).map((row: any) => row.exercise_en));
+    setUserItems((itemsRes.data ?? []).filter((row: any) => row.kind === "item").map((row: any) => row.name));
+    setUserBooks((itemsRes.data ?? []).filter((row: any) => row.kind === "book").map((row: any) => row.name));
   }
   useEffect(() => {
     if (!user) return;
