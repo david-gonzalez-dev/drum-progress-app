@@ -281,6 +281,7 @@ const translations = {
     confirm: { cancel: "Cancel", confirm: "Confirm" },
     today: {
       heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", currentStreak: "Current streak", days: "days", pointsTitle: "POINTS",
+      pointsCardTitle: "YOUR POINTS", pointsCardCta: "View rewards", pointsCardKickoff: "Start earning points", pointsCardRankOne: "You're #1", pointsCardTop3: "You're in the Top 3", pointsCardKeepGoing: "Keep going",
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", practiceTimeHeading: "PRACTICE TIME", whatPractised: "ADD WHAT YOU PRACTISED",
       notes: "NOTES", notesPrefix: "Notes:", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} on ${equipmentName}`,
@@ -421,6 +422,7 @@ const translations = {
     confirm: { cancel: "Cancelar", confirm: "Confirmar" },
     today: {
       heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", currentStreak: "Racha actual", days: "días", pointsTitle: "PUNTOS",
+      pointsCardTitle: "TUS PUNTOS", pointsCardCta: "Ver recompensas", pointsCardKickoff: "Empieza a ganar puntos", pointsCardRankOne: "Eres el número 1", pointsCardTop3: "Estás en el Top 3", pointsCardKeepGoing: "Sigue así",
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", practiceTimeHeading: "TIEMPO DE PRÁCTICA", whatPractised: "AÑADE LO QUE PRACTICASTE",
       notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} en ${equipmentName}`,
@@ -744,6 +746,7 @@ export default function Home() {
   const [userItems, setUserItems] = useState<string[]>([]);
   const [userBooks, setUserBooks] = useState<string[]>([]);
   const [showPinManager, setShowPinManager] = useState(false);
+  const [showPointsDetail, setShowPointsDetail] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -1014,7 +1017,7 @@ export default function Home() {
   if (!user) return <Login error={authError} setError={setAuthError} />;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className="shell">
-    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => setTab("practice")} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} displayName={displayName} language={language} T={T} />}
+    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => setTab("practice")} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
@@ -1032,6 +1035,7 @@ export default function Home() {
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
     {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onTogglePin={togglePin} onClose={() => setShowPinManager(false)} language={language} T={T} />}
+    {showPointsDetail && <PointsDetailModal user={user} onClose={() => setShowPointsDetail(false)} T={T} />}
     {showOnboarding && <OnboardingModal currentGoal={dailyGoal} onSkip={skipOnboarding} onFinish={finishOnboarding} language={language} T={T} />}
   </main>;
 }
@@ -1068,6 +1072,35 @@ function PinManagerModal({ pinnedExercises, onMove, onUnpin, onTogglePin, onClos
           </button>)}
         </div>
       </> : <button type="button" className="notes-toggle" onClick={() => setAddOpen(true)}>{T.practiceMode.pinManagerAddBtn}</button>)}
+    </div>
+  </div></div>;
+}
+
+const POINTS_DETAIL_HISTORY_LIMIT = 5;
+function PointsDetailModal({ user, onClose, T }: { user: any; onClose: () => void; T: any }) {
+  const [points, setPoints] = useState<{ id: string; amount: number; reason: string | null; created_at: string }[] | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => {
+    supabase.from("point_awards").select("id,amount,reason,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => setPoints(data ?? []));
+  }, [user.id]);
+  const total = (points ?? []).reduce((sum, p) => sum + p.amount, 0);
+  return <div className="modal modal-center" onClick={onClose}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
+    <div className="ds-head">
+      <span className="eyebrow">{T.today.pointsCardTitle}</span>
+      <button className="close" onClick={onClose}>×</button>
+    </div>
+    <div className="day-summary-body">
+      <strong className="points-card-value points-detail-total">{total}</strong>
+      <span className="ladder-label admin-section-gap">{T.admin.pointsHistory}</span>
+      {points === null ? <p className="hint">…</p> : points.length === 0 ? <p className="hint">{T.admin.noPoints}</p> : (<>
+        <div className="admin-log-list">
+          {(showAll ? points : points.slice(0, POINTS_DETAIL_HISTORY_LIMIT)).map((p) => <div key={p.id} className="admin-log-row">
+            <div className="admin-log-head"><span>{p.created_at.slice(0, 10)}</span><span className={p.amount > 0 ? "admin-points-positive" : "admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span></div>
+            {p.reason && <p className="today-notes">{p.reason}</p>}
+          </div>)}
+        </div>
+        {points.length > POINTS_DETAIL_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAll(!showAll)}>{showAll ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+      </>)}
     </div>
   </div></div>;
 }
@@ -1174,22 +1207,46 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
   return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Choose a new password for your account.</p><div className="auth-card"><h2>Set a new password</h2><input type="password" placeholder="New password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? "Please wait..." : "Update password"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
-function PointsLeaderboard({ user, pointsEnabled, T }: any) {
-  const [rows, setRows] = useState<{ id: string; name: string; total_points: number }[] | null>(null);
-  useEffect(() => {
-    if (!pointsEnabled) return;
-    supabase.rpc("points_leaderboard").then(({ data }) => setRows(data ?? []));
-  }, [pointsEnabled]);
+function YourPointsCard({ user, pointsEnabled, rows, onViewPoints, T }: any) {
+  // Same rule as the leaderboard below it: nothing renders (no placeholder, no flash of
+  // zero) until the admin has opted this student into the point game and the shared
+  // points_leaderboard() fetch (kicked off once in Today) has actually landed.
+  if (!pointsEnabled || !rows) return null;
+  const mine = rows.find((r: any) => r.id === user.id);
+  const total = mine?.total_points ?? 0;
+  const rank = rows.findIndex((r: any) => r.id === user.id) + 1;
+  const status = total === 0 ? T.today.pointsCardKickoff : rank === 1 ? T.today.pointsCardRankOne : rank > 0 && rank <= 3 ? T.today.pointsCardTop3 : T.today.pointsCardKeepGoing;
+  const ringPct = Math.max(0, Math.min(1, (total % 100) / 100));
+  const ringOffset = 88 - 88 * ringPct;
+  return <button type="button" className="form-card points-card" onClick={onViewPoints}>
+    <div className="points-card-top">
+      <div className="points-card-main">
+        <span className="input-label points-card-label">{T.today.pointsCardTitle}</span>
+        <strong className="points-card-value">{total}</strong>
+      </div>
+      <div className="points-card-ring">
+        <svg viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="14" className="points-ring-track" />
+          <circle cx="18" cy="18" r="14" className="points-ring-progress" strokeDasharray="88" strokeDashoffset={ringOffset} />
+        </svg>
+        <svg className="points-card-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7L12 2z" /></svg>
+      </div>
+    </div>
+    <p className="points-card-status">{status}</p>
+    <span className="points-card-cta">{T.today.pointsCardCta}<span>→</span></span>
+  </button>;
+}
+function PointsLeaderboard({ user, pointsEnabled, rows, T }: any) {
   // Hidden entirely for students the admin hasn't opted into the point game, and stays
   // hidden until at least one point has actually been awarded anywhere -- an all-zero
   // leaderboard on a brand new feature would read as broken, not motivating.
-  if (!pointsEnabled || !rows || !rows.some((r) => r.total_points !== 0)) return null;
+  if (!pointsEnabled || !rows || !rows.some((r: any) => r.total_points !== 0)) return null;
   const topRows = rows.slice(0, 5);
-  const maxPoints = Math.max(1, ...topRows.map((r) => r.total_points));
+  const maxPoints = Math.max(1, ...topRows.map((r: any) => r.total_points));
   return <div className="form-card">
     <span className="section-label">{T.today.pointsTitle}</span>
     <div className="leaderboard">
-      {topRows.map((r, idx) => <div key={r.id} className="leaderboard-row">
+      {topRows.map((r: any, idx: number) => <div key={r.id} className="leaderboard-row">
         <span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{r.id === user.id ? T.group.you : r.name}</span>
         <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${Math.max(0, Math.min(100, (r.total_points / maxPoints) * 100))}%` }} /></div>
         <span className="leaderboard-value">{r.total_points}</span>
@@ -1226,16 +1283,24 @@ function HomeChallenges({ user, practiceSessions, language, T }: any) {
     </div>)}
   </div>;
 }
-function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onOpenExercise, onManagePins, displayName, language, T }: any) {
+function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onOpenExercise, onManagePins, onViewPoints, displayName, language, T }: any) {
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
   const goalAchieved = dailyGoal != null && todayMinutes >= dailyGoal;
   const goalPct = dailyGoal != null ? Math.min(100, (todayMinutes / Math.max(1, dailyGoal)) * 100) : 0;
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
+  // Fetched once here and handed to both the personal points card and the group leaderboard
+  // below it, instead of each issuing its own points_leaderboard() call for the same data.
+  const [pointsRows, setPointsRows] = useState<{ id: string; name: string; total_points: number }[] | null>(null);
+  useEffect(() => {
+    if (!pointsEnabled) { setPointsRows(null); return; }
+    supabase.rpc("points_leaderboard").then(({ data }) => setPointsRows(data ?? []));
+  }, [pointsEnabled]);
   return <section className="page today">
     <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
+    <YourPointsCard user={user} pointsEnabled={pointsEnabled} rows={pointsRows} onViewPoints={onViewPoints} T={T} />
     <div className="form-card stats-tile"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
-    <PointsLeaderboard user={user} pointsEnabled={pointsEnabled} T={T} />
+    <PointsLeaderboard user={user} pointsEnabled={pointsEnabled} rows={pointsRows} T={T} />
     <div className={todayMinutes === 0 ? "form-card today-goal-card today-goal-card-empty" : "form-card today-goal-card"} onClick={todayMinutes === 0 ? onGoToPractice : undefined}>
       <label className="input-label">{T.today.todaySummary}</label>
       {dailyGoal != null ? (
