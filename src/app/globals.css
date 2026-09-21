@@ -13,6 +13,10 @@
 .ex-row .track i{display:block;height:100%;background:#ff6b1a;border-radius:99px}
 .ex-row .frac{font-size:13px;color:#6d746f;flex-shrink:0}
 .ex-row .chev{color:#565c58;font-size:20px;flex-shrink:0}
+.ex-row-locked{border-style:dashed;border-color:#262b28;background:#101211}
+.ex-row-locked .name{color:#9aa19d}
+.lock-icon{width:17px;height:17px;color:#6d746f;flex-shrink:0}
+.locked-hint{font-size:13px;color:#6d746f;margin:0}
 
 .back-row{display:flex;align-items:center;gap:10px;margin-bottom:18px}
 .pin-toggle{margin-left:auto;flex-shrink:0;width:36px;height:36px;border-radius:50%;border:1px solid #2c312e;background:#161918;color:#6d746f;display:flex;align-items:center;justify-content:center;transition:all .15s ease}.pin-toggle svg{width:16px;height:16px}.pin-toggle.pinned{border-color:#472315;background:#2a170a;color:#ff9b50;box-shadow:0 0 0 1px #ff6b1a33}
@@ -64,6 +68,26 @@
 .category-title{font:400 17px 'DM Sans';margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .category-count{font-size:14px;color:#6d746f;font-weight:600}
 .category-card .chev{display:none}
+.tier-select-list{display:flex;flex-direction:column;gap:14px;margin-bottom:8px}
+.tier-card{position:relative;width:100%;text-align:left;background:#121413;border:1px solid #222724;border-radius:20px;padding:22px 66px 22px 22px;color:#f6f7f5;font-family:inherit;overflow:hidden}
+.tier-card-num{display:block;font:800 15px 'Barlow Condensed';letter-spacing:1px;margin-bottom:2px}
+.tier-card-title{font:800 26px 'Barlow Condensed';letter-spacing:.3px;margin:0 0 8px;color:#f6f7f5}
+.tier-card-desc{font-size:14px;color:#a5ada7;line-height:1.4;margin:0 0 18px}
+.tier-card-progress{width:100%}
+.tier-card-count{display:block;font:700 14px 'DM Sans';color:#e7e9e6;margin-bottom:8px}
+.tier-card-bar-track{height:7px;background:#1c211f;border-radius:99px;overflow:hidden}
+.tier-card-bar{height:100%;border-radius:99px}
+.tier-card-chev{position:absolute;right:18px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;background:#1c211f;display:flex;align-items:center;justify-content:center;color:#e7e9e6;flex-shrink:0}
+.tier-card-chev svg{width:16px;height:16px}
+.tier-card-basics{background:radial-gradient(circle at 92% 6%,#3d2210,transparent 55%),#121413;border-color:#472e18}
+.tier-card-basics .tier-card-num{color:#ff9b50}
+.tier-card-basics .tier-card-bar{background:#ff6b1a}
+.tier-card-intermediate{background:radial-gradient(circle at 92% 6%,#3d3010,transparent 55%),#121413;border-color:#473c18}
+.tier-card-intermediate .tier-card-num{color:#f0c04a}
+.tier-card-intermediate .tier-card-bar{background:#f0b429}
+.tier-card-advanced{background:radial-gradient(circle at 92% 6%,#3d1712,transparent 55%),#121413;border-color:#47201a}
+.tier-card-advanced .tier-card-num{color:#e2726a}
+.tier-card-advanced .tier-card-bar{background:#e2483d}
 .stats-tile .stats{margin-bottom:0}
 .pinned-list{display:flex;flex-direction:column;gap:20px}
 .see-more-btn{display:block;background:transparent;border:0;color:#ff9b50;font:600 15px 'DM Sans';margin-top:14px;padding:0;text-align:center;width:100%}
@@ -186,6 +210,8 @@
 .day-editor-modal .equipment-option{padding:10px;font-size:15px}
 .day-editor-modal .notes-label{margin-top:16px}
 .day-editor-modal .notes-toggle{margin-top:16px;font-size:15px}
+.modal-center .day-summary.improvements-modal{max-height:60vh;padding:18px 18px 16px}
+.improvements-modal .admin-log-list-compact{margin-bottom:0}
 .day-editor-modal textarea{min-height:56px;font-size:16px}
 .day-editor-modal .save{padding:13px;font-size:17px;margin-top:13px}
 .day-editor-modal .delete-entry{margin-top:8px;font-size:15px}
@@ -248,12 +274,12 @@ h2.home-title{font:700 21px 'Barlow Condensed';margin:0 0 13px;letter-spacing:.2
 .speed-unqualified-label{display:block;color:#6d746f;font-size:12px;margin-bottom:6px}
 .speed-unqualified-name{display:inline-block;color:#8d9690;font-size:13px;margin:0 10px 4px 0}
 .speed-empty{margin:4px 0 0;text-align:left}
-.admin-log-list-compact{gap:6px}
-.admin-log-list-compact .admin-log-row{padding:8px 11px}
-.improvement-row{display:flex;align-items:center;gap:8px}
-.improvement-icon{width:13px;height:13px;color:#ff9b50;flex-shrink:0}
-.improvement-text{flex:1;min-width:0;color:#e7e9e6;font-size:13px;line-height:1.35}
-.improvement-date{color:#6d746f;font-size:11px;flex-shrink:0;white-space:nowrap}
+.admin-log-list-compact{gap:5px}
+.admin-log-list-compact .admin-log-row{padding:7px 10px}
+.improvement-row{display:flex;align-items:center;gap:7px}
+.improvement-chip{background:#2a170a;border:1px solid #472315;color:#ff9b50;font:700 11px 'DM Sans';padding:3px 8px;border-radius:99px;flex-shrink:0;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.improvement-text{flex:1;min-width:0;color:#e7e9e6;font-size:11px;line-height:1.3}
+.improvement-date{color:#6d746f;font-size:10px;flex-shrink:0;white-space:nowrap}
 .admin-overview-leaderboard .leaderboard-row{padding:5px 0;gap:8px}
 .admin-overview-leaderboard .leaderboard-name{width:auto;max-width:74px;font-size:13px}
 .admin-overview-leaderboard .leaderboard-value{width:auto;font-size:12px}

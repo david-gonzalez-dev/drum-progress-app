@@ -84,47 +84,47 @@ const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; 
 
 const PRACTICE_CATEGORIES = ["rudiments", "exercises"] as const;
 const CATEGORY_ICON_SRC: Record<string, string> = { rudiments: "/icons/rudiments.png", exercises: "/icons/exercises.png", rhythms: "/icons/rhythms.png" };
-const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string; difficulty: "core" | "advanced"; subdivision?: "quarter" | "eighth" | "triplet" | "sixteenth"; tempoRange?: "extended" }[] = [
-  { category: "rudiments", subcategory: null, en: "Single Strokes", es: "Golpes simples", difficulty: "core", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Double Strokes", es: "Golpes dobles", difficulty: "core", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Single Paradiddle", es: "Paradiddle simple", difficulty: "core", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Double Paradiddle", es: "Paradiddle doble", difficulty: "core", subdivision: "triplet", tempoRange: "extended" },
-  { category: "rudiments", subcategory: null, en: "Triple Paradiddle", es: "Paradiddle triple", difficulty: "core", subdivision: "eighth", tempoRange: "extended" },
-  { category: "rudiments", subcategory: null, en: "Paradiddle-Diddle", es: "Paradiddle-diddle", difficulty: "advanced", subdivision: "triplet", tempoRange: "extended" },
-  { category: "rudiments", subcategory: null, en: "Flam", es: "Flam", difficulty: "core", subdivision: "quarter", tempoRange: "extended" },
-  { category: "rudiments", subcategory: null, en: "Flam Accent", es: "Flam acentuado", difficulty: "advanced", subdivision: "triplet" },
-  { category: "rudiments", subcategory: null, en: "Flam Tap", es: "Flam tap", difficulty: "advanced", subdivision: "eighth" },
-  { category: "rudiments", subcategory: null, en: "Drag", es: "Drag", difficulty: "advanced", subdivision: "quarter" },
-  { category: "rudiments", subcategory: null, en: "Ratamacue", es: "Ratamacue", difficulty: "advanced", subdivision: "eighth" },
-  { category: "rudiments", subcategory: null, en: "Single Strokes Four", es: "Golpes Simples Cuatro", difficulty: "advanced", subdivision: "triplet", tempoRange: "extended" },
-  { category: "rudiments", subcategory: null, en: "Single Strokes Seven", es: "Golpes Simples Siete", difficulty: "advanced", subdivision: "triplet", tempoRange: "extended" },
-  { category: "rudiments", subcategory: null, en: "5 Stroke Roll", es: "Redoble de 5 Golpes", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "6 Stroke Roll", es: "Redoble de 6 Golpes", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "7 Stroke Roll", es: "Redoble de 7 Golpes", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "9 Stroke Roll", es: "Redoble de 9 Golpes", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "10 Stroke Roll", es: "Redoble de 10 Golpes", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "11 Stroke Roll", es: "Redoble de 11 Golpes", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "13 Stroke Roll", es: "Redoble de 13 Golpes", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "15 Stroke Roll", es: "Redoble de 15 Golpes", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "17 Stroke Roll", es: "Redoble de 17 Golpes", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Lesson 25", es: "Lección 25", difficulty: "advanced", subdivision: "eighth" },
-  { category: "rudiments", subcategory: null, en: "Single Drag Tap", es: "Drag Tap Simple", difficulty: "advanced", subdivision: "eighth" },
-  { category: "rudiments", subcategory: null, en: "Single Dragadiddle", es: "Dragadiddle Simple", difficulty: "advanced", subdivision: "eighth" },
-  { category: "rudiments", subcategory: null, en: "Drag Paradiddle #1", es: "Drag Paradiddle #1", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Drag Paradiddle #2", es: "Drag Paradiddle #2", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Flammed Mill", es: "Flammed Mill", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Swiss Army Triplet", es: "Swiss Army Triplet", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Flamacue", es: "Flamacue", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Triple Stroke Roll", es: "Redoble Triple", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Flam Paradiddle", es: "Flam Paradiddle", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Patafla-fla", es: "Patafla-fla", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Double Drag Tap", es: "Drag Tap Doble", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Flam Paradiddle-diddle", es: "Flam Paradiddle-diddle", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Single Ratamacue", es: "Ratamacue Simple", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Double Ratamacue", es: "Ratamacue Doble", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Triple Ratamacue", es: "Ratamacue Triple", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Inverted Flam Tap", es: "Flam Tap Invertido", difficulty: "advanced", subdivision: "sixteenth" },
-  { category: "rudiments", subcategory: null, en: "Flam Drag", es: "Flam Drag", difficulty: "advanced", subdivision: "sixteenth" },
+const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string; difficulty: "core" | "advanced"; subdivision?: "quarter" | "eighth" | "triplet" | "sixteenth"; tempoRange?: "extended"; tier?: "basics" | "intermediate" | "advanced"; prerequisites?: string[] }[] = [
+  { category: "rudiments", subcategory: null, en: "Single Strokes", es: "Golpes simples", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: [] },
+  { category: "rudiments", subcategory: null, en: "Double Strokes", es: "Golpes dobles", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: [] },
+  { category: "rudiments", subcategory: null, en: "Single Paradiddle", es: "Paradiddle simple", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: ["Single Strokes", "Double Strokes"] },
+  { category: "rudiments", subcategory: null, en: "Double Paradiddle", es: "Paradiddle doble", difficulty: "core", subdivision: "triplet", tempoRange: "extended", tier: "intermediate", prerequisites: ["Single Paradiddle"] },
+  { category: "rudiments", subcategory: null, en: "Triple Paradiddle", es: "Paradiddle triple", difficulty: "core", subdivision: "eighth", tempoRange: "extended", tier: "intermediate", prerequisites: ["Double Paradiddle"] },
+  { category: "rudiments", subcategory: null, en: "Paradiddle-Diddle", es: "Paradiddle-diddle", difficulty: "advanced", subdivision: "triplet", tempoRange: "extended", tier: "intermediate", prerequisites: ["Triple Paradiddle"] },
+  { category: "rudiments", subcategory: null, en: "Flam", es: "Flam", difficulty: "core", subdivision: "quarter", tempoRange: "extended", tier: "basics", prerequisites: [] },
+  { category: "rudiments", subcategory: null, en: "Flam Accent", es: "Flam acentuado", difficulty: "advanced", subdivision: "triplet", tier: "basics", prerequisites: ["Flam Tap"] },
+  { category: "rudiments", subcategory: null, en: "Flam Tap", es: "Flam tap", difficulty: "advanced", subdivision: "eighth", tier: "basics", prerequisites: ["Flam"] },
+  { category: "rudiments", subcategory: null, en: "Drag", es: "Drag", difficulty: "advanced", subdivision: "quarter", tier: "basics", prerequisites: ["Flam"] },
+  { category: "rudiments", subcategory: null, en: "Ratamacue", es: "Ratamacue", difficulty: "advanced", subdivision: "eighth", tier: "intermediate", prerequisites: ["Drag"] },
+  { category: "rudiments", subcategory: null, en: "Single Strokes Four", es: "Golpes Simples Cuatro", difficulty: "advanced", subdivision: "triplet", tempoRange: "extended", tier: "intermediate", prerequisites: ["Single Strokes"] },
+  { category: "rudiments", subcategory: null, en: "Single Strokes Seven", es: "Golpes Simples Siete", difficulty: "advanced", subdivision: "triplet", tempoRange: "extended", tier: "intermediate", prerequisites: ["Single Strokes Four"] },
+  { category: "rudiments", subcategory: null, en: "5 Stroke Roll", es: "Redoble de 5 Golpes", difficulty: "advanced", subdivision: "sixteenth", tier: "basics", prerequisites: ["Single Strokes", "Double Strokes"] },
+  { category: "rudiments", subcategory: null, en: "6 Stroke Roll", es: "Redoble de 6 Golpes", difficulty: "advanced", subdivision: "sixteenth", tier: "intermediate", prerequisites: ["5 Stroke Roll"] },
+  { category: "rudiments", subcategory: null, en: "7 Stroke Roll", es: "Redoble de 7 Golpes", difficulty: "advanced", subdivision: "sixteenth", tier: "intermediate", prerequisites: ["6 Stroke Roll"] },
+  { category: "rudiments", subcategory: null, en: "9 Stroke Roll", es: "Redoble de 9 Golpes", difficulty: "advanced", subdivision: "sixteenth", tier: "intermediate", prerequisites: ["7 Stroke Roll"] },
+  { category: "rudiments", subcategory: null, en: "10 Stroke Roll", es: "Redoble de 10 Golpes", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["9 Stroke Roll"] },
+  { category: "rudiments", subcategory: null, en: "11 Stroke Roll", es: "Redoble de 11 Golpes", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["10 Stroke Roll"] },
+  { category: "rudiments", subcategory: null, en: "13 Stroke Roll", es: "Redoble de 13 Golpes", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["11 Stroke Roll"] },
+  { category: "rudiments", subcategory: null, en: "15 Stroke Roll", es: "Redoble de 15 Golpes", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["13 Stroke Roll"] },
+  { category: "rudiments", subcategory: null, en: "17 Stroke Roll", es: "Redoble de 17 Golpes", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["15 Stroke Roll"] },
+  { category: "rudiments", subcategory: null, en: "Lesson 25", es: "Lección 25", difficulty: "advanced", subdivision: "eighth", tier: "intermediate", prerequisites: ["Single Strokes", "Double Strokes"] },
+  { category: "rudiments", subcategory: null, en: "Single Drag Tap", es: "Drag Tap Simple", difficulty: "advanced", subdivision: "eighth", tier: "intermediate", prerequisites: ["Drag"] },
+  { category: "rudiments", subcategory: null, en: "Single Dragadiddle", es: "Dragadiddle Simple", difficulty: "advanced", subdivision: "eighth", tier: "intermediate", prerequisites: ["Drag"] },
+  { category: "rudiments", subcategory: null, en: "Drag Paradiddle #1", es: "Drag Paradiddle #1", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Single Paradiddle", "Drag"] },
+  { category: "rudiments", subcategory: null, en: "Drag Paradiddle #2", es: "Drag Paradiddle #2", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Double Paradiddle", "Drag"] },
+  { category: "rudiments", subcategory: null, en: "Flammed Mill", es: "Flammed Mill", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Flam"] },
+  { category: "rudiments", subcategory: null, en: "Swiss Army Triplet", es: "Swiss Army Triplet", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Single Paradiddle"] },
+  { category: "rudiments", subcategory: null, en: "Flamacue", es: "Flamacue", difficulty: "advanced", subdivision: "sixteenth", tier: "intermediate", prerequisites: ["Flam"] },
+  { category: "rudiments", subcategory: null, en: "Triple Stroke Roll", es: "Redoble Triple", difficulty: "advanced", subdivision: "sixteenth", tier: "intermediate", prerequisites: ["Double Strokes"] },
+  { category: "rudiments", subcategory: null, en: "Flam Paradiddle", es: "Flam Paradiddle", difficulty: "advanced", subdivision: "sixteenth", tier: "intermediate", prerequisites: ["Single Paradiddle", "Flam"] },
+  { category: "rudiments", subcategory: null, en: "Patafla-fla", es: "Patafla-fla", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Flam"] },
+  { category: "rudiments", subcategory: null, en: "Double Drag Tap", es: "Drag Tap Doble", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Drag"] },
+  { category: "rudiments", subcategory: null, en: "Flam Paradiddle-diddle", es: "Flam Paradiddle-diddle", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Flam Paradiddle"] },
+  { category: "rudiments", subcategory: null, en: "Single Ratamacue", es: "Ratamacue Simple", difficulty: "advanced", subdivision: "sixteenth", tier: "intermediate", prerequisites: ["Ratamacue"] },
+  { category: "rudiments", subcategory: null, en: "Double Ratamacue", es: "Ratamacue Doble", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Single Ratamacue"] },
+  { category: "rudiments", subcategory: null, en: "Triple Ratamacue", es: "Ratamacue Triple", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Double Ratamacue"] },
+  { category: "rudiments", subcategory: null, en: "Inverted Flam Tap", es: "Flam Tap Invertido", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Flam"] },
+  { category: "rudiments", subcategory: null, en: "Flam Drag", es: "Flam Drag", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Flam"] },
   { category: "exercises", subcategory: null, en: "Push Pull - Right Hand", es: "Push Pull - Mano Derecha", difficulty: "advanced" },
   { category: "exercises", subcategory: null, en: "Push Pull - Left Hand", es: "Push Pull - Mano Izquierda", difficulty: "advanced" },
   { category: "exercises", subcategory: null, en: "Heel Down, 8th Notes", es: "Talón abajo, corcheas", difficulty: "core" },
@@ -351,6 +351,12 @@ const translations = {
       improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `Improved from ${from} to ${to} on ${exercise} · ${bpm} BPM in ${days} day${days === 1 ? "" : "s"}`, niceBtn: "Nice!",
       struggledFlagTitle: "You used to struggle at this tempo",
       tierBeginner: "BEGINNER", tierIntermediate: "INTERMEDIATE", tierAdvanced: "ADVANCED", tierLegend: "LEGEND",
+      rudimentTierBasics: "FOUNDATION", rudimentTierIntermediate: "INTERMEDIATE", rudimentTierAdvanced: "COMPLEX",
+      unlockFirst: (names: string) => `Unlock ${names} first`,
+      tierUnlockedCount: (unlocked: number, total: number) => `${unlocked} of ${total} unlocked`,
+      rudimentTierBasicsDesc: "Essential building blocks — the core rudiments to get started.",
+      rudimentTierIntermediateDesc: "Build on the basics with more advanced sticking patterns.",
+      rudimentTierAdvancedDesc: "The hardest rudiments and combinations to master.",
       subdivisionQuarter: "Quarter Notes", subdivisionEighth: "8th Notes", subdivisionTriplet: "Triplets", subdivisionSixteenth: "16th Notes",
       ratingNotReady: "Not ready", ratingTense: "Tense", ratingAlmost: "Almost there", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
       rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Rate your session at ${bpm} BPM to save it.`, skipRating: "Skip, don't log this",
@@ -362,7 +368,8 @@ const translations = {
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} PINNED`, pinManagerTitle: "Your Focus", pinManagerDone: "Done",
       quickTitle: "Quick Practice",
       trainTitle: "Skill Trainer",
-      listIntroRudiments: (min: number) => `Practice for ${min} min at each tempo to unlock the next level.`,
+      rudimentListIntro: "Unlock 2 tempos to open the next rudiment.",
+      tempoCompleteIntro: (min: number) => `Practice a tempo for ${min} min to complete it.`,
       listIntroExercises: (min: number) => `Practice for ${min} min at each tempo to unlock the next level.`,
       listIntroRhythms: (min: number) => `Grooves and styles to build your musical vocabulary. Tap one, then log at least ${min} comfortable min at each BPM level to unlock it and move up.`,
     },
@@ -397,7 +404,7 @@ const translations = {
       speedNoData: "No sessions logged for this exercise yet.", speedNotQualified: "Practising, not yet at a steady speed:",
       speedBpmSuffix: "BPM",
       improvementsLabel: "RECENT IMPROVEMENTS", improvementsEmpty: "No tempo improvements yet.",
-      improvedMsg: (name: string, exercise: string, bpm: number) => `${name} improved ${exercise} to ${bpm} BPM`,
+      improvedTo: (exercise: string, bpm: number) => `${exercise} → ${bpm} BPM`,
     },
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
@@ -484,6 +491,12 @@ const translations = {
       improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `Mejoraste de ${from} a ${to} en ${exercise} · ${bpm} BPM en ${days} día${days === 1 ? "" : "s"}`, niceBtn: "¡Genial!",
       struggledFlagTitle: "Antes te costaba este tempo",
       tierBeginner: "PRINCIPIANTE", tierIntermediate: "INTERMEDIO", tierAdvanced: "AVANZADO", tierLegend: "LEYENDA",
+      rudimentTierBasics: "FUNDAMENTOS", rudimentTierIntermediate: "INTERMEDIO", rudimentTierAdvanced: "COMPLEJO",
+      unlockFirst: (names: string) => `Desbloquea ${names} primero`,
+      tierUnlockedCount: (unlocked: number, total: number) => `${unlocked} de ${total} desbloqueados`,
+      rudimentTierBasicsDesc: "Los pilares esenciales: los rudimentos básicos para empezar.",
+      rudimentTierIntermediateDesc: "Desarrolla tu técnica con patrones de baqueteo más avanzados.",
+      rudimentTierAdvancedDesc: "Los rudimentos y combinaciones más exigentes para dominar.",
       subdivisionQuarter: "Negras", subdivisionEighth: "Corcheas", subdivisionTriplet: "Tresillos", subdivisionSixteenth: "Semicorcheas",
       ratingNotReady: "No listo", ratingTense: "Con tensión", ratingAlmost: "Casi listo", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
       rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Califica tu sesión a ${bpm} BPM para guardarla.`, skipRating: "Omitir, no guardar esto",
@@ -495,7 +508,8 @@ const translations = {
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} FIJADOS`, pinManagerTitle: "Tu enfoque", pinManagerDone: "Listo",
       quickTitle: "Práctica rápida",
       trainTitle: "Entrenador de habilidades",
-      listIntroRudiments: (min: number) => `Practica ${min} min en cada tempo para desbloquear el siguiente nivel.`,
+      rudimentListIntro: "Desbloquea 2 tempos para abrir el siguiente rudimento.",
+      tempoCompleteIntro: (min: number) => `Practica un tempo durante ${min} min para completarlo.`,
       listIntroExercises: (min: number) => `Practica ${min} min en cada tempo para desbloquear el siguiente nivel.`,
       listIntroRhythms: (min: number) => `Grooves y estilos para ampliar tu vocabulario musical. Toca uno y registra al menos ${min} min cómodos en cada nivel de BPM para desbloquearlo y subir de nivel.`,
     },
@@ -530,7 +544,7 @@ const translations = {
       speedNoData: "Aún no hay sesiones registradas para este ejercicio.", speedNotQualified: "Practicando, aún sin una velocidad estable:",
       speedBpmSuffix: "BPM",
       improvementsLabel: "MEJORAS RECIENTES", improvementsEmpty: "Aún no hay mejoras de tempo.",
-      improvedMsg: (name: string, exercise: string, bpm: number) => `${name} mejoró ${exercise} a ${bpm} BPM`,
+      improvedTo: (exercise: string, bpm: number) => `${exercise} → ${bpm} BPM`,
     },
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
@@ -702,8 +716,11 @@ export default function Home() {
   // the teacher-run point game and its ranking, on Home.
   const [pointsEnabled, setPointsEnabled] = useState(false);
   const T = translations[language];
-  const [practiceStep, setPracticeStep] = useState<"category" | "list" | "detail" | "session" | "rate">("category");
+  const [practiceStep, setPracticeStep] = useState<"category" | "tiers" | "list" | "detail" | "session" | "rate">("category");
   const [practiceCategory, setPracticeCategory] = useState<string | null>(null);
+  // Which of the Rudiments list's three tier cards (Foundation/Intermediate/Complex) is open --
+  // separate from practiceCategory since it's only meaningful when category is "rudiments".
+  const [practiceRudimentTier, setPracticeRudimentTier] = useState<string | null>(null);
   const [practiceExercise, setPracticeExercise] = useState<string | null>(null);
   // Bumped to force AdminPage to remount (dropping back to its user list) when the admin nav
   // icon is tapped again while already inside a specific student's detail page.
@@ -711,6 +728,7 @@ export default function Home() {
   function openExerciseDetail(itemEn: string) {
     const match = PRACTICE_EXERCISES.find((e) => e.en === itemEn);
     setPracticeCategory(match?.category ?? null);
+    setPracticeRudimentTier(match?.tier ?? null);
     setPracticeExercise(itemEn);
     setPracticeStep("detail");
     setTab("practice");
@@ -981,7 +999,7 @@ export default function Home() {
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className="shell">
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
@@ -2004,7 +2022,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ step, setStep, category, setCategory, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
+function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setRudimentTier, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -2128,6 +2146,16 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     const bestRating = bestBpm ? bestQualifyingRating(itemEn, bestBpm) : null;
     return { unlocked: unlockedLevels.length, bestBpm, bestRating };
   }
+  // Rudiment-list gating, separate from the per-exercise BPM tempo ladder above: a rudiment
+  // with prerequisites stays locked in the Rudiments list until every prerequisite has at
+  // least 2 BPM levels unlocked (exerciseStats(...).unlocked >= 2) -- not until the prerequisite
+  // itself is "fully" unlocked. Items with no prerequisites (the three always-unlocked roots)
+  // are unlocked from the start.
+  function isRudimentUnlocked(itemEn: string) {
+    const prereqs = PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.prerequisites;
+    if (!prereqs || prereqs.length === 0) return true;
+    return prereqs.every((p) => exerciseStats(p).unlocked >= 2);
+  }
   function tierProgress(itemEn: string, tier: { min: number; max: number }) {
     const levels = bpmLevelsFor(itemEn).filter((l) => l >= tier.min && l <= tier.max);
     const done = levels.filter((l) => isUnlocked(itemEn, l));
@@ -2185,7 +2213,8 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const CATEGORY_LABEL: Record<string, string> = { rudiments: T.practiceMode.categoryRudiments, exercises: T.practiceMode.categoryExercises, rhythms: T.practiceMode.categoryRhythms };
   const SUBDIVISION_LABEL: Record<string, string> = { quarter: T.practiceMode.subdivisionQuarter, eighth: T.practiceMode.subdivisionEighth, triplet: T.practiceMode.subdivisionTriplet, sixteenth: T.practiceMode.subdivisionSixteenth };
-  function openCategory(cat: string) { setCategory(cat); setStep("list"); }
+  function openCategory(cat: string) { setCategory(cat); setStep(cat === "rudiments" ? "tiers" : "list"); }
+  function openRudimentTier(tier: string) { setRudimentTier(tier); setStep("list"); }
   function openExercise(itemEn: string) { setJustPracticedLevel(null); setExercise(itemEn); setStep("detail"); }
   function startSession(targetBpm: number) { setJustPracticedLevel(null); setBpm(targetBpm); setStep("session"); }
   async function handleSessionEnd(sessionMinutes: number) {
@@ -2219,6 +2248,18 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
   }
   function ExerciseRow({ item }: { item: { en: string; es: string } }) {
     const stats = exerciseStats(item.en);
+    const full = PRACTICE_EXERCISES.find((e) => e.en === item.en);
+    const locked = full?.category === "rudiments" && !isRudimentUnlocked(item.en);
+    if (locked) {
+      const prereqLabels = (full?.prerequisites ?? []).map((p) => PRACTICE_EXERCISES.find((e) => e.en === p)?.[language as Lang] ?? p);
+      return <div className="ex-row ex-row-locked">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="lock-icon"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
+        <div className="info">
+          <p className="name">{item[language as Lang]}</p>
+          <p className="locked-hint">{T.practiceMode.unlockFirst(prereqLabels.join(language === "es" ? " y " : " and "))}</p>
+        </div>
+      </div>;
+    }
     return <button className="ex-row" onClick={() => openExercise(item.en)}>
       <div className="info">
         <p className="name">{item[language as Lang]}</p>
@@ -2322,9 +2363,40 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
     </section>;
   }
 
+  if (step === "tiers") {
+    // The Rudiments category opens here instead of straight into the list -- three big tappable
+    // cards (Foundation/Intermediate/Complex, an app-defined learning order, not an official PAS
+    // difficulty rating), built dynamically from PRACTICE_EXERCISES' own `tier` field so this
+    // never needs updating if rudiments are added or removed.
+    const RUDIMENT_TIERS: ("basics" | "intermediate" | "advanced")[] = ["basics", "intermediate", "advanced"];
+    const RUDIMENT_TIER_LABEL: Record<string, string> = { basics: T.practiceMode.rudimentTierBasics, intermediate: T.practiceMode.rudimentTierIntermediate, advanced: T.practiceMode.rudimentTierAdvanced };
+    const RUDIMENT_TIER_DESC: Record<string, string> = { basics: T.practiceMode.rudimentTierBasicsDesc, intermediate: T.practiceMode.rudimentTierIntermediateDesc, advanced: T.practiceMode.rudimentTierAdvancedDesc };
+    const allRudiments = PRACTICE_EXERCISES.filter((e) => e.category === "rudiments" && (!kidMode || e.difficulty !== "advanced"));
+    return <section className="page">
+      <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL.rudiments}</h2></div></div>
+      <div className="tier-select-list">
+        {RUDIMENT_TIERS.map((tier, idx) => {
+          const tierItems = allRudiments.filter((e) => e.tier === tier);
+          if (!tierItems.length) return null;
+          const unlockedCount = tierItems.filter((item) => isRudimentUnlocked(item.en)).length;
+          return <button key={tier} className={`tier-card tier-card-${tier}`} onClick={() => openRudimentTier(tier)}>
+            <span className="tier-card-num">{String(idx + 1).padStart(2, "0")}</span>
+            <p className="tier-card-title">{RUDIMENT_TIER_LABEL[tier]}</p>
+            <p className="tier-card-desc">{RUDIMENT_TIER_DESC[tier]}</p>
+            <div className="tier-card-progress">
+              <span className="tier-card-count">{T.practiceMode.tierUnlockedCount(unlockedCount, tierItems.length)}</span>
+              <div className="tier-card-bar-track"><div className="tier-card-bar" style={{ width: `${Math.max(4, (unlockedCount / tierItems.length) * 100)}%` }} /></div>
+            </div>
+            <span className="tier-card-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
+          </button>;
+        })}
+      </div>
+    </section>;
+  }
+
   if (step === "list" && category) {
     const items = PRACTICE_EXERCISES.filter((e) => e.category === category && (!kidMode || e.difficulty !== "advanced"));
-    const LIST_INTRO: Record<string, string> = { rudiments: T.practiceMode.listIntroRudiments(UNLOCK_MINUTES), exercises: T.practiceMode.listIntroExercises(UNLOCK_MINUTES), rhythms: T.practiceMode.listIntroRhythms(UNLOCK_MINUTES) };
+    const LIST_INTRO: Record<string, string> = { rudiments: T.practiceMode.rudimentListIntro, exercises: T.practiceMode.listIntroExercises(UNLOCK_MINUTES), rhythms: T.practiceMode.listIntroRhythms(UNLOCK_MINUTES) };
     function lastPracticedDate(itemEn: string): string | null {
       let latest: string | null = null;
       sessions.forEach((s: any) => { if (s.item_en === itemEn && (!latest || s.practiced_on > latest)) latest = s.practiced_on; });
@@ -2340,6 +2412,10 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         return 0;
       });
       listBody = <div className="book-list">{sortedItems.map((item) => <ExerciseRow key={item.en} item={item} />)}</div>;
+    } else if (category === "rudiments") {
+      // Reached via a tier card on the "tiers" step -- a flat list of just that tier's
+      // rudiments (locked ones included; ExerciseRow itself renders the locked state).
+      listBody = <div className="book-list">{items.filter((e) => e.tier === rudimentTier).map((item) => <ExerciseRow key={item.en} item={item} />)}</div>;
     } else {
       const subcats: { en: string; es: string }[] = [];
       items.forEach((e) => { if (e.subcategory && !subcats.some((s) => s.en === e.subcategory!.en)) subcats.push(e.subcategory); });
@@ -2351,8 +2427,10 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
         </div>
       </div>)}</>;
     }
+    const RUDIMENT_TIER_LABEL: Record<string, string> = { basics: T.practiceMode.rudimentTierBasics, intermediate: T.practiceMode.rudimentTierIntermediate, advanced: T.practiceMode.rudimentTierAdvanced };
+    const listTitle = category === "rudiments" && rudimentTier ? RUDIMENT_TIER_LABEL[rudimentTier] : CATEGORY_LABEL[category];
     return <section className="page">
-      <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL[category]}</h2></div></div>
+      <div className="back-row"><button onClick={() => setStep(category === "rudiments" ? "tiers" : "category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{listTitle}</h2></div></div>
       <p className="category-list-intro">{LIST_INTRO[category]}</p>
       {listBody}
     </section>;
@@ -2379,6 +2457,7 @@ function PracticeMode({ step, setStep, category, setCategory, exercise, setExerc
       <div className="tier-strip">
         {tiersFor(exercise).map((tier) => <div key={tier.key} className="tier-seg">{renderTierSegBar(tierProgress(exercise, tier), tierIsSkipped(sessions, exercise, tier))}<span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
       </div>
+      <p className="category-list-intro">{T.practiceMode.tempoCompleteIntro(UNLOCK_MINUTES)}</p>
       <span className="ladder-label">{T.practiceMode.bpmLevels}</span>
       {tiersFor(exercise).map((tier) => {
         const levels = bpmLevelsFor(exercise).filter((l) => l >= tier.min && l <= tier.max);
@@ -2942,7 +3021,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     }
     loadAll();
   }, []);
-  const [showAllImprovements, setShowAllImprovements] = useState(false);
+  const [showImprovementsModal, setShowImprovementsModal] = useState(false);
   const [selected, setSelected] = useState<{ id: string; name: string; email: string } | null>(null);
   const [logs, setLogs] = useState<any[] | null>(null);
   const [sessions, setSessions] = useState<any[] | null>(null);
@@ -3354,7 +3433,14 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     });
     improvements.sort((a, b) => b.date.localeCompare(a.date));
   }
-  const visibleImprovements = showAllImprovements ? improvements : improvements.slice(0, IMPROVEMENTS_LIMIT);
+  const visibleImprovements = improvements.slice(0, IMPROVEMENTS_LIMIT);
+  function renderImprovementRow(ev: ImprovementEvent) {
+    return <div key={ev.key} className="admin-log-row improvement-row">
+      <span className="improvement-chip">{ev.name}</span>
+      <span className="improvement-text">{T.admin.improvedTo(PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language as Lang] ?? ev.exerciseEn, ev.bpm)}</span>
+      <span className="improvement-date">{ev.date}</span>
+    </div>;
+  }
 
   return <section className="page">
     <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
@@ -3401,15 +3487,24 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
         <span className="admin-summary-label">{T.admin.improvementsLabel}</span>
         {allSpeedSessions === null ? <p className="hint">…</p> : improvements.length === 0 ? <p className="hint speed-empty">{T.admin.improvementsEmpty}</p> : <>
           <div className="admin-log-list admin-log-list-compact">
-            {visibleImprovements.map((ev) => <div key={ev.key} className="admin-log-row improvement-row">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="improvement-icon"><path d="M3 17l6-6 4 4 8-8" /><path d="M15 7h6v6" /></svg>
-              <span className="improvement-text">{T.admin.improvedMsg(ev.name, PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language as Lang] ?? ev.exerciseEn, ev.bpm)}</span>
-              <span className="improvement-date">{ev.date}</span>
-            </div>)}
+            {visibleImprovements.map((ev) => renderImprovementRow(ev))}
           </div>
-          {improvements.length > IMPROVEMENTS_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllImprovements(!showAllImprovements)}>{showAllImprovements ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+          {improvements.length > IMPROVEMENTS_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowImprovementsModal(true)}>{T.progressPage.seeMore}</button>}
         </>}
       </div>
+      {showImprovementsModal && <div className="modal modal-center" onClick={() => setShowImprovementsModal(false)}>
+        <div className="day-summary day-editor-modal improvements-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="ds-head">
+            <span className="eyebrow">{T.admin.improvementsLabel}</span>
+            <button className="close" onClick={() => setShowImprovementsModal(false)}>×</button>
+          </div>
+          <div className="day-summary-body">
+            <div className="admin-log-list admin-log-list-compact">
+              {improvements.map((ev) => renderImprovementRow(ev))}
+            </div>
+          </div>
+        </div>
+      </div>}
 
       <div className="admin-summary-card admin-section-gap">
         <span className="admin-summary-label">{T.admin.speedLabel}</span>
