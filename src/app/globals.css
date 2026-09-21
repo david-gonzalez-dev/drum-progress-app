@@ -71,8 +71,7 @@
 .tier-select-list{display:flex;flex-direction:column;gap:14px;margin-bottom:8px}
 .tier-card{position:relative;width:100%;text-align:left;background:#121413;border:1px solid #222724;border-radius:20px;padding:22px 66px 22px 22px;color:#f6f7f5;font-family:inherit;overflow:hidden}
 .tier-card-num{display:block;font:800 15px 'Barlow Condensed';letter-spacing:1px;margin-bottom:2px}
-.tier-card-title{font:800 26px 'Barlow Condensed';letter-spacing:.3px;margin:0 0 8px;color:#f6f7f5}
-.tier-card-desc{font-size:14px;color:#a5ada7;line-height:1.4;margin:0 0 18px}
+.tier-card-title{font:800 26px 'Barlow Condensed';letter-spacing:.3px;margin:0 0 16px;color:#f6f7f5}
 .tier-card-progress{width:100%}
 .tier-card-count{display:block;font:700 14px 'DM Sans';color:#e7e9e6;margin-bottom:8px}
 .tier-card-bar-track{height:7px;background:#1c211f;border-radius:99px;overflow:hidden}
@@ -88,6 +87,15 @@
 .tier-card-advanced{background:radial-gradient(circle at 92% 6%,#3d1712,transparent 55%),#121413;border-color:#47201a}
 .tier-card-advanced .tier-card-num{color:#e2726a}
 .tier-card-advanced .tier-card-bar{background:#e2483d}
+.tier-card-hand{background:radial-gradient(circle at 92% 6%,#132a44,transparent 55%),#121413;border-color:#1c3a5c}
+.tier-card-hand .tier-card-num{color:#5b9eea}
+.tier-card-hand .tier-card-bar{background:#3987e5}
+.tier-card-footwork{background:radial-gradient(circle at 92% 6%,#0f2c2c,transparent 55%),#121413;border-color:#1c4040}
+.tier-card-footwork .tier-card-num{color:#5ed4cf}
+.tier-card-footwork .tier-card-bar{background:#2bb8b3}
+.tier-card-coordination{background:radial-gradient(circle at 92% 6%,#241a3d,transparent 55%),#121413;border-color:#3a2a5c}
+.tier-card-coordination .tier-card-num{color:#a78bfa}
+.tier-card-coordination .tier-card-bar{background:#8b5cf6}
 .stats-tile .stats{margin-bottom:0}
 .pinned-list{display:flex;flex-direction:column;gap:20px}
 .see-more-btn{display:block;background:transparent;border:0;color:#ff9b50;font:600 15px 'DM Sans';margin-top:14px;padding:0;text-align:center;width:100%}

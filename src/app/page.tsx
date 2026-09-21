@@ -84,7 +84,7 @@ const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; 
 
 const PRACTICE_CATEGORIES = ["rudiments", "exercises"] as const;
 const CATEGORY_ICON_SRC: Record<string, string> = { rudiments: "/icons/rudiments.png", exercises: "/icons/exercises.png", rhythms: "/icons/rhythms.png" };
-const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string; difficulty: "core" | "advanced"; subdivision?: "quarter" | "eighth" | "triplet" | "sixteenth"; tempoRange?: "extended"; tier?: "basics" | "intermediate" | "advanced"; prerequisites?: string[] }[] = [
+const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string; difficulty: "core" | "advanced"; subdivision?: "quarter" | "eighth" | "triplet" | "sixteenth"; tempoRange?: "extended"; tier?: "basics" | "intermediate" | "advanced"; prerequisites?: string[]; exerciseGroup?: "hand" | "footwork" | "coordination" }[] = [
   { category: "rudiments", subcategory: null, en: "Single Strokes", es: "Golpes simples", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: [] },
   { category: "rudiments", subcategory: null, en: "Double Strokes", es: "Golpes dobles", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: [] },
   { category: "rudiments", subcategory: null, en: "Single Paradiddle", es: "Paradiddle simple", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: ["Single Strokes", "Double Strokes"] },
@@ -125,22 +125,23 @@ const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcat
   { category: "rudiments", subcategory: null, en: "Triple Ratamacue", es: "Ratamacue Triple", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Double Ratamacue"] },
   { category: "rudiments", subcategory: null, en: "Inverted Flam Tap", es: "Flam Tap Invertido", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Flam"] },
   { category: "rudiments", subcategory: null, en: "Flam Drag", es: "Flam Drag", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Flam"] },
-  { category: "exercises", subcategory: null, en: "Push Pull - Right Hand", es: "Push Pull - Mano Derecha", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "Push Pull - Left Hand", es: "Push Pull - Mano Izquierda", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "Heel Down, 8th Notes", es: "Talón abajo, corcheas", difficulty: "core" },
-  { category: "exercises", subcategory: null, en: "Heel Up, 8th Notes", es: "Talón arriba, corcheas", difficulty: "core" },
-  { category: "exercises", subcategory: null, en: "Slide Technique, 8th Notes", es: "Técnica de deslizamiento, corcheas", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "Double Bass Drum", es: "Doble bombo", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "Flow, 16th Notes", es: "Flow, semicorcheas", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "RLKK", es: "RLKK", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "RKKL", es: "RKKL", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "KKRL", es: "KKRL", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "KRLK", es: "KRLK", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "RLLK", es: "RLLK", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "R L L (Triplets)", es: "R L L (Tresillos)", difficulty: "advanced" },
-  { category: "exercises", subcategory: null, en: "Finger Technique (Single-Handed)", es: "Técnica de dedos (una mano)", difficulty: "core" },
-  { category: "exercises", subcategory: null, en: "16th Note Single Strokes Around the Set", es: "Golpes simples en semicorcheas alrededor de la batería", difficulty: "core" },
-  { category: "exercises", subcategory: null, en: "Hi-Hat Pedal 8th Notes", es: "Pedal de hi-hat en corcheas", difficulty: "advanced" },
+  { category: "exercises", subcategory: null, en: "Push Pull - Right Hand", es: "Push Pull - Mano Derecha", difficulty: "advanced", exerciseGroup: "hand" },
+  { category: "exercises", subcategory: null, en: "Push Pull - Left Hand", es: "Push Pull - Mano Izquierda", difficulty: "advanced", exerciseGroup: "hand" },
+  { category: "exercises", subcategory: null, en: "Bass Drum - Heel Down", es: "Bombo - Talón Abajo", difficulty: "core", subdivision: "eighth", exerciseGroup: "footwork" },
+  { category: "exercises", subcategory: null, en: "Bass Drum - Heel Up", es: "Bombo - Talón Arriba", difficulty: "core", subdivision: "eighth", exerciseGroup: "footwork" },
+  { category: "exercises", subcategory: null, en: "Bass Drum - Slide Technique", es: "Bombo - Técnica de Deslizamiento", difficulty: "advanced", subdivision: "eighth", exerciseGroup: "footwork" },
+  { category: "exercises", subcategory: null, en: "Double Bass Drum", es: "Doble bombo", difficulty: "advanced", exerciseGroup: "footwork" },
+  { category: "exercises", subcategory: null, en: "Flow, 16th Notes", es: "Flow, semicorcheas", difficulty: "advanced", exerciseGroup: "coordination" },
+  { category: "exercises", subcategory: null, en: "RLKK", es: "RLKK", difficulty: "advanced", exerciseGroup: "coordination" },
+  { category: "exercises", subcategory: null, en: "RKKL", es: "RKKL", difficulty: "advanced", exerciseGroup: "coordination" },
+  { category: "exercises", subcategory: null, en: "KKRL", es: "KKRL", difficulty: "advanced", exerciseGroup: "coordination" },
+  { category: "exercises", subcategory: null, en: "KRLK", es: "KRLK", difficulty: "advanced", exerciseGroup: "coordination" },
+  { category: "exercises", subcategory: null, en: "RLLK", es: "RLLK", difficulty: "advanced", exerciseGroup: "coordination" },
+  { category: "exercises", subcategory: null, en: "R L L (Triplets)", es: "R L L (Tresillos)", difficulty: "advanced", exerciseGroup: "coordination" },
+  { category: "exercises", subcategory: null, en: "Finger Technique (Single-Handed)", es: "Técnica de dedos (una mano)", difficulty: "core", exerciseGroup: "hand" },
+  { category: "exercises", subcategory: null, en: "16th Note Single Strokes Around the Set", es: "Golpes simples en semicorcheas alrededor de la batería", difficulty: "core", exerciseGroup: "coordination" },
+  { category: "exercises", subcategory: null, en: "Hi-hat Pedal - Heel Up", es: "Pedal de Hi-hat - Talón Arriba", difficulty: "advanced", subdivision: "eighth", exerciseGroup: "footwork" },
+  { category: "exercises", subcategory: null, en: "Hi-hat Pedal - Heel Down", es: "Pedal de Hi-hat - Talón Abajo", difficulty: "advanced", subdivision: "eighth", exerciseGroup: "footwork" },
 ];
 // Structured sticking data for the Practice Mode metronome's sticking panel. A token is one stroke:
 // hand ("R"/"L"), an optional grace flag (soft pre-stroke for flams/drags, rendered smaller/dimmer),
@@ -354,9 +355,8 @@ const translations = {
       rudimentTierBasics: "FOUNDATION", rudimentTierIntermediate: "INTERMEDIATE", rudimentTierAdvanced: "COMPLEX",
       unlockFirst: (names: string) => `Unlock ${names} first`,
       tierUnlockedCount: (unlocked: number, total: number) => `${unlocked} of ${total} unlocked`,
-      rudimentTierBasicsDesc: "Essential building blocks — the core rudiments to get started.",
-      rudimentTierIntermediateDesc: "Build on the basics with more advanced sticking patterns.",
-      rudimentTierAdvancedDesc: "The hardest rudiments and combinations to master.",
+      exerciseGroupHand: "HAND TECHNIQUES", exerciseGroupFootwork: "FOOTWORK", exerciseGroupCoordination: "COORDINATION",
+      exercisesPracticedCount: (n: number, total: number) => `${n} of ${total} practiced`,
       subdivisionQuarter: "Quarter Notes", subdivisionEighth: "8th Notes", subdivisionTriplet: "Triplets", subdivisionSixteenth: "16th Notes",
       ratingNotReady: "Not ready", ratingTense: "Tense", ratingAlmost: "Almost there", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
       rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Rate your session at ${bpm} BPM to save it.`, skipRating: "Skip, don't log this",
@@ -495,9 +495,8 @@ const translations = {
       rudimentTierBasics: "FUNDAMENTOS", rudimentTierIntermediate: "INTERMEDIO", rudimentTierAdvanced: "COMPLEJO",
       unlockFirst: (names: string) => `Desbloquea ${names} primero`,
       tierUnlockedCount: (unlocked: number, total: number) => `${unlocked} de ${total} desbloqueados`,
-      rudimentTierBasicsDesc: "Los pilares esenciales: los rudimentos básicos para empezar.",
-      rudimentTierIntermediateDesc: "Desarrolla tu técnica con patrones de baqueteo más avanzados.",
-      rudimentTierAdvancedDesc: "Los rudimentos y combinaciones más exigentes para dominar.",
+      exerciseGroupHand: "TÉCNICA DE MANOS", exerciseGroupFootwork: "TÉCNICA DE PIES", exerciseGroupCoordination: "COORDINACIÓN",
+      exercisesPracticedCount: (n: number, total: number) => `${n} de ${total} practicados`,
       subdivisionQuarter: "Negras", subdivisionEighth: "Corcheas", subdivisionTriplet: "Tresillos", subdivisionSixteenth: "Semicorcheas",
       ratingNotReady: "No listo", ratingTense: "Con tensión", ratingAlmost: "Casi listo", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
       rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Califica tu sesión a ${bpm} BPM para guardarla.`, skipRating: "Omitir, no guardar esto",
@@ -718,11 +717,13 @@ export default function Home() {
   // the teacher-run point game and its ranking, on Home.
   const [pointsEnabled, setPointsEnabled] = useState(false);
   const T = translations[language];
-  const [practiceStep, setPracticeStep] = useState<"category" | "tiers" | "list" | "detail" | "session" | "rate">("category");
+  const [practiceStep, setPracticeStep] = useState<"category" | "tiers" | "exerciseGroups" | "list" | "detail" | "session" | "rate">("category");
   const [practiceCategory, setPracticeCategory] = useState<string | null>(null);
   // Which of the Rudiments list's three tier cards (Foundation/Intermediate/Complex) is open --
   // separate from practiceCategory since it's only meaningful when category is "rudiments".
   const [practiceRudimentTier, setPracticeRudimentTier] = useState<string | null>(null);
+  // Same idea for the Exercises list's three group cards (Hand Techniques/Footwork/Coordination).
+  const [practiceExerciseGroup, setPracticeExerciseGroup] = useState<string | null>(null);
   const [practiceExercise, setPracticeExercise] = useState<string | null>(null);
   // Bumped to force AdminPage to remount (dropping back to its user list) when the admin nav
   // icon is tapped again while already inside a specific student's detail page.
@@ -731,6 +732,7 @@ export default function Home() {
     const match = PRACTICE_EXERCISES.find((e) => e.en === itemEn);
     setPracticeCategory(match?.category ?? null);
     setPracticeRudimentTier(match?.tier ?? null);
+    setPracticeExerciseGroup(match?.exerciseGroup ?? null);
     setPracticeExercise(itemEn);
     setPracticeStep("detail");
     setTab("practice");
@@ -1013,7 +1015,7 @@ export default function Home() {
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className="shell">
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
@@ -2059,7 +2061,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setRudimentTier, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
+function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setRudimentTier, exerciseGroup, setExerciseGroup, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -2255,8 +2257,9 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const CATEGORY_LABEL: Record<string, string> = { rudiments: T.practiceMode.categoryRudiments, exercises: T.practiceMode.categoryExercises, rhythms: T.practiceMode.categoryRhythms };
   const SUBDIVISION_LABEL: Record<string, string> = { quarter: T.practiceMode.subdivisionQuarter, eighth: T.practiceMode.subdivisionEighth, triplet: T.practiceMode.subdivisionTriplet, sixteenth: T.practiceMode.subdivisionSixteenth };
-  function openCategory(cat: string) { setCategory(cat); setStep(cat === "rudiments" ? "tiers" : "list"); }
+  function openCategory(cat: string) { setCategory(cat); setStep(cat === "rudiments" ? "tiers" : cat === "exercises" ? "exerciseGroups" : "list"); }
   function openRudimentTier(tier: string) { setRudimentTier(tier); setStep("list"); }
+  function openExerciseGroup(group: string) { setExerciseGroup(group); setStep("list"); }
   function openExercise(itemEn: string) { setJustPracticedLevel(null); setExercise(itemEn); setStep("detail"); }
   function startSession(targetBpm: number) { setJustPracticedLevel(null); setBpm(targetBpm); setStep("session"); }
   async function handleSessionEnd(elapsedSeconds: number) {
@@ -2414,7 +2417,6 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
     // never needs updating if rudiments are added or removed.
     const RUDIMENT_TIERS: ("basics" | "intermediate" | "advanced")[] = ["basics", "intermediate", "advanced"];
     const RUDIMENT_TIER_LABEL: Record<string, string> = { basics: T.practiceMode.rudimentTierBasics, intermediate: T.practiceMode.rudimentTierIntermediate, advanced: T.practiceMode.rudimentTierAdvanced };
-    const RUDIMENT_TIER_DESC: Record<string, string> = { basics: T.practiceMode.rudimentTierBasicsDesc, intermediate: T.practiceMode.rudimentTierIntermediateDesc, advanced: T.practiceMode.rudimentTierAdvancedDesc };
     const allRudiments = PRACTICE_EXERCISES.filter((e) => e.category === "rudiments" && (!kidMode || e.difficulty !== "advanced"));
     return <section className="page">
       <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL.rudiments}</h2></div></div>
@@ -2426,10 +2428,40 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
           return <button key={tier} className={`tier-card tier-card-${tier}`} onClick={() => openRudimentTier(tier)}>
             <span className="tier-card-num">{String(idx + 1).padStart(2, "0")}</span>
             <p className="tier-card-title">{RUDIMENT_TIER_LABEL[tier]}</p>
-            <p className="tier-card-desc">{RUDIMENT_TIER_DESC[tier]}</p>
             <div className="tier-card-progress">
               <span className="tier-card-count">{T.practiceMode.tierUnlockedCount(unlockedCount, tierItems.length)}</span>
               <div className="tier-card-bar-track"><div className="tier-card-bar" style={{ width: `${Math.max(4, (unlockedCount / tierItems.length) * 100)}%` }} /></div>
+            </div>
+            <span className="tier-card-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
+          </button>;
+        })}
+      </div>
+    </section>;
+  }
+
+  if (step === "exerciseGroups") {
+    // Same pattern as the Rudiments tier screen, but grouping by exercise type (Hand
+    // Techniques/Footwork/Coordination) instead of a learning order -- built dynamically from
+    // PRACTICE_EXERCISES' own `exerciseGroup` field. There's no lock/prerequisite system here
+    // (exercises in this category aren't gated), so the per-card progress is a plain "how many
+    // of these have you tried" count -- any exercise with at least one logged session counts,
+    // deliberately not phrased as "unlocked" since nothing is actually locked.
+    const EXERCISE_GROUPS: ("hand" | "footwork" | "coordination")[] = ["hand", "footwork", "coordination"];
+    const EXERCISE_GROUP_LABEL: Record<string, string> = { hand: T.practiceMode.exerciseGroupHand, footwork: T.practiceMode.exerciseGroupFootwork, coordination: T.practiceMode.exerciseGroupCoordination };
+    const allExercisesList = PRACTICE_EXERCISES.filter((e) => e.category === "exercises" && (!kidMode || e.difficulty !== "advanced"));
+    return <section className="page">
+      <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL.exercises}</h2></div></div>
+      <div className="tier-select-list">
+        {EXERCISE_GROUPS.map((group, idx) => {
+          const groupItems = allExercisesList.filter((e) => e.exerciseGroup === group);
+          if (!groupItems.length) return null;
+          const practicedCount = groupItems.filter((item) => sessions.some((s: any) => s.item_en === item.en)).length;
+          return <button key={group} className={`tier-card tier-card-${group}`} onClick={() => openExerciseGroup(group)}>
+            <span className="tier-card-num">{String(idx + 1).padStart(2, "0")}</span>
+            <p className="tier-card-title">{EXERCISE_GROUP_LABEL[group]}</p>
+            <div className="tier-card-progress">
+              <span className="tier-card-count">{T.practiceMode.exercisesPracticedCount(practicedCount, groupItems.length)}</span>
+              <div className="tier-card-bar-track"><div className="tier-card-bar" style={{ width: `${Math.max(4, (practicedCount / groupItems.length) * 100)}%` }} /></div>
             </div>
             <span className="tier-card-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
           </button>;
@@ -2448,7 +2480,9 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
     }
     let listBody;
     if (category === "exercises") {
-      const sortedItems = [...items].sort((a, b) => {
+      // Reached via a group card on the "exerciseGroups" step -- a flat list of just that
+      // group's exercises, sorted by most recently practiced.
+      const sortedItems = [...items].filter((e) => e.exerciseGroup === exerciseGroup).sort((a, b) => {
         const da = lastPracticedDate(a.en); const db = lastPracticedDate(b.en);
         if (da && db) return db.localeCompare(da);
         if (da && !db) return -1;
@@ -2472,9 +2506,10 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
       </div>)}</>;
     }
     const RUDIMENT_TIER_LABEL: Record<string, string> = { basics: T.practiceMode.rudimentTierBasics, intermediate: T.practiceMode.rudimentTierIntermediate, advanced: T.practiceMode.rudimentTierAdvanced };
-    const listTitle = category === "rudiments" && rudimentTier ? RUDIMENT_TIER_LABEL[rudimentTier] : CATEGORY_LABEL[category];
+    const EXERCISE_GROUP_LABEL: Record<string, string> = { hand: T.practiceMode.exerciseGroupHand, footwork: T.practiceMode.exerciseGroupFootwork, coordination: T.practiceMode.exerciseGroupCoordination };
+    const listTitle = category === "rudiments" && rudimentTier ? RUDIMENT_TIER_LABEL[rudimentTier] : category === "exercises" && exerciseGroup ? EXERCISE_GROUP_LABEL[exerciseGroup] : CATEGORY_LABEL[category];
     return <section className="page">
-      <div className="back-row"><button onClick={() => setStep(category === "rudiments" ? "tiers" : "category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{listTitle}</h2></div></div>
+      <div className="back-row"><button onClick={() => setStep(category === "rudiments" ? "tiers" : category === "exercises" ? "exerciseGroups" : "category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{listTitle}</h2></div></div>
       <p className="category-list-intro">{LIST_INTRO[category]}</p>
       {listBody}
     </section>;

@@ -1014,3 +1014,26 @@ end;
 $$;
 revoke execute on function public.admin_list_users() from anon, public;
 grant execute on function public.admin_list_users() to authenticated;
+
+-- Renamed 4 footwork exercises to an "Equipment - Technique" pattern and moved the note value
+-- (8th notes) into the app's subdivision badge instead of the name -- matching what was already
+-- done for rudiments. Also splits the old single "Hi-Hat Pedal 8th Notes" entry: renamed to
+-- "Hi-hat Pedal - Heel Up" and added a new "Hi-hat Pedal - Heel Down" alongside it.
+-- practice_sessions links to practice_exercises by id, so renaming the catalog row (not
+-- practice_sessions) is what keeps past sessions attached. pinned_exercises/personal_challenges
+-- store the name as plain text, so those need their own update to stay matched.
+update public.practice_exercises set name_en = 'Bass Drum - Heel Down', name_es = 'Bombo - Talón Abajo' where name_en = 'Heel Down, 8th Notes';
+update public.practice_exercises set name_en = 'Bass Drum - Heel Up', name_es = 'Bombo - Talón Arriba' where name_en = 'Heel Up, 8th Notes';
+update public.practice_exercises set name_en = 'Bass Drum - Slide Technique', name_es = 'Bombo - Técnica de Deslizamiento' where name_en = 'Slide Technique, 8th Notes';
+update public.practice_exercises set name_en = 'Hi-hat Pedal - Heel Up', name_es = 'Pedal de Hi-hat - Talón Arriba' where name_en = 'Hi-Hat Pedal 8th Notes';
+insert into public.practice_exercises (category, subcategory, name_en, name_es, sort_order) values
+  ('exercises', null, 'Hi-hat Pedal - Heel Down', 'Pedal de Hi-hat - Talón Abajo', 16)
+on conflict (category, name_en) do nothing;
+update public.pinned_exercises set exercise_en = 'Bass Drum - Heel Down' where exercise_en = 'Heel Down, 8th Notes';
+update public.pinned_exercises set exercise_en = 'Bass Drum - Heel Up' where exercise_en = 'Heel Up, 8th Notes';
+update public.pinned_exercises set exercise_en = 'Bass Drum - Slide Technique' where exercise_en = 'Slide Technique, 8th Notes';
+update public.pinned_exercises set exercise_en = 'Hi-hat Pedal - Heel Up' where exercise_en = 'Hi-Hat Pedal 8th Notes';
+update public.personal_challenges set exercise_en = 'Bass Drum - Heel Down' where exercise_en = 'Heel Down, 8th Notes';
+update public.personal_challenges set exercise_en = 'Bass Drum - Heel Up' where exercise_en = 'Heel Up, 8th Notes';
+update public.personal_challenges set exercise_en = 'Bass Drum - Slide Technique' where exercise_en = 'Slide Technique, 8th Notes';
+update public.personal_challenges set exercise_en = 'Hi-hat Pedal - Heel Up' where exercise_en = 'Hi-Hat Pedal 8th Notes';
