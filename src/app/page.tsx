@@ -69,7 +69,7 @@ function equipmentSplitLabel(drumsetMinutes: number | null | undefined, padMinut
 }
 
 const NAV_TABS: Tab[] = ["today", "practice", "group", "progress"];
-const MEMBER_COLORS = ["#ff6b1a", "#4fd1c5", "#9f7aea", "#f6ad55", "#68d391", "#f687b3", "#63b3ed", "#fc8181"];
+const MEMBER_COLORS = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#8b5cf6", "#4dd0c4", "#c9a24a"];
 function autoColorForUserId(userId: string) {
   let hash = 0;
   for (let i = 0; i < userId.length; i++) hash = (hash * 31 + userId.charCodeAt(i)) % MEMBER_COLORS.length;
@@ -380,7 +380,7 @@ const translations = {
     },
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
-      language: "LANGUAGE", showDaysThisYear: "Show \"days this year\" stat", on: "ON", off: "OFF", save: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR", autoColor: "Auto",
+      language: "LANGUAGE", showDaysThisYear: "Days practiced this year", showDaysThisYearDesc: "Adds a count of practice days this year to your Home stats.", on: "ON", off: "OFF", save: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR", autoColor: "Auto",
       metronomeTone: "METRONOME TONE", toneNames: { click: "Click", beep: "Beep", wood: "Wood", clave: "Clave" },
       profileSection: "PROFILE", practiceSection: "PRACTICE", preferencesSection: "PREFERENCES", accountSection: "ACCOUNT SETTINGS", pleaseWait: "Please wait...",
       libraryLabel: "CONTENT LIBRARY", libraryFull: "Full Library", libraryEssentials: "Essentials", libraryHint: "Essentials shows a shorter, beginner-friendly list of rudiments and exercises. You can change this anytime.",
@@ -520,7 +520,7 @@ const translations = {
     },
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
-      language: "IDIOMA", showDaysThisYear: "Mostrar estadística \"días este año\"", on: "SÍ", off: "NO", save: "Guardar ajustes", saved: "✓ Ajustes guardados", logout: "Cerrar sesión", calendarColor: "COLOR DEL CALENDARIO DE GRUPO", autoColor: "Auto",
+      language: "IDIOMA", showDaysThisYear: "Días practicados este año", showDaysThisYearDesc: "Añade un contador de días practicados este año a tus estadísticas de Inicio.", on: "SÍ", off: "NO", save: "Guardar ajustes", saved: "✓ Ajustes guardados", logout: "Cerrar sesión", calendarColor: "COLOR DEL CALENDARIO DE GRUPO", autoColor: "Auto",
       metronomeTone: "SONIDO DEL METRÓNOMO", toneNames: { click: "Click", beep: "Bip", wood: "Madera", clave: "Clave" },
       profileSection: "PERFIL", practiceSection: "PRÁCTICA", preferencesSection: "PREFERENCIAS", accountSection: "AJUSTES DE CUENTA", pleaseWait: "Un momento...",
       libraryLabel: "BIBLIOTECA DE CONTENIDO", libraryFull: "Biblioteca Completa", libraryEssentials: "Esenciales", libraryHint: "Esenciales muestra una lista más corta y sencilla de rudimentos y ejercicios. Puedes cambiarlo cuando quieras.",
@@ -1014,7 +1014,7 @@ export default function Home() {
   if (!user) return <Login error={authError} setError={setAuthError} />;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className="shell">
-    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} displayName={displayName} language={language} T={T} />}
+    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => setTab("practice")} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
@@ -1226,7 +1226,7 @@ function HomeChallenges({ user, practiceSessions, language, T }: any) {
     </div>)}
   </div>;
 }
-function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onOpenExercise, onManagePins, displayName, language, T }: any) {
+function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onOpenExercise, onManagePins, displayName, language, T }: any) {
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
   const goalAchieved = dailyGoal != null && todayMinutes >= dailyGoal;
@@ -1236,7 +1236,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
     <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
     <div className="form-card stats-tile"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
     <PointsLeaderboard user={user} pointsEnabled={pointsEnabled} T={T} />
-    <div className="form-card today-goal-card">
+    <div className={todayMinutes === 0 ? "form-card today-goal-card today-goal-card-empty" : "form-card today-goal-card"} onClick={todayMinutes === 0 ? onGoToPractice : undefined}>
       <label className="input-label">{T.today.todaySummary}</label>
       {dailyGoal != null ? (
         <div className="goal-progress"><div className="goal-progress-label"><strong className={goalAchieved ? "achieved" : ""}>{formatMinutes(todayMinutes)} / {formatMinutes(dailyGoal)}</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
@@ -1244,7 +1244,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
         <div className="no-goal-card">
           <p className="no-goal-title">{T.today.noGoalTitle}</p>
           <p className="no-goal-subtitle">{T.today.noGoalSubtitle}</p>
-          <button className="no-goal-btn" onClick={openSettings}>{T.today.noGoalBtn}</button>
+          <button className="no-goal-btn" onClick={(e) => { e.stopPropagation(); openSettings(); }}>{T.today.noGoalBtn}</button>
         </div>
       )}
       {todayLog && todayLog.equipment && <span className="roster-equipment">{equipmentSplitLabel(todayLog.drumsetMinutes, todayLog.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(todayLog.equipment, T))}</span>}
@@ -1254,7 +1254,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
     <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} />
     <div className="home-pinned">
       <div className="home-pinned-head-row">
-        <h2 className="home-title home-pinned-title"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.progressPage.pinned}</h2>
+        <button type="button" className="home-title home-pinned-title" onClick={onManagePins}><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.progressPage.pinned}</button>
         <button type="button" className="home-pinned-settings" onClick={onManagePins} aria-label={T.practiceMode.pinManagerTitle} title={T.practiceMode.pinManagerTitle}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>
         </button>
@@ -1296,7 +1296,7 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language
   function changeMonth(delta: number) { setViewDate(new Date(year, month + delta, 1)); }
   function tapDay(key: string) {
     setSelectedDate(key);
-    if (key < dateKey) setSummaryDate(key);
+    if (key <= dateKey) setSummaryDate(key);
   }
   function goToToday() {
     setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -1509,8 +1509,9 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const group = useMemo(() => groups.find((g) => g.id === activeGroupId) ?? null, [groups, activeGroupId]);
   const [groupLoading, setGroupLoading] = useState(true);
   const [members, setMembers] = useState<{ id: string; name: string; color: string }[]>([]);
-  const [totals, setTotals] = useState<{ id: string; name: string; total: number }[]>([]);
-  const [daysTotals, setDaysTotals] = useState<{ id: string; name: string; days: number; totalDays: number }[]>([]);
+  const [totals, setTotals] = useState<{ id: string; name: string; color: string; total: number }[]>([]);
+  const [daysTotals, setDaysTotals] = useState<{ id: string; name: string; color: string; days: number; totalDays: number }[]>([]);
+  const [groupImprovements, setGroupImprovements] = useState<{ key: string; name: string; exerciseEn: string; bpm: number; date: string }[]>([]);
   const [viewDate, setViewDate] = useState(() => new Date());
   const [monthLogs, setMonthLogs] = useState<Record<string, Record<string, number>>>({});
   const [summaryDayKey, setSummaryDayKey] = useState<string | null>(null);
@@ -1541,19 +1542,22 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   // group's data first -- callers only swap the state once the new data has actually arrived, so
   // switching groups (or the very first load) never shows an in-between empty state.
   async function loadGroupDetail(targetGroup: any) {
-    if (!targetGroup) { setMembers([]); setTotals([]); setDaysTotals([]); return; }
+    if (!targetGroup) { setMembers([]); setTotals([]); setDaysTotals([]); setGroupImprovements([]); return; }
     const { data } = await supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", targetGroup.id).order("user_id");
     const memberList = (data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) }));
     const memberIds = memberList.map((m: any) => m.id);
     let totalsResult: any[] = [];
     let daysTotalsResult: any[] = [];
+    let improvementsResult: { key: string; name: string; exerciseEn: string; bpm: number; date: string }[] = [];
     if (memberIds.length) {
       const since = String(targetGroup.created_at).slice(0, 10);
       const yearStart = `${dateKey.slice(0, 4)}-01-01`;
       const yearEnd = `${dateKey.slice(0, 4)}-12-31`;
-      const [logsRes, yearRes] = await Promise.all([
+      const [logsRes, yearRes, sessionsRes, exerciseRows] = await Promise.all([
         supabase.from("practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since),
         supabase.from("practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd),
+        supabase.from("practice_sessions").select("user_id,practice_exercise_id,bpm,rating,duration_minutes,practiced_on").in("user_id", memberIds).order("practiced_on"),
+        supabase.from("practice_exercises").select("id,name_en"),
       ]);
       const sums: Record<string, number> = {};
       (logsRes.data ?? []).forEach((row: any) => { sums[row.user_id] = (sums[row.user_id] ?? 0) + row.minutes; });
@@ -1565,10 +1569,37 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         daySets[row.user_id].add(row.practiced_on);
       });
       daysTotalsResult = memberList.map((m: any) => ({ ...m, days: daySets[m.id]?.size ?? 0, totalDays: 365 })).sort((a: any, b: any) => b.days - a.days);
+      // Same tempo-unlock detection as the admin dashboard's "Recent Improvements" board, scoped
+      // to this group's own members instead of every student in the app.
+      const exerciseNames: Record<string, string> = Object.fromEntries((exerciseRows.data ?? []).map((r: any) => [r.id, r.name_en]));
+      const byUserExercise: Record<string, any[]> = {};
+      (sessionsRes.data ?? []).forEach((s: any) => { const key = `${s.user_id}::${s.practice_exercise_id}`; (byUserExercise[key] ??= []).push(s); });
+      Object.entries(byUserExercise).forEach(([key, sess]) => {
+        const [uid, exerciseId] = key.split("::");
+        const exerciseEn = exerciseNames[exerciseId];
+        if (!exerciseEn) return;
+        const levels = bpmLevelsFor(exerciseEn);
+        const dates = Array.from(new Set(sess.map((s) => s.practiced_on))).sort();
+        const qualifyingByBpm: Record<number, number> = {};
+        let previousHighest: number | null = null;
+        const meta = memberList.find((m) => m.id === uid);
+        const name = meta?.name ?? uid;
+        dates.forEach((date) => {
+          sess.filter((s) => s.practiced_on === date).forEach((s) => {
+            if (s.rating === "comfortable" || s.rating === "mastered") qualifyingByBpm[s.bpm] = (qualifyingByBpm[s.bpm] ?? 0) + s.duration_minutes;
+          });
+          const unlocked = levels.filter((l) => (qualifyingByBpm[l] ?? 0) >= UNLOCK_MINUTES);
+          const highest = unlocked.length ? Math.max(...unlocked) : null;
+          if (highest !== null && highest !== previousHighest) improvementsResult.push({ key: `${key}::${date}`, name, exerciseEn, bpm: highest, date });
+          previousHighest = highest;
+        });
+      });
+      improvementsResult.sort((a, b) => b.date.localeCompare(a.date));
     }
     setMembers(memberList);
     setTotals(totalsResult);
     setDaysTotals(daysTotalsResult);
+    setGroupImprovements(improvementsResult.slice(0, 5));
   }
   useEffect(() => {
     // Combines the groups list and the active group's detail into one continuous fetch chain
@@ -1772,22 +1803,23 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         <button className="group-add-btn" onClick={() => { setAddingGroup(true); setMode("start"); }}>+</button>
       </header>
       {groups.length > 1 && <div className="group-switcher">{groups.map((g) => <button key={g.id} className={g.id === activeGroupId ? "chip selected" : "chip"} onClick={() => setActiveGroupId(g.id)}>{g.name}</button>)}</div>}
-      <div className="leaderboard"><span className="section-label">{T.group.leaderboard}</span>
-        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%` }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
+      <div className="leaderboard time-card"><span className="section-label">{T.group.leaderboard}</span>
+        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
       </div>
       <div className="time-card"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{sinceLabel}</span>
-        {totals.length <= 3 ? (
-          <div className="stats" style={{ gridTemplateColumns: `repeat(${totals.length}, 1fr)` }}>
-            {totals.map((member) => <Stat key={member.id} label={member.id === user.id ? T.group.you : member.name} value={formatMinutes(member.total)} />)}
-          </div>
-        ) : (
-          <div className="time-list">
-            {totals.map((member) => <div key={member.id} className="time-row">
-              <span className="minutes-name">{member.id === user.id ? T.group.you : member.name}</span>
-              <span className="list-minutes-value">{formatMinutes(member.total)}</span>
-            </div>)}
-          </div>
-        )}
+        <div className="leaderboard">
+          {totals.map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / Math.max(1, totals[0]?.total ?? 0)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
+        </div>
+      </div>
+      <div className="time-card">
+        <span className="section-label">{T.admin.improvementsLabel}</span>
+        {groupImprovements.length === 0 ? <p className="hint speed-empty">{T.admin.improvementsEmpty}</p> : <div className="admin-log-list admin-log-list-compact">
+          {groupImprovements.map((ev) => <div key={ev.key} className="admin-log-row improvement-row">
+            <span className="improvement-chip">{ev.name}</span>
+            <span className="improvement-text">{T.admin.improvedTo(PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language as Lang] ?? ev.exerciseEn, ev.bpm)}</span>
+            <span className="improvement-date">{ev.date}</span>
+          </div>)}
+        </div>}
       </div>
       <div className="group-progress"><span className="section-label">{T.group.progress}</span><div className="calendar-card">
         <div className="cal-head"><button onClick={() => setViewDate(new Date(year, month - 1, 1))}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => setViewDate(new Date(year, month + 1, 1))}>›</button></div>
@@ -2689,7 +2721,7 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
       <p className="settings-neutral-hint">{T.settings.libraryHint}</p>
     </div>
     <p className="settings-section-label">{T.settings.preferencesSection}</p>
-    <div className="settings-form"><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span>{T.settings.showDaysThisYear}</span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
+    <div className="settings-form"><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row toggle-row-with-desc" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span className="toggle-row-text"><span>{T.settings.showDaysThisYear}</span><span className="toggle-row-desc">{T.settings.showDaysThisYearDesc}</span></span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
     <p className="settings-section-label">{T.settings.accountSection}</p>
     <div className="settings-form account-settings">
       <label>{T.settings.changeEmail}<input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={T.settings.newEmailPlaceholder} /></label>
