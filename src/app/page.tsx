@@ -1296,6 +1296,10 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
     if (!pointsEnabled) { setPointsRows(null); return; }
     supabase.rpc("points_leaderboard").then(({ data }) => setPointsRows(data ?? []));
   }, [pointsEnabled]);
+  // Skill Trainer sessions are logged separately from Quick Practice's "what did you practice"
+  // tags (see logPracticeSession) -- a day with only Skill Trainer minutes would otherwise show
+  // "No practice yet." here despite the goal bar above it being full, which reads as broken.
+  const todaySkillExercises: string[] = Array.from(new Set(practiceSessions.filter((s: any) => s.practiced_on === dateKey).map((s: any) => s.item_en as string)));
   return <section className="page today">
     <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
     <YourPointsCard user={user} pointsEnabled={pointsEnabled} rows={pointsRows} onViewPoints={onViewPoints} T={T} />
@@ -1313,7 +1317,11 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
         </div>
       )}
       {todayLog && todayLog.equipment && <span className="roster-equipment">{equipmentSplitLabel(todayLog.drumsetMinutes, todayLog.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(todayLog.equipment, T))}</span>}
-      {todayLog && (todayLog.items.length > 0 || todayLog.customItems.length > 0) ? <div className="detail-chips">{Array.from(new Set([...todayLog.items, ...todayLog.customItems])).map((item: string) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>}
+      {(() => {
+        const loggedItems = todayLog ? [...todayLog.items, ...todayLog.customItems] : [];
+        const allItems: string[] = Array.from(new Set([...loggedItems, ...todaySkillExercises]));
+        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <em key={item}>{PRACTICE_EXERCISES.find((e) => e.en === item)?.[language as Lang] ?? practiceItemLabel(item, language)}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>;
+      })()}
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>
     <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} />
