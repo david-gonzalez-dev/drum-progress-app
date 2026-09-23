@@ -31,7 +31,7 @@
 .time-card .section-label{margin-bottom:2px;font-weight:500;font-size:17px}
 .time-card .section-sublabel{margin:0 0 4px}
 .time-card .leaderboard-row{padding:5px 0;gap:8px}
-.time-card .leaderboard-name{width:auto;max-width:96px;font-size:14px}
+.time-card .leaderboard-name{width:96px;font-size:14px}
 .time-card .leaderboard-value{width:auto;font-size:13px;white-space:nowrap}
 .time-card .leaderboard-bar-track{height:6px}
 .time-card .leaderboard{margin-top:6px}
