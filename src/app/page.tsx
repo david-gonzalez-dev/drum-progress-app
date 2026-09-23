@@ -42,6 +42,12 @@ const PRACTICE_BOOKS = ["Stick Control", "Syncopation", "4-Way Coordination", "R
 function practiceItemLabel(en: string, lang: Lang) {
   return PRACTICE_ITEMS.find((item) => item.en === en)?.[lang] ?? en;
 }
+// Quick Practice's checklist tags and Skill Trainer's exercise names come from two different
+// catalogs (PRACTICE_ITEMS vs PRACTICE_EXERCISES) -- this covers both when rendering a merged
+// chip list of "what was practiced" that can contain either kind of entry.
+function practicedItemLabel(en: string, lang: Lang) {
+  return PRACTICE_EXERCISES.find((item) => item.en === en)?.[lang] ?? practiceItemLabel(en, lang);
+}
 function formatMinutes(totalMinutes: number) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -1320,7 +1326,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
       {(() => {
         const loggedItems = todayLog ? [...todayLog.items, ...todayLog.customItems] : [];
         const allItems: string[] = Array.from(new Set([...loggedItems, ...todaySkillExercises]));
-        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <em key={item}>{PRACTICE_EXERCISES.find((e) => e.en === item)?.[language as Lang] ?? practiceItemLabel(item, language)}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>;
+        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <em key={item}>{practicedItemLabel(item, language)}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>;
       })()}
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>
@@ -1356,13 +1362,13 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
       </> : <button type="button" className="home-pinned-empty" onClick={onManagePins}>{T.practiceMode.pinManagerEmpty}</button>}
     </div>
     <div className="section-title"><h2 className="home-title">{T.calendar.title}</h2></div>
-    <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} language={language} T={T} />
+    <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} practiceSessions={practiceSessions} language={language} T={T} />
   </section>;
 }
 
 type SaveLogFor = (targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[]) => Promise<boolean>;
 
-function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T }: { logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
+function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practiceSessions, language, T }: { logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; practiceSessions: any[]; language: Lang; T: any }) {
   const today = new Date(); const [selectedDate, setSelectedDate] = useState(dateKey); const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1)); const year = viewDate.getFullYear(); const month = viewDate.getMonth(); const days = new Date(year, month + 1, 0).getDate(); const starts = (new Date(year, month, 1).getDay() + 6) % 7; const selectedLog = logs[selectedDate];
   const locale = language === "es" ? "es-ES" : "en-US";
   const [summaryDate, setSummaryDate] = useState<string | null>(null);
@@ -1381,9 +1387,9 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language
     <div className="calendar-card"><div className="cal-head"><div className="cal-nav"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div>{!isTodayView && <button type="button" className="cal-today-btn" onClick={goToToday}>{T.calendar.todayBtn}</button>}</div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=(logs[key]?.minutes ?? 0) > 0; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
     {selectedDate !== dateKey && <div className="day-detail"><span>{new Date(selectedDate + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
       {isFuture && <p>{T.calendar.futureDay}</p>}
-      {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{formatMinutes(selectedLog.minutes)} {T.calendar.minPractised}</strong><div className="detail-chips">{Array.from(new Set([...selectedLog.items, ...selectedLog.customItems])).map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
+      {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{formatMinutes(selectedLog.minutes)} {T.calendar.minPractised}</strong><div className="detail-chips">{Array.from(new Set([...selectedLog.items, ...selectedLog.customItems, ...practiceSessions.filter((s) => s.practiced_on === selectedDate).map((s) => s.item_en)])).map((item) => <em key={item}>{practicedItemLabel(item, language)}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
     </div>}
-    {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
+    {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} practiceSessions={practiceSessions} locale={locale} language={language} T={T}
       onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm}
       onNavigateDay={(delta) => setSummaryDate((current) => current ? shiftDateKey(current, delta) : current)} />}
   </>;
@@ -1443,8 +1449,8 @@ function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, se
     </div>}
   </>;
 }
-function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onClose, onSave, onDelete, confirm, roster, onNavigateDay }: {
-  date: string; log?: Log; dailyGoal: number | null; logs: Record<string, Log>; locale: string; language: Lang; T: any;
+function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale, language, T, onClose, onSave, onDelete, confirm, roster, onNavigateDay }: {
+  date: string; log?: Log; dailyGoal: number | null; logs: Record<string, Log>; practiceSessions?: any[]; locale: string; language: Lang; T: any;
   onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>;
   roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }>; currentUserId: string };
   onNavigateDay?: (delta: number) => void;
@@ -1452,6 +1458,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
   const [editing, setEditing] = useState(false);
   const streakHere = calculateStreaks(logs, date).current;
   const hasPractice = !!log && log.minutes > 0;
+  const daySkillExercises = (practiceSessions ?? []).filter((s) => s.practiced_on === date).map((s) => s.item_en);
   const rosterRows = roster ? roster.members.filter((m) => (roster.dayLogs[m.id]?.minutes ?? 0) > 0).map((m) => ({ ...m, ...roster.dayLogs[m.id] })).sort((a, b) => b.minutes - a.minutes) : null;
   return <div className="modal modal-center" onClick={onClose}><div className="day-summary day-editor-modal" onClick={(e) => e.stopPropagation()}>
     <div className="ds-head">
@@ -1476,7 +1483,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, locale, language, T, onCl
       ) : (
         hasPractice && log ? <>
           <strong className="ds-minutes">{formatMinutes(log.minutes)} {T.calendar.minPractised}{log.equipment ? ` - ${equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
-          {(log.items.length > 0 || log.customItems.length > 0) && <div className="detail-chips">{Array.from(new Set([...log.items, ...log.customItems])).map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>}
+          {(log.items.length > 0 || log.customItems.length > 0 || daySkillExercises.length > 0) && <div className="detail-chips">{Array.from(new Set([...log.items, ...log.customItems, ...daySkillExercises])).map((item) => <em key={item}>{practicedItemLabel(item, language)}</em>)}</div>}
           {log.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
           {dailyGoal != null && <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(formatMinutes(log.minutes), formatMinutes(dailyGoal))}</p>}
           {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
@@ -3452,6 +3459,12 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
           <div className="admin-log-list">
             {(showAllLogs ? logs : logs.slice(0, ADMIN_HISTORY_LIMIT)).map((log, i) => {
               const usedSkillTrainer = skillTrainerDates.has(log.date);
+              // Skill Trainer sessions save separately from a day's practice_logs tags (see
+              // logPracticeSession), so a day practiced entirely through the Skill Trainer had
+              // minutes and the badge above but no chips here -- merge that day's session
+              // exercise names in too, same fix as the student's own Home TODAY card.
+              const skillExercises = Array.from(new Set((sessions ?? []).filter((s) => s.date === log.date).map((s) => s.item_en).filter(Boolean)));
+              const allItems = Array.from(new Set([...log.items, ...skillExercises]));
               return <div key={i} className="admin-log-row">
                 <div className="admin-log-line">
                   <span className="admin-log-date">{log.date}</span>
@@ -3460,7 +3473,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
                   {usedSkillTrainer && <span className="admin-source-label">🎯 {T.admin.skillTrainerBadge}</span>}
                   {!log.usedMetronome && !usedSkillTrainer && <span className="admin-source-label admin-source-muted">✎ {T.admin.quickEntryBadge}</span>}
                 </div>
-                {log.items.length > 0 && <div className="detail-chips">{log.items.map((item: string) => <em key={item}>{item}</em>)}</div>}
+                {allItems.length > 0 && <div className="detail-chips">{allItems.map((item: string) => <em key={item}>{item}</em>)}</div>}
                 {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
               </div>;
             })}
