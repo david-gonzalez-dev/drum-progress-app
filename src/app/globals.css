@@ -41,6 +41,9 @@
 .roster-detail-head{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;margin-bottom:4px}
 .roster-equipment{display:block;font-size:13px;color:#8d9690;margin-bottom:4px}
 .group-add-btn{width:32px;height:32px;border-radius:50%;border:1px solid #472315;background:#2a170a;color:#ff9b50;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.group-add-btn svg{width:16px;height:16px}
+.group-hof-row{display:flex;justify-content:flex-end;margin-bottom:12px}
+.group-hof-btn{display:flex;align-items:center;gap:6px;background:#2a170a;border:1px solid #472315;color:#ff9b50;font:700 13px 'DM Sans';padding:8px 14px;border-radius:99px}
 .group-switcher{display:flex;gap:8px;overflow-x:auto;margin-bottom:20px;padding-bottom:2px}
 .group-switcher .chip{white-space:nowrap;flex-shrink:0}
 .group-invite-footer{margin-top:24px;padding-top:20px;border-top:1px solid #242925;text-align:center}

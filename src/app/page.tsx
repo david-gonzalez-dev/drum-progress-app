@@ -316,7 +316,7 @@ const translations = {
       groupNamePlaceholder: "Group name", inviteCodePlaceholder: "Invite code", pleaseWait: "Please wait...", createGroup: "Create group",
       joinGroup: "Join group", back: "Back", inviteNotFound: "That invite code was not found.", couldNotCreate: "Could not create group.",
       leaderboard: "LEADERBOARD", timePractised: "TIME PRACTISED", you: "You",
-      teacherBadge: "Teacher · Admin", showTeacherStats: "Show teacher stats",
+      teacherBadge: "Admin", showTeacherStats: "Show admin stats",
       awardMostDays: "Most practice days this year", awardMostMinutes: "Most time practised",
       medalBoard: "Hall of Fame", medalBoardEmpty: "No one yet", medalBoardAllTime: "ALL-TIME", medalBoardThisWeek: "THIS WEEK",
       awardConsistency: "Most Consistent", awardStreak: "On a Streak", awardChallenge: "Challenge Champion", awardImproved: "Most Improved",
@@ -465,7 +465,7 @@ const translations = {
       groupNamePlaceholder: "Nombre del grupo", inviteCodePlaceholder: "Código de invitación", pleaseWait: "Un momento...", createGroup: "Crear grupo",
       joinGroup: "Unirse al grupo", back: "Atrás", inviteNotFound: "No se encontró ese código de invitación.", couldNotCreate: "No se pudo crear el grupo.",
       leaderboard: "CLASIFICACIÓN", timePractised: "TIEMPO PRACTICADO", you: "Tú",
-      teacherBadge: "Profesor · Admin", showTeacherStats: "Mostrar estadísticas del profesor",
+      teacherBadge: "Admin", showTeacherStats: "Mostrar estadísticas del admin",
       awardMostDays: "Más días de práctica este año", awardMostMinutes: "Más tiempo practicado",
       medalBoard: "Salón de la Fama", medalBoardEmpty: "Nadie todavía", medalBoardAllTime: "SIEMPRE", medalBoardThisWeek: "ESTA SEMANA",
       awardConsistency: "Más Constante", awardStreak: "En Racha", awardChallenge: "Campeón del Reto", awardImproved: "Más Mejorado",
@@ -1783,11 +1783,11 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const resolvedTeacherId: string | null = teacherIdRes ?? null;
     const memberList = (data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) }));
     const memberIds = memberList.map((m: any) => m.id);
-    // A group's teacher stays a full member (roster/calendar legend/chat) even with stats
-    // hidden -- only the ranked leaderboard arrays below exclude them. groupImprovements
-    // needs no such filter: RLS itself already omits the teacher's practice_sessions rows
-    // when hidden, so their tempo-unlock events simply never appear in sessionsRes below.
-    const statsMembers = (resolvedTeacherId && !targetGroup.show_teacher_stats && user.id !== resolvedTeacherId) ? memberList.filter((m: any) => m.id !== resolvedTeacherId) : memberList;
+    // A group's admin stays a full member (roster/calendar legend/chat) even with stats
+    // hidden -- only the ranked leaderboard arrays below exclude them. This applies to the
+    // admin's own view too, not just students': hiding stats hides them from everyone,
+    // including the admin looking at their own group.
+    const statsMembers = (resolvedTeacherId && !targetGroup.show_teacher_stats) ? memberList.filter((m: any) => m.id !== resolvedTeacherId) : memberList;
     let totalsResult: any[] = [];
     let daysTotalsResult: any[] = [];
     let improvementsResult: { key: string; id: string; name: string; exerciseEn: string; bpm: number; date: string }[] = [];
@@ -1824,7 +1824,11 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       // to this group's own members instead of every student in the app.
       const exerciseNames: Record<string, string> = Object.fromEntries((exerciseRows.data ?? []).map((r: any) => [r.id, r.name_en]));
       const byUserExercise: Record<string, any[]> = {};
-      (sessionsRes.data ?? []).forEach((s: any) => { const key = `${s.user_id}::${s.practice_exercise_id}`; (byUserExercise[key] ??= []).push(s); });
+      const hideAdminSessions = resolvedTeacherId && !targetGroup.show_teacher_stats;
+      (sessionsRes.data ?? []).forEach((s: any) => {
+        if (hideAdminSessions && s.user_id === resolvedTeacherId) return;
+        const key = `${s.user_id}::${s.practice_exercise_id}`; (byUserExercise[key] ??= []).push(s);
+      });
       Object.entries(byUserExercise).forEach(([key, sess]) => {
         const [uid, exerciseId] = key.split("::");
         const exerciseEn = exerciseNames[exerciseId];
@@ -1989,9 +1993,10 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const enriched = list.map((c: any) => {
       const participants = (memberRows ?? []).filter((m: any) => m.challenge_id === c.id);
       const joined = participants.some((m: any) => m.user_id === user.id);
-      // Same hide-teacher-stats rule as the leaderboards: a hidden teacher's own challenge
-      // progress/ranking spot is a competitive stat too, so it's excluded here as well.
-      const hideTeacher = teacherId && group && !group.show_teacher_stats && user.id !== teacherId;
+      // Same hide-admin-stats rule as the leaderboards, including for the admin's own view:
+      // a hidden admin's own challenge progress/ranking spot is a competitive stat too, so
+      // it's excluded here as well.
+      const hideTeacher = teacherId && group && !group.show_teacher_stats;
       const rankedParticipants = hideTeacher ? participants.filter((m: any) => m.user_id !== teacherId) : participants;
       const ranking = rankedParticipants.map((p: any) => {
         const member = members.find((m) => m.id === p.user_id);
@@ -2138,8 +2143,9 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         </div>
       </header>
       {groups.length > 1 && <div className="group-switcher">{groups.map((g) => <button key={g.id} className={g.id === activeGroupId ? "chip selected" : "chip"} onClick={() => setActiveGroupId(g.id)}>{g.name}</button>)}</div>}
+      <div className="group-hof-row"><button type="button" className="group-hof-btn" onClick={() => setShowMedalBoard(true)}>{T.group.medalBoard}<span>→</span></button></div>
       <div className="leaderboard time-card">
-        <div className="section-head"><span className="section-label">{T.group.leaderboard}</span><button type="button" onClick={() => setShowMedalBoard(true)}>{T.group.medalBoard}</button></div>
+        <span className="section-label">{T.group.leaderboard}</span>
         {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
       </div>
       <div className="time-card"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{sinceLabel}</span>
