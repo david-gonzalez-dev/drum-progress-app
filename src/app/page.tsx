@@ -81,6 +81,22 @@ function autoColorForUserId(userId: string) {
   for (let i = 0; i < userId.length; i++) hash = (hash * 31 + userId.charCodeAt(i)) % MEMBER_COLORS.length;
   return MEMBER_COLORS[hash];
 }
+// autoColorForUserId hashes each id independently, so two members in the same small group can
+// land on the same color purely by chance (not rare with only 8 colors) -- this keeps the first
+// member's color (their own pick, or their auto-color) and bumps any later member who'd collide
+// with an already-used color onto the next unused one from the palette, so every member in a
+// given group is visually distinguishable on its leaderboards/calendar.
+function dedupeMemberColors<T extends { color: string }>(members: T[]): T[] {
+  const used = new Set<string>();
+  return members.map((m) => {
+    let color = m.color;
+    if (used.has(color)) {
+      color = MEMBER_COLORS.find((c) => !used.has(c)) ?? color;
+    }
+    used.add(color);
+    return { ...m, color };
+  });
+}
 const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; goal: number; days: number }[] = [
   { key: "daily3", type: "daily", goal: 3, days: 7 },
   { key: "daily30x5", type: "daily", goal: 30, days: 5 },
@@ -1789,7 +1805,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       supabase.rpc("group_teacher_id", { target_group_id: targetGroup.id }),
     ]);
     const resolvedTeacherId: string | null = teacherIdRes ?? null;
-    const memberList = (data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) }));
+    const memberList = dedupeMemberColors((data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) })));
     const memberIds = memberList.map((m: any) => m.id);
     // A group's admin stays a full member (roster/calendar legend/chat) even with stats
     // hidden -- only the ranked leaderboard arrays below exclude them. This applies to the
