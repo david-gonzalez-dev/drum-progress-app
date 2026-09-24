@@ -1037,3 +1037,181 @@ update public.personal_challenges set exercise_en = 'Bass Drum - Heel Down' wher
 update public.personal_challenges set exercise_en = 'Bass Drum - Heel Up' where exercise_en = 'Heel Up, 8th Notes';
 update public.personal_challenges set exercise_en = 'Bass Drum - Slide Technique' where exercise_en = 'Slide Technique, 8th Notes';
 update public.personal_challenges set exercise_en = 'Hi-hat Pedal - Heel Up' where exercise_en = 'Hi-Hat Pedal 8th Notes';
+
+-- Group teacher/admin role: lets students in a group identify their teacher (any group
+-- member who is a global admin, via the existing admin_users/is_admin() system -- no new
+-- role table) and lets that teacher hide their own competitive stats (leaderboard position,
+-- minutes, streaks, recent improvements) from the group without losing their membership,
+-- their "Teacher · Admin" identity, or their own ability to see/manage the group.
+alter table public.groups add column if not exists show_teacher_stats boolean not null default true;
+
+-- security definer + bypasses admin_users' own RLS internally, same reasoning as is_admin()
+-- above -- a non-admin caller's RLS-filtered view of admin_users would otherwise make this
+-- always return false for other people, silently disabling the hide-stats feature.
+create or replace function public.is_admin_user(target_user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as 'select exists (select 1 from public.admin_users where user_id = target_user_id);';
+revoke execute on function public.is_admin_user(uuid) from anon, public;
+grant execute on function public.is_admin_user(uuid) to authenticated;
+
+-- Any member of a group can ask who its teacher is (if any) -- this is identity, not a
+-- stats leak, so it only checks group membership, not is_admin() on the caller.
+create or replace function public.group_teacher_id(target_group_id uuid)
+returns uuid
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select gm.user_id
+  from public.group_members gm
+  where gm.group_id = target_group_id
+    and public.is_group_member(target_group_id)
+    and public.is_admin_user(gm.user_id)
+  limit 1;
+$$;
+revoke execute on function public.group_teacher_id(uuid) from anon, public;
+grant execute on function public.group_teacher_id(uuid) to authenticated;
+
+-- Only a group's own teacher (a global admin who is a member of this specific group) can
+-- flip this -- a regular student, or an admin who isn't in this group, cannot.
+create or replace function public.admin_set_group_teacher_stats(target_group_id uuid, enabled boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized';
+  end if;
+  if not public.is_group_member(target_group_id) then
+    raise exception 'Not a member of this group';
+  end if;
+  update public.groups set show_teacher_stats = enabled where id = target_group_id;
+end;
+$$;
+revoke execute on function public.admin_set_group_teacher_stats(uuid, boolean) from anon, public;
+grant execute on function public.admin_set_group_teacher_stats(uuid, boolean) to authenticated;
+
+-- Enforce the hide-stats setting at the data level (not just the UI): a group member can no
+-- longer see another member's practice_logs rows if that other member is this group's
+-- teacher and the group has turned teacher stats off. The teacher's own "users manage their
+-- practice logs" policy is untouched, so this never affects the teacher's own visibility.
+drop policy if exists "group members can view each other's practice logs" on public.practice_logs;
+create policy "group members can view each other's practice logs" on public.practice_logs for select to authenticated using (
+  exists (
+    select 1 from public.group_members gm1
+    join public.group_members gm2 on gm1.group_id = gm2.group_id
+    join public.groups g on g.id = gm1.group_id
+    where gm1.user_id = practice_logs.user_id and gm2.user_id = auth.uid()
+      and (g.show_teacher_stats = true or not public.is_admin_user(practice_logs.user_id))
+  )
+);
+
+-- Same enforcement for Skill Trainer sessions, which feed the group's "Recent Improvements"
+-- board. This also newly lets group members see each other's sessions at all -- no such
+-- policy existed before, so that board only ever showed the viewer's own progress.
+drop policy if exists "group members can view each other's practice sessions" on public.practice_sessions;
+create policy "group members can view each other's practice sessions" on public.practice_sessions for select to authenticated using (
+  exists (
+    select 1 from public.group_members gm1
+    join public.group_members gm2 on gm1.group_id = gm2.group_id
+    join public.groups g on g.id = gm1.group_id
+    where gm1.user_id = practice_sessions.user_id and gm2.user_id = auth.uid()
+      and (g.show_teacher_stats = true or not public.is_admin_user(practice_sessions.user_id))
+  )
+);
+
+-- Group creation/settings expansion: practice-day counting window, an on/off switch for group
+-- chat, and an on/off switch for the weekly awards board. Defaults are chosen so EXISTING
+-- groups behave exactly as before (chat already always showed -> true; days-this-year already
+-- counted Jan1-Dec31 -> count_days_from_creation false; weekly awards is brand new UI that
+-- shouldn't appear unasked -> false). New groups explicitly opt into all three at creation time
+-- via the client's insert payload, matching the suggested "default ON" creation form.
+alter table public.groups add column if not exists count_days_from_creation boolean not null default false;
+alter table public.groups add column if not exists chat_enabled boolean not null default true;
+alter table public.groups add column if not exists weekly_awards_enabled boolean not null default false;
+
+-- Single settings RPC for every teacher-controlled group flag (replaces
+-- admin_set_group_teacher_stats as the client's write path going forward; that older function
+-- is left in place, just unused, per this schema's append-only convention). Any parameter left
+-- null keeps that column's current value, so the client only ever sends the one flag it's
+-- actually toggling.
+create or replace function public.admin_set_group_settings(
+  target_group_id uuid,
+  p_show_teacher_stats boolean default null,
+  p_chat_enabled boolean default null,
+  p_weekly_awards_enabled boolean default null,
+  p_count_days_from_creation boolean default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized';
+  end if;
+  if not public.is_group_member(target_group_id) then
+    raise exception 'Not a member of this group';
+  end if;
+  update public.groups set
+    show_teacher_stats = coalesce(p_show_teacher_stats, show_teacher_stats),
+    chat_enabled = coalesce(p_chat_enabled, chat_enabled),
+    weekly_awards_enabled = coalesce(p_weekly_awards_enabled, weekly_awards_enabled),
+    count_days_from_creation = coalesce(p_count_days_from_creation, count_days_from_creation)
+  where id = target_group_id;
+end;
+$$;
+revoke execute on function public.admin_set_group_settings(uuid, boolean, boolean, boolean, boolean) from anon, public;
+grant execute on function public.admin_set_group_settings(uuid, boolean, boolean, boolean, boolean) to authenticated;
+
+-- Practice-day counting, take 2: a specific calendar date the teacher picks, not just an
+-- on/off "from today" switch. Supersedes the 5-arg admin_set_group_settings from the previous
+-- migration (dropped + recreated with the wider signature, since nothing outside this feature
+-- depended on the old one yet) -- the client now always calls the 7-arg version.
+alter table public.groups add column if not exists stats_start_date date;
+
+drop function if exists public.admin_set_group_settings(uuid, boolean, boolean, boolean, boolean);
+create or replace function public.admin_set_group_settings(
+  target_group_id uuid,
+  p_show_teacher_stats boolean default null,
+  p_chat_enabled boolean default null,
+  p_weekly_awards_enabled boolean default null,
+  p_count_days_from_creation boolean default null,
+  p_stats_start_date date default null,
+  -- stats_start_date genuinely needs to go back to null sometimes (switching back to "from
+  -- today" or "calendar year"), so a plain coalesce can't tell "leave it alone" apart from
+  -- "clear it" -- this flag makes that explicit. Every other flag keeps the simpler
+  -- coalesce-against-current-value pattern since none of them ever need to be unset to null.
+  p_update_stats_start_date boolean default false
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Not authorized';
+  end if;
+  if not public.is_group_member(target_group_id) then
+    raise exception 'Not a member of this group';
+  end if;
+  update public.groups set
+    show_teacher_stats = coalesce(p_show_teacher_stats, show_teacher_stats),
+    chat_enabled = coalesce(p_chat_enabled, chat_enabled),
+    weekly_awards_enabled = coalesce(p_weekly_awards_enabled, weekly_awards_enabled),
+    count_days_from_creation = coalesce(p_count_days_from_creation, count_days_from_creation),
+    stats_start_date = case when p_update_stats_start_date then p_stats_start_date else stats_start_date end
+  where id = target_group_id;
+end;
+$$;
+revoke execute on function public.admin_set_group_settings(uuid, boolean, boolean, boolean, boolean, date, boolean) from anon, public;
+grant execute on function public.admin_set_group_settings(uuid, boolean, boolean, boolean, boolean, date, boolean) to authenticated;

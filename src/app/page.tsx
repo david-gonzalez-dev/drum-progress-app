@@ -316,6 +316,14 @@ const translations = {
       groupNamePlaceholder: "Group name", inviteCodePlaceholder: "Invite code", pleaseWait: "Please wait...", createGroup: "Create group",
       joinGroup: "Join group", back: "Back", inviteNotFound: "That invite code was not found.", couldNotCreate: "Could not create group.",
       leaderboard: "LEADERBOARD", timePractised: "TIME PRACTISED", you: "You",
+      teacherBadge: "Teacher · Admin", showTeacherStats: "Show teacher stats",
+      awardMostDays: "Most practice days this year", awardMostMinutes: "Most time practised",
+      medalBoard: "Hall of Fame", medalBoardEmpty: "No one yet", medalBoardAllTime: "ALL-TIME", medalBoardThisWeek: "THIS WEEK",
+      awardConsistency: "Most Consistent", awardStreak: "On a Streak", awardChallenge: "Challenge Champion", awardImproved: "Most Improved",
+      awardDaysValue: (v: number) => `${v} day${v === 1 ? "" : "s"}`, awardUnlocksValue: (v: number) => `${v} new tempo${v === 1 ? "" : "s"}`, awardChallengeValue: (pct: number) => `${pct}% there`,
+      groupSettings: "GROUP SETTINGS", countFromCreation: "Stats start tracking from", enableChatSetting: "Enable group chat", enableWeeklyAwards: "Enable weekly awards",
+      dateModeCalendar: "Jan 1", dateModeToday: "Group start", dateModeCustom: "Custom date",
+      countFromCreationDesc: "Sets the starting date for this group's practice-day and time-practised leaderboards.",
       noChallenges: "No challenges yet. Start one with your crew!", newChallenge: "+ New challenge", cancel: "Cancel", challengeNamePlaceholder: "Challenge name",
       typeDaily: "Every day", typeMinutes: "Total minutes", typeSessions: "Days practised", goalLabel: "GOAL", startLabel: "START", endLabel: "END",
       rewardPlaceholder: "Reward (optional)", punishmentPlaceholder: "Punishment (optional)", createChallengeBtn: "Create challenge",
@@ -457,6 +465,14 @@ const translations = {
       groupNamePlaceholder: "Nombre del grupo", inviteCodePlaceholder: "Código de invitación", pleaseWait: "Un momento...", createGroup: "Crear grupo",
       joinGroup: "Unirse al grupo", back: "Atrás", inviteNotFound: "No se encontró ese código de invitación.", couldNotCreate: "No se pudo crear el grupo.",
       leaderboard: "CLASIFICACIÓN", timePractised: "TIEMPO PRACTICADO", you: "Tú",
+      teacherBadge: "Profesor · Admin", showTeacherStats: "Mostrar estadísticas del profesor",
+      awardMostDays: "Más días de práctica este año", awardMostMinutes: "Más tiempo practicado",
+      medalBoard: "Salón de la Fama", medalBoardEmpty: "Nadie todavía", medalBoardAllTime: "SIEMPRE", medalBoardThisWeek: "ESTA SEMANA",
+      awardConsistency: "Más Constante", awardStreak: "En Racha", awardChallenge: "Campeón del Reto", awardImproved: "Más Mejorado",
+      awardDaysValue: (v: number) => `${v} día${v === 1 ? "" : "s"}`, awardUnlocksValue: (v: number) => `${v} tiempo${v === 1 ? "" : "s"} nuevo${v === 1 ? "" : "s"}`, awardChallengeValue: (pct: number) => `${pct}% completado`,
+      groupSettings: "AJUSTES DEL GRUPO", countFromCreation: "Las estadísticas empiezan desde", enableChatSetting: "Activar chat del grupo", enableWeeklyAwards: "Activar premios semanales",
+      dateModeCalendar: "1 de enero", dateModeToday: "Inicio del grupo", dateModeCustom: "Fecha personalizada",
+      countFromCreationDesc: "Define la fecha desde la que se cuentan los días y el tiempo de práctica del grupo.",
       noChallenges: "Aún no hay desafíos. ¡Empieza uno con tu grupo!", newChallenge: "+ Nuevo desafío", cancel: "Cancelar", challengeNamePlaceholder: "Nombre del desafío",
       typeDaily: "Todos los días", typeMinutes: "Minutos totales", typeSessions: "Días practicados", goalLabel: "META", startLabel: "INICIO", endLabel: "FIN",
       rewardPlaceholder: "Recompensa (opcional)", punishmentPlaceholder: "Penalización (opcional)", createChallengeBtn: "Crear desafío",
@@ -1474,7 +1490,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale,
         rosterRows && rosterRows.length ? <div className="challenge-ranking">{rosterRows.map((m) => <div key={m.id} className="roster-detail-row">
           <i style={{ width: 8, height: 8, borderRadius: "50%", background: m.color, flexShrink: 0, marginTop: 4 }} />
           <div className="roster-detail-info">
-            <div className="roster-detail-head"><span className="rank-name">{m.id === roster!.currentUserId ? T.group.you : m.name}</span><span className="rank-value">{formatMinutes(m.minutes)}</span></div>
+            <div className="roster-detail-head"><span className="rank-name">{m.name}</span><span className="rank-value">{formatMinutes(m.minutes)}</span></div>
             {m.equipment && <span className="roster-equipment">{equipmentSplitLabel(m.drumsetMinutes, m.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(m.equipment, T))}</span>}
             {((m.items && m.items.length > 0) || (m.customItems && m.customItems.length > 0)) && <div className="detail-chips">{Array.from(new Set([...(m.items ?? []), ...(m.customItems ?? [])])).map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>}
             {m.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {m.notes}</p>}
@@ -1583,15 +1599,152 @@ function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date
   </>;
 }
 function Stat({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><strong>{value}</strong></div>; }
+function TeacherBadge({ T }: { T: any }) {
+  return <span className="teacher-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l9 4.5-9 4.5-9-4.5L12 3z" /><path d="M7 10.5V16c0 1.1 2.24 2 5 2s5-.9 5-2v-5.5" /></svg>{T.group.teacherBadge}</span>;
+}
+// Trophy/medal/consistency/streak/challenge/improved silhouettes are Lucide's (ISC license,
+// lucide.dev) -- their proportions are hand-tuned by icon designers, not something worth
+// re-drawing from scratch. The gold fill + star/shine accents are the only custom part,
+// layered on top to match this app's palette.
+type AwardIconId = "trophy" | "medal" | "consistency" | "streak" | "challenge" | "improved";
+const AWARD_ICON_PATHS: Record<string, React.ReactNode> = {
+  trophy: <>
+    <defs><linearGradient id="award-gold-trophy" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ffe08a" /><stop offset="100%" stopColor="#f0b429" /></linearGradient></defs>
+    <path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2" />
+    <path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2" />
+    <path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3" />
+    <path d="M4 22h16" />
+    <path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z" fill="url(#award-gold-trophy)" stroke="#ffe08a" strokeWidth="1.3" />
+    <ellipse cx="9" cy="5.6" rx="0.9" ry="1.7" fill="#fff3d6" opacity="0.6" transform="rotate(-15 9 5.6)" />
+    <path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3" />
+  </>,
+  medal: <>
+    <defs><radialGradient id="award-gold-medal" cx="35%" cy="30%" r="75%"><stop offset="0%" stopColor="#fff0c2" /><stop offset="55%" stopColor="#f6c445" /><stop offset="100%" stopColor="#d99a1f" /></radialGradient></defs>
+    <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526" />
+    <circle cx="12" cy="8" r="6" fill="url(#award-gold-medal)" stroke="#ffe9ad" strokeWidth="1.3" />
+    <path d="M12 5.3l1 2.1 2.3.35-1.65 1.6.4 2.25-2.05-1.1-2.05 1.1.4-2.25-1.65-1.6 2.3-.35z" fill="#fff8e6" stroke="none" />
+  </>,
+  consistency: <>
+    <defs><linearGradient id="award-gold-consistency" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ffe08a" /><stop offset="100%" stopColor="#f0b429" /></linearGradient></defs>
+    <path d="M8 2v3" /><path d="M16 2v3" />
+    <rect x="3" y="3" width="18" height="18" rx="2" fill="url(#award-gold-consistency)" stroke="#ffe08a" strokeWidth="1.3" />
+    <path d="M3 9h18" stroke="#8a5a1a" strokeWidth="1.4" />
+    <path d="m9 15.2 2 2 4-4.2" stroke="#7a3f0c" strokeWidth="2.1" />
+  </>,
+  streak: <>
+    <defs><linearGradient id="award-gold-streak" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ffdc7a" /><stop offset="55%" stopColor="#ffb029" /><stop offset="100%" stopColor="#e2580c" /></linearGradient></defs>
+    <path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4" fill="url(#award-gold-streak)" stroke="#ffe6ad" strokeWidth="1.2" />
+    <ellipse cx="11" cy="15" rx="1" ry="1.8" fill="#fff3d6" opacity="0.55" />
+  </>,
+  challenge: <>
+    <defs><radialGradient id="award-gold-challenge" cx="35%" cy="30%" r="75%"><stop offset="0%" stopColor="#fff0c2" /><stop offset="55%" stopColor="#f6c445" /><stop offset="100%" stopColor="#d99a1f" /></radialGradient></defs>
+    <circle cx="12" cy="12" r="10" fill="url(#award-gold-challenge)" stroke="#ffe9ad" strokeWidth="1.2" />
+    <circle cx="12" cy="12" r="6" fill="none" stroke="#c2571a" strokeWidth="1.4" opacity="0.6" />
+    <circle cx="12" cy="12" r="2" fill="#8a3d10" stroke="none" />
+  </>,
+  improved: <>
+    <defs><radialGradient id="award-gold-improved" cx="40%" cy="30%" r="80%"><stop offset="0%" stopColor="#fff3d6" /><stop offset="60%" stopColor="#ffcf5e" /><stop offset="100%" stopColor="#e8a021" /></radialGradient></defs>
+    <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" fill="url(#award-gold-improved)" stroke="#ffe9ad" strokeWidth="1.2" />
+    <path d="M20 2v4" /><path d="M22 4h-4" /><circle cx="4" cy="20" r="2" />
+  </>,
+};
+// Award icons render only inside the Medal Board popup now (rows built below), not scattered
+// next to names elsewhere -- see MedalBoardModal. Extensibility lives in that row list: one
+// more row (icon + title + holder + value) covers a future award type, no structural change.
+function MedalBoardModal({ daysTotals, totals, weeklyRows, onClose, T }: any) {
+  const allTimeRows = [
+    { icon: "trophy" as const, title: T.group.awardMostDays, leader: daysTotals[0], hasValue: (daysTotals[0]?.days ?? 0) > 0, value: daysTotals[0] ? `${daysTotals[0].days} / ${daysTotals[0].totalDays}` : "" },
+    { icon: "medal" as const, title: T.group.awardMostMinutes, leader: totals[0], hasValue: (totals[0]?.total ?? 0) > 0, value: totals[0] ? formatMinutes(totals[0].total) : "" },
+  ];
+  const renderRow = (row: any) => <div key={row.icon} className="admin-log-row medal-board-row">
+    <span className="medal-board-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{AWARD_ICON_PATHS[row.icon]}</svg></span>
+    <div className="medal-board-info">
+      <span className="medal-board-title">{row.title}</span>
+      <span className="medal-board-holder">{row.hasValue ? row.leader.name : T.group.medalBoardEmpty}</span>
+    </div>
+    {row.hasValue && <span className="medal-board-value">{row.value}</span>}
+  </div>;
+  return <div className="modal modal-center" onClick={onClose}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
+    <div className="ds-head">
+      <span className="eyebrow">{T.group.medalBoard}</span>
+      <button className="close" onClick={onClose}>×</button>
+    </div>
+    <div className="day-summary-body">
+      <span className="ladder-label">{T.group.medalBoardAllTime}</span>
+      <div className="admin-log-list">{allTimeRows.map(renderRow)}</div>
+      {weeklyRows && weeklyRows.length > 0 && <>
+        <span className="ladder-label admin-section-gap">{T.group.medalBoardThisWeek}</span>
+        <div className="admin-log-list">{weeklyRows.map(renderRow)}</div>
+      </>}
+    </div>
+  </div></div>;
+}
+function GroupSettingsModal({ group, setGroupSetting, setGroupDateMode, onClose, T }: any) {
+  return <div className="modal modal-center" onClick={onClose}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
+    <div className="ds-head">
+      <span className="eyebrow">{T.group.groupSettings}</span>
+      <button className="close" onClick={onClose}>×</button>
+    </div>
+    <div className="day-summary-body">
+      <h2 className="edit-rating-title">{group.name}</h2>
+      <div className="admin-settings-list admin-settings-list-nodivider">
+        <div className="admin-settings-row admin-settings-row-stack">
+          <span>{T.group.countFromCreation}</span>
+          <span className="toggle-row-desc">{T.group.countFromCreationDesc}</span>
+          <div className="admin-mini-toggle">
+            <button type="button" className={!group.stats_start_date && !group.count_days_from_creation ? "selected" : ""} onClick={() => setGroupDateMode("calendar")}>{T.group.dateModeCalendar}</button>
+            <button type="button" className={!group.stats_start_date && group.count_days_from_creation ? "selected" : ""} onClick={() => setGroupDateMode("creation")}>{T.group.dateModeToday}</button>
+            <button type="button" className={group.stats_start_date ? "selected" : ""} onClick={() => setGroupDateMode("custom")}>{T.group.dateModeCustom}</button>
+          </div>
+          {group.stats_start_date && <input type="date" className="group-input" value={group.stats_start_date} max={dateKey} onChange={(e) => setGroupDateMode("custom", e.target.value)} />}
+        </div>
+        <div className="admin-settings-row">
+          <span>{T.group.enableChatSetting}</span>
+          <div className="admin-mini-toggle">
+            <button type="button" className={!group.chat_enabled ? "selected" : ""} onClick={() => setGroupSetting("chat_enabled", "p_chat_enabled", false)}>{T.admin.pointGameOff}</button>
+            <button type="button" className={group.chat_enabled ? "selected" : ""} onClick={() => setGroupSetting("chat_enabled", "p_chat_enabled", true)}>{T.admin.pointGameOn}</button>
+          </div>
+        </div>
+        <div className="admin-settings-row">
+          <span>{T.group.showTeacherStats}</span>
+          <div className="admin-mini-toggle">
+            <button type="button" className={!group.show_teacher_stats ? "selected" : ""} onClick={() => setGroupSetting("show_teacher_stats", "p_show_teacher_stats", false)}>{T.admin.pointGameOff}</button>
+            <button type="button" className={group.show_teacher_stats ? "selected" : ""} onClick={() => setGroupSetting("show_teacher_stats", "p_show_teacher_stats", true)}>{T.admin.pointGameOn}</button>
+          </div>
+        </div>
+        <div className="admin-settings-row">
+          <span>{T.group.enableWeeklyAwards}</span>
+          <div className="admin-mini-toggle">
+            <button type="button" className={!group.weekly_awards_enabled ? "selected" : ""} onClick={() => setGroupSetting("weekly_awards_enabled", "p_weekly_awards_enabled", false)}>{T.admin.pointGameOff}</button>
+            <button type="button" className={group.weekly_awards_enabled ? "selected" : ""} onClick={() => setGroupSetting("weekly_awards_enabled", "p_weekly_awards_enabled", true)}>{T.admin.pointGameOn}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>;
+}
 
 function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T }: { user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
   const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [groups, setGroups] = useState<any[]>([]); const [activeGroupId, setActiveGroupId] = useState<string | null>(null); const [addingGroup, setAddingGroup] = useState(false); const [busy, setBusy] = useState(false);
+  // New-group setup defaults -- practice tracking defaults to "from today" (matching the
+  // suggested creation-form layout), everything else defaults on. Existing groups are
+  // unaffected: their columns default the opposite way at the DB level (see schema.sql), these
+  // only apply to what THIS form inserts for a brand new group.
+  const [newDateMode, setNewDateMode] = useState<"calendar" | "creation" | "custom">("creation");
+  const [newCustomStartDate, setNewCustomStartDate] = useState(dateKey);
+  const [newChatEnabled, setNewChatEnabled] = useState(true);
+  const [newShowTeacherStats, setNewShowTeacherStats] = useState(true);
+  const [newWeeklyAwards, setNewWeeklyAwards] = useState(true);
   const group = useMemo(() => groups.find((g) => g.id === activeGroupId) ?? null, [groups, activeGroupId]);
   const [groupLoading, setGroupLoading] = useState(true);
+  const [teacherId, setTeacherId] = useState<string | null>(null);
   const [members, setMembers] = useState<{ id: string; name: string; color: string }[]>([]);
   const [totals, setTotals] = useState<{ id: string; name: string; color: string; total: number }[]>([]);
   const [daysTotals, setDaysTotals] = useState<{ id: string; name: string; color: string; days: number; totalDays: number }[]>([]);
   const [groupImprovements, setGroupImprovements] = useState<{ key: string; name: string; exerciseEn: string; bpm: number; date: string }[]>([]);
+  const [weeklyAwards, setWeeklyAwards] = useState<{ icon: AwardIconId; title: string; leader: { id: string; name: string } | null; hasValue: boolean; value: string }[]>([]);
+  const [showMedalBoard, setShowMedalBoard] = useState(false);
+  const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [viewDate, setViewDate] = useState(() => new Date());
   const [monthLogs, setMonthLogs] = useState<Record<string, Record<string, number>>>({});
   const [summaryDayKey, setSummaryDayKey] = useState<string | null>(null);
@@ -1622,17 +1775,35 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   // group's data first -- callers only swap the state once the new data has actually arrived, so
   // switching groups (or the very first load) never shows an in-between empty state.
   async function loadGroupDetail(targetGroup: any) {
-    if (!targetGroup) { setMembers([]); setTotals([]); setDaysTotals([]); setGroupImprovements([]); return; }
-    const { data } = await supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", targetGroup.id).order("user_id");
+    if (!targetGroup) { setTeacherId(null); setMembers([]); setTotals([]); setDaysTotals([]); setGroupImprovements([]); setWeeklyAwards([]); return; }
+    const [{ data }, { data: teacherIdRes }] = await Promise.all([
+      supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", targetGroup.id).order("user_id"),
+      supabase.rpc("group_teacher_id", { target_group_id: targetGroup.id }),
+    ]);
+    const resolvedTeacherId: string | null = teacherIdRes ?? null;
     const memberList = (data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) }));
     const memberIds = memberList.map((m: any) => m.id);
+    // A group's teacher stays a full member (roster/calendar legend/chat) even with stats
+    // hidden -- only the ranked leaderboard arrays below exclude them. groupImprovements
+    // needs no such filter: RLS itself already omits the teacher's practice_sessions rows
+    // when hidden, so their tempo-unlock events simply never appear in sessionsRes below.
+    const statsMembers = (resolvedTeacherId && !targetGroup.show_teacher_stats && user.id !== resolvedTeacherId) ? memberList.filter((m: any) => m.id !== resolvedTeacherId) : memberList;
     let totalsResult: any[] = [];
     let daysTotalsResult: any[] = [];
-    let improvementsResult: { key: string; name: string; exerciseEn: string; bpm: number; date: string }[] = [];
+    let improvementsResult: { key: string; id: string; name: string; exerciseEn: string; bpm: number; date: string }[] = [];
+    let weeklyAwardsResult: { icon: AwardIconId; title: string; leader: { id: string; name: string } | null; hasValue: boolean; value: string }[] = [];
     if (memberIds.length) {
-      const since = String(targetGroup.created_at).slice(0, 10);
-      const yearStart = `${dateKey.slice(0, 4)}-01-01`;
-      const yearEnd = `${dateKey.slice(0, 4)}-12-31`;
+      const createdAt = String(targetGroup.created_at).slice(0, 10);
+      // Practice-day/time-practised counting window: either a specific date the teacher picked
+      // (stats_start_date), "from this group's creation date" (count_days_from_creation), or
+      // the default calendar year (Jan1-Dec31 for days, all-time-since-creation for total
+      // minutes) -- otherwise a group created mid-year makes a recent joiner's "150/365" look
+      // worse than it is. A custom date takes priority over the plain from-creation flag.
+      const effectiveStart: string | null = targetGroup.stats_start_date || (targetGroup.count_days_from_creation ? createdAt : null);
+      const since = effectiveStart ?? createdAt;
+      const yearStart = effectiveStart ?? `${dateKey.slice(0, 4)}-01-01`;
+      const yearEnd = effectiveStart ? dateKey : `${dateKey.slice(0, 4)}-12-31`;
+      const totalDaysElapsed = effectiveStart ? Math.max(1, Math.round((new Date(dateKey + "T12:00:00").getTime() - new Date(yearStart + "T12:00:00").getTime()) / 86400000) + 1) : 365;
       const [logsRes, yearRes, sessionsRes, exerciseRows] = await Promise.all([
         supabase.from("practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since),
         supabase.from("practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd),
@@ -1641,14 +1812,14 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       ]);
       const sums: Record<string, number> = {};
       (logsRes.data ?? []).forEach((row: any) => { sums[row.user_id] = (sums[row.user_id] ?? 0) + row.minutes; });
-      totalsResult = memberList.map((m: any) => ({ ...m, total: sums[m.id] ?? 0 })).sort((a: any, b: any) => b.total - a.total);
+      totalsResult = statsMembers.map((m: any) => ({ ...m, total: sums[m.id] ?? 0 })).sort((a: any, b: any) => b.total - a.total);
       const daySets: Record<string, Set<string>> = {};
       (yearRes.data ?? []).forEach((row: any) => {
         if (row.minutes <= 0) return;
         if (!daySets[row.user_id]) daySets[row.user_id] = new Set();
         daySets[row.user_id].add(row.practiced_on);
       });
-      daysTotalsResult = memberList.map((m: any) => ({ ...m, days: daySets[m.id]?.size ?? 0, totalDays: 365 })).sort((a: any, b: any) => b.days - a.days);
+      daysTotalsResult = statsMembers.map((m: any) => ({ ...m, days: daySets[m.id]?.size ?? 0, totalDays: totalDaysElapsed })).sort((a: any, b: any) => b.days - a.days);
       // Same tempo-unlock detection as the admin dashboard's "Recent Improvements" board, scoped
       // to this group's own members instead of every student in the app.
       const exerciseNames: Record<string, string> = Object.fromEntries((exerciseRows.data ?? []).map((r: any) => [r.id, r.name_en]));
@@ -1670,12 +1841,45 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           });
           const unlocked = levels.filter((l) => (qualifyingByBpm[l] ?? 0) >= UNLOCK_MINUTES);
           const highest = unlocked.length ? Math.max(...unlocked) : null;
-          if (highest !== null && highest !== previousHighest) improvementsResult.push({ key: `${key}::${date}`, name, exerciseEn, bpm: highest, date });
+          if (highest !== null && highest !== previousHighest) improvementsResult.push({ key: `${key}::${date}`, id: uid, name, exerciseEn, bpm: highest, date });
           previousHighest = highest;
         });
       });
       improvementsResult.sort((a, b) => b.date.localeCompare(a.date));
+      // Weekly recognition (opt-in per group, off by default): four categories built from data
+      // already fetched above, not a second "most minutes" leaderboard -- each looks at a
+      // different signal so recognition can land on a different student each week instead of
+      // always the same top practicer.
+      if (targetGroup.weekly_awards_enabled) {
+        const weekStart = shiftDateKey(dateKey, -6);
+        const weekDayCounts: Record<string, number> = {};
+        const logsByMember: Record<string, Record<string, { minutes: number }>> = {};
+        (yearRes.data ?? []).forEach((row: any) => {
+          (logsByMember[row.user_id] ??= {})[row.practiced_on] = { minutes: row.minutes };
+          if (row.minutes > 0 && row.practiced_on >= weekStart) weekDayCounts[row.user_id] = (weekDayCounts[row.user_id] ?? 0) + 1;
+        });
+        const streakByMember: Record<string, number> = {};
+        statsMembers.forEach((m: any) => { streakByMember[m.id] = calculateStreaks((logsByMember[m.id] ?? {}) as any, dateKey).current; });
+        const weekImprovedCounts: Record<string, number> = {};
+        improvementsResult.forEach((ev) => { if (ev.date >= weekStart) weekImprovedCounts[ev.id] = (weekImprovedCounts[ev.id] ?? 0) + 1; });
+        const pickTop = (counts: Record<string, number>) => {
+          let best: { id: string; value: number } | null = null;
+          statsMembers.forEach((m: any) => { const v = counts[m.id] ?? 0; if (v > 0 && (!best || v > best.value)) best = { id: m.id, value: v }; });
+          return best;
+        };
+        const toRow = (icon: AwardIconId, title: string, top: { id: string; value: number } | null, valueLabel: (v: number) => string): typeof weeklyAwardsResult[number] => {
+          const leader = top ? statsMembers.find((m: any) => m.id === top.id) ?? null : null;
+          return { icon, title, leader: leader ? { id: leader.id, name: leader.name } : null, hasValue: !!top, value: top ? valueLabel(top.value) : "" };
+        };
+        weeklyAwardsResult = [
+          toRow("consistency", T.group.awardConsistency, pickTop(weekDayCounts), (v) => T.group.awardDaysValue(v)),
+          toRow("streak", T.group.awardStreak, pickTop(streakByMember), (v) => T.group.awardDaysValue(v)),
+          toRow("improved", T.group.awardImproved, pickTop(weekImprovedCounts), (v) => T.group.awardUnlocksValue(v)),
+        ];
+      }
     }
+    setWeeklyAwards(weeklyAwardsResult);
+    setTeacherId(resolvedTeacherId);
     setMembers(memberList);
     setTotals(totalsResult);
     setDaysTotals(daysTotalsResult);
@@ -1686,7 +1890,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     // (rather than two separate effects/round trips) and only reveals the screen once both are
     // done, instead of showing the groups list first and then the leaderboard popping in after.
     (async () => {
-      const { data } = await supabase.from("group_members").select("groups(id,name,invite_code,created_at,created_by)").eq("user_id", user.id).order("joined_at", { ascending: true });
+      const { data } = await supabase.from("group_members").select("groups(id,name,invite_code,created_at,created_by,show_teacher_stats,count_days_from_creation,chat_enabled,weekly_awards_enabled,stats_start_date)").eq("user_id", user.id).order("joined_at", { ascending: true });
       const list = (data ?? []).map((row: any) => row.groups).filter(Boolean);
       const nextId = (activeGroupId && list.some((g: any) => g.id === activeGroupId)) ? activeGroupId : (list[0]?.id ?? null);
       await loadGroupDetail(list.find((g: any) => g.id === nextId) ?? null);
@@ -1702,12 +1906,12 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const didMountGroupSwitch = useRef(false);
   useEffect(() => {
     if (!didMountGroupSwitch.current) { didMountGroupSwitch.current = true; return; }
-    if (!group) { setMembers([]); setTotals([]); setDaysTotals([]); setChallenges([]); return; }
+    if (!group) { setMembers([]); setTotals([]); setDaysTotals([]); setChallenges([]); setWeeklyAwards([]); return; }
     loadGroupDetail(group);
   }, [group]);
   useEffect(() => { loadChallenges(); }, [group, members]);
   async function loadMessages() {
-    if (!group) { setMessages([]); return; }
+    if (!group || !group.chat_enabled) { setMessages([]); return; }
     const { data } = await supabase.from("group_messages").select("id,user_id,message,created_at").eq("group_id", group.id).order("created_at", { ascending: true }).limit(50);
     setMessages(data ?? []);
   }
@@ -1716,12 +1920,11 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
   }, [messages]);
   useEffect(() => {
-    if (!group) return;
+    if (!group || !group.chat_enabled) return;
     const interval = setInterval(loadMessages, 8000);
     return () => clearInterval(interval);
   }, [group]);
   function nameFor(userId: string) {
-    if (userId === user.id) return T.group.you;
     return members.find((m) => m.id === userId)?.name ?? "Drummer";
   }
   async function sendMessage() {
@@ -1786,13 +1989,17 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const enriched = list.map((c: any) => {
       const participants = (memberRows ?? []).filter((m: any) => m.challenge_id === c.id);
       const joined = participants.some((m: any) => m.user_id === user.id);
-      const ranking = participants.map((p: any) => {
+      // Same hide-teacher-stats rule as the leaderboards: a hidden teacher's own challenge
+      // progress/ranking spot is a competitive stat too, so it's excluded here as well.
+      const hideTeacher = teacherId && group && !group.show_teacher_stats && user.id !== teacherId;
+      const rankedParticipants = hideTeacher ? participants.filter((m: any) => m.user_id !== teacherId) : participants;
+      const ranking = rankedParticipants.map((p: any) => {
         const member = members.find((m) => m.id === p.user_id);
         const { progress, target } = computeChallengeProgress(c.goal_type, c.goal_value, c.start_date, c.end_date, logsByUser[p.user_id] ?? {});
-        return { id: p.user_id, name: p.user_id === user.id ? T.group.you : (member?.name ?? "Drummer"), progress, target };
+        return { id: p.user_id, name: member?.name ?? "Drummer", progress, target };
       }).sort((a, b) => b.progress - a.progress);
       const mine = ranking.find((r) => r.id === user.id);
-      return { ...c, joined, participantCount: participants.length, progress: mine?.progress ?? 0, target: mine?.target ?? c.goal_value, ranking };
+      return { ...c, joined, participantCount: rankedParticipants.length, progress: mine?.progress ?? 0, target: mine?.target ?? c.goal_value, ranking };
     });
     setChallenges(enriched);
   }
@@ -1822,13 +2029,36 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     setChallengeName(""); setChallengeGoal("10"); setChallengeReward(""); setChallengePunishment(""); setShowNewChallenge(false); setChallengeBusy(false);
     loadChallenges();
   }
+  // 4th weekly category: best progress on a currently-active challenge. `challenges` (from
+  // loadChallenges) already excludes a hidden teacher's own ranking row, so no extra filtering
+  // is needed here.
+  const challengeAward = useMemo(() => {
+    if (!group || !group.weekly_awards_enabled) return null;
+    const entries: { id: string; name: string; value: number }[] = [];
+    challenges.forEach((c: any) => {
+      if (c.start_date > dateKey || c.end_date < dateKey) return;
+      (c.ranking ?? []).forEach((r: any) => {
+        const pct = r.target > 0 ? r.progress / r.target : 0;
+        if (pct > 0) entries.push({ id: r.id, name: r.name, value: pct });
+      });
+    });
+    const best = entries.reduce((top: { id: string; name: string; value: number } | null, e) => (!top || e.value > top.value ? e : top), null);
+    return { icon: "challenge" as AwardIconId, title: T.group.awardChallenge, leader: best ? { id: best.id, name: best.name } : null, hasValue: !!best, value: best ? T.group.awardChallengeValue(Math.round(best.value * 100)) : "" };
+  }, [group, challenges, T]);
   async function createGroup() {
     setBusy(true);
     const invite = Math.random().toString(36).slice(2, 8).toUpperCase();
-    const { data, error } = await supabase.from("groups").insert({ name, invite_code: invite, created_by: user.id }).select().single();
+    const { data, error } = await supabase.from("groups").insert({
+      name, invite_code: invite, created_by: user.id,
+      count_days_from_creation: newDateMode === "creation", stats_start_date: newDateMode === "custom" ? newCustomStartDate : null,
+      chat_enabled: newChatEnabled, show_teacher_stats: newShowTeacherStats, weekly_awards_enabled: newWeeklyAwards,
+    }).select().single();
     if (!error && data) {
       const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id, role: "owner" });
-      if (!member.error) { setGroups((current) => [...current, data]); setActiveGroupId(data.id); setAddingGroup(false); setMode("start"); setName(""); }
+      if (!member.error) {
+        setGroups((current) => [...current, data]); setActiveGroupId(data.id); setAddingGroup(false); setMode("start"); setName("");
+        setNewDateMode("creation"); setNewCustomStartDate(dateKey); setNewChatEnabled(true); setNewShowTeacherStats(true); setNewWeeklyAwards(true);
+      }
       else setError(member.error.message);
     } else setError(error?.message ?? T.group.couldNotCreate);
     setBusy(false);
@@ -1871,6 +2101,26 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       setActiveGroupId(next[0]?.id ?? null);
     }
   }
+  // Re-validated server-side by admin_set_group_settings itself (checks is_admin() and
+  // membership in this exact group) -- the client only decides whether to SHOW the controls.
+  // `key` is the local groups-state field name; `param` is that field's RPC parameter name.
+  async function setGroupSetting(key: "show_teacher_stats" | "chat_enabled" | "weekly_awards_enabled" | "count_days_from_creation", param: "p_show_teacher_stats" | "p_chat_enabled" | "p_weekly_awards_enabled" | "p_count_days_from_creation", enabled: boolean) {
+    if (!group || enabled === group[key]) return;
+    const { error } = await supabase.rpc("admin_set_group_settings", { target_group_id: group.id, [param]: enabled });
+    if (error) { setError(error.message); return; }
+    setGroups((current) => current.map((g) => (g.id === group.id ? { ...g, [key]: enabled } : g)));
+  }
+  // stats_start_date needs its own path since it's a tri-state choice (calendar / from-creation
+  // / a specific date), not a plain on/off -- p_update_stats_start_date tells the RPC to apply
+  // p_stats_start_date even when it's null (switching away from a custom date).
+  async function setGroupDateMode(mode: "calendar" | "creation" | "custom", customDate?: string) {
+    if (!group) return;
+    const countFromCreation = mode === "creation";
+    const statsStartDate = mode === "custom" ? (customDate ?? group.stats_start_date ?? dateKey) : null;
+    const { error } = await supabase.rpc("admin_set_group_settings", { target_group_id: group.id, p_count_days_from_creation: countFromCreation, p_stats_start_date: statsStartDate, p_update_stats_start_date: true });
+    if (error) { setError(error.message); return; }
+    setGroups((current) => current.map((g) => (g.id === group.id ? { ...g, count_days_from_creation: countFromCreation, stats_start_date: statsStartDate } : g)));
+  }
   if (groupLoading) return <section className="page"><p className="hint">…</p></section>;
   if (!addingGroup && group) {
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
@@ -1880,15 +2130,21 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     return <section className="page">
       <header className="simple-head group-head">
         <div><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></div>
-        <button className="group-add-btn" onClick={() => { setAddingGroup(true); setMode("start"); }}>+</button>
+        <div className="group-head-actions">
+          {user.id === teacherId && <button type="button" className="group-add-btn" onClick={() => setShowGroupSettings(true)} aria-label={T.group.groupSettings} title={T.group.groupSettings}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>
+          </button>}
+          <button type="button" className="group-add-btn" onClick={() => { setAddingGroup(true); setMode("start"); }}>+</button>
+        </div>
       </header>
       {groups.length > 1 && <div className="group-switcher">{groups.map((g) => <button key={g.id} className={g.id === activeGroupId ? "chip selected" : "chip"} onClick={() => setActiveGroupId(g.id)}>{g.name}</button>)}</div>}
-      <div className="leaderboard time-card"><span className="section-label">{T.group.leaderboard}</span>
-        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
+      <div className="leaderboard time-card">
+        <div className="section-head"><span className="section-label">{T.group.leaderboard}</span><button type="button" onClick={() => setShowMedalBoard(true)}>{T.group.medalBoard}</button></div>
+        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
       </div>
       <div className="time-card"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{sinceLabel}</span>
         <div className="leaderboard">
-          {totals.map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.id === user.id ? T.group.you : member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / Math.max(1, totals[0]?.total ?? 0)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
+          {totals.map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / Math.max(1, totals[0]?.total ?? 0)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
         </div>
       </div>
       <div className="time-card">
@@ -1913,12 +2169,14 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
             return <button key={d} className={className} onClick={() => { if (key <= dateKey) setSummaryDayKey(key); }}><span>{d}</span>{dayMemberIds.length > 0 && <div className="day-dots">{members.map((m) => dayMemberIds.includes(m.id) && <i key={m.id} style={{ background: m.color }} />)}</div>}</button>;
           })}
         </div>
-        <div className="calendar-legend">{members.map((m) => <span key={m.id}><i style={{ background: m.color }} />{m.id === user.id ? T.group.you : m.name}</span>)}</div>
+        <div className="calendar-legend">{members.map((m) => <span key={m.id}><i style={{ background: m.color }} />{m.name}{m.id === teacherId && <TeacherBadge T={T} />}</span>)}</div>
       </div></div>
       {summaryDayKey && <DaySummaryModal date={summaryDayKey} log={logs[summaryDayKey]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
         onClose={() => setSummaryDayKey(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm}
         roster={{ members, dayLogs: dayDetailLogs, currentUserId: user.id }}
         onNavigateDay={(delta) => setSummaryDayKey((current) => current ? shiftDateKey(current, delta) : current)} />}
+      {showMedalBoard && <MedalBoardModal daysTotals={daysTotals} totals={totals} weeklyRows={group.weekly_awards_enabled ? [...weeklyAwards, ...(challengeAward ? [challengeAward] : [])] : []} onClose={() => setShowMedalBoard(false)} T={T} />}
+      {showGroupSettings && <GroupSettingsModal group={group} setGroupSetting={setGroupSetting} setGroupDateMode={setGroupDateMode} onClose={() => setShowGroupSettings(false)} T={T} />}
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span><button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button></div>
         {showNewChallenge && <div className="challenge-form">
@@ -1960,12 +2218,12 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           </div>;
         })}
       </div>
-      <div className="chat-section">
+      {group.chat_enabled && <div className="chat-section">
         <div className="section-head"><span className="section-label">{T.group.chat}</span></div>
         <div className="chat-messages" ref={chatScrollRef}>
           {!messages.length ? <p className="hint">{T.group.noMessages}</p> : messages.map((m) => (
             <div key={m.id} className={m.user_id === user.id ? "chat-message mine" : "chat-message"}>
-              <span className="chat-message-name">{nameFor(m.user_id)}</span>
+              <span className="chat-message-name">{nameFor(m.user_id)}{m.user_id === teacherId && <TeacherBadge T={T} />}</span>
               <p className="chat-message-text">{m.message}</p>
             </div>
           ))}
@@ -1974,7 +2232,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           <input className="group-input chat-input" value={chatText} onChange={(e) => setChatText(e.target.value)} placeholder={T.group.chatPlaceholder} maxLength={300} onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }} />
           <button className="chat-send" disabled={chatBusy || !chatText.trim()} onClick={sendMessage}>{T.group.send}</button>
         </div>
-      </div>
+      </div>}
       <div className="group-invite-footer">
         <span className="section-sublabel">{T.group.inviteMsg}</span>
         <button className="invite-chip" onClick={copyInvite}>{copied ? T.group.copied : group.invite_code}</button>
@@ -1985,7 +2243,57 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   }
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.group.practiseTogether}</p><h1>{T.group.yourGroup}</h1></header>
     {groups.length > 0 && <button className="page-back" onClick={() => setAddingGroup(false)}>‹ {T.group.back}</button>}
-    <div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? T.group.findCrew : mode === "create" ? T.group.startGroup : T.group.joinCrew}</h2>{mode === "start" ? <><p>{T.group.intro}</p><button className="primary" onClick={() => setMode("create")}>{T.group.createGroupBtn} <span>→</span></button><button className="secondary" onClick={() => setMode("join")}>{T.group.joinWithCode}</button></> : <><input className="group-input" value={mode === "create" ? name : code} onChange={e => mode === "create" ? setName(e.target.value) : setCode(e.target.value)} placeholder={mode === "create" ? T.group.groupNamePlaceholder : T.group.inviteCodePlaceholder}/><button className="primary" disabled={busy || !(mode === "create" ? name : code)} onClick={mode === "create" ? createGroup : joinGroup}>{busy ? T.group.pleaseWait : mode === "create" ? T.group.createGroup : T.group.joinGroup}</button><button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button></>}</div></section>;
+    <div className="group-card"><div className="group-icon">✦</div><h2>{mode === "start" ? T.group.findCrew : mode === "create" ? T.group.startGroup : T.group.joinCrew}</h2>
+    {mode === "start" ? <>
+      <p>{T.group.intro}</p>
+      <button className="primary" onClick={() => setMode("create")}>{T.group.createGroupBtn} <span>→</span></button>
+      <button className="secondary" onClick={() => setMode("join")}>{T.group.joinWithCode}</button>
+    </> : mode === "join" ? <>
+      <input className="group-input" value={code} onChange={e => setCode(e.target.value)} placeholder={T.group.inviteCodePlaceholder} />
+      <button className="primary" disabled={busy || !code} onClick={joinGroup}>{busy ? T.group.pleaseWait : T.group.joinGroup}</button>
+      <button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button>
+    </> : <>
+      <input className="group-input" value={name} onChange={e => setName(e.target.value)} placeholder={T.group.groupNamePlaceholder} />
+      <div className="admin-controls-card create-group-settings">
+        <span className="ladder-label">{T.group.groupSettings}</span>
+        <div className="admin-settings-list">
+          <div className="admin-settings-row admin-settings-row-stack">
+            <span>{T.group.countFromCreation}</span>
+            <span className="toggle-row-desc">{T.group.countFromCreationDesc}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={newDateMode === "calendar" ? "selected" : ""} onClick={() => setNewDateMode("calendar")}>{T.group.dateModeCalendar}</button>
+              <button type="button" className={newDateMode === "creation" ? "selected" : ""} onClick={() => setNewDateMode("creation")}>{T.group.dateModeToday}</button>
+              <button type="button" className={newDateMode === "custom" ? "selected" : ""} onClick={() => setNewDateMode("custom")}>{T.group.dateModeCustom}</button>
+            </div>
+            {newDateMode === "custom" && <input type="date" className="group-input" value={newCustomStartDate} max={dateKey} onChange={(e) => setNewCustomStartDate(e.target.value)} />}
+          </div>
+          <div className="admin-settings-row">
+            <span>{T.group.enableChatSetting}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={!newChatEnabled ? "selected" : ""} onClick={() => setNewChatEnabled(false)}>{T.admin.pointGameOff}</button>
+              <button type="button" className={newChatEnabled ? "selected" : ""} onClick={() => setNewChatEnabled(true)}>{T.admin.pointGameOn}</button>
+            </div>
+          </div>
+          <div className="admin-settings-row">
+            <span>{T.group.showTeacherStats}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={!newShowTeacherStats ? "selected" : ""} onClick={() => setNewShowTeacherStats(false)}>{T.admin.pointGameOff}</button>
+              <button type="button" className={newShowTeacherStats ? "selected" : ""} onClick={() => setNewShowTeacherStats(true)}>{T.admin.pointGameOn}</button>
+            </div>
+          </div>
+          <div className="admin-settings-row">
+            <span>{T.group.enableWeeklyAwards}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={!newWeeklyAwards ? "selected" : ""} onClick={() => setNewWeeklyAwards(false)}>{T.admin.pointGameOff}</button>
+              <button type="button" className={newWeeklyAwards ? "selected" : ""} onClick={() => setNewWeeklyAwards(true)}>{T.admin.pointGameOn}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button className="primary" disabled={busy || !name} onClick={createGroup}>{busy ? T.group.pleaseWait : T.group.createGroup}</button>
+      <button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button>
+    </>}
+    </div></section>;
 }
 function Progress({ practiceSessions, logs, user, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
