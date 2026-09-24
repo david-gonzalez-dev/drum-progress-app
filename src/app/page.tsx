@@ -661,6 +661,14 @@ async function fetchChallengeLogsCache(userId: string, earliestStart: string) {
   return cache;
 }
 
+// A group's chosen practice-tracking start date (custom date, or its own creation date), or
+// null when it's just using the default calendar year -- shared by the leaderboard math in
+// loadGroupDetail and the calendar's day-dots/day-detail fetches, so "where stats start" means
+// the same thing everywhere in the group, not just on the leaderboards.
+function groupStatsStart(group: any): string | null {
+  if (!group) return null;
+  return group.stats_start_date || (group.count_days_from_creation ? String(group.created_at).slice(0, 10) : null);
+}
 function calculateStreaks(logs: Record<string, Log>, today: string) {
   const loggedDates = new Set(Object.keys(logs).filter((key) => logs[key].minutes > 0));
   let current = 0;
@@ -1799,7 +1807,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       // the default calendar year (Jan1-Dec31 for days, all-time-since-creation for total
       // minutes) -- otherwise a group created mid-year makes a recent joiner's "150/365" look
       // worse than it is. A custom date takes priority over the plain from-creation flag.
-      const effectiveStart: string | null = targetGroup.stats_start_date || (targetGroup.count_days_from_creation ? createdAt : null);
+      const effectiveStart = groupStatsStart(targetGroup);
       const since = effectiveStart ?? createdAt;
       const yearStart = effectiveStart ?? `${dateKey.slice(0, 4)}-01-01`;
       const yearEnd = effectiveStart ? dateKey : `${dateKey.slice(0, 4)}-12-31`;
@@ -1947,6 +1955,10 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const monthStart = formatLocalDate(year, month, 1);
     const monthEnd = formatLocalDate(year, month, new Date(year, month + 1, 0).getDate());
     const memberIds = members.map((m) => m.id);
+    // Same start date the leaderboards use (custom date, or the group's own creation date) --
+    // days before it are outside the group's tracking window, so the calendar shouldn't show
+    // activity for them even though the underlying practice_logs rows exist.
+    const statsStart = groupStatsStart(group);
     supabase.from("practice_logs").select("practiced_on, user_id, minutes").in("user_id", memberIds).gte("practiced_on", monthStart).lte("practiced_on", monthEnd).then(({ data }) => {
       // Same hide-admin-stats rule as the leaderboards, applied to everyone including the
       // admin's own view -- students already get this for free via RLS (they never receive
@@ -1956,6 +1968,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       const byDay: Record<string, Record<string, number>> = {};
       (data ?? []).forEach((row: any) => {
         if (hideAdmin && row.user_id === teacherId) return;
+        if (statsStart && row.practiced_on < statsStart) return;
         if (row.minutes > 0) byDay[row.practiced_on] = { ...(byDay[row.practiced_on] ?? {}), [row.user_id]: row.minutes };
       });
       setMonthLogs(byDay);
@@ -1963,6 +1976,8 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   }, [group, members, viewDate, teacherId]);
   useEffect(() => {
     if (!summaryDayKey || !members.length) { setDayDetailLogs({}); return; }
+    const statsStart = groupStatsStart(group);
+    if (statsStart && summaryDayKey < statsStart) { setDayDetailLogs({}); return; }
     const memberIds = members.map((m) => m.id);
     const hideAdmin = teacherId && group && !group.show_teacher_stats;
     supabase.from("practice_logs").select("user_id,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("practiced_on", summaryDayKey).in("user_id", memberIds).then(({ data }) => {
