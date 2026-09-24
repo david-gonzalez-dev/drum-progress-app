@@ -1948,22 +1948,32 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const monthEnd = formatLocalDate(year, month, new Date(year, month + 1, 0).getDate());
     const memberIds = members.map((m) => m.id);
     supabase.from("practice_logs").select("practiced_on, user_id, minutes").in("user_id", memberIds).gte("practiced_on", monthStart).lte("practiced_on", monthEnd).then(({ data }) => {
+      // Same hide-admin-stats rule as the leaderboards, applied to everyone including the
+      // admin's own view -- students already get this for free via RLS (they never receive
+      // the admin's rows at all when hidden), but the admin's own query still gets their own
+      // rows back (they can always see their own data), so it needs an explicit client filter.
+      const hideAdmin = teacherId && !group.show_teacher_stats;
       const byDay: Record<string, Record<string, number>> = {};
-      (data ?? []).forEach((row: any) => { if (row.minutes > 0) byDay[row.practiced_on] = { ...(byDay[row.practiced_on] ?? {}), [row.user_id]: row.minutes }; });
+      (data ?? []).forEach((row: any) => {
+        if (hideAdmin && row.user_id === teacherId) return;
+        if (row.minutes > 0) byDay[row.practiced_on] = { ...(byDay[row.practiced_on] ?? {}), [row.user_id]: row.minutes };
+      });
       setMonthLogs(byDay);
     });
-  }, [group, members, viewDate]);
+  }, [group, members, viewDate, teacherId]);
   useEffect(() => {
     if (!summaryDayKey || !members.length) { setDayDetailLogs({}); return; }
     const memberIds = members.map((m) => m.id);
+    const hideAdmin = teacherId && group && !group.show_teacher_stats;
     supabase.from("practice_logs").select("user_id,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("practiced_on", summaryDayKey).in("user_id", memberIds).then(({ data }) => {
       const byUser: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }> = {};
       (data ?? []).forEach((row: any) => {
+        if (hideAdmin && row.user_id === teacherId) return;
         byUser[row.user_id] = { minutes: row.minutes, seconds: row.seconds ?? 0, equipment: row.equipment ?? null, drumsetMinutes: row.drumset_minutes ?? null, padMinutes: row.pad_minutes ?? null, customItems: row.custom_items ?? [], notes: row.notes ?? "", items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) };
       });
       setDayDetailLogs(byUser);
     });
-  }, [summaryDayKey, members]);
+  }, [summaryDayKey, members, group, teacherId]);
   function computeChallengeProgress(goalType: string, goalValue: number, startDate: string, endDate: string, userLogs: Record<string, number>) {
     const end = endDate < dateKey ? endDate : dateKey;
     let progress = 0; let target = goalValue;
