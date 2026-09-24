@@ -48,6 +48,15 @@ function practiceItemLabel(en: string, lang: Lang) {
 function practicedItemLabel(en: string, lang: Lang) {
   return PRACTICE_EXERCISES.find((item) => item.en === en)?.[lang] ?? practiceItemLabel(en, lang);
 }
+// A "what was practiced" chip, marked with a small target icon + warmer style when it came from
+// a tracked Skill Trainer session rather than a manually-picked Quick Practice tag -- so the
+// two sources stay visually distinct wherever this merged chip list is shown.
+function PracticedChip({ item, skill, language }: { item: string; skill: boolean; language: Lang }) {
+  return <em className={skill ? "skill-chip" : undefined}>
+    {skill && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>}
+    {practicedItemLabel(item, language)}
+  </em>;
+}
 function formatMinutes(totalMinutes: number) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -1366,7 +1375,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
       {(() => {
         const loggedItems = todayLog ? [...todayLog.items, ...todayLog.customItems] : [];
         const allItems: string[] = Array.from(new Set([...loggedItems, ...todaySkillExercises]));
-        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <em key={item}>{practicedItemLabel(item, language)}</em>)}</div> : <p className="hint">{T.today.noPracticeYet}</p>;
+        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <PracticedChip key={item} item={item} skill={todaySkillExercises.includes(item)} language={language} />)}</div> : <p className="hint">{T.today.noPracticeYet}</p>;
       })()}
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>
@@ -1427,7 +1436,11 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practice
     <div className="calendar-card"><div className="cal-head"><div className="cal-nav"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div>{!isTodayView && <button type="button" className="cal-today-btn" onClick={goToToday}>{T.calendar.todayBtn}</button>}</div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=(logs[key]?.minutes ?? 0) > 0; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
     {selectedDate !== dateKey && <div className="day-detail"><span>{new Date(selectedDate + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
       {isFuture && <p>{T.calendar.futureDay}</p>}
-      {!isFuture && (selectedLog && selectedLog.minutes > 0 ? <><strong>{formatMinutes(selectedLog.minutes)} {T.calendar.minPractised}</strong><div className="detail-chips">{Array.from(new Set([...selectedLog.items, ...selectedLog.customItems, ...practiceSessions.filter((s) => s.practiced_on === selectedDate).map((s) => s.item_en)])).map((item) => <em key={item}>{practicedItemLabel(item, language)}</em>)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</> : <p>{T.calendar.noPractice}</p>)}
+      {!isFuture && (selectedLog && selectedLog.minutes > 0 ? (() => {
+        const selectedSkillExercises = practiceSessions.filter((s) => s.practiced_on === selectedDate).map((s) => s.item_en);
+        const allItems = Array.from(new Set([...selectedLog.items, ...selectedLog.customItems, ...selectedSkillExercises]));
+        return <><strong>{formatMinutes(selectedLog.minutes)} {T.calendar.minPractised}</strong><div className="detail-chips">{allItems.map((item) => <PracticedChip key={item} item={item} skill={selectedSkillExercises.includes(item)} language={language} />)}</div>{selectedLog.notes && <p>{selectedLog.notes}</p>}</>;
+      })() : <p>{T.calendar.noPractice}</p>)}
     </div>}
     {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} practiceSessions={practiceSessions} locale={locale} language={language} T={T}
       onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm}
@@ -1492,7 +1505,7 @@ function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, se
 function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale, language, T, onClose, onSave, onDelete, confirm, roster, onNavigateDay }: {
   date: string; log?: Log; dailyGoal: number | null; logs: Record<string, Log>; practiceSessions?: any[]; locale: string; language: Lang; T: any;
   onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>;
-  roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }>; currentUserId: string };
+  roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string; skillItems?: string[] }>; currentUserId: string };
   onNavigateDay?: (delta: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -1516,14 +1529,14 @@ function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale,
           <div className="roster-detail-info">
             <div className="roster-detail-head"><span className="rank-name">{m.name}</span><span className="rank-value">{formatMinutes(m.minutes)}</span></div>
             {m.equipment && <span className="roster-equipment">{equipmentSplitLabel(m.drumsetMinutes, m.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(m.equipment, T))}</span>}
-            {((m.items && m.items.length > 0) || (m.customItems && m.customItems.length > 0)) && <div className="detail-chips">{Array.from(new Set([...(m.items ?? []), ...(m.customItems ?? [])])).map((item) => <em key={item}>{practiceItemLabel(item, language)}</em>)}</div>}
+            {((m.items && m.items.length > 0) || (m.customItems && m.customItems.length > 0)) && <div className="detail-chips">{Array.from(new Set([...(m.items ?? []), ...(m.customItems ?? [])])).map((item) => <PracticedChip key={item} item={item} skill={(m.skillItems ?? []).includes(item)} language={language} />)}</div>}
             {m.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {m.notes}</p>}
           </div>
         </div>)}</div> : <p className="hint">{T.group.noOnePractised}</p>
       ) : (
         hasPractice && log ? <>
           <strong className="ds-minutes">{formatMinutes(log.minutes)} {T.calendar.minPractised}{log.equipment ? ` - ${equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
-          {(log.items.length > 0 || log.customItems.length > 0 || daySkillExercises.length > 0) && <div className="detail-chips">{Array.from(new Set([...log.items, ...log.customItems, ...daySkillExercises])).map((item) => <em key={item}>{practicedItemLabel(item, language)}</em>)}</div>}
+          {(log.items.length > 0 || log.customItems.length > 0 || daySkillExercises.length > 0) && <div className="detail-chips">{Array.from(new Set([...log.items, ...log.customItems, ...daySkillExercises])).map((item) => <PracticedChip key={item} item={item} skill={daySkillExercises.includes(item)} language={language} />)}</div>}
           {log.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
           {dailyGoal != null && <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(formatMinutes(log.minutes), formatMinutes(dailyGoal))}</p>}
           {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
@@ -1772,7 +1785,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [viewDate, setViewDate] = useState(() => new Date());
   const [monthLogs, setMonthLogs] = useState<Record<string, Record<string, number>>>({});
   const [summaryDayKey, setSummaryDayKey] = useState<string | null>(null);
-  const [dayDetailLogs, setDayDetailLogs] = useState<Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }>>({});
+  const [dayDetailLogs, setDayDetailLogs] = useState<Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string; skillItems: string[] }>>({});
   const [copied, setCopied] = useState(false);
   const [challenges, setChallenges] = useState<any[]>([]);
   const [showNewChallenge, setShowNewChallenge] = useState(false);
@@ -1996,11 +2009,25 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     if (statsStart && summaryDayKey < statsStart) { setDayDetailLogs({}); return; }
     const memberIds = members.map((m) => m.id);
     const hideAdmin = teacherId && group && !group.show_teacher_stats;
-    supabase.from("practice_logs").select("user_id,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("practiced_on", summaryDayKey).in("user_id", memberIds).then(({ data }) => {
-      const byUser: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string }> = {};
-      (data ?? []).forEach((row: any) => {
+    // Skill Trainer sessions save separately from a day's practice_logs tags (see
+    // logPracticeSession) -- fetched and merged in here the same way it already is for the
+    // TODAY card, Admin's daily logs, and Home's own calendar, so a group member's day that was
+    // entirely Skill Trainer doesn't show a blank/incomplete chip list to the rest of the group.
+    Promise.all([
+      supabase.from("practice_logs").select("user_id,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("practiced_on", summaryDayKey).in("user_id", memberIds),
+      supabase.from("practice_sessions").select("user_id,practice_exercises(name_en)").eq("practiced_on", summaryDayKey).in("user_id", memberIds),
+    ]).then(([logsRes, sessionsRes]) => {
+      const byUser: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string; skillItems: string[] }> = {};
+      (logsRes.data ?? []).forEach((row: any) => {
         if (hideAdmin && row.user_id === teacherId) return;
-        byUser[row.user_id] = { minutes: row.minutes, seconds: row.seconds ?? 0, equipment: row.equipment ?? null, drumsetMinutes: row.drumset_minutes ?? null, padMinutes: row.pad_minutes ?? null, customItems: row.custom_items ?? [], notes: row.notes ?? "", items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean) };
+        byUser[row.user_id] = { minutes: row.minutes, seconds: row.seconds ?? 0, equipment: row.equipment ?? null, drumsetMinutes: row.drumset_minutes ?? null, padMinutes: row.pad_minutes ?? null, customItems: row.custom_items ?? [], notes: row.notes ?? "", items: (row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean), skillItems: [] };
+      });
+      (sessionsRes.data ?? []).forEach((row: any) => {
+        if (hideAdmin && row.user_id === teacherId) return;
+        const exerciseEn = row.practice_exercises?.name_en;
+        if (!exerciseEn || !byUser[row.user_id]) return;
+        if (!byUser[row.user_id].items.includes(exerciseEn)) byUser[row.user_id].items.push(exerciseEn);
+        if (!byUser[row.user_id].skillItems.includes(exerciseEn)) byUser[row.user_id].skillItems.push(exerciseEn);
       });
       setDayDetailLogs(byUser);
     });
@@ -3828,7 +3855,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
                   {usedSkillTrainer && <span className="admin-source-label">🎯 {T.admin.skillTrainerBadge}</span>}
                   {!log.usedMetronome && !usedSkillTrainer && <span className="admin-source-label admin-source-muted">✎ {T.admin.quickEntryBadge}</span>}
                 </div>
-                {allItems.length > 0 && <div className="detail-chips">{allItems.map((item: string) => <em key={item}>{item}</em>)}</div>}
+                {allItems.length > 0 && <div className="detail-chips">{allItems.map((item: string) => <em key={item} className={skillExercises.includes(item) ? "skill-chip" : undefined}>{skillExercises.includes(item) && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>}{item}</em>)}</div>}
                 {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
               </div>;
             })}
