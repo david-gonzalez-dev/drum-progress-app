@@ -1215,3 +1215,135 @@ end;
 $$;
 revoke execute on function public.admin_set_group_settings(uuid, boolean, boolean, boolean, boolean, date, boolean) from anon, public;
 grant execute on function public.admin_set_group_settings(uuid, boolean, boolean, boolean, boolean, date, boolean) to authenticated;
+
+-- SECURITY AUDIT FIXES (2026-09-25 read-only audit, findings B1/B2, plus one bug found while
+-- fixing B2 -- see comments on each block below).
+
+-- BUG FOUND WHILE FIXING B2: settings had no admin-read policy at all -- the admin per-student
+-- page's kid_mode/points_enabled fetch (openUser() in page.tsx) was silently returning no row
+-- for every student (RLS only ever allowed auth.uid() = user_id to select), so the admin's
+-- "Mode"/"Point Game" toggle always displayed OFF regardless of the student's real setting.
+-- Additive, same pattern as every other "admins can view all ..." policy in this file.
+drop policy if exists "admins can view all settings" on public.settings;
+create policy "admins can view all settings" on public.settings for select to authenticated using (public.is_admin());
+
+-- FIX (audit finding B2): points_enabled is documented, and used by the app, as admin-only --
+-- the client never writes it directly, only through admin_set_points_enabled -- but the
+-- original blanket "for all" policy on settings (see top of this file) still let a user UPDATE
+-- it directly via the API, bypassing that RPC and self-opting in/out of the leaderboard against
+-- the teacher's decision. Column-level grants close that gap without touching the RPC (a
+-- security definer function runs as its owner, not the caller, so it's unaffected by this).
+--
+-- kid_mode is deliberately left updatable here: unlike points_enabled, the app already treats
+-- it as a genuine self-service preference (set during onboarding and editable any time in
+-- Settings -- see finishOnboarding/saveSettings in page.tsx), with the admin's admin_set_kid_mode
+-- only ever adjusting the same value, not enforcing it. Locking it down at the DB level would
+-- break that already-shipped, legitimate flow. The stale "never self-toggled" comment on kid_mode
+-- above (and in page.tsx) has been corrected to describe what actually ships.
+-- Both INSERT and UPDATE need the same column-level restriction: an upsert's first-ever write
+-- for a user (no existing row yet) goes through INSERT, not UPDATE, so restricting only one of
+-- the two would leave points_enabled settable exactly once, on a brand-new account.
+revoke insert, update on public.settings from authenticated;
+grant insert (user_id, language, daily_goal_minutes, metronome_tone, show_days_this_year, onboarded, kid_mode) on public.settings to authenticated;
+grant update (language, daily_goal_minutes, metronome_tone, show_days_this_year, onboarded, kid_mode) on public.settings to authenticated;
+
+-- FIX (audit finding B1): "signed-in users can join challenges" only checked auth.uid() =
+-- user_id, never that the caller is actually a member of the challenge's own group -- the same
+-- bug already found and fixed for group_members joins (see "SECURITY FIX" comment earlier in
+-- this file), just never mirrored onto challenge_members. Narrowing to require membership in
+-- the challenge's group, same join pattern already used by "group members can create challenges".
+drop policy if exists "signed-in users can join challenges" on public.challenge_members;
+create policy "group members can join challenges" on public.challenge_members for insert to authenticated with check (
+  auth.uid() = user_id and exists (
+    select 1 from public.challenges c
+    join public.group_members m on m.group_id = c.group_id
+    where c.id = challenge_id and m.user_id = auth.uid()
+  )
+);
+
+-- FIX (audit finding B5): group_messages had no rate limit, unlike groups/challenges (see the
+-- rate-limit triggers earlier in this file) -- a member could spam a group's chat with rapid
+-- inserts. Same style trigger, generous enough that no real conversation would ever hit it.
+create or replace function public.enforce_group_message_rate_limit()
+returns trigger
+language plpgsql
+as $$
+begin
+  if (select count(*) from public.group_messages where user_id = new.user_id and created_at > now() - interval '1 minute') >= 20 then
+    raise exception 'Sending messages too fast. Please slow down.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists group_messages_rate_limit on public.group_messages;
+create trigger group_messages_rate_limit
+before insert on public.group_messages
+for each row execute function public.enforce_group_message_rate_limit();
+
+-- FIX (audit finding B6): several free-text fields had no length limit at all, unlike
+-- group_messages.message (already capped at 500). Not a security issue on their own (all are
+-- RLS-scoped to the owner or shared read-only with a group/admin, and React escapes everything
+-- on render) -- just hardening against an oversized paste breaking layout or bloating storage.
+alter table public.practice_logs drop constraint if exists practice_logs_notes_length_check;
+alter table public.practice_logs add constraint practice_logs_notes_length_check check (notes is null or char_length(notes) <= 2000);
+alter table public.practice_sessions drop constraint if exists practice_sessions_notes_length_check;
+alter table public.practice_sessions add constraint practice_sessions_notes_length_check check (notes is null or char_length(notes) <= 2000);
+alter table public.profiles drop constraint if exists profiles_name_length_check;
+alter table public.profiles add constraint profiles_name_length_check check (char_length(name) <= 100);
+alter table public.challenges drop constraint if exists challenges_name_length_check;
+alter table public.challenges add constraint challenges_name_length_check check (char_length(name) <= 200);
+alter table public.challenges drop constraint if exists challenges_reward_length_check;
+alter table public.challenges add constraint challenges_reward_length_check check (reward is null or char_length(reward) <= 500);
+alter table public.challenges drop constraint if exists challenges_punishment_length_check;
+alter table public.challenges add constraint challenges_punishment_length_check check (punishment is null or char_length(punishment) <= 500);
+
+-- FIX (audit finding B7): MAX_PINNED_EXERCISES (5) was only enforced client-side in page.tsx --
+-- harmless today (pinning more isn't an advantage of any kind), but a direct API call could
+-- exceed it. Trigger mirrors the same style as the other row-count limits in this file.
+create or replace function public.enforce_max_pinned_exercises()
+returns trigger
+language plpgsql
+as $$
+begin
+  if (select count(*) from public.pinned_exercises where user_id = new.user_id) >= 5 then
+    raise exception 'You can only pin up to 5 exercises.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists pinned_exercises_max_limit on public.pinned_exercises;
+create trigger pinned_exercises_max_limit
+before insert on public.pinned_exercises
+for each row execute function public.enforce_max_pinned_exercises();
+
+-- FOLLOW-UP TO B6: two more freeform-text fields missed in the first pass, same rationale as the
+-- notes/name/reward/punishment caps above.
+--
+-- user_practice_items.name (sticky custom "what did you practice" / method-book entries a
+-- student types themselves) had no length limit -- plain check constraint, same as profiles.name.
+alter table public.user_practice_items drop constraint if exists user_practice_items_name_length_check;
+alter table public.user_practice_items add constraint user_practice_items_name_length_check check (char_length(name) <= 100);
+
+-- practice_logs.custom_items is a text[] (freeform "Other" pills typed into the metronome's
+-- Add-Time prompt), visible to group members via the existing group-visibility policy on
+-- practice_logs -- unlike the plain-text columns above, a check constraint can't validate a
+-- subquery over an array's elements, so this needs a trigger instead (same style as the other
+-- triggers in this file): caps the number of pills per day and each pill's length.
+create or replace function public.enforce_custom_items_limits()
+returns trigger
+language plpgsql
+as $$
+begin
+  if array_length(new.custom_items, 1) > 20 then
+    raise exception 'Too many custom items for one day.';
+  end if;
+  if exists (select 1 from unnest(new.custom_items) as item where char_length(item) > 100) then
+    raise exception 'A custom item name is too long.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists practice_logs_custom_items_limits on public.practice_logs;
+create trigger practice_logs_custom_items_limits
+before insert or update on public.practice_logs
+for each row execute function public.enforce_custom_items_limits();

@@ -767,11 +767,14 @@ export default function Home() {
   const [dailyGoal, setDailyGoal] = useState<number | null>(null);
   const [metronomeTone, setMetronomeTone] = useState("click");
   const [showDaysThisYear, setShowDaysThisYear] = useState(true);
-  // Set by the admin only (see admin_set_kid_mode), never self-toggled -- hides advanced
-  // rudiments/exercises from Skill Trainer for this student.
+  // A self-service preference (set during onboarding, editable any time in Settings) that hides
+  // advanced rudiments/exercises from Skill Trainer -- the admin can also set a default for a
+  // student via admin_set_kid_mode, but it's not an enforced restriction: the student can always
+  // change it back themselves.
   const [kidMode, setKidMode] = useState(false);
-  // Also admin-only (see admin_set_points_enabled) -- whether this student is opted into
-  // the teacher-run point game and its ranking, on Home.
+  // Admin-only (see admin_set_points_enabled), and actually enforced -- whether this student is
+  // opted into the teacher-run point game and its ranking, on Home. The database now rejects a
+  // direct client write to this column; only the admin_set_points_enabled RPC can change it.
   const [pointsEnabled, setPointsEnabled] = useState(false);
   const T = translations[language];
   const [practiceStep, setPracticeStep] = useState<"category" | "tiers" | "exerciseGroups" | "list" | "detail" | "session" | "rate">("category");
