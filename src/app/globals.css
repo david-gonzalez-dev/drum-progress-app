@@ -35,6 +35,8 @@
 .time-card .leaderboard-value{width:auto;font-size:13px;white-space:nowrap}
 .time-card .leaderboard-bar-track{height:6px}
 .time-card .leaderboard{margin-top:6px}
+.time-view-toggle{display:flex;gap:6px;margin:2px 0 8px}
+.time-view-toggle .equipment-option{padding:6px;font-size:13px;border-radius:9px}
 .roster-detail-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0}
 .roster-detail-row+.roster-detail-row{border-top:1px solid #222724}
 .roster-detail-info{flex:1;min-width:0}

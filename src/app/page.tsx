@@ -360,7 +360,7 @@ const translations = {
       noOnePractised: "No one practised on this day.",
       weekdaysMon: ["M", "T", "W", "T", "F", "S", "S"], copied: "Copied!", progress: "PROGRESS", leaveGroup: "Leave group",
       confirmLeave: "Leave this group? You can rejoin later with the invite code.", confirmDeleteChallenge: "Delete this challenge? This can't be undone.",
-      deleteChallenge: "Delete", since: (date: string) => `Since ${date}`, couldNotLeave: "Could not leave the group.", couldNotDeleteChallenge: "Could not delete the challenge.",
+      deleteChallenge: "Delete", since: (date: string) => `Since ${date}`, last7Days: "Last 7 days", couldNotLeave: "Could not leave the group.", couldNotDeleteChallenge: "Could not delete the challenge.",
       deleteGroupBtn: "Delete group", confirmDeleteGroup: "Delete this group? This removes it for everyone and can't be undone.", couldNotDeleteGroup: "Could not delete the group.",
       chat: "CHAT", noMessages: "No messages yet. Say hi to your crew!", chatPlaceholder: "Message your crew...", send: "Send", couldNotSend: "Could not send message.",
     },
@@ -509,7 +509,7 @@ const translations = {
       noOnePractised: "Nadie practicó ese día.",
       weekdaysMon: ["L", "M", "X", "J", "V", "S", "D"], copied: "¡Copiado!", progress: "PROGRESO", leaveGroup: "Salir del grupo",
       confirmLeave: "¿Salir de este grupo? Puedes volver a unirte más tarde con el código de invitación.", confirmDeleteChallenge: "¿Eliminar este desafío? Esta acción no se puede deshacer.",
-      deleteChallenge: "Eliminar", since: (date: string) => `Desde ${date}`, couldNotLeave: "No se pudo salir del grupo.", couldNotDeleteChallenge: "No se pudo eliminar el desafío.",
+      deleteChallenge: "Eliminar", since: (date: string) => `Desde ${date}`, last7Days: "Últimos 7 días", couldNotLeave: "No se pudo salir del grupo.", couldNotDeleteChallenge: "No se pudo eliminar el desafío.",
       deleteGroupBtn: "Eliminar grupo", confirmDeleteGroup: "¿Eliminar este grupo? Se eliminará para todos y no se puede deshacer.", couldNotDeleteGroup: "No se pudo eliminar el grupo.",
       chat: "CHAT", noMessages: "Aún no hay mensajes. ¡Saluda a tu grupo!", chatPlaceholder: "Escribe a tu grupo...", send: "Enviar", couldNotSend: "No se pudo enviar el mensaje.",
     },
@@ -1780,6 +1780,8 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [teacherId, setTeacherId] = useState<string | null>(null);
   const [members, setMembers] = useState<{ id: string; name: string; color: string }[]>([]);
   const [totals, setTotals] = useState<{ id: string; name: string; color: string; total: number }[]>([]);
+  const [weekTotals, setWeekTotals] = useState<{ id: string; name: string; color: string; total: number }[]>([]);
+  const [timeView, setTimeView] = useState<"all" | "week">("all");
   const [daysTotals, setDaysTotals] = useState<{ id: string; name: string; color: string; days: number; totalDays: number }[]>([]);
   const [groupImprovements, setGroupImprovements] = useState<{ key: string; name: string; exerciseEn: string; bpm: number; date: string }[]>([]);
   const [weeklyAwards, setWeeklyAwards] = useState<{ icon: AwardIconId; title: string; leader: { id: string; name: string } | null; hasValue: boolean; value: string }[]>([]);
@@ -1815,7 +1817,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   // group's data first -- callers only swap the state once the new data has actually arrived, so
   // switching groups (or the very first load) never shows an in-between empty state.
   async function loadGroupDetail(targetGroup: any) {
-    if (!targetGroup) { setTeacherId(null); setMembers([]); setTotals([]); setDaysTotals([]); setGroupImprovements([]); setWeeklyAwards([]); return; }
+    if (!targetGroup) { setTeacherId(null); setMembers([]); setTotals([]); setWeekTotals([]); setDaysTotals([]); setGroupImprovements([]); setWeeklyAwards([]); return; }
     const [{ data }, { data: teacherIdRes }] = await Promise.all([
       supabase.from("group_members").select("user_id, profiles(name, color)").eq("group_id", targetGroup.id).order("user_id"),
       supabase.rpc("group_teacher_id", { target_group_id: targetGroup.id }),
@@ -1829,6 +1831,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     // including the admin looking at their own group.
     const statsMembers = (resolvedTeacherId && !targetGroup.show_teacher_stats) ? memberList.filter((m: any) => m.id !== resolvedTeacherId) : memberList;
     let totalsResult: any[] = [];
+    let weekTotalsResult: any[] = [];
     let daysTotalsResult: any[] = [];
     let improvementsResult: { key: string; id: string; name: string; exerciseEn: string; bpm: number; date: string }[] = [];
     let weeklyAwardsResult: { icon: AwardIconId; title: string; leader: { id: string; name: string } | null; hasValue: boolean; value: string }[] = [];
@@ -1853,6 +1856,13 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       const sums: Record<string, number> = {};
       (logsRes.data ?? []).forEach((row: any) => { sums[row.user_id] = (sums[row.user_id] ?? 0) + row.minutes; });
       totalsResult = statsMembers.map((m: any) => ({ ...m, total: sums[m.id] ?? 0 })).sort((a: any, b: any) => b.total - a.total);
+      // "This week" totals (trailing 7 days, same window as the weekly awards below) reuse
+      // yearRes -- it already covers this range (yearStart is always Jan 1 or an even earlier
+      // custom stats-start date), so no extra query is needed.
+      const weekStart = shiftDateKey(dateKey, -6);
+      const weekSums: Record<string, number> = {};
+      (yearRes.data ?? []).forEach((row: any) => { if (row.practiced_on >= weekStart) weekSums[row.user_id] = (weekSums[row.user_id] ?? 0) + row.minutes; });
+      weekTotalsResult = statsMembers.map((m: any) => ({ ...m, total: weekSums[m.id] ?? 0 })).sort((a: any, b: any) => b.total - a.total);
       const daySets: Record<string, Set<string>> = {};
       (yearRes.data ?? []).forEach((row: any) => {
         if (row.minutes <= 0) return;
@@ -1895,7 +1905,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       // different signal so recognition can land on a different student each week instead of
       // always the same top practicer.
       if (targetGroup.weekly_awards_enabled) {
-        const weekStart = shiftDateKey(dateKey, -6);
         const weekDayCounts: Record<string, number> = {};
         const logsByMember: Record<string, Record<string, { minutes: number }>> = {};
         (yearRes.data ?? []).forEach((row: any) => {
@@ -1926,6 +1935,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     setTeacherId(resolvedTeacherId);
     setMembers(memberList);
     setTotals(totalsResult);
+    setWeekTotals(weekTotalsResult);
     setDaysTotals(daysTotalsResult);
     setGroupImprovements(improvementsResult.slice(0, 5));
   }
@@ -1950,7 +1960,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const didMountGroupSwitch = useRef(false);
   useEffect(() => {
     if (!didMountGroupSwitch.current) { didMountGroupSwitch.current = true; return; }
-    if (!group) { setMembers([]); setTotals([]); setDaysTotals([]); setChallenges([]); setWeeklyAwards([]); return; }
+    if (!group) { setMembers([]); setTotals([]); setWeekTotals([]); setDaysTotals([]); setChallenges([]); setWeeklyAwards([]); return; }
     loadGroupDetail(group);
   }, [group]);
   useEffect(() => { loadChallenges(); }, [group, members]);
@@ -2219,9 +2229,13 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         <span className="section-label">{T.group.leaderboard}</span>
         {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
       </div>
-      <div className="time-card"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{sinceLabel}</span>
+      <div className="time-card"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{timeView === "week" ? T.group.last7Days : sinceLabel}</span>
+        <div className="equipment-toggle time-view-toggle">
+          <button type="button" className={timeView === "all" ? "equipment-option selected" : "equipment-option"} onClick={() => setTimeView("all")}>{T.group.medalBoardAllTime}</button>
+          <button type="button" className={timeView === "week" ? "equipment-option selected" : "equipment-option"} onClick={() => setTimeView("week")}>{T.group.medalBoardThisWeek}</button>
+        </div>
         <div className="leaderboard">
-          {totals.map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / Math.max(1, totals[0]?.total ?? 0)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
+          {(timeView === "week" ? weekTotals : totals).map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / Math.max(1, (timeView === "week" ? weekTotals : totals)[0]?.total ?? 0)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
         </div>
       </div>
       <div className="time-card">
