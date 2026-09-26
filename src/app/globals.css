@@ -112,6 +112,7 @@
 .back-row button{width:32px;height:32px;border-radius:50%;border:1px solid #2c312e;background:#161918;color:#f6f7f5;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .back-row .title-block .eyebrow{margin-bottom:2px}
 .back-row h2{font-size:26px;margin:0}
+.back-row .title-block .exercise-pattern-note{margin:4px 0 0}
 
 .level-card{background:linear-gradient(110deg,#17120f,#27140a);border:1px solid #472315;border-radius:18px;padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
 .level-card .badge{font-size:28px;line-height:1}
@@ -311,6 +312,7 @@
 .medal-board-holder{font-size:13px;color:#9aa19d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .medal-board-value{flex-shrink:0;font-size:13px;color:#ff9b50;font-weight:700}
 .subdivision-badge{display:inline-block;background:#1c211f;color:#9aa19d;font:700 12px 'DM Sans';letter-spacing:.5px;text-transform:uppercase;padding:5px 11px;border-radius:99px;margin:-8px 0 18px}
+.exercise-pattern-note{font-size:14px;color:#9aa19d;margin:-8px 0 18px}
 .admin-source-label.admin-source-muted{color:#6d746f}
 .admin-summary-card,.admin-controls-card{background:#121413;border:1px solid #222724;border-radius:18px;padding:18px;margin-bottom:16px}
 .admin-stats-row{display:flex;justify-content:space-between;gap:10px}

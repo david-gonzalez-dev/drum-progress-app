@@ -1347,3 +1347,23 @@ drop trigger if exists practice_logs_custom_items_limits on public.practice_logs
 create trigger practice_logs_custom_items_limits
 before insert or update on public.practice_logs
 for each row execute function public.enforce_custom_items_limits();
+
+-- New Hand Techniques exercises: three short sticking patterns (see the `pattern` field on their
+-- PRACTICE_EXERCISES entries in page.tsx for the short "1 eighth + 2 sixteenth" style
+-- description). practice_sessions links to practice_exercises by id (looked up by name_en), so
+-- these need a matching catalog row here for Skill Trainer/BPM tracking to work at all.
+insert into public.practice_exercises (category, subcategory, name_en, name_es, sort_order) values
+  ('exercises', null, 'Three-Note Pattern #1', 'Patrón de Tres Notas #1', 17),
+  ('exercises', null, 'Three-Note Pattern #2', 'Patrón de Tres Notas #2', 18),
+  ('exercises', null, 'Three-Note Pattern #3', 'Patrón de Tres Notas #3', 19)
+on conflict (category, name_en) do nothing;
+
+-- BUG FOUND while adding the above: "R L L (Triplets)" has existed in the app's own
+-- PRACTICE_EXERCISES list (page.tsx) since it was added, but was never inserted into this
+-- catalog table -- so practice_exercises lookup by name_en has always failed for it, meaning
+-- every Skill Trainer session logged against it silently saved with no practice_exercise_id and
+-- was invisible to tier/BPM progress tracking. Backfilling it now, matching its exact english/
+-- spanish labels.
+insert into public.practice_exercises (category, subcategory, name_en, name_es, sort_order) values
+  ('exercises', 'Permutations', 'R L L (Triplets)', 'R L L (Tresillos)', 20)
+on conflict (category, name_en) do nothing;
