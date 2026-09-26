@@ -1253,6 +1253,7 @@ grant update (language, daily_goal_minutes, metronome_tone, show_days_this_year,
 -- this file), just never mirrored onto challenge_members. Narrowing to require membership in
 -- the challenge's group, same join pattern already used by "group members can create challenges".
 drop policy if exists "signed-in users can join challenges" on public.challenge_members;
+drop policy if exists "group members can join challenges" on public.challenge_members;
 create policy "group members can join challenges" on public.challenge_members for insert to authenticated with check (
   auth.uid() = user_id and exists (
     select 1 from public.challenges c
