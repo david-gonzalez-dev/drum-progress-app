@@ -362,6 +362,8 @@
 .create-group-settings .admin-settings-row span:first-child{font-size:14px;color:#c7cdc9}
 .admin-mini-toggle button{border:0;background:transparent;color:#8d9690;font:600 12px 'DM Sans';padding:6px 12px;border-radius:99px}
 .admin-mini-toggle button.selected{background:#2a170a;color:#ff9b50}
+.admin-mini-toggle-wide{width:100%}
+.admin-mini-toggle-wide button{flex:1;white-space:nowrap;padding:8px 6px}
 .admin-log-line{display:flex;flex-wrap:wrap;align-items:center;gap:9px;font:600 14px 'DM Sans';color:#e7e9e6;margin-bottom:6px}
 .admin-log-duration{color:#9aa19d;font-weight:400}
 .admin-skill-header{margin-bottom:8px}

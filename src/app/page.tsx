@@ -440,7 +440,7 @@ const translations = {
       pointsLabel: "POINTS", awardHint: "Award or remove points", reasonPlaceholder: "Reason", awardBtn: "Award", modeLabel: "MODE", modeStandard: "Full Library", modeBeginner: "Essentials", pointGameLabel: "POINT GAME", pointGameOn: "On", pointGameOff: "Off", pointsHistory: "POINTS HISTORY", noPoints: "No points awarded yet.",
       metronomeBadge: "Metronome", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Quick entry",
       mostMinutesTitle: "MOST PRACTICE TIME", allUsersTitle: "ALL USERS", excludeSelfLabel: "Exclude my account from stats",
-      statsRangeLabel: "Time range", statsRangeAll: "All", statsRangeMonth: "Month", statsRangeYear: "Year",
+      statsRangeLabel: "Time range", statsRangeAll: "All", statsRangeMonth: "This Month", statsRangeLastMonth: "Last Month", statsRangeYear: "Year",
       skillProgressLabel: "SKILL PROGRESS",
       monthlyPracticeLabel: "MONTHLY PRACTICE", achievementsLabel: "ACHIEVEMENTS", noAchievements: "No achievements yet.",
       historyBtn: "History", hideHistoryBtn: "Hide history",
@@ -589,7 +589,7 @@ const translations = {
       pointsLabel: "PUNTOS", awardHint: "Otorgar o quitar puntos", reasonPlaceholder: "Motivo", awardBtn: "Dar", modeLabel: "MODO", modeStandard: "Biblioteca Completa", modeBeginner: "Esenciales", pointGameLabel: "JUEGO DE PUNTOS", pointGameOn: "Activado", pointGameOff: "Desactivado", pointsHistory: "HISTORIAL DE PUNTOS", noPoints: "Aún no se han otorgado puntos.",
       metronomeBadge: "Metrónomo", skillTrainerBadge: "Entrenador de habilidades", quickEntryBadge: "Entrada rápida",
       mostMinutesTitle: "MÁS TIEMPO DE PRÁCTICA", allUsersTitle: "TODOS LOS USUARIOS", excludeSelfLabel: "Excluir mi cuenta de las estadísticas",
-      statsRangeLabel: "Rango de tiempo", statsRangeAll: "Todo", statsRangeMonth: "Mes", statsRangeYear: "Año",
+      statsRangeLabel: "Rango de tiempo", statsRangeAll: "Todo", statsRangeMonth: "Este Mes", statsRangeLastMonth: "Mes Pasado", statsRangeYear: "Año",
       skillProgressLabel: "PROGRESO DE HABILIDADES",
       monthlyPracticeLabel: "PRÁCTICA MENSUAL", achievementsLabel: "LOGROS", noAchievements: "Aún no hay logros.",
       historyBtn: "Historial", hideHistoryBtn: "Ocultar historial",
@@ -626,6 +626,10 @@ const now = new Date();
 const dateKey = formatLocalDate(now.getFullYear(), now.getMonth(), now.getDate());
 const monthStartKey = formatLocalDate(now.getFullYear(), now.getMonth(), 1);
 const yearStartKey = formatLocalDate(now.getFullYear(), 0, 1);
+// getMonth() - 1 rolls back into December of the prior year on its own (JS Date normalizes it),
+// so this works correctly in January too.
+const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+const lastMonthStartKey = formatLocalDate(lastMonthDate.getFullYear(), lastMonthDate.getMonth(), 1);
 
 function shiftDateKey(key: string, days: number) {
   const [year, month, day] = key.split("-").map(Number);
@@ -3542,7 +3546,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   // browser rather than in the database, so it doesn't need its own settings column.
   const [excludeSelf, setExcludeSelf] = useState(() => typeof window !== "undefined" && localStorage.getItem("admin_exclude_self") === "1");
   useEffect(() => { try { localStorage.setItem("admin_exclude_self", excludeSelf ? "1" : "0"); } catch {} }, [excludeSelf]);
-  const [statsRange, setStatsRange] = useState<"all" | "month" | "year">("all");
+  const [statsRange, setStatsRange] = useState<"all" | "month" | "lastMonth" | "year">("all");
   // Every user's raw daily logs, fetched once -- admin already has read access to everyone's
   // practice_logs (see the existing admin RLS policy), so month/year totals are just a client-side
   // sum over a date range instead of needing a second parameterized RPC.
@@ -3913,10 +3917,13 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   // total, not additional time on top of it. admin_list_users() used to add session minutes
   // on top of log minutes, double-counting that overlap and inflating "All"; fixed there too
   // (see schema.sql), so this must stay logs-only to match.
-  const rangeStartKey = statsRange === "month" ? monthStartKey : statsRange === "year" ? yearStartKey : null;
+  const rangeStartKey = statsRange === "month" ? monthStartKey : statsRange === "lastMonth" ? lastMonthStartKey : statsRange === "year" ? yearStartKey : null;
+  // Last Month is the only range with an upper bound too (it must stop at the end of that
+  // month, not run into the current one) -- every other range already means "...through today".
+  const rangeEndKey = statsRange === "lastMonth" ? monthStartKey : null;
   const rangedUsers = rangeStartKey && allLogs
     ? (users ?? []).map((u) => {
-        const inRangeLogs = allLogs.filter((l) => l.user_id === u.id && l.practiced_on >= rangeStartKey);
+        const inRangeLogs = allLogs.filter((l) => l.user_id === u.id && l.practiced_on >= rangeStartKey && (!rangeEndKey || l.practiced_on < rangeEndKey));
         return { ...u, total_minutes: inRangeLogs.reduce((sum, l) => sum + l.minutes, 0), total_logs: inRangeLogs.length };
       })
     : (users ?? []);
@@ -4045,11 +4052,12 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   return <section className="page">
     <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
     {users === null ? <p className="hint">…</p> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : <>
-      <div className="admin-settings-row admin-exclude-row">
+      <div className="admin-settings-row admin-settings-row-stack admin-exclude-row">
         <span>{T.admin.statsRangeLabel}</span>
-        <div className="admin-mini-toggle">
+        <div className="admin-mini-toggle admin-mini-toggle-wide">
           <button type="button" className={statsRange === "all" ? "selected" : ""} onClick={() => setStatsRange("all")}>{T.admin.statsRangeAll}</button>
           <button type="button" className={statsRange === "month" ? "selected" : ""} onClick={() => setStatsRange("month")}>{T.admin.statsRangeMonth}</button>
+          <button type="button" className={statsRange === "lastMonth" ? "selected" : ""} onClick={() => setStatsRange("lastMonth")}>{T.admin.statsRangeLastMonth}</button>
           <button type="button" className={statsRange === "year" ? "selected" : ""} onClick={() => setStatsRange("year")}>{T.admin.statsRangeYear}</button>
         </div>
       </div>
