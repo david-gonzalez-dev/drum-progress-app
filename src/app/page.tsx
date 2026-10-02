@@ -476,7 +476,7 @@ const translations = {
     },
     sessionTimer: {
       pillLabel: "Session Timer", title: "SESSION TIMER", modeStopwatch: "Stopwatch", modeTimer: "Timer",
-      durationLabel: "DURATION", timeUp: "Time's up!", sessionFinished: "Session finished", tapToOpen: "tap to open", tapToLog: "tap to log it",
+      durationLabel: "DURATION", timeUp: "Time's up!", sessionFinished: "Session finished", tapToOpen: "tap to open", tapToLog: "tap to log it", longSessionWarning: "That is over 3 hours. If you forgot to stop it, tap Not now.",
     },
   },
   es: {
@@ -629,7 +629,7 @@ const translations = {
     },
     sessionTimer: {
       pillLabel: "Temporizador de Sesión", title: "TEMPORIZADOR DE SESIÓN", modeStopwatch: "Cronómetro", modeTimer: "Temporizador",
-      durationLabel: "DURACIÓN", timeUp: "¡Se acabó el tiempo!", sessionFinished: "Sesión terminada", tapToOpen: "toca para abrir", tapToLog: "toca para registrarla",
+      durationLabel: "DURACIÓN", timeUp: "¡Se acabó el tiempo!", sessionFinished: "Sesión terminada", tapToOpen: "toca para abrir", tapToLog: "toca para registrarla", longSessionWarning: "Son más de 3 horas. Si olvidaste pararlo, toca Ahora no.",
     },
   },
 } as const;
@@ -3585,6 +3585,20 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     </>}
   </div></div>; }
 
+// A running (or finished-but-unlogged) Session Timer is saved on the device so it survives closing
+// the tab/app: only the start time is stored, and elapsed time is recomputed from it on reopen.
+const SESSION_TIMER_STORAGE_KEY = "session_timer_v1";
+// A stopwatch left running for days shouldn't log days: capped at 12h, and anything over 3h gets
+// a "did you forget to stop it?" warning on the add-time prompt.
+const MAX_SESSION_SECONDS = 12 * 3600;
+const LONG_SESSION_WARNING_SECONDS = 3 * 3600;
+function persistSessionTimer(value: object | null) {
+  try {
+    if (value) localStorage.setItem(SESSION_TIMER_STORAGE_KEY, JSON.stringify(value));
+    else localStorage.removeItem(SESSION_TIMER_STORAGE_KEY);
+  } catch { /* storage unavailable (private mode etc.) -- the timer still works, it just won't survive closing */ }
+}
+
 // Standalone timing tool for Home (plain Stopwatch, or a countdown Timer with a settable
 // duration) -- not tied to a BPM/click like Metronome, but ending a session offers to log the
 // time the same way Metronome's free-play mode does, reusing the exact same "what did you
@@ -3678,6 +3692,36 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
   // setInterval, so tick-counting would silently under-report. Also recomputes the moment the app
   // becomes visible again.
   const startedAtRef = useRef<number | null>(null);
+  // Restores a session saved before the app/tab was closed: a still-running one resumes from its
+  // start time, and a Timer that ran out in the meantime opens straight to the log prompt (capped
+  // at its set duration, no alert sound -- nothing can play while the app is closed).
+  useEffect(() => {
+    let saved: any = null;
+    try { saved = JSON.parse(localStorage.getItem(SESSION_TIMER_STORAGE_KEY) ?? "null"); } catch { /* ignore unreadable data */ }
+    if (!saved || typeof saved !== "object") return;
+    const savedMode: "stopwatch" | "timer" = saved.mode === "timer" ? "timer" : "stopwatch";
+    const savedDuration = Number.isFinite(saved.durationMinutes) ? Math.min(120, Math.max(1, saved.durationMinutes)) : 10;
+    setMode(savedMode);
+    setDurationMinutes(savedDuration);
+    function restoreFinished(seconds: number) {
+      const total = Math.min(Math.floor(seconds), MAX_SESSION_SECONDS);
+      if (total <= 0) { persistSessionTimer(null); return; }
+      setElapsed(total);
+      setAddPromptSeconds(total);
+      setShowAddPrompt(true);
+      persistSessionTimer({ phase: "finished", mode: savedMode, durationMinutes: savedDuration, seconds: total });
+    }
+    if (saved.phase === "finished") { restoreFinished(Number(saved.seconds) || 0); return; }
+    if (saved.phase === "running" && Number.isFinite(saved.startedAt)) {
+      const live = Math.max(0, Math.floor((Date.now() - saved.startedAt) / 1000));
+      if (savedMode === "timer" && live >= savedDuration * 60) { restoreFinished(savedDuration * 60); return; }
+      startedAtRef.current = saved.startedAt;
+      setElapsed(live);
+      setPlaying(true);
+      return;
+    }
+    persistSessionTimer(null);
+  }, []);
   useEffect(() => {
     if (!playing) return;
     const tick = () => { if (startedAtRef.current !== null) setElapsed(Math.floor((Date.now() - startedAtRef.current) / 1000)); };
@@ -3701,10 +3745,20 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
   // Plays a short alert tone when a Timer session completes on its own. The AudioContext is
   // created/unlocked inside togglePlaying()'s start branch (a real tap, same iOS-unlock trick
   // Metronome uses) and kept in a ref, so it's still usable later when this fires from a plain
-  // setInterval tick rather than a fresh user gesture.
+  // setInterval tick rather than a fresh user gesture. A session restored after reopening the app
+  // has no unlocked context yet, so one is created here as a best effort -- iOS may keep it muted
+  // until the user taps something, in which case the tone is skipped but the log prompt still shows.
   function playAlertTone() {
-    const ctx = audioCtxRef.current;
-    if (!ctx) return;
+    let existing = audioCtxRef.current;
+    if (!existing) {
+      try {
+        const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        existing = new AudioContextClass();
+        audioCtxRef.current = existing;
+      } catch { return; }
+    }
+    const ctx = existing;
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
     [0, 0.26, 0.52].forEach((offset) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -3723,11 +3777,12 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
     // A Timer left running while the app was backgrounded can overshoot its target by the time
     // this runs, so its logged time is capped at the set duration.
     const live = startedAtRef.current !== null ? Math.floor((Date.now() - startedAtRef.current) / 1000) : elapsed;
-    const total = mode === "timer" ? Math.min(live, durationMinutes * 60) : live;
+    const total = Math.min(mode === "timer" ? Math.min(live, durationMinutes * 60) : live, MAX_SESSION_SECONDS);
     startedAtRef.current = null;
     setPlaying(false);
     setElapsed(total);
     if (playAlert) playAlertTone();
+    persistSessionTimer(total > 0 ? { phase: "finished", mode, durationMinutes, seconds: total } : null);
     if (total > 0) { setAddPromptSeconds(total); setAddItems([]); setAddCustomItems([]); setRudimentsOpenRaw(false); setBooksOpenRaw(false); setMyItemsOpenRaw(false); setShowAddPrompt(true); }
   }
   // A Timer counts up the same `elapsed` seconds as a Stopwatch internally (simpler than a
@@ -3740,6 +3795,7 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
   async function togglePlaying() {
     if (!playing) {
       startedAtRef.current = Date.now();
+      persistSessionTimer({ phase: "running", mode, durationMinutes, startedAt: startedAtRef.current });
       setElapsed(0);
       setPlaying(true);
       const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -3755,8 +3811,8 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
     }
     stopAndPrompt(false);
   }
-  function addTime() { if (addPromptSeconds <= 0) return; onAddPractice?.(addPromptSeconds, addItems, addCustomItems); setShowAddPrompt(false); setElapsed(0); close(); }
-  function discardTime() { setShowAddPrompt(false); setElapsed(0); }
+  function addTime() { if (addPromptSeconds <= 0) return; onAddPractice?.(addPromptSeconds, addItems, addCustomItems); persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); close(); }
+  function discardTime() { persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); }
   function nudgeAddPromptSeconds(delta: number) { setAddPromptSeconds((current) => Math.max(0, current + delta)); }
   function toggleAddItem(item: string) { setAddItems((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
   // With the modal closed, a running session (or a finished one still waiting to be logged) shows
@@ -3779,6 +3835,7 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
       <span>{T.metronome.sessionComplete}</span>
       <h3>{addPromptSeconds > 0 ? T.metronome.addTimeQuestion(formatMinSecLabel(addPromptSeconds)) : T.metronome.addTimeTooShort}</h3>
       <p>{T.metronome.sessionLasted(formatMMSS(elapsed))}</p>
+      {addPromptSeconds > LONG_SESSION_WARNING_SECONDS && <p className="add-time-warning">{T.sessionTimer.longSessionWarning}</p>}
       <div className="add-time-adjust"><button onClick={() => nudgeAddPromptSeconds(-10)}>-10s</button><span className="add-time-value">{formatMMSS(addPromptSeconds)}</span><button onClick={() => nudgeAddPromptSeconds(10)}>+10s</button></div>
       <span className="metro-section-label">{T.today.whatPractised}</span>
       <div className="chips">
