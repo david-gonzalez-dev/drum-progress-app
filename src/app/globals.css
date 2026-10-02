@@ -387,6 +387,13 @@
 .admin-skill-row .pinned-name{font-size:14px}
 .admin-skill-row .tier-strip{gap:4px;margin-bottom:0}
 .add-time .add-time-warning{color:#e2877d;font-size:14px;margin-top:8px}
+.add-time-minutes{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 0 14px}
+.add-time-minutes button{width:44px;border:1px solid #6f351a;background:#2a1710;color:#f0d9c8;border-radius:10px;padding:9px 0;font:700 15px "DM Sans"}
+.add-time-minutes-value{position:relative;display:flex;align-items:baseline;justify-content:center;gap:5px;min-width:96px}
+.add-time-minutes-value small{position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:#c9a68a;white-space:nowrap}
+.add-time-minutes-value input{width:56px;background:transparent;border:0;border-bottom:1px solid #6f351a;border-radius:0;color:#ff9b50;font:700 30px "Barlow Condensed";text-align:center;padding:0}
+.add-time .add-time-minutes-value span{font-size:13px;letter-spacing:0;color:#c9a68a;white-space:nowrap}
+.add-time .add-time-reset{display:block;margin:8px auto 0;background:transparent;border:0;color:#c9a68a;font:600 13px "DM Sans";text-decoration:underline;padding:4px 0}
 .session-timer-mode-toggle{margin-bottom:2px}
 .session-timer-duration{margin-top:4px}
 .session-timer-display{font:700 58px/1 'Barlow Condensed';color:#ff9b50;letter-spacing:1px;margin:24px 0 2px}

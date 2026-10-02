@@ -476,7 +476,7 @@ const translations = {
     },
     sessionTimer: {
       pillLabel: "Session Timer", title: "SESSION TIMER", modeStopwatch: "Stopwatch", modeTimer: "Timer",
-      durationLabel: "DURATION", timeUp: "Time's up!", sessionFinished: "Session finished", tapToOpen: "tap to open", tapToLog: "tap to log it", longSessionWarning: "That is over 3 hours. If you forgot to stop it, tap Not now.",
+      durationLabel: "DURATION", timeUp: "Time's up!", sessionFinished: "Session finished", tapToOpen: "tap to open", tapToLog: "tap to log it", longSessionWarning: "That is over 3 hours. If you forgot to stop it, adjust the time below or tap Not now.", adjustHint: "ADJUST TIME", resetTime: (original: string) => `Reset to ${original}`,
     },
   },
   es: {
@@ -629,7 +629,7 @@ const translations = {
     },
     sessionTimer: {
       pillLabel: "Temporizador de Sesión", title: "TEMPORIZADOR DE SESIÓN", modeStopwatch: "Cronómetro", modeTimer: "Temporizador",
-      durationLabel: "DURACIÓN", timeUp: "¡Se acabó el tiempo!", sessionFinished: "Sesión terminada", tapToOpen: "toca para abrir", tapToLog: "toca para registrarla", longSessionWarning: "Son más de 3 horas. Si olvidaste pararlo, toca Ahora no.",
+      durationLabel: "DURACIÓN", timeUp: "¡Se acabó el tiempo!", sessionFinished: "Sesión terminada", tapToOpen: "toca para abrir", tapToLog: "toca para registrarla", longSessionWarning: "Son más de 3 horas. Si olvidaste pararlo, ajusta el tiempo abajo o toca Ahora no.", adjustHint: "AJUSTAR TIEMPO", resetTime: (original: string) => `Restablecer a ${original}`,
     },
   },
 } as const;
@@ -3813,7 +3813,7 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
   }
   function addTime() { if (addPromptSeconds <= 0) return; onAddPractice?.(addPromptSeconds, addItems, addCustomItems); persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); close(); }
   function discardTime() { persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); }
-  function nudgeAddPromptSeconds(delta: number) { setAddPromptSeconds((current) => Math.max(0, current + delta)); }
+  function nudgeAddPromptSeconds(delta: number) { setAddPromptSeconds((current) => Math.min(MAX_SESSION_SECONDS, Math.max(0, current + delta))); }
   function toggleAddItem(item: string) { setAddItems((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
   // With the modal closed, a running session (or a finished one still waiting to be logged) shows
   // as a slim bar pinned to the top of every tab -- tapping it reopens the modal. Home gets told
@@ -3836,7 +3836,19 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
       <h3>{addPromptSeconds > 0 ? T.metronome.addTimeQuestion(formatMinSecLabel(addPromptSeconds)) : T.metronome.addTimeTooShort}</h3>
       <p>{T.metronome.sessionLasted(formatMMSS(elapsed))}</p>
       {addPromptSeconds > LONG_SESSION_WARNING_SECONDS && <p className="add-time-warning">{T.sessionTimer.longSessionWarning}</p>}
-      <div className="add-time-adjust"><button onClick={() => nudgeAddPromptSeconds(-10)}>-10s</button><span className="add-time-value">{formatMMSS(addPromptSeconds)}</span><button onClick={() => nudgeAddPromptSeconds(10)}>+10s</button></div>
+      <span className="metro-section-label">{T.sessionTimer.adjustHint}</span>
+      <div className="add-time-minutes">
+        <button type="button" onClick={() => nudgeAddPromptSeconds(-300)}>−5</button>
+        <button type="button" onClick={() => nudgeAddPromptSeconds(-60)}>−1</button>
+        <div className="add-time-minutes-value">
+          <input inputMode="numeric" aria-label={T.metronome.minAbbr} value={Math.floor(addPromptSeconds / 60)} onChange={(e) => setAddPromptSeconds(Math.min(MAX_SESSION_SECONDS, (parseInt(e.target.value.replace(/\D/g, ""), 10) || 0) * 60 + (addPromptSeconds % 60)))} />
+          <span>{T.metronome.minAbbr}</span>
+          {addPromptSeconds % 60 > 0 && <small>+{addPromptSeconds % 60} {T.metronome.secAbbr}</small>}
+        </div>
+        <button type="button" onClick={() => nudgeAddPromptSeconds(60)}>+1</button>
+        <button type="button" onClick={() => nudgeAddPromptSeconds(300)}>+5</button>
+      </div>
+      {addPromptSeconds !== elapsed && <button type="button" className="add-time-reset" onClick={() => setAddPromptSeconds(elapsed)}>{T.sessionTimer.resetTime(formatMMSS(elapsed))}</button>}
       <span className="metro-section-label">{T.today.whatPractised}</span>
       <div className="chips">
         <ChipDropdown label={T.today.rudiments} selectedCount={selectedRudimentsCount} open={rudimentsOpen} onToggleOpen={() => setRudimentsOpen(!rudimentsOpen)}
