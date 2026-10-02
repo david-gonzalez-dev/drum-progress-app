@@ -115,7 +115,7 @@ const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; 
 
 const PRACTICE_CATEGORIES = ["rudiments", "exercises"] as const;
 const CATEGORY_ICON_SRC: Record<string, string> = { rudiments: "/icons/rudiments.png", exercises: "/icons/exercises.png", rhythms: "/icons/rhythms.png" };
-const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string; difficulty: "core" | "advanced"; subdivision?: "quarter" | "eighth" | "triplet" | "sixteenth"; tempoRange?: "extended"; tier?: "basics" | "intermediate" | "advanced"; prerequisites?: string[]; exerciseGroup?: "hand" | "footwork" | "coordination"; pattern?: { en: string; es: string } }[] = [
+const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string; difficulty: "core" | "advanced"; subdivision?: "quarter" | "eighth" | "triplet" | "sixteenth"; tempoRange?: "extended" | "footwork"; tier?: "basics" | "intermediate" | "advanced"; prerequisites?: string[]; exerciseGroup?: "hand" | "footwork" | "coordination"; pattern?: { en: string; es: string } }[] = [
   { category: "rudiments", subcategory: null, en: "Single Strokes", es: "Golpes simples", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: [] },
   { category: "rudiments", subcategory: null, en: "Double Strokes", es: "Golpes dobles", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: [] },
   { category: "rudiments", subcategory: null, en: "Single Paradiddle", es: "Paradiddle simple", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: ["Single Strokes", "Double Strokes"] },
@@ -158,7 +158,7 @@ const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcat
   { category: "rudiments", subcategory: null, en: "Flam Drag", es: "Flam Drag", difficulty: "advanced", subdivision: "sixteenth", tier: "advanced", prerequisites: ["Flam"] },
   { category: "exercises", subcategory: null, en: "Push Pull - Right Hand", es: "Push Pull - Mano Derecha", difficulty: "advanced", exerciseGroup: "hand" },
   { category: "exercises", subcategory: null, en: "Push Pull - Left Hand", es: "Push Pull - Mano Izquierda", difficulty: "advanced", exerciseGroup: "hand" },
-  { category: "exercises", subcategory: null, en: "Bass Drum - Heel Down", es: "Bombo - Talón Abajo", difficulty: "core", subdivision: "eighth", exerciseGroup: "footwork" },
+  { category: "exercises", subcategory: null, en: "Bass Drum - Heel Down", es: "Bombo - Talón Abajo", difficulty: "core", subdivision: "eighth", exerciseGroup: "footwork", tempoRange: "footwork" },
   { category: "exercises", subcategory: null, en: "Bass Drum - Heel Up", es: "Bombo - Talón Arriba", difficulty: "core", subdivision: "eighth", exerciseGroup: "footwork" },
   { category: "exercises", subcategory: null, en: "Bass Drum - Slide Technique", es: "Bombo - Técnica de Deslizamiento", difficulty: "advanced", subdivision: "eighth", exerciseGroup: "footwork" },
   { category: "exercises", subcategory: null, en: "Double Bass Drum", es: "Doble bombo", difficulty: "advanced", exerciseGroup: "footwork" },
@@ -272,11 +272,23 @@ const EXTENDED_PRACTICE_TIERS = [
   { key: "advanced", min: 180, max: 220 },
   { key: "legend", min: 220, max: 280 },
 ];
+// Bass Drum - Heel Down: a 50-200 BPM ladder in flat 5-BPM steps, instead of the default
+// 50-220 ladder's mixed granularity, with tier boundaries given directly (these overlap at
+// 90/130/160, same as EXTENDED_PRACTICE_TIERS' advanced/legend boundary at 220 above).
+const FOOTWORK_BPM_LEVELS = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200];
+const FOOTWORK_PRACTICE_TIERS = [
+  { key: "beginner", min: 50, max: 90 },
+  { key: "intermediate", min: 90, max: 130 },
+  { key: "advanced", min: 130, max: 160 },
+  { key: "legend", min: 160, max: 200 },
+];
 function bpmLevelsFor(itemEn: string) {
-  return PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.tempoRange === "extended" ? EXTENDED_BPM_LEVELS : BPM_LEVELS;
+  const tempoRange = PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.tempoRange;
+  return tempoRange === "extended" ? EXTENDED_BPM_LEVELS : tempoRange === "footwork" ? FOOTWORK_BPM_LEVELS : BPM_LEVELS;
 }
 function tiersFor(itemEn: string) {
-  return PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.tempoRange === "extended" ? EXTENDED_PRACTICE_TIERS : PRACTICE_TIERS;
+  const tempoRange = PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.tempoRange;
+  return tempoRange === "extended" ? EXTENDED_PRACTICE_TIERS : tempoRange === "footwork" ? FOOTWORK_PRACTICE_TIERS : PRACTICE_TIERS;
 }
 const RATING_RANK: Record<string, number> = { not_ready: 1, tense: 2, almost: 3, comfortable: 4, mastered: 5 };
 const RATING_ORDER = ["not_ready", "tense", "almost", "comfortable", "mastered"];
@@ -297,8 +309,12 @@ function tierProgressFor(sessions: { item_en: string; bpm: number; rating: strin
 // has some progress — i.e. the user jumped ahead instead of working through what's left here. This
 // applies even when the tier itself is partially done (not just fully untouched), so e.g. practicing
 // 50 and 100 but not 60-90 dots out the Beginner tier's remaining, unpracticed levels.
+// "later" uses >= (not just >) on purpose: some tier sets give adjacent tiers a shared boundary
+// BPM (e.g. FOOTWORK_PRACTICE_TIERS' 90/130/160) rather than a gap between them -- with a strict
+// >, a tier whose max exactly equals the next tier's min was never recognized as "later", so
+// jumping ahead past that shared boundary silently never showed the dotted remainder.
 function tierIsSkipped(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[], itemEn: string, tier: { min: number; max: number }) {
-  return tiersFor(itemEn).some((t) => t.min > tier.max && tierProgressFor(sessions, itemEn, t) > 0);
+  return tiersFor(itemEn).some((t) => t.min >= tier.max && t !== tier && tierProgressFor(sessions, itemEn, t) > 0);
 }
 // Solid fill for what's actually done, plus a dashed remainder for what's left when tierIsSkipped
 // flags this tier as jumped-ahead-past, so the gap reads as "skipped" rather than "not reached yet".
@@ -458,6 +474,10 @@ const translations = {
       notNow: "Not now", addTime: "Add time",
       timeSignature: "BEATS / BAR", subdivisionLabel: "CLICKS / BEAT", historyTitle: (n: number) => `HISTORY (${n})`,
     },
+    sessionTimer: {
+      pillLabel: "Session Timer", title: "SESSION TIMER", modeStopwatch: "Stopwatch", modeTimer: "Timer",
+      durationLabel: "DURATION", timeUp: "Time's up!", sessionFinished: "Session finished", tapToOpen: "tap to open", tapToLog: "tap to log it",
+    },
   },
   es: {
     nav: { today: "Inicio", practice: "Práctica", group: "Grupo", progress: "Progreso", settings: "Ajustes", admin: "Admin" },
@@ -607,6 +627,10 @@ const translations = {
       notNow: "Ahora no", addTime: "Añadir tiempo",
       timeSignature: "TIEMPOS / COMPÁS", subdivisionLabel: "CLICS / TIEMPO", historyTitle: (n: number) => `HISTORIAL (${n})`,
     },
+    sessionTimer: {
+      pillLabel: "Temporizador de Sesión", title: "TEMPORIZADOR DE SESIÓN", modeStopwatch: "Cronómetro", modeTimer: "Temporizador",
+      durationLabel: "DURACIÓN", timeUp: "¡Se acabó el tiempo!", sessionFinished: "Sesión terminada", tapToOpen: "toca para abrir", tapToLog: "toca para registrarla",
+    },
   },
 } as const;
 
@@ -741,6 +765,8 @@ export default function Home() {
   const [logs, setLogs] = useState<Record<string, Log>>({});
   const [saved, setSaved] = useState(false);
   const [metronome, setMetronome] = useState(false);
+  const [sessionTimer, setSessionTimer] = useState(false);
+  const [timerBanner, setTimerBanner] = useState(false);
   const [confirmState, setConfirmState] = useState<{ message: string; resolve: (value: boolean) => void } | null>(null);
   function askConfirm(message: string): Promise<boolean> {
     return new Promise((resolve) => setConfirmState({ message, resolve }));
@@ -1063,7 +1089,9 @@ export default function Home() {
     if (ok) { setMinutes(String(newTotal)); setQuickAddMinutes("0"); setSaved(true); setTimeout(() => setSaved(false), 2200); }
   }
   function toggle(item: string) { setSelected((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
-  async function addMetronomePractice(addedSeconds: number, items: string[], addCustomItems: string[]) {
+  // markMetronome=false is for the Session Timer, which shares this save path but isn't a
+  // metronome session -- keeps the admin's "Metronome" badge for days that actually used one.
+  async function addMetronomePractice(addedSeconds: number, items: string[], addCustomItems: string[], markMetronome = true) {
     const totalSeconds = (Number(minutes) || 0) * 60 + (Number(seconds) || 0) + addedSeconds;
     const newMinutes = Math.floor(totalSeconds / 60);
     const newSeconds = totalSeconds % 60;
@@ -1074,16 +1102,16 @@ export default function Home() {
     setSelected(newSelected);
     setCustomItems(newCustomItems);
     const isSplit = equipment === "both";
-    await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, newSeconds, newCustomItems, true);
+    await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, newSeconds, newCustomItems, markMetronome);
   }
   async function signOut() { await supabase.auth.signOut(); }
   if (passwordRecovery) return <ResetPassword onDone={() => setPasswordRecovery(false)} />;
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
-  return <main className="shell">
-    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => setTab("practice")} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+  return <main className={timerBanner ? "shell has-timer-banner" : "shell"}>
+    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => setTab("practice")} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} displayName={displayName} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
@@ -1098,6 +1126,7 @@ export default function Home() {
     </div>}
     <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
+    <SessionTimer open={sessionTimer} close={() => setSessionTimer(false)} onOpen={() => setSessionTimer(true)} onBannerChange={setTimerBanner} onAddPractice={(seconds, items, customItems) => addMetronomePractice(seconds, items, customItems, false)}userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
     {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onTogglePin={togglePin} onClose={() => setShowPinManager(false)} language={language} T={T} />}
     {showPointsDetail && <PointsDetailModal user={user} onClose={() => setShowPointsDetail(false)} T={T} />}
@@ -1348,7 +1377,7 @@ function HomeChallenges({ user, practiceSessions, language, T }: any) {
     </div>)}
   </div>;
 }
-function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onOpenExercise, onManagePins, onViewPoints, displayName, language, T }: any) {
+function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onOpenExercise, onManagePins, onViewPoints, onOpenSessionTimer, displayName, language, T }: any) {
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
   const goalAchieved = dailyGoal != null && todayMinutes >= dailyGoal;
@@ -1367,6 +1396,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
   const todaySkillExercises: string[] = Array.from(new Set(practiceSessions.filter((s: any) => s.practiced_on === dateKey).map((s: any) => s.item_en as string)));
   return <section className="page today">
     <header className="hero"><div><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></header>
+    <button type="button" className="session-timer-pill" onClick={onOpenSessionTimer}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M9 2h6" /></svg>{T.sessionTimer.pillLabel}</button>
     <YourPointsCard user={user} pointsEnabled={pointsEnabled} rows={pointsRows} onViewPoints={onViewPoints} T={T} />
     <div className="form-card stats-tile"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><Stat label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><Stat label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <Stat label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
     <PointsLeaderboard user={user} pointsEnabled={pointsEnabled} rows={pointsRows} T={T} />
@@ -2579,7 +2609,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setRudimentTier, exerciseGroup, setExerciseGroup, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, metronomeTone, user, setError, language, T }: any) {
+function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setRudimentTier, exerciseGroup, setExerciseGroup, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, openSessionTimer, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -2843,10 +2873,19 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
     return <section className="page">
       <header className="simple-head"><p className="eyebrow">{T.practiceMode.pageEyebrow}</p><h1>{T.practiceMode.pageTitle}</h1></header>
 
+      <div className="practice-tools">
+        <button type="button" className="practice-tool" onClick={openMetronome}>
+          <span className="practice-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 21l1.8-16.5a.7.7 0 01.7-.5h2a.7.7 0 01.7.5L15.5 21z" /><path d="M12 17.5L15.2 8" /><circle cx="14.3" cy="11.2" r="1" fill="currentColor" /><path d="M6.5 21h11" /></svg></span>
+          <span className="practice-tool-label">{T.today.metronome}</span>
+        </button>
+        <button type="button" className="practice-tool" onClick={openSessionTimer}>
+          <span className="practice-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13.5" r="7.5" /><path d="M12 9.5v4l2.6 1.6" /><path d="M9.5 2.5h5" /><path d="M12 2.5v3.5" /></svg></span>
+          <span className="practice-tool-label">{T.sessionTimer.pillLabel}</span>
+        </button>
+      </div>
       <div className="mode-header quick-header">
         <img src="/icons/lightning.png" alt="" className="mode-icon quick" />
         <div className="mode-copy"><h2>{T.practiceMode.quickTitle}</h2></div>
-        <button className="mode-action metro-launch" onClick={openMetronome}>⌁ {T.today.metronome}</button>
       </div>
       <div className="form-card quick-start"><label className="input-label">{T.today.practiceTimeHeading}</label>
         {equipment === "both" ? (
@@ -3540,7 +3579,236 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
       <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : T.metronome.start}</button>
     </>}
-  </div></div>; }function AdminPage({ user, language, T }: { user: any; language: Lang; T: any }) {
+  </div></div>; }
+
+// Standalone timing tool for Home (plain Stopwatch, or a countdown Timer with a settable
+// duration) -- not tied to a BPM/click like Metronome, but ending a session offers to log the
+// time the same way Metronome's free-play mode does, reusing the exact same "what did you
+// practice" picker (duplicated here rather than extracted, since Metronome's version is tightly
+// coupled to its own large block of local state).
+function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onOpen?: () => void; onBannerChange?: (active: boolean) => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; language?: Lang; T: any }) {
+  const [mode, setMode] = useState<"stopwatch" | "timer">("stopwatch");
+  const [playing, setPlaying] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [durationMinutes, setDurationMinutes] = useState(10);
+  const [showAddPrompt, setShowAddPrompt] = useState(false);
+  const [addPromptSeconds, setAddPromptSeconds] = useState(0);
+  const [addItems, setAddItems] = useState<string[]>([]);
+  const [addCustomItems, setAddCustomItems] = useState<string[]>([]);
+  const [rudimentsOpen, setRudimentsOpenRaw] = useState(false);
+  const [exercisesOpen, setExercisesOpenRaw] = useState(false);
+  const [booksOpen, setBooksOpenRaw] = useState(false);
+  const [myItemsOpen, setMyItemsOpenRaw] = useState(false);
+  function setRudimentsOpen(next: boolean) { setRudimentsOpenRaw(next); if (next) { setExercisesOpenRaw(false); setBooksOpenRaw(false); setMyItemsOpenRaw(false); } }
+  function setExercisesOpen(next: boolean) { setExercisesOpenRaw(next); if (next) { setRudimentsOpenRaw(false); setBooksOpenRaw(false); setMyItemsOpenRaw(false); } }
+  function setBooksOpen(next: boolean) { setBooksOpenRaw(next); if (next) { setRudimentsOpenRaw(false); setExercisesOpenRaw(false); setMyItemsOpenRaw(false); } }
+  function setMyItemsOpen(next: boolean) { setMyItemsOpenRaw(next); if (next) { setRudimentsOpenRaw(false); setExercisesOpenRaw(false); setBooksOpenRaw(false); } }
+  const [rudimentSearch, setRudimentSearch] = useState("");
+  const rudimentExercises = sortedRudiments ?? [];
+  const filteredRudiments = useMemo(() => {
+    const q = rudimentSearch.trim().toLowerCase();
+    if (!q) return rudimentExercises;
+    return rudimentExercises.filter((r) => r[(language ?? "en") as Lang].toLowerCase().includes(q));
+  }, [rudimentExercises, rudimentSearch, language]);
+  const [exerciseSearch, setExerciseSearch] = useState("");
+  const exerciseItems = sortedExercises ?? [];
+  const filteredExercises = useMemo(() => {
+    const q = exerciseSearch.trim().toLowerCase();
+    if (!q) return exerciseItems;
+    return exerciseItems.filter((r) => r[(language ?? "en") as Lang].toLowerCase().includes(q));
+  }, [exerciseItems, exerciseSearch, language]);
+  function toggleCustomItem(en: string) {
+    setAddCustomItems((current) => current.includes(en) ? current.filter((v) => v !== en) : [...current, en]);
+  }
+  const selectedRudimentsCount = addCustomItems.filter((ci) => rudimentExercises.some((r) => r.en === ci)).length;
+  const selectedExercisesCount = addCustomItems.filter((ci) => exerciseItems.some((r) => r.en === ci)).length;
+  const [bookAddText, setBookAddText] = useState("");
+  const allBooks = useMemo(() => [...PRACTICE_BOOKS, ...(userBooks ?? []).filter((b) => !PRACTICE_BOOKS.includes(b))], [userBooks]);
+  function toggleBook(name: string) {
+    setAddCustomItems((current) => current.includes(name) ? current.filter((v) => v !== name) : [...current, name]);
+  }
+  async function addBook() {
+    const trimmed = bookAddText.trim();
+    if (!trimmed) return;
+    if (!allBooks.includes(trimmed)) await onAddUserItem?.("book", trimmed);
+    setAddCustomItems((current) => current.includes(trimmed) ? current : [...current, trimmed]);
+    setBookAddText("");
+  }
+  const selectedBooksCount = addCustomItems.filter((ci) => allBooks.includes(ci)).length;
+  const [myItemAddText, setMyItemAddText] = useState("");
+  function toggleMyItem(name: string) {
+    setAddCustomItems((current) => current.includes(name) ? current.filter((v) => v !== name) : [...current, name]);
+  }
+  async function addMyItem() {
+    const trimmed = myItemAddText.trim();
+    if (!trimmed) return;
+    if (!(userItems ?? []).includes(trimmed)) await onAddUserItem?.("item", trimmed);
+    setAddCustomItems((current) => current.includes(trimmed) ? current : [...current, trimmed]);
+    setMyItemAddText("");
+  }
+  const selectedMyItemsCount = addCustomItems.filter((ci) => (userItems ?? []).includes(ci)).length;
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const wakeLockRef = useRef<any>(null);
+
+  async function acquireWakeLock() {
+    if (!("wakeLock" in navigator)) return;
+    try { wakeLockRef.current = await (navigator as any).wakeLock.request("screen"); } catch { /* not available in this context, e.g. low battery mode */ }
+  }
+  useEffect(() => {
+    if (playing) acquireWakeLock();
+    else { wakeLockRef.current?.release(); wakeLockRef.current = null; }
+  }, [playing]);
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible" && playing && !wakeLockRef.current) acquireWakeLock();
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [playing]);
+  useEffect(() => {
+    return () => { audioCtxRef.current?.close(); wakeLockRef.current?.release(); };
+  }, []);
+
+  // Elapsed time is derived from a start timestamp, not by counting interval ticks: the timer now
+  // keeps running behind other tabs (and a locked screen), where browsers throttle or pause
+  // setInterval, so tick-counting would silently under-report. Also recomputes the moment the app
+  // becomes visible again.
+  const startedAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!playing) return;
+    const tick = () => { if (startedAtRef.current !== null) setElapsed(Math.floor((Date.now() - startedAtRef.current) / 1000)); };
+    const timer = window.setInterval(tick, 1000);
+    document.addEventListener("visibilitychange", tick);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", tick); };
+  }, [playing]);
+
+  function formatMMSS(totalSeconds: number) { return String(Math.floor(totalSeconds / 60)).padStart(2, "0") + ":" + String(totalSeconds % 60).padStart(2, "0"); }
+  function formatMinSecLabel(totalSeconds: number) {
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    const parts: string[] = [];
+    if (m > 0) parts.push(`${m} ${T.metronome.minAbbr}`);
+    if (s > 0 || m === 0) parts.push(`${s} ${T.metronome.secAbbr}`);
+    return parts.join(" ");
+  }
+  const remaining = Math.max(0, durationMinutes * 60 - elapsed);
+  const displaySeconds = mode === "timer" ? (playing ? remaining : durationMinutes * 60) : elapsed;
+
+  // Plays a short alert tone when a Timer session completes on its own. The AudioContext is
+  // created/unlocked inside togglePlaying()'s start branch (a real tap, same iOS-unlock trick
+  // Metronome uses) and kept in a ref, so it's still usable later when this fires from a plain
+  // setInterval tick rather than a fresh user gesture.
+  function playAlertTone() {
+    const ctx = audioCtxRef.current;
+    if (!ctx) return;
+    [0, 0.26, 0.52].forEach((offset) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + offset + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + offset);
+      osc.stop(ctx.currentTime + offset + 0.22);
+    });
+  }
+  function stopAndPrompt(playAlert: boolean) {
+    // A Timer left running while the app was backgrounded can overshoot its target by the time
+    // this runs, so its logged time is capped at the set duration.
+    const live = startedAtRef.current !== null ? Math.floor((Date.now() - startedAtRef.current) / 1000) : elapsed;
+    const total = mode === "timer" ? Math.min(live, durationMinutes * 60) : live;
+    startedAtRef.current = null;
+    setPlaying(false);
+    setElapsed(total);
+    if (playAlert) playAlertTone();
+    if (total > 0) { setAddPromptSeconds(total); setAddItems([]); setAddCustomItems([]); setRudimentsOpenRaw(false); setBooksOpenRaw(false); setMyItemsOpenRaw(false); setShowAddPrompt(true); }
+  }
+  // A Timer counts up the same `elapsed` seconds as a Stopwatch internally (simpler than a
+  // separate countdown value) -- this just watches for it reaching the target duration.
+  useEffect(() => {
+    if (mode === "timer" && playing && elapsed >= durationMinutes * 60) stopAndPrompt(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elapsed]);
+
+  async function togglePlaying() {
+    if (!playing) {
+      startedAtRef.current = Date.now();
+      setElapsed(0);
+      setPlaying(true);
+      const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = audioCtxRef.current ?? new AudioContextClass();
+      audioCtxRef.current = ctx;
+      if (ctx.state === "suspended") await ctx.resume();
+      const unlockBuffer = ctx.createBuffer(1, 1, 22050);
+      const unlockSource = ctx.createBufferSource();
+      unlockSource.buffer = unlockBuffer;
+      unlockSource.connect(ctx.destination);
+      unlockSource.start(0);
+      return;
+    }
+    stopAndPrompt(false);
+  }
+  function addTime() { if (addPromptSeconds <= 0) return; onAddPractice?.(addPromptSeconds, addItems, addCustomItems); setShowAddPrompt(false); setElapsed(0); close(); }
+  function discardTime() { setShowAddPrompt(false); setElapsed(0); }
+  function nudgeAddPromptSeconds(delta: number) { setAddPromptSeconds((current) => Math.max(0, current + delta)); }
+  function toggleAddItem(item: string) { setAddItems((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
+  // With the modal closed, a running session (or a finished one still waiting to be logged) shows
+  // as a slim bar pinned to the top of every tab -- tapping it reopens the modal. Home gets told
+  // via onBannerChange so it can make room for the bar instead of letting it cover page headers.
+  const bannerActive = !open && (playing || showAddPrompt);
+  useEffect(() => { onBannerChange?.(bannerActive); }, [bannerActive]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!open) {
+    if (!bannerActive) return null;
+    return <button type="button" className={showAddPrompt ? "session-timer-banner finished" : "session-timer-banner"} onClick={onOpen}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M9 2h6" /></svg>
+      <strong>{showAddPrompt ? T.sessionTimer.sessionFinished : formatMMSS(displaySeconds)}</strong>
+      <span>{showAddPrompt ? T.sessionTimer.tapToLog : `${mode === "timer" ? T.sessionTimer.modeTimer : T.sessionTimer.modeStopwatch} · ${T.sessionTimer.tapToOpen}`}</span>
+    </button>;
+  }
+  const lang = (language ?? "en") as Lang;
+
+  return <div className="modal modal-center"><div className="metro"><button className="close" onClick={close}>×</button><p className="eyebrow">{T.sessionTimer.title}</p>
+    {showAddPrompt ? <div className="add-time">
+      <span>{T.metronome.sessionComplete}</span>
+      <h3>{addPromptSeconds > 0 ? T.metronome.addTimeQuestion(formatMinSecLabel(addPromptSeconds)) : T.metronome.addTimeTooShort}</h3>
+      <p>{T.metronome.sessionLasted(formatMMSS(elapsed))}</p>
+      <div className="add-time-adjust"><button onClick={() => nudgeAddPromptSeconds(-10)}>-10s</button><span className="add-time-value">{formatMMSS(addPromptSeconds)}</span><button onClick={() => nudgeAddPromptSeconds(10)}>+10s</button></div>
+      <span className="metro-section-label">{T.today.whatPractised}</span>
+      <div className="chips">
+        <ChipDropdown label={T.today.rudiments} selectedCount={selectedRudimentsCount} open={rudimentsOpen} onToggleOpen={() => setRudimentsOpen(!rudimentsOpen)}
+          searchable searchValue={rudimentSearch} onSearchChange={setRudimentSearch} searchPlaceholder={T.today.searchRudiments}
+          rows={filteredRudiments.map((r) => ({ key: r.en, label: r[lang], selected: addCustomItems.includes(r.en), onToggle: () => toggleCustomItem(r.en) }))} doneLabel={T.today.pickerDone} />
+        <ChipDropdown label={T.practiceMode.categoryExercises} selectedCount={selectedExercisesCount} open={exercisesOpen} onToggleOpen={() => setExercisesOpen(!exercisesOpen)}
+          searchable searchValue={exerciseSearch} onSearchChange={setExerciseSearch} searchPlaceholder={T.today.searchExercises}
+          rows={filteredExercises.map((r) => ({ key: r.en, label: r[lang], selected: addCustomItems.includes(r.en), onToggle: () => toggleCustomItem(r.en) }))} doneLabel={T.today.pickerDone} />
+        {QUICK_PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggleAddItem(item.en)} className={addItems.includes(item.en) ? "chip selected" : "chip"}>{addItems.includes(item.en) && <b>✓</b>}{item[lang]}</button>)}
+        <ChipDropdown label={T.today.books} selectedCount={selectedBooksCount} open={booksOpen} onToggleOpen={() => setBooksOpen(!booksOpen)}
+          rows={allBooks.map((name) => ({ key: name, label: name, selected: addCustomItems.includes(name), onToggle: () => toggleBook(name), onDelete: PRACTICE_BOOKS.includes(name) ? undefined : () => onRemoveUserItem?.("book", name) }))}
+          addValue={bookAddText} onAddChange={setBookAddText} onAdd={addBook} addPlaceholder={T.today.addOwnBookPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
+        <ChipDropdown label={T.today.myItems} selectedCount={selectedMyItemsCount} open={myItemsOpen} onToggleOpen={() => setMyItemsOpen(!myItemsOpen)}
+          rows={(userItems ?? []).map((name) => ({ key: name, label: name, selected: addCustomItems.includes(name), onToggle: () => toggleMyItem(name), onDelete: () => onRemoveUserItem?.("item", name) }))}
+          addValue={myItemAddText} onAddChange={setMyItemAddText} onAdd={addMyItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
+      </div>
+      <div className="add-time-buttons"><button className="discard" onClick={discardTime}>{T.metronome.notNow}</button><button className="add" onClick={addTime} disabled={addPromptSeconds <= 0 || (addItems.length === 0 && addCustomItems.length === 0)}>{T.metronome.addTime}</button></div>
+    </div> : <>
+      <div className="equipment-toggle session-timer-mode-toggle">
+        <button type="button" className={mode === "stopwatch" ? "equipment-option selected" : "equipment-option"} disabled={playing} onClick={() => setMode("stopwatch")}>{T.sessionTimer.modeStopwatch}</button>
+        <button type="button" className={mode === "timer" ? "equipment-option selected" : "equipment-option"} disabled={playing} onClick={() => setMode("timer")}>{T.sessionTimer.modeTimer}</button>
+      </div>
+      {mode === "timer" && !playing && <div className="session-timer-duration">
+        <span className="metro-section-label">{T.sessionTimer.durationLabel}</span>
+        <div className="add-time-adjust"><button onClick={() => setDurationMinutes((m) => Math.max(1, m - 5))}>-5</button><span className="add-time-value">{durationMinutes} {T.metronome.minAbbr}</span><button onClick={() => setDurationMinutes((m) => Math.min(120, m + 5))}>+5</button></div>
+      </div>}
+      <div className="session-timer-display">{formatMMSS(displaySeconds)}</div>
+      <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : T.metronome.start}</button>
+    </>}
+  </div></div>;
+}
+
+function AdminPage({ user, language, T }: { user: any; language: Lang; T: any }) {
   const [users, setUsers] = useState<{ id: string; name: string; email: string; last_active: string | null; total_logs: number; total_minutes: number }[] | null>(null);
   // A personal viewing preference for the admin, not app data -- remembered locally per
   // browser rather than in the database, so it doesn't need its own settings column.
