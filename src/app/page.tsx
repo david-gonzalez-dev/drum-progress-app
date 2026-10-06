@@ -668,6 +668,48 @@ function localDateFromTimestamp(iso: string) {
   const d = new Date(iso);
   return formatLocalDate(d.getFullYear(), d.getMonth(), d.getDate());
 }
+// "2026-10-05" -> "05/10/2026". Group dates are always shown day/month/year, whatever the
+// device's own locale would do (a US-set phone would otherwise show month/day/year).
+function formatDMY(key: string) { return `${key.slice(8, 10)}/${key.slice(5, 7)}/${key.slice(0, 4)}`; }
+// Picker that always reads day / month / year. A native <input type="date"> uses the device's
+// locale order and the page can't override it, so this uses three selects instead. Values stay
+// "YYYY-MM-DD" strings like the native input, and min/max are enforced by clamping.
+function DateDMY({ value, onChange, min, max }: { value: string; onChange: (value: string) => void; min?: string; max?: string }) {
+  const [y, m, d] = value.split("-").map(Number);
+  const thisYear = new Date().getFullYear();
+  const firstYear = Math.min(min ? Number(min.slice(0, 4)) : thisYear - 5, y);
+  const lastYear = Math.max(max ? Number(max.slice(0, 4)) : thisYear + 5, y);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  function commit(ny: number, nm: number, nd: number) {
+    let next = `${ny}-${pad(nm)}-${pad(Math.min(nd, new Date(ny, nm, 0).getDate()))}`;
+    if (min && next < min) next = min;
+    if (max && next > max) next = max;
+    onChange(next);
+  }
+  return <div className="date-dmy">
+    <select aria-label="Day" value={d} onChange={(e) => commit(y, m, Number(e.target.value))}>{Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{pad(n)}</option>)}</select>
+    <span>/</span>
+    <select aria-label="Month" value={m} onChange={(e) => commit(y, Number(e.target.value), d)}>{Array.from({ length: 12 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{pad(n)}</option>)}</select>
+    <span>/</span>
+    <select aria-label="Year" value={y} onChange={(e) => commit(Number(e.target.value), m, d)}>{Array.from({ length: lastYear - firstYear + 1 }, (_, i) => firstYear + i).map((n) => <option key={n} value={n}>{n}</option>)}</select>
+  </div>;
+}
+// Little music-note drawing for the note-value chip on an exercise's detail screen.
+function NoteValueIcon({ subdivision }: { subdivision: "quarter" | "eighth" | "triplet" | "sixteenth" }) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return <svg className="note-value-icon" viewBox="0 0 24 24" aria-hidden="true">
+    {subdivision === "triplet" ? <>
+      <ellipse cx="5" cy="18" rx="2.3" ry="1.8" fill="currentColor" stroke="none" /><ellipse cx="12" cy="18" rx="2.3" ry="1.8" fill="currentColor" stroke="none" /><ellipse cx="19" cy="18" rx="2.3" ry="1.8" fill="currentColor" stroke="none" />
+      <path d="M7.2 17.5V9M14.2 17.5V9M21.2 17.5V9M7.2 9h14" {...common} />
+      <text x="14.2" y="6.4" fontSize="7" fontWeight="800" textAnchor="middle" fill="currentColor" stroke="none">3</text>
+    </> : <>
+      <ellipse cx="8.5" cy="18" rx="3.4" ry="2.5" fill="currentColor" stroke="none" transform="rotate(-18 8.5 18)" />
+      <path d="M11.6 17V3.5" {...common} />
+      {(subdivision === "eighth" || subdivision === "sixteenth") && <path d="M11.6 3.5c0 4.2 6 4.6 6 9.5" {...common} />}
+      {subdivision === "sixteenth" && <path d="M11.6 8c0 4.2 6 4.6 6 9.5" {...common} />}
+    </>}
+  </svg>;
+}
 function challengeExerciseLabel(en: string, language: Lang) {
   return CHALLENGE_EXERCISE_OPTIONS.find((e) => e.en === en)?.[language] ?? en;
 }
@@ -1192,7 +1234,7 @@ function PointsDetailModal({ user, onClose, T }: { user: any; onClose: () => voi
       {points === null ? <p className="hint">…</p> : points.length === 0 ? <p className="hint">{T.admin.noPoints}</p> : (<>
         <div className="admin-log-list">
           {(showAll ? points : points.slice(0, POINTS_DETAIL_HISTORY_LIMIT)).map((p) => <div key={p.id} className="admin-log-row">
-            <div className="admin-log-head"><span>{p.created_at.slice(0, 10)}</span><span className={p.amount > 0 ? "admin-points-positive" : "admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span></div>
+            <div className="admin-log-head"><span>{formatDMY(localDateFromTimestamp(p.created_at))}</span><span className={p.amount > 0 ? "admin-points-positive" : "admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span></div>
             {p.reason && <p className="today-notes">{p.reason}</p>}
           </div>)}
         </div>
@@ -1776,7 +1818,7 @@ function GroupSettingsModal({ group, setGroupSetting, setGroupDateMode, onClose,
             <button type="button" className={!group.stats_start_date && group.count_days_from_creation ? "selected" : ""} onClick={() => setGroupDateMode("creation")}>{T.group.dateModeToday}</button>
             <button type="button" className={group.stats_start_date ? "selected" : ""} onClick={() => setGroupDateMode("custom")}>{T.group.dateModeCustom}</button>
           </div>
-          {group.stats_start_date && <input type="date" className="group-input" value={group.stats_start_date} max={dateKey} onChange={(e) => setGroupDateMode("custom", e.target.value)} />}
+          {group.stats_start_date && <DateDMY value={group.stats_start_date} max={dateKey} onChange={(v) => setGroupDateMode("custom", v)} />}
         </div>
         <div className="admin-settings-row">
           <span>{T.group.enableChatSetting}</span>
@@ -2252,8 +2294,8 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
-    const sinceLabel = T.group.since(new Date(group.created_at).toLocaleDateString(locale, { month: "short", day: "numeric" }));
-    const weekRangeLabel = [weekStartKey, shiftDateKey(weekStartKey, 6)].map((key) => new Date(key + "T12:00:00").toLocaleDateString(locale, { month: "short", day: "numeric" })).join(" - ");
+    const sinceLabel = T.group.since(formatDMY(localDateFromTimestamp(group.created_at)));
+    const weekRangeLabel = [weekStartKey, shiftDateKey(weekStartKey, 6)].map(formatDMY).join(" - ");
     return <section className="page">
       <header className="simple-head group-head">
         <div><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></div>
@@ -2285,7 +2327,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           {groupImprovements.map((ev) => <div key={ev.key} className="admin-log-row improvement-row">
             <span className="improvement-chip">{ev.name}</span>
             <span className="improvement-text">{T.admin.improvedTo(PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language as Lang] ?? ev.exerciseEn, ev.bpm)}</span>
-            <span className="improvement-date">{ev.date}</span>
+            <span className="improvement-date">{formatDMY(ev.date)}</span>
           </div>)}
         </div>}
       </div>
@@ -2322,8 +2364,8 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           <label className="input-label">{T.group.goalLabel}</label>
           <input className="group-input" inputMode="numeric" value={challengeGoal} onChange={e => setChallengeGoal(e.target.value.replace(/\D/g, ""))} />
           <div className="challenge-date-row">
-            <div><label className="input-label">{T.group.startLabel}</label><input type="date" className="group-input" value={challengeStart} onChange={e => setChallengeStart(e.target.value)} /></div>
-            <div><label className="input-label">{T.group.endLabel}</label><input type="date" className="group-input" value={challengeEnd} min={challengeStart} onChange={e => setChallengeEnd(e.target.value)} /></div>
+            <div><label className="input-label">{T.group.startLabel}</label><DateDMY value={challengeStart} onChange={setChallengeStart} /></div>
+            <div><label className="input-label">{T.group.endLabel}</label><DateDMY value={challengeEnd} min={challengeStart} onChange={setChallengeEnd} /></div>
           </div>
           <input className="group-input" value={challengeReward} onChange={e => setChallengeReward(e.target.value)} placeholder={T.group.rewardPlaceholder} />
           <input className="group-input" value={challengePunishment} onChange={e => setChallengePunishment(e.target.value)} placeholder={T.group.punishmentPlaceholder} />
@@ -2337,7 +2379,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           return <div key={c.id} className="challenge-card">
             <div className="challenge-head"><h3>{c.name}</h3><span>{T.group.participants(c.participantCount)}</span></div>
             <p className="challenge-desc">{desc}</p>
-            <div className="challenge-range">{new Date(c.start_date + "T12:00:00").toLocaleDateString(locale, { month: "short", day: "numeric" })} – {new Date(c.end_date + "T12:00:00").toLocaleDateString(locale, { month: "short", day: "numeric" })}</div>
+            <div className="challenge-range">{formatDMY(c.start_date)} - {formatDMY(c.end_date)}</div>
             <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${pct}%` }} /></div>
             <div className="challenge-progress-label">{progressLabel}</div>
             {c.ranking.length > 1 && <div className="challenge-ranking">{c.ranking.map((r: any, idx: number) => <div key={r.id} className="challenge-rank-row"><span className="rank-medal">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`}</span><span className="rank-name">{r.name}</span><span className="rank-value">{c.goal_type === "minutes" ? T.group.minutesProgress(r.progress, r.target) : T.group.daysProgress(r.progress, r.target)}</span></div>)}</div>}
@@ -2397,7 +2439,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
               <button type="button" className={newDateMode === "creation" ? "selected" : ""} onClick={() => setNewDateMode("creation")}>{T.group.dateModeToday}</button>
               <button type="button" className={newDateMode === "custom" ? "selected" : ""} onClick={() => setNewDateMode("custom")}>{T.group.dateModeCustom}</button>
             </div>
-            {newDateMode === "custom" && <input type="date" className="group-input" value={newCustomStartDate} max={dateKey} onChange={(e) => setNewCustomStartDate(e.target.value)} />}
+            {newDateMode === "custom" && <DateDMY value={newCustomStartDate} max={dateKey} onChange={setNewCustomStartDate} />}
           </div>
           <div className="admin-settings-row">
             <span>{T.group.enableChatSetting}</span>
@@ -3080,6 +3122,7 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
     const stats = exerciseStats(exercise);
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     const isPinned = pinnedExercises.includes(exercise);
+    const subdivision = PRACTICE_EXERCISES.find((e) => e.en === exercise)?.subdivision;
     return <section className="page">
       <div className="back-row"><button onClick={() => setStep("list")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2>{PRACTICE_EXERCISES.find((e) => e.en === exercise)?.pattern && <p className="exercise-pattern-note">{PRACTICE_EXERCISES.find((e) => e.en === exercise)!.pattern![language as Lang]}</p>}</div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
       <div className="level-card">
@@ -3089,11 +3132,11 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
           <p className="lc-value">{stats.bestBpm ? `${stats.bestBpm} BPM` : "—"}</p>
           <p className="lc-sub">{T.practiceMode.levelsUnlocked(stats.unlocked, bpmLevelsFor(exercise).length)}</p>
         </div>
+        {subdivision && <div className="level-note">
+          <NoteValueIcon subdivision={subdivision} />
+          <strong>{SUBDIVISION_LABEL[subdivision]}</strong>
+        </div>}
       </div>
-      {(() => {
-        const subdivision = PRACTICE_EXERCISES.find((e) => e.en === exercise)?.subdivision;
-        return subdivision ? <span className="subdivision-badge">{SUBDIVISION_LABEL[subdivision]}</span> : null;
-      })()}
       <div className="tier-strip">
         {tiersFor(exercise).map((tier) => <div key={tier.key} className="tier-seg">{renderTierSegBar(tierProgress(exercise, tier), tierIsSkipped(sessions, exercise, tier))}<span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
       </div>
@@ -3515,7 +3558,6 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     // "this used to be tense, now it's comfortable" at a glance. Collapsed by default and hidden
     // entirely when there's nothing to show yet, so a fresh tempo doesn't add clutter.
     const history = (sessions ?? []).filter((s) => s.item_en === exerciseEn && s.bpm === bpm).slice().sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8);
-    const locale = language === "es" ? "es-ES" : "en-US";
     const historyRatingLabel: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
     return <div className="modal modal-center"><div className="metro metro-practice">
       <button className="close" onClick={close}>×</button>
@@ -3540,7 +3582,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
         </button>
         {historyOpen && <div className="admin-log-list metro-history-list">
           {history.map((s, i) => <div key={i} className="admin-log-row">
-            <div className="admin-log-head"><span>{new Date(s.practiced_on + "T12:00:00").toLocaleDateString(locale, { month: "short", day: "numeric" })}</span><span>{RATING_ICON[s.rating]} {historyRatingLabel[s.rating] ?? s.rating}</span></div>
+            <div className="admin-log-head"><span>{formatDMY(s.practiced_on)}</span><span>{RATING_ICON[s.rating]} {historyRatingLabel[s.rating] ?? s.rating}</span></div>
             {s.issues && s.issues.length > 0 && <div className="detail-chips">{s.issues.map((issueEn) => <em key={issueEn}>{SESSION_ISSUE_TAGS.find((t) => t.en === issueEn)?.[language as Lang] ?? issueEn}</em>)}</div>}
             {s.notes && <p className="today-notes">{s.notes}</p>}
           </div>)}
@@ -4212,7 +4254,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
               const allItems = Array.from(new Set([...log.items, ...skillExercises]));
               return <div key={i} className="admin-log-row">
                 <div className="admin-log-line">
-                  <span className="admin-log-date">{log.date}</span>
+                  <span className="admin-log-date">{formatDMY(log.date)}</span>
                   <span className="admin-log-duration">{formatMinutes(log.minutes)}</span>
                   {log.usedMetronome && <span className="admin-source-label">⌁ {T.admin.metronomeBadge}</span>}
                   {usedSkillTrainer && <span className="admin-source-label">🎯 {T.admin.skillTrainerBadge}</span>}
@@ -4230,7 +4272,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
           <div className="admin-log-list">
             {(showAllSessions ? sessions : sessions.slice(0, ADMIN_HISTORY_LIMIT)).map((s, i) => <div key={i} className="admin-log-row">
               <div className="admin-log-head"><span>{s.exercise}</span><span>{s.bpm} BPM</span></div>
-              <div className="admin-log-head"><span>{s.date}</span><span>{formatMinutes(s.minutes)}</span></div>
+              <div className="admin-log-head"><span>{formatDMY(s.date)}</span><span>{formatMinutes(s.minutes)}</span></div>
             </div>)}
           </div>
           {sessions.length > ADMIN_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSessions(!showAllSessions)}>{showAllSessions ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
@@ -4239,7 +4281,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
         {points === null ? <p className="hint">…</p> : points.length === 0 ? <p className="hint">{T.admin.noPoints}</p> : (<>
           <div className="admin-log-list">
             {(showAllPoints ? points : points.slice(0, ADMIN_HISTORY_LIMIT)).map((p) => <div key={p.id} className="admin-log-row">
-              <div className="admin-log-head"><span>{p.created_at.slice(0, 10)}</span><span className={p.amount > 0 ? "admin-points-positive" : "admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span></div>
+              <div className="admin-log-head"><span>{formatDMY(localDateFromTimestamp(p.created_at))}</span><span className={p.amount > 0 ? "admin-points-positive" : "admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span></div>
               {p.reason && <p className="today-notes">{p.reason}</p>}
             </div>)}
           </div>
@@ -4386,7 +4428,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     return <div key={ev.key} className="admin-log-row improvement-row">
       <span className="improvement-chip">{ev.name}</span>
       <span className="improvement-text">{T.admin.improvedTo(PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language as Lang] ?? ev.exerciseEn, ev.bpm)}</span>
-      <span className="improvement-date">{ev.date}</span>
+      <span className="improvement-date">{formatDMY(ev.date)}</span>
     </div>;
   }
 
@@ -4500,7 +4542,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
           <div className="admin-user-info">
             <span className="onboard-row-name">{u.name || u.email}{u.name && <span className="admin-user-email-inline"> - {u.email}</span>}</span>
           </div>
-          <span className="admin-user-last">{u.last_active ?? T.admin.neverPracticed}</span>
+          <span className="admin-user-last">{u.last_active ? formatDMY(u.last_active) : T.admin.neverPracticed}</span>
         </button>)}
       </div>
     </>}

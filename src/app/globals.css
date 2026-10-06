@@ -325,7 +325,10 @@
 .medal-board-title{font-size:14px;font-weight:700;color:#e7e9e6}
 .medal-board-holder{font-size:13px;color:#9aa19d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .medal-board-value{flex-shrink:0;font-size:13px;color:#ff9b50;font-weight:700}
-.subdivision-badge{display:inline-block;background:#1c211f;color:#9aa19d;font:700 12px 'DM Sans';letter-spacing:.5px;text-transform:uppercase;padding:5px 11px;border-radius:99px;margin:-8px 0 18px}
+.level-card>div:nth-child(2){min-width:0}
+.level-note{margin-left:auto;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 12px 10px;border-radius:14px;background:linear-gradient(160deg,#4a230d,#2a170a);border:1px solid #ff6b1a;color:#ffb877;box-shadow:0 0 20px #ff6b1a38,inset 0 1px 0 #ffffff14;text-align:center}
+.level-note .note-value-icon{width:30px;height:30px;margin-bottom:3px}
+.level-note strong{font:800 17px/1.1 'Barlow Condensed';letter-spacing:.4px;color:#fff3e8;text-transform:uppercase}
 .exercise-pattern-note{font-size:14px;color:#9aa19d;margin:-8px 0 18px}
 .admin-source-label.admin-source-muted{color:#6d746f}
 .admin-summary-card,.admin-controls-card{background:#121413;border:1px solid #222724;border-radius:18px;padding:18px;margin-bottom:16px}
@@ -394,6 +397,11 @@
 .add-time-minutes-value input{width:56px;background:transparent;border:0;border-bottom:1px solid #6f351a;border-radius:0;color:#ff9b50;font:700 30px "Barlow Condensed";text-align:center;padding:0}
 .add-time .add-time-minutes-value span{font-size:13px;letter-spacing:0;color:#c9a68a;white-space:nowrap}
 .add-time .add-time-reset{display:block;margin:8px auto 0;background:transparent;border:0;color:#c9a68a;font:600 13px "DM Sans";text-decoration:underline;padding:4px 0}
+.date-dmy{display:flex;align-items:center;gap:6px;width:100%}
+.date-dmy select{flex:1;min-width:0;-webkit-appearance:none;appearance:none;text-align:center;text-align-last:center;border:1px solid #463126;background:#211b17;color:#f7f4f0;border-radius:10px;padding:13px 2px;font:17px "DM Sans"}
+.date-dmy select:last-of-type{flex:1.5}
+.date-dmy span{color:#7c6a5c;font-size:17px}
+.challenge-date-row .date-dmy select{font-size:15px}
 .session-timer-mode-toggle{margin-bottom:2px}
 .session-timer-duration{margin-top:4px}
 .session-timer-display{font:700 58px/1 'Barlow Condensed';color:#ff9b50;letter-spacing:1px;margin:24px 0 2px}
