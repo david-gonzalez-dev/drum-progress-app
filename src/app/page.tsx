@@ -365,7 +365,7 @@ const translations = {
       medalBoard: "Hall of Fame", medalBoardEmpty: "No one yet", medalBoardAllTime: "ALL-TIME", medalBoardThisWeek: "THIS WEEK",
       awardConsistency: "Most Consistent", awardStreak: "On a Streak", awardChallenge: "Challenge Champion", awardImproved: "Most Improved",
       awardDaysValue: (v: number) => `${v} day${v === 1 ? "" : "s"}`, awardUnlocksValue: (v: number) => `${v} new tempo${v === 1 ? "" : "s"}`, awardChallengeValue: (pct: number) => `${pct}% there`,
-      groupSettings: "GROUP SETTINGS", countFromCreation: "Stats start tracking from", enableChatSetting: "Enable group chat", enableWeeklyAwards: "Enable weekly awards",
+      groupSettings: "GROUP SETTINGS", countFromCreation: "Stats start tracking from", enableWeeklyAwards: "Enable weekly awards",
       dateModeCalendar: "Jan 1", dateModeToday: "Group start", dateModeCustom: "Custom date",
       countFromCreationDesc: "Sets the starting date for this group's practice-day and time-practised leaderboards.",
       noChallenges: "No challenges yet. Start one with your crew!", newChallenge: "+ New challenge", cancel: "Cancel", challengeNamePlaceholder: "Challenge name",
@@ -381,7 +381,6 @@ const translations = {
       confirmLeave: "Leave this group? You can rejoin later with the invite code.", confirmDeleteChallenge: "Delete this challenge? This can't be undone.",
       deleteChallenge: "Delete", since: (date: string) => `Since ${date}`, couldNotLeave: "Could not leave the group.", couldNotDeleteChallenge: "Could not delete the challenge.",
       deleteGroupBtn: "Delete group", confirmDeleteGroup: "Delete this group? This removes it for everyone and can't be undone.", couldNotDeleteGroup: "Could not delete the group.",
-      chat: "CHAT", noMessages: "No messages yet. Say hi to your crew!", chatPlaceholder: "Message your crew...", send: "Send", couldNotSend: "Could not send message.",
     },
     progressPage: {
       eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", yourPractice: "YOUR PRACTICE",
@@ -518,7 +517,7 @@ const translations = {
       medalBoard: "Salón de la Fama", medalBoardEmpty: "Nadie todavía", medalBoardAllTime: "SIEMPRE", medalBoardThisWeek: "ESTA SEMANA",
       awardConsistency: "Más Constante", awardStreak: "En Racha", awardChallenge: "Campeón del Reto", awardImproved: "Más Mejorado",
       awardDaysValue: (v: number) => `${v} día${v === 1 ? "" : "s"}`, awardUnlocksValue: (v: number) => `${v} tiempo${v === 1 ? "" : "s"} nuevo${v === 1 ? "" : "s"}`, awardChallengeValue: (pct: number) => `${pct}% completado`,
-      groupSettings: "AJUSTES DEL GRUPO", countFromCreation: "Las estadísticas empiezan desde", enableChatSetting: "Activar chat del grupo", enableWeeklyAwards: "Activar premios semanales",
+      groupSettings: "AJUSTES DEL GRUPO", countFromCreation: "Las estadísticas empiezan desde", enableWeeklyAwards: "Activar premios semanales",
       dateModeCalendar: "1 de enero", dateModeToday: "Inicio del grupo", dateModeCustom: "Fecha personalizada",
       countFromCreationDesc: "Define la fecha desde la que se cuentan los días y el tiempo de práctica del grupo.",
       noChallenges: "Aún no hay desafíos. ¡Empieza uno con tu grupo!", newChallenge: "+ Nuevo desafío", cancel: "Cancelar", challengeNamePlaceholder: "Nombre del desafío",
@@ -534,7 +533,6 @@ const translations = {
       confirmLeave: "¿Salir de este grupo? Puedes volver a unirte más tarde con el código de invitación.", confirmDeleteChallenge: "¿Eliminar este desafío? Esta acción no se puede deshacer.",
       deleteChallenge: "Eliminar", since: (date: string) => `Desde ${date}`, couldNotLeave: "No se pudo salir del grupo.", couldNotDeleteChallenge: "No se pudo eliminar el desafío.",
       deleteGroupBtn: "Eliminar grupo", confirmDeleteGroup: "¿Eliminar este grupo? Se eliminará para todos y no se puede deshacer.", couldNotDeleteGroup: "No se pudo eliminar el grupo.",
-      chat: "CHAT", noMessages: "Aún no hay mensajes. ¡Saluda a tu grupo!", chatPlaceholder: "Escribe a tu grupo...", send: "Enviar", couldNotSend: "No se pudo enviar el mensaje.",
     },
     progressPage: {
       eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", yourPractice: "TU PRÁCTICA",
@@ -1318,10 +1316,12 @@ function Login({ error, setError }: { error: string; setError: (message: string)
       return;
     }
     const result = mode === "login" ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password });
-    // Supabase deliberately doesn't say whether an email is already registered (prevents
-    // an attacker from probing which emails have accounts), so signUp() "succeeds" with no
-    // error either way. The message below has to make sense for both cases.
-    setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup") setError("If this is a new account, check your email to confirm it. Already have an account with this email? Just log in instead.");
+    // When email confirmation is on, Supabase deliberately doesn't say whether an email is already
+    // registered (prevents an attacker from probing which emails have accounts), so signUp()
+    // "succeeds" with no session either way and the message below has to make sense for both cases.
+    // When confirmation is off, signUp() returns a live session and the user is simply logged in,
+    // so there is nothing to tell them.
+    setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup" && !(result.data as { session?: unknown } | null)?.session) setError("If this is a new account, check your email to confirm it. Already have an account with this email? Just log in instead.");
   }
   async function google() { setBusy(true); const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); if (oauthError) { setError(oauthError.message); setBusy(false); } }
   return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Build your daily drumming habit, one session at a time.</p><div className="auth-card">
@@ -1821,13 +1821,6 @@ function GroupSettingsModal({ group, setGroupSetting, setGroupDateMode, onClose,
           {group.stats_start_date && <DateDMY value={group.stats_start_date} max={dateKey} onChange={(v) => setGroupDateMode("custom", v)} />}
         </div>
         <div className="admin-settings-row">
-          <span>{T.group.enableChatSetting}</span>
-          <div className="admin-mini-toggle">
-            <button type="button" className={!group.chat_enabled ? "selected" : ""} onClick={() => setGroupSetting("chat_enabled", "p_chat_enabled", false)}>{T.admin.pointGameOff}</button>
-            <button type="button" className={group.chat_enabled ? "selected" : ""} onClick={() => setGroupSetting("chat_enabled", "p_chat_enabled", true)}>{T.admin.pointGameOn}</button>
-          </div>
-        </div>
-        <div className="admin-settings-row">
           <span>{T.group.showTeacherStats}</span>
           <div className="admin-mini-toggle">
             <button type="button" className={!group.show_teacher_stats ? "selected" : ""} onClick={() => setGroupSetting("show_teacher_stats", "p_show_teacher_stats", false)}>{T.admin.pointGameOff}</button>
@@ -1854,7 +1847,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   // only apply to what THIS form inserts for a brand new group.
   const [newDateMode, setNewDateMode] = useState<"calendar" | "creation" | "custom">("creation");
   const [newCustomStartDate, setNewCustomStartDate] = useState(dateKey);
-  const [newChatEnabled, setNewChatEnabled] = useState(true);
   const [newShowTeacherStats, setNewShowTeacherStats] = useState(true);
   const [newWeeklyAwards, setNewWeeklyAwards] = useState(true);
   const group = useMemo(() => groups.find((g) => g.id === activeGroupId) ?? null, [groups, activeGroupId]);
@@ -1884,10 +1876,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [challengeReward, setChallengeReward] = useState("");
   const [challengePunishment, setChallengePunishment] = useState("");
   const [challengeBusy, setChallengeBusy] = useState(false);
-  const [messages, setMessages] = useState<{ id: string; user_id: string; message: string; created_at: string }[]>([]);
-  const [chatText, setChatText] = useState("");
-  const [chatBusy, setChatBusy] = useState(false);
-  const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const locale = language === "es" ? "es-ES" : "en-US";
   const presetOptions = [
     { ...CHALLENGE_PRESETS[0], label: T.group.presetDaily5 },
@@ -1907,7 +1895,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const resolvedTeacherId: string | null = teacherIdRes ?? null;
     const memberList = dedupeMemberColors((data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) })));
     const memberIds = memberList.map((m: any) => m.id);
-    // A group's admin stays a full member (roster/calendar legend/chat) even with stats
+    // A group's admin stays a full member (roster/calendar legend) even with stats
     // hidden -- only the ranked leaderboard arrays below exclude them. This applies to the
     // admin's own view too, not just students': hiding stats hides them from everyone,
     // including the admin looking at their own group.
@@ -2026,7 +2014,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     // (rather than two separate effects/round trips) and only reveals the screen once both are
     // done, instead of showing the groups list first and then the leaderboard popping in after.
     (async () => {
-      const { data } = await supabase.from("group_members").select("groups(id,name,invite_code,created_at,created_by,show_teacher_stats,count_days_from_creation,chat_enabled,weekly_awards_enabled,stats_start_date)").eq("user_id", user.id).order("joined_at", { ascending: true });
+      const { data } = await supabase.from("group_members").select("groups(id,name,invite_code,created_at,created_by,show_teacher_stats,count_days_from_creation,weekly_awards_enabled,stats_start_date)").eq("user_id", user.id).order("joined_at", { ascending: true });
       const list = (data ?? []).map((row: any) => row.groups).filter(Boolean);
       const nextId = (activeGroupId && list.some((g: any) => g.id === activeGroupId)) ? activeGroupId : (list[0]?.id ?? null);
       await loadGroupDetail(list.find((g: any) => g.id === nextId) ?? null);
@@ -2046,33 +2034,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     loadGroupDetail(group);
   }, [group]);
   useEffect(() => { loadChallenges(); }, [group, members]);
-  async function loadMessages() {
-    if (!group || !group.chat_enabled) { setMessages([]); return; }
-    const { data } = await supabase.from("group_messages").select("id,user_id,message,created_at").eq("group_id", group.id).order("created_at", { ascending: true }).limit(50);
-    setMessages(data ?? []);
-  }
-  useEffect(() => { loadMessages(); }, [group]);
-  useEffect(() => {
-    if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-  }, [messages]);
-  useEffect(() => {
-    if (!group || !group.chat_enabled) return;
-    const interval = setInterval(loadMessages, 8000);
-    return () => clearInterval(interval);
-  }, [group]);
-  function nameFor(userId: string) {
-    return members.find((m) => m.id === userId)?.name ?? "Drummer";
-  }
-  async function sendMessage() {
-    const text = chatText.trim();
-    if (!text || !group) return;
-    setChatBusy(true);
-    const { error } = await supabase.from("group_messages").insert({ group_id: group.id, user_id: user.id, message: text });
-    setChatBusy(false);
-    if (error) { setError(error.message ?? T.group.couldNotSend); return; }
-    setChatText("");
-    loadMessages();
-  }
   useEffect(() => {
     if (!group || !members.length) { setMonthLogs({}); return; }
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
@@ -2219,13 +2180,13 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const { data, error } = await supabase.from("groups").insert({
       name, invite_code: invite, created_by: user.id,
       count_days_from_creation: newDateMode === "creation", stats_start_date: newDateMode === "custom" ? newCustomStartDate : null,
-      chat_enabled: newChatEnabled, show_teacher_stats: newShowTeacherStats, weekly_awards_enabled: newWeeklyAwards,
+      show_teacher_stats: newShowTeacherStats, weekly_awards_enabled: newWeeklyAwards,
     }).select().single();
     if (!error && data) {
       const member = await supabase.from("group_members").insert({ group_id: data.id, user_id: user.id, role: "owner" });
       if (!member.error) {
         setGroups((current) => [...current, data]); setActiveGroupId(data.id); setAddingGroup(false); setMode("start"); setName("");
-        setNewDateMode("creation"); setNewCustomStartDate(dateKey); setNewChatEnabled(true); setNewShowTeacherStats(true); setNewWeeklyAwards(true);
+        setNewDateMode("creation"); setNewCustomStartDate(dateKey); setNewShowTeacherStats(true); setNewWeeklyAwards(true);
       }
       else setError(member.error.message);
     } else setError(error?.message ?? T.group.couldNotCreate);
@@ -2272,7 +2233,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   // Re-validated server-side by admin_set_group_settings itself (checks is_admin() and
   // membership in this exact group) -- the client only decides whether to SHOW the controls.
   // `key` is the local groups-state field name; `param` is that field's RPC parameter name.
-  async function setGroupSetting(key: "show_teacher_stats" | "chat_enabled" | "weekly_awards_enabled" | "count_days_from_creation", param: "p_show_teacher_stats" | "p_chat_enabled" | "p_weekly_awards_enabled" | "p_count_days_from_creation", enabled: boolean) {
+  async function setGroupSetting(key: "show_teacher_stats" | "weekly_awards_enabled" | "count_days_from_creation", param: "p_show_teacher_stats" | "p_weekly_awards_enabled" | "p_count_days_from_creation", enabled: boolean) {
     if (!group || enabled === group[key]) return;
     const { error } = await supabase.rpc("admin_set_group_settings", { target_group_id: group.id, [param]: enabled });
     if (error) { setError(error.message); return; }
@@ -2392,21 +2353,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           </div>;
         })}
       </div>
-      {group.chat_enabled && <div className="chat-section">
-        <div className="section-head"><span className="section-label">{T.group.chat}</span></div>
-        <div className="chat-messages" ref={chatScrollRef}>
-          {!messages.length ? <p className="hint">{T.group.noMessages}</p> : messages.map((m) => (
-            <div key={m.id} className={m.user_id === user.id ? "chat-message mine" : "chat-message"}>
-              <span className="chat-message-name">{nameFor(m.user_id)}{m.user_id === teacherId && <TeacherBadge T={T} />}</span>
-              <p className="chat-message-text">{m.message}</p>
-            </div>
-          ))}
-        </div>
-        <div className="chat-input-row">
-          <input className="group-input chat-input" value={chatText} onChange={(e) => setChatText(e.target.value)} placeholder={T.group.chatPlaceholder} maxLength={300} onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }} />
-          <button className="chat-send" disabled={chatBusy || !chatText.trim()} onClick={sendMessage}>{T.group.send}</button>
-        </div>
-      </div>}
       <div className="group-invite-footer">
         <span className="section-sublabel">{T.group.inviteMsg}</span>
         <button className="invite-chip" onClick={copyInvite}>{copied ? T.group.copied : group.invite_code}</button>
@@ -2440,13 +2386,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
               <button type="button" className={newDateMode === "custom" ? "selected" : ""} onClick={() => setNewDateMode("custom")}>{T.group.dateModeCustom}</button>
             </div>
             {newDateMode === "custom" && <DateDMY value={newCustomStartDate} max={dateKey} onChange={setNewCustomStartDate} />}
-          </div>
-          <div className="admin-settings-row">
-            <span>{T.group.enableChatSetting}</span>
-            <div className="admin-mini-toggle">
-              <button type="button" className={!newChatEnabled ? "selected" : ""} onClick={() => setNewChatEnabled(false)}>{T.admin.pointGameOff}</button>
-              <button type="button" className={newChatEnabled ? "selected" : ""} onClick={() => setNewChatEnabled(true)}>{T.admin.pointGameOn}</button>
-            </div>
           </div>
           <div className="admin-settings-row">
             <span>{T.group.showTeacherStats}</span>

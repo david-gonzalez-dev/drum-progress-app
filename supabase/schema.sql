@@ -1368,3 +1368,44 @@ on conflict (category, name_en) do nothing;
 insert into public.practice_exercises (category, subcategory, name_en, name_es, sort_order) values
   ('exercises', 'Permutations', 'R L L (Triplets)', 'R L L (Tresillos)', 20)
 on conflict (category, name_en) do nothing;
+
+-- ACCOUNT DELETION FIX (found while preparing the App Store release): deleting an account runs
+-- auth.users -> profiles -> everything else via "on delete cascade", but three columns pointed at
+-- profiles(id) WITHOUT any delete rule, so the database refused the whole deletion for anyone who
+-- had created a group, created a challenge, or (as a teacher) given points. Apple requires account
+-- deletion to always work. After this:
+--   * a deleted user's groups and challenges are deleted with them (group members, challenge
+--     participants and group data cascade from there, same as when a creator deletes a group);
+--   * points a deleted teacher gave stay on the students' history, but "awarded_by" becomes empty.
+-- The loop drops whatever the existing foreign keys on these columns are called, so this is safe to
+-- re-run.
+do $$
+declare
+  r record;
+begin
+  for r in
+    select con.conname, rel.relname
+    from pg_constraint con
+    join pg_class rel on rel.oid = con.conrelid
+    join pg_namespace n on n.oid = rel.relnamespace
+    join pg_attribute att on att.attrelid = rel.oid and att.attnum = any(con.conkey)
+    where n.nspname = 'public' and con.contype = 'f'
+      and ((rel.relname = 'groups' and att.attname = 'created_by')
+        or (rel.relname = 'challenges' and att.attname = 'created_by')
+        or (rel.relname = 'point_awards' and att.attname = 'awarded_by'))
+  loop
+    execute format('alter table public.%I drop constraint %I', r.relname, r.conname);
+  end loop;
+end $$;
+alter table public.groups add constraint groups_created_by_fkey foreign key (created_by) references public.profiles(id) on delete cascade;
+alter table public.challenges add constraint challenges_created_by_fkey foreign key (created_by) references public.profiles(id) on delete cascade;
+alter table public.point_awards alter column awarded_by drop not null;
+alter table public.point_awards add constraint point_awards_awarded_by_fkey foreign key (awarded_by) references public.profiles(id) on delete set null;
+
+-- GROUP CHAT REMOVED (children use the app, and Apple requires report/block/moderation for chat
+-- between users): the app no longer has chat, and this closes it at the database too. With row level
+-- security still enabled on group_messages and no policy left, nobody can read or write it through
+-- the API. Existing messages are NOT deleted by this -- delete from public.group_messages; would
+-- purge them.
+drop policy if exists "group members read messages" on public.group_messages;
+drop policy if exists "group members send messages" on public.group_messages;
