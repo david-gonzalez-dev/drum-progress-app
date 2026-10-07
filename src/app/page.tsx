@@ -921,7 +921,12 @@ export default function Home() {
     if (profileRes.data?.name) { setProfileName(profileRes.data.name); }
     else {
       setProfileName(fallbackName);
-      supabase.from("profiles").upsert({ id: currentUser.id, name: fallbackName }, { onConflict: "id" }).then();
+      // Only ever FILL IN a missing name: a fetch that comes back empty (e.g. a phone waking up with
+      // a stale login) lands here too, and a plain upsert used to overwrite the real saved name
+      // with the email prefix. No row at all -> create it without touching an existing one;
+      // a row with an empty name -> fill just the name.
+      if (!profileRes.data) supabase.from("profiles").upsert({ id: currentUser.id, name: fallbackName }, { onConflict: "id", ignoreDuplicates: true }).then();
+      else supabase.from("profiles").update({ name: fallbackName }).eq("id", currentUser.id).then();
     }
     const settingsData = settingsRes.data;
     if (settingsData?.language === "es" || settingsData?.language === "en") setLanguage(settingsData.language);

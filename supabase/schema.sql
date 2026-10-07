@@ -1449,3 +1449,11 @@ notify pgrst, 'reload schema';
 -- can read the base tables, so notes are private at the database level.
 drop policy if exists "group members can view each other's practice logs" on public.practice_logs;
 drop policy if exists "group members can view each other's practice sessions" on public.practice_sessions;
+
+-- FIX FOR A REGRESSION IN THE "SECURITY AUDIT FIXES" BLOCK ABOVE: saving settings failed with
+-- "permission denied for table settings". The app saves with an upsert (INSERT ... ON CONFLICT DO
+-- UPDATE), and PostgREST writes that as "DO UPDATE SET user_id = EXCLUDED.user_id, language = ...":
+-- the conflict column itself is in the SET list, so the column-level UPDATE grant needs user_id too.
+-- This is safe: the row-level policy ("auth.uid() = user_id" in with check) still stops anyone from
+-- pointing a row at another user. points_enabled stays admin-only (still not granted).
+grant update (user_id) on public.settings to authenticated;
