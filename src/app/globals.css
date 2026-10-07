@@ -489,3 +489,33 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .cf-date-row .date-dmy select{padding:10px 2px;font-size:15px}
 .cf-more{align-self:flex-start;background:none;border:0;color:#ff9b50;font:700 14px 'DM Sans';padding:2px 0 10px}
 .cf-create{padding:13px;font-size:16px}
+.from-teacher-badge{display:inline-block;align-self:flex-start;margin:0 0 8px;padding:3px 9px;border-radius:999px;background:rgba(255,155,80,.14);border:1px solid rgba(255,155,80,.35);color:#ff9b50;font:700 11px 'DM Sans';letter-spacing:.6px;text-transform:uppercase}
+.from-teacher-inline{margin:0 0 0 8px;padding:2px 7px;font-size:10px;vertical-align:middle}
+.give-challenge{display:flex;flex-direction:column}
+.give-challenge .group-input{padding:11px 12px;font-size:16px;margin:10px 0 12px}
+.give-challenge .admin-mini-toggle{margin:6px 0 10px}
+.give-challenge .cf-goal{margin:0 0 12px}
+.give-length-input{flex:1;min-width:0;width:0;text-align:center;background:transparent;border:0;border-left:1px solid #2c312e;color:#f6f7f5;font:700 13px 'DM Sans';padding:8px 4px}
+.give-length-input:not(:placeholder-shown){background:#ff9b50;color:#250d02}
+.give-length-input::placeholder{color:#8d9690}
+.give-error{color:#ff8a7a;font-size:13px;margin:0 0 10px}
+.given-list{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.given-row{border-top:1px solid #232826;padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.given-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.given-name{font-weight:700;font-size:15px;color:#f6f7f5}
+.given-meta{font-size:13px;color:#8d9690}
+.group-cheer-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:14px;border:1px solid rgba(255,155,80,.4);background:rgba(255,155,80,.1);color:#ff9b50;font:700 15px 'DM Sans'}
+.cheer-banner{margin:0 0 12px;padding:12px 14px;border-radius:16px;border:1px solid rgba(255,155,80,.45);background:linear-gradient(135deg,rgba(255,155,80,.16),rgba(255,155,80,.05))}
+.cheer-banner-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px;color:#f6f7f5;font-size:15px}
+.cheer-banner-head button{background:#ff9b50;color:#250d02;border:0;border-radius:999px;padding:6px 14px;font:700 13px 'DM Sans'}
+.cheer-banner-row{margin:4px 0 0;font-size:14px;color:#d9dcd9;line-height:1.35}
+.cheer-banner-row em{color:#ff9b50;font-style:normal}
+.cheer-sheet{display:flex;flex-direction:column;gap:10px}
+.cheer-to-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.cheer-to-row .chip{white-space:nowrap;flex-shrink:0}
+.cheer-list{display:flex;flex-direction:column;gap:6px;max-height:48vh;overflow-y:auto}
+.cheer-option{display:flex;align-items:center;gap:10px;text-align:left;padding:11px 12px;border-radius:12px;border:1px solid #2c312e;background:#161918;color:#f6f7f5;font:600 15px 'DM Sans'}
+.cheer-option:active{background:#1f2421}
+.cheer-toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:60;padding:10px 18px;border-radius:999px;background:#68d391;color:#0b2417;font:700 14px 'DM Sans';box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.bottom-nav button>span{position:relative}
+.nav-dot{position:absolute;top:-2px;right:-6px;width:9px;height:9px;border-radius:50%;background:#ff7a3c;border:2px solid #0f1110;box-sizing:content-box}

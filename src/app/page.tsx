@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 type Tab = "today" | "practice" | "group" | "progress" | "settings" | "admin";
@@ -388,6 +388,11 @@ const translations = {
       skillProgress: "SKILL PROGRESS", noSkillData: "Train an exercise's BPM levels to see your skill progress here.",
       achievements: "ACHIEVEMENTS", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
     },
+    cheers: {
+      sendBtn: "Send a cheer", sheetTitle: "SEND A CHEER", toLabel: "TO", everyone: "Everyone", sent: "Cheer sent!",
+      newCount: (n: number) => n === 1 ? "1 new cheer" : `${n} new cheers`, gotIt: "Got it", toYou: "to you",
+      couldNotSend: "Could not send the cheer.",
+    },
     personalChallenges: {
       title: "Personal Challenges", homeTitle: "PERSONAL CHALLENGES", subtitle: "Set your own practice goal.",
       newChallenge: "+ New challenge", cancel: "Cancel",
@@ -398,6 +403,8 @@ const translations = {
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practice ${minutes} min at ${bpm}+ BPM every day for ${days} consecutive days.` : `Practice ${minutes} min every day for ${days} consecutive days.`,
       statusActive: (done: number, total: number) => `${done}/${total} days`, statusCompleted: "✓ Completed — achievement unlocked!", statusFailed: "Challenge failed. Want to start over?",
       deleteChallenge: "Delete", confirmDelete: "Delete this challenge? This can't be undone.",
+      fromTeacher: "From your teacher", failedShort: "Missed a day",
+      giveTitle: "GIVE A CHALLENGE", giveBtn: "Give challenge", giveHint: "Shows on their Home and Challenges as \"From your teacher\". They can't delete it.", givenLabel: "CHALLENGES", noneGiven: "No challenges yet.", givenBadge: "Given by you", confirmRemove: "Remove this challenge from the student?", remove: "Remove", perDay: (m: number) => `${m} min a day`, couldNotGive: "Could not give the challenge.", lengthDaysN: (n: number) => `${n} days`, lengthCustomShort: "Other",
       resetChallenge: "Try again", confirmReset: "Restart this challenge from day 1?",
       couldNotCreate: "Could not create challenge.",
     },
@@ -541,6 +548,11 @@ const translations = {
       skillProgress: "PROGRESO TÉCNICO", noSkillData: "Entrena los niveles de BPM de un ejercicio para ver tu progreso técnico aquí.",
       achievements: "LOGROS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
     },
+    cheers: {
+      sendBtn: "Enviar ánimo", sheetTitle: "ENVIAR ÁNIMO", toLabel: "PARA", everyone: "Todos", sent: "¡Ánimo enviado!",
+      newCount: (n: number) => n === 1 ? "1 ánimo nuevo" : `${n} ánimos nuevos`, gotIt: "Entendido", toYou: "para ti",
+      couldNotSend: "No se pudo enviar el ánimo.",
+    },
     personalChallenges: {
       title: "Retos personales", homeTitle: "RETOS PERSONALES", subtitle: "Ponte tu propia meta de práctica.",
       newChallenge: "+ Nuevo reto", cancel: "Cancelar",
@@ -551,6 +563,8 @@ const translations = {
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practica ${minutes} min a ${bpm}+ BPM cada día durante ${days} días consecutivos.` : `Practica ${minutes} min cada día durante ${days} días consecutivos.`,
       statusActive: (done: number, total: number) => `${done}/${total} días`, statusCompleted: "✓ Completado — ¡logro desbloqueado!", statusFailed: "Reto fallido. ¿Quieres empezar de nuevo?",
       deleteChallenge: "Eliminar", confirmDelete: "¿Eliminar este reto? Esta acción no se puede deshacer.",
+      fromTeacher: "De tu profesor", failedShort: "Falló un día",
+      giveTitle: "DAR UN RETO", giveBtn: "Dar reto", giveHint: "Le aparece en Inicio y en Retos como \"De tu profesor\". No puede borrarlo.", givenLabel: "RETOS", noneGiven: "Aún no hay retos.", givenBadge: "Dado por ti", confirmRemove: "¿Quitar este reto al alumno?", remove: "Quitar", perDay: (m: number) => `${m} min al día`, couldNotGive: "No se pudo dar el reto.", lengthDaysN: (n: number) => `${n} días`, lengthCustomShort: "Otro",
       resetChallenge: "Intentar de nuevo", confirmReset: "¿Reiniciar este reto desde el día 1?",
       couldNotCreate: "No se pudo crear el reto.",
     },
@@ -635,6 +649,20 @@ const translations = {
 } as const;
 
 
+// Ready-made group cheers (no typing). Keep the keys in sync with the check constraint on group_cheers in schema.sql.
+const CHEER_KEYS: { key: string; en: string; es: string }[] = [
+  { key: "letsgo", en: "Let's go, you can do it!", es: "¡Vamos, tú puedes!" },
+  { key: "keepitup", en: "Keep it up, team!", es: "¡Sigan así, equipo!" },
+  { key: "greatpractice", en: "Great practice today!", es: "¡Gran práctica hoy!" },
+  { key: "streak", en: "Don't break the streak!", es: "¡No rompas la racha!" },
+  { key: "proud", en: "Proud of you all!", es: "¡Orgulloso de todos!" },
+  { key: "gopractice", en: "Go practice!", es: "¡A practicar!" },
+];
+type Cheer = { id: string; group_id: string; from_user: string; to_user: string | null; cheer_key: string; created_at: string; from_name: string };
+function cheerText(key: string, language: Lang) {
+  const c = CHEER_KEYS.find((x) => x.key === key);
+  return c ? c[language] : "";
+}
 const NAV_ICONS: Record<Tab, React.ReactNode> = {
   today: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L10 3l7 6.5" /><path d="M4.5 8.5V17h11V8.5" /><path d="M8 17v-4.5a1 1 0 011-1h2a1 1 0 011 1V17" /></svg>,
   practice: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="10" cy="10" r="7" /><circle cx="10" cy="10" r="4" /><circle cx="10" cy="10" r="1.1" fill="currentColor" stroke="none" /></svg>,
@@ -715,13 +743,14 @@ function challengeExerciseLabel(en: string, language: Lang) {
 }
 type ChallengeLogEntry = { minutes: number; items: string[]; customItems: string[]; updatedAt: string };
 function isChallengeDayValid(challenge: any, date: string, practiceSessions: { item_en: string; bpm: number; duration_minutes: number; practiced_on: string; created_at: string }[], logsCache: Record<string, ChallengeLogEntry>) {
-  if (challenge.target_bpm) {
-    // Anti-backdating: same idea as the log-based check below, but against the session's own
-    // created_at (server-controlled, see the practice_sessions_lock_created_at trigger) instead of
-    // practiced_on, since a session has no separate "edited" timestamp to forge.
-    const minutes = practiceSessions.filter((s) => s.item_en === challenge.exercise_en && s.practiced_on === date && s.bpm >= challenge.target_bpm && s.created_at && localDateFromTimestamp(s.created_at) === date).reduce((sum, s) => sum + s.duration_minutes, 0);
-    return minutes >= challenge.target_minutes;
-  }
+  // Skill Trainer exercises are tracked by their sessions, at the target BPM or faster (any BPM when the
+  // challenge has none). Anti-backdating: same idea as the log-based check below, but against the
+  // session's own created_at (server-controlled, see the practice_sessions_lock_created_at trigger)
+  // instead of practiced_on, since a session has no separate "edited" timestamp to forge.
+  const minBpm = challenge.target_bpm ?? 0;
+  const sessionMinutes = practiceSessions.filter((s) => s.item_en === challenge.exercise_en && s.practiced_on === date && s.bpm >= minBpm && s.created_at && localDateFromTimestamp(s.created_at) === date).reduce((sum, s) => sum + s.duration_minutes, 0);
+  if (sessionMinutes >= challenge.target_minutes) return true;
+  if (challenge.target_bpm) return false;
   const log = logsCache[date];
   if (!log) return false;
   const tags = [...log.items, ...log.customItems];
@@ -817,6 +846,34 @@ export default function Home() {
     return new Promise((resolve) => setConfirmState({ message, resolve }));
   }
   const [user, setUser] = useState<any>(null);
+  // Group cheers: loaded for every group the user is in (RLS decides what is visible), polled gently so the
+  // Group tab can show an "unread" dot. "Seen" is a per-device convenience, so it lives in localStorage.
+  const [cheers, setCheers] = useState<Cheer[]>([]);
+  const [cheersSeenAt, setCheersSeenAt] = useState("");
+  const loadCheers = useCallback(async () => {
+    if (!user) return;
+    const since = new Date(Date.now() - 3 * 86400000).toISOString();
+    const { data } = await supabase.from("group_cheers").select("id,group_id,from_user,to_user,cheer_key,created_at,from_profile:profiles!group_cheers_from_user_fkey(name)").gte("created_at", since).order("created_at", { ascending: false }).limit(50);
+    setCheers((data ?? []).map((row: any) => ({ id: row.id, group_id: row.group_id, from_user: row.from_user, to_user: row.to_user, cheer_key: row.cheer_key, created_at: row.created_at, from_name: row.from_profile?.name || "Drummer" })));
+  }, [user?.id]);
+  useEffect(() => {
+    if (!user) { setCheers([]); return; }
+    const storageKey = `cheers_seen_${user.id}`;
+    let seen = "";
+    try { seen = localStorage.getItem(storageKey) ?? ""; } catch {}
+    if (!seen) { seen = new Date().toISOString(); try { localStorage.setItem(storageKey, seen); } catch {} }
+    setCheersSeenAt(seen);
+    loadCheers();
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") loadCheers(); }, 60000);
+    return () => window.clearInterval(timer);
+  }, [user?.id, loadCheers]);
+  useEffect(() => { if (user && tab === "group") loadCheers(); }, [tab]);
+  function markCheersSeen() {
+    if (!user) return;
+    const latest = cheers[0]?.created_at ?? new Date().toISOString();
+    setCheersSeenAt(latest);
+    try { localStorage.setItem(`cheers_seen_${user.id}`, latest); } catch {}
+  }
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState("");
   const [progressToast, setProgressToast] = useState("");
@@ -1158,11 +1215,12 @@ export default function Home() {
   if (passwordRecovery) return <ResetPassword onDone={() => setPasswordRecovery(false)} />;
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
+  const hasUnreadCheers = cheers.some((c) => c.from_user !== user.id && c.created_at > cheersSeenAt);
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className={timerBanner ? "shell has-timer-banner" : "shell"}>
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => setTab("practice")} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
-    {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} />}
+    {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage key={adminResetKey} user={user} language={language} T={T} />}
@@ -1174,7 +1232,7 @@ export default function Home() {
         <button className="save" onClick={() => setProgressToast("")}>{T.practiceMode.niceBtn}</button>
       </div>
     </div>}
-    <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}</span>{T.nav[id]}</button>)}</nav>
+    <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}{id === "group" && hasUnreadCheers && tab !== "group" && <i className="nav-dot" />}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     <SessionTimer open={sessionTimer} close={() => setSessionTimer(false)} onOpen={() => setSessionTimer(true)} onBannerChange={setTimerBanner} onAddPractice={(seconds, items, customItems) => addMetronomePractice(seconds, items, customItems, false)}userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
@@ -1408,7 +1466,7 @@ function HomeChallenges({ user, practiceSessions, language, T }: any) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date").eq("user_id", user.id).order("start_date", { ascending: false });
+      const { data } = await supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date,assigned_by").eq("user_id", user.id).order("start_date", { ascending: false });
       const list = data ?? [];
       if (cancelled) return;
       setChallenges(list);
@@ -1426,7 +1484,7 @@ function HomeChallenges({ user, practiceSessions, language, T }: any) {
   return <div className="home-pinned">
     <h2 className="home-title">{T.personalChallenges.homeTitle}</h2>
     {active.map((c) => <div key={c.id} className="home-pinned-row">
-      <div className="home-pinned-head"><span className="home-pinned-name">{challengeExerciseLabel(c.exercise_en, language)}</span><span className="home-pinned-time">{T.personalChallenges.statusActive(c.completedCount, c.length_days)}</span></div>
+      <div className="home-pinned-head"><span className="home-pinned-name">{challengeExerciseLabel(c.exercise_en, language)}{c.assigned_by && <span className="from-teacher-badge from-teacher-inline">{T.personalChallenges.fromTeacher}</span>}</span><span className="home-pinned-time">{T.personalChallenges.statusActive(c.completedCount, c.length_days)}</span></div>
       <div className="personal-challenge-dots home-challenge-dots">{c.days.map((d: any) => <i key={d.date} className={`pc-dot ${d.valid === true ? "hit" : d.valid === false ? "miss" : "pending"}`} />)}</div>
     </div>)}
   </div>;
@@ -1848,7 +1906,7 @@ function GroupSettingsModal({ group, setGroupSetting, setGroupDateMode, onClose,
   </div></div>;
 }
 
-function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T }: { user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
+function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T, cheers, cheersSeenAt, onCheersSeen, onCheersChanged }: { cheers: Cheer[]; cheersSeenAt: string; onCheersSeen: () => void; onCheersChanged: () => void; user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
   const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [groups, setGroups] = useState<any[]>([]); const [activeGroupId, setActiveGroupId] = useState<string | null>(null); const [addingGroup, setAddingGroup] = useState(false); const [busy, setBusy] = useState(false);
   // New-group setup defaults -- practice tracking defaults to "from today" (matching the
   // suggested creation-form layout), everything else defaults on. Existing groups are
@@ -1888,6 +1946,24 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [challengePunishment, setChallengePunishment] = useState("");
   const [challengeBusy, setChallengeBusy] = useState(false);
   const locale = language === "es" ? "es-ES" : "en-US";
+  const [showCheerSheet, setShowCheerSheet] = useState(false);
+  const [cheerTo, setCheerTo] = useState<string | null>(null);
+  const [cheerToast, setCheerToast] = useState(false);
+  const [cheerBusy, setCheerBusy] = useState(false);
+  async function sendCheer(key: string) {
+    if (!group || cheerBusy) return;
+    setCheerBusy(true);
+    const { error } = await supabase.from("group_cheers").insert({ group_id: group.id, from_user: user.id, to_user: cheerTo, cheer_key: key });
+    setCheerBusy(false);
+    if (error) { setError(error.message || T.cheers.couldNotSend); return; }
+    setShowCheerSheet(false);
+    setCheerTo(null);
+    setCheerToast(true);
+    window.setTimeout(() => setCheerToast(false), 2200);
+    onCheersChanged();
+  }
+  const groupCheers = group ? cheers.filter((c) => c.group_id === group.id) : [];
+  const unreadCheers = groupCheers.filter((c) => c.from_user !== user.id && c.created_at > cheersSeenAt);
   const presetOptions = [
     { ...CHALLENGE_PRESETS[0], label: T.group.presetDaily5 },
     { ...CHALLENGE_PRESETS[1], label: T.group.presetDaily30x5 },
@@ -2283,6 +2359,11 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         </div>
       </header>
       {groups.length > 1 && <div className="group-switcher">{groups.map((g) => <button key={g.id} className={g.id === activeGroupId ? "chip selected" : "chip"} onClick={() => setActiveGroupId(g.id)}>{g.name}</button>)}</div>}
+      {unreadCheers.length > 0 && <div className="cheer-banner">
+        <div className="cheer-banner-head"><strong>📣 {T.cheers.newCount(unreadCheers.length)}</strong><button type="button" onClick={onCheersSeen}>{T.cheers.gotIt}</button></div>
+        {unreadCheers.slice(0, 3).map((c) => <p key={c.id} className="cheer-banner-row"><b>{c.from_name}</b>{c.to_user === user.id && <em> ({T.cheers.toYou})</em>}: {cheerText(c.cheer_key, language)}</p>)}
+      </div>}
+      <div className="group-hof-row"><button type="button" className="group-cheer-btn" onClick={() => { setCheerTo(null); setShowCheerSheet(true); }}>{T.cheers.sendBtn}</button></div>
       <div className="group-hof-row"><button type="button" className="group-hof-btn" onClick={() => setShowMedalBoard(true)}>{T.group.medalBoard}<span>→</span></button></div>
       <div className="leaderboard time-card">
         <span className="section-label">{T.group.leaderboard}</span>
@@ -2326,6 +2407,16 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         roster={{ members, dayLogs: dayDetailLogs, currentUserId: user.id }}
         onNavigateDay={(delta) => setSummaryDayKey((current) => current ? shiftDateKey(current, delta) : current)} />}
       {showMedalBoard && <MedalBoardModal daysTotals={daysTotals} totals={totals} weeklyRows={group.weekly_awards_enabled ? [...weeklyAwards, ...(challengeAward ? [challengeAward] : [])] : []} onClose={() => setShowMedalBoard(false)} T={T} />}
+      {showCheerSheet && <div className="modal modal-center" onClick={() => setShowCheerSheet(false)}><div className="day-summary cheer-sheet" onClick={(e) => e.stopPropagation()}>
+        <span className="section-label">{T.cheers.sheetTitle}</span>
+        <span className="cf-label">{T.cheers.toLabel}</span>
+        <div className="cheer-to-row">
+          <button type="button" className={cheerTo === null ? "chip selected" : "chip"} onClick={() => setCheerTo(null)}>{T.cheers.everyone}</button>
+          {members.filter((m) => m.id !== user.id).map((m) => <button key={m.id} type="button" className={cheerTo === m.id ? "chip selected" : "chip"} onClick={() => setCheerTo(m.id)}>{m.name}</button>)}
+        </div>
+        <div className="cheer-list">{CHEER_KEYS.map((c) => <button key={c.key} type="button" className="cheer-option" disabled={cheerBusy} onClick={() => sendCheer(c.key)}>{c[language as Lang]}</button>)}</div>
+      </div></div>}
+      {cheerToast && <div className="cheer-toast">✓ {T.cheers.sent}</div>}
       {showGroupSettings && <GroupSettingsModal group={group} setGroupSetting={setGroupSetting} setGroupDateMode={setGroupDateMode} onClose={() => setShowGroupSettings(false)} T={T} />}
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span>{user.id === teacherId && <button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button>}</div>
@@ -2449,7 +2540,7 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const { data } = await supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date").eq("user_id", user.id);
+      const { data } = await supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date,assigned_by").eq("user_id", user.id);
       const list = data ?? [];
       if (!list.length) { if (!cancelled) setWonChallenges([]); return; }
       const earliestStart = list.reduce((min: string, c: any) => (c.start_date < min ? c.start_date : min), list[0].start_date);
@@ -2548,7 +2639,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
   const isLadder = PRACTICE_EXERCISES.some((e) => e.en === exerciseEn);
 
   async function loadChallenges() {
-    const { data } = await supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date").eq("user_id", user.id).order("start_date", { ascending: false });
+    const { data } = await supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date,assigned_by").eq("user_id", user.id).order("start_date", { ascending: false });
     const list = data ?? [];
     setChallenges(list);
     if (!list.length) { setLogsCache({}); return; }
@@ -2606,13 +2697,14 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
       return <div key={c.id} className="challenge-card">
         <div className="challenge-head">
           <h3>{T.personalChallenges.challengeTitle(challengeExerciseLabel(c.exercise_en, language), c.length_days)}</h3>
-          <button className="challenge-delete" onClick={() => deleteChallenge(c.id)}>{T.personalChallenges.deleteChallenge}</button>
+          {!c.assigned_by && <button className="challenge-delete" onClick={() => deleteChallenge(c.id)}>{T.personalChallenges.deleteChallenge}</button>}
         </div>
+        {c.assigned_by && <span className="from-teacher-badge">{T.personalChallenges.fromTeacher}</span>}
         <p className="challenge-desc">{T.personalChallenges.challengeDescription(c.target_minutes, c.target_bpm, c.length_days)}</p>
         {status === "failed" ? (
           <div className="challenge-failed-block">
             <p className="personal-challenge-status failed">{T.personalChallenges.statusFailed}</p>
-            <button className="challenge-try-again" onClick={() => resetChallenge(c.id)}>{T.personalChallenges.resetChallenge}</button>
+            {!c.assigned_by && <button className="challenge-try-again" onClick={() => resetChallenge(c.id)}>{T.personalChallenges.resetChallenge}</button>}
           </div>
         ) : <>
           <div className="personal-challenge-dots">
@@ -3997,6 +4089,14 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
   const [showAllPoints, setShowAllPoints] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [wonChallenges, setWonChallenges] = useState<any[]>([]);
+  // Every personal challenge of the opened student (own and given) with its day-by-day result, for the "Give a challenge" section.
+  const [studentChallenges, setStudentChallenges] = useState<any[]>([]);
+  const [giveExercise, setGiveExercise] = useState(CHALLENGE_EXERCISE_OPTIONS[0]?.en ?? "");
+  const [giveMinutes, setGiveMinutes] = useState("10");
+  const [giveBpm, setGiveBpm] = useState("");
+  const [giveLength, setGiveLength] = useState("7");
+  const [giveBusy, setGiveBusy] = useState(false);
+  const [giveError, setGiveError] = useState<string | null>(null);
   const [awardAmount, setAwardAmount] = useState("1");
   const [awardReason, setAwardReason] = useState("");
   const [awarding, setAwarding] = useState(false);
@@ -4021,7 +4121,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
       supabase.from("pinned_exercises").select("exercise_en").eq("user_id", u.id).order("sort_order"),
       supabase.from("settings").select("kid_mode, points_enabled").eq("user_id", u.id).maybeSingle(),
       supabase.from("point_awards").select("id,amount,reason,created_at").eq("user_id", u.id).order("created_at", { ascending: false }),
-      supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date").eq("user_id", u.id),
+      supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date,assigned_by").eq("user_id", u.id),
     ]);
     setLogs((logsRes.data ?? []).map((row: any) => ({
       date: row.practiced_on, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes, usedMetronome: !!row.used_metronome,
@@ -4038,14 +4138,49 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
       const sessionsForEval = (sessionsRes.data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en ?? "", bpm: row.bpm, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on, created_at: row.created_at }));
       const logsCache = await fetchChallengeLogsCache(u.id, earliestStart);
       setWonChallenges(challengesList.filter((c: any) => evaluateChallenge(c, sessionsForEval, logsCache).status === "completed"));
+      setStudentChallenges(challengesList.map((c: any) => ({ ...c, ...evaluateChallenge(c, sessionsForEval, logsCache) })).sort((a: any, b: any) => (a.start_date < b.start_date ? 1 : -1)));
     } else {
       setWonChallenges([]);
+      setStudentChallenges([]);
     }
+    setGiveError(null);
     setShowAllLogs(false);
     setShowAllSessions(false);
     setShowAllPoints(false);
     setShowHistory(false);
     setSelected(u);
+  }
+  async function reloadStudentChallenges(studentId: string) {
+    const [challengesRes, sessionsRes] = await Promise.all([
+      supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date,assigned_by").eq("user_id", studentId),
+      supabase.from("practice_sessions").select("bpm,duration_minutes,practiced_on,created_at,practice_exercises(name_en)").eq("user_id", studentId),
+    ]);
+    const list = challengesRes.data ?? [];
+    if (!list.length) { setStudentChallenges([]); setWonChallenges([]); return; }
+    const earliestStart = list.reduce((min: string, c: any) => (c.start_date < min ? c.start_date : min), list[0].start_date);
+    const sessionsForEval = (sessionsRes.data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en ?? "", bpm: row.bpm, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on, created_at: row.created_at }));
+    const logsCache = await fetchChallengeLogsCache(studentId, earliestStart);
+    const evaluated = list.map((c: any) => ({ ...c, ...evaluateChallenge(c, sessionsForEval, logsCache) }));
+    setStudentChallenges([...evaluated].sort((a: any, b: any) => (a.start_date < b.start_date ? 1 : -1)));
+    setWonChallenges(evaluated.filter((c: any) => c.status === "completed"));
+  }
+  async function giveChallenge() {
+    if (!selected) return;
+    setGiveBusy(true);
+    setGiveError(null);
+    const isLadderExercise = PRACTICE_EXERCISES.some((e) => e.en === giveExercise);
+    const { error } = await supabase.from("personal_challenges").insert({ user_id: selected.id, assigned_by: user.id, exercise_en: giveExercise, target_minutes: Number(giveMinutes) || 1, target_bpm: isLadderExercise && giveBpm ? Number(giveBpm) : null, length_days: Number(giveLength) || 1, start_date: dateKey });
+    setGiveBusy(false);
+    if (error) { setGiveError(error.message || T.personalChallenges.couldNotGive); return; }
+    setGiveBpm("");
+    reloadStudentChallenges(selected.id);
+  }
+  async function removeGivenChallenge(id: string) {
+    if (!selected) return;
+    if (!window.confirm(T.personalChallenges.confirmRemove)) return;
+    const { error } = await supabase.from("personal_challenges").delete().eq("id", id);
+    if (error) { setGiveError(error.message); return; }
+    reloadStudentChallenges(selected.id);
   }
   async function awardPoints(amount: number, reason: string | null) {
     if (!selected || !amount) return;
@@ -4160,6 +4295,41 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
           </div>)}
         </div>
       </div>}
+
+      <div className="admin-summary-card give-challenge">
+        <span className="admin-summary-label">{T.personalChallenges.giveTitle}</span>
+        <select className="group-input" value={giveExercise} onChange={(e) => { setGiveExercise(e.target.value); setGiveBpm(""); }}>
+          {CHALLENGE_EXERCISE_OPTIONS.map((opt) => <option key={opt.en} value={opt.en}>{opt[language as Lang]}</option>)}
+        </select>
+        <div className="cf-goal">
+          <div className="cf-goal-text"><span className="cf-label">{T.personalChallenges.minutesLabel.toUpperCase()}</span></div>
+          <div className="cf-stepper">
+            <button type="button" aria-label="-" onClick={() => setGiveMinutes(String(Math.max(1, (Number(giveMinutes) || 1) - 1)))}>−</button>
+            <input inputMode="numeric" value={giveMinutes} onChange={(e) => setGiveMinutes(e.target.value.replace(/\D/g, ""))} />
+            <button type="button" aria-label="+" onClick={() => setGiveMinutes(String((Number(giveMinutes) || 0) + 1))}>+</button>
+          </div>
+        </div>
+        {PRACTICE_EXERCISES.some((e) => e.en === giveExercise) && <input className="group-input" inputMode="numeric" value={giveBpm} onChange={(e) => setGiveBpm(e.target.value.replace(/\D/g, ""))} placeholder={`${T.personalChallenges.bpmLabel} - ${T.personalChallenges.bpmPlaceholder}`} />}
+        <span className="cf-label">{T.personalChallenges.lengthLabel.toUpperCase()}</span>
+        <div className="admin-mini-toggle admin-mini-toggle-wide">
+          {[7, 14, 30].map((n) => <button key={n} type="button" className={Number(giveLength) === n ? "selected" : ""} onClick={() => setGiveLength(String(n))}>{T.personalChallenges.lengthDaysN(n)}</button>)}
+          <input className="give-length-input" inputMode="numeric" aria-label={T.personalChallenges.lengthLabel} value={![7, 14, 30].includes(Number(giveLength)) ? giveLength : ""} placeholder={T.personalChallenges.lengthCustomShort} onChange={(e) => setGiveLength(e.target.value.replace(/\D/g, "").slice(0, 2))} />
+        </div>
+        <p className="cf-hint">{T.personalChallenges.giveHint}</p>
+        {giveError && <p className="give-error">{giveError}</p>}
+        <button type="button" className="primary cf-create" disabled={giveBusy || !giveExercise || !Number(giveMinutes) || !Number(giveLength) || Number(giveLength) > 90} onClick={giveChallenge}>{giveBusy ? T.personalChallenges.pleaseWait : T.personalChallenges.giveBtn}</button>
+        <div className="given-list">
+          {studentChallenges.length === 0 ? <p className="hint">{T.personalChallenges.noneGiven}</p> : studentChallenges.map((c) => <div key={c.id} className="given-row">
+            <div className="given-head">
+              <span className="given-name">{challengeExerciseLabel(c.exercise_en, language)}</span>
+              {c.assigned_by === user.id && <button type="button" className="challenge-delete" onClick={() => removeGivenChallenge(c.id)}>{T.personalChallenges.remove}</button>}
+            </div>
+            <span className="given-meta">{T.personalChallenges.perDay(c.target_minutes)}{c.target_bpm ? ` · ${c.target_bpm}+ BPM` : ""} · {T.personalChallenges.lengthDaysN(c.length_days)}{c.assigned_by === user.id ? ` · ${T.personalChallenges.givenBadge}` : ""}</span>
+            <div className="personal-challenge-dots">{c.days.map((d: any) => <i key={d.date} className={`pc-dot ${d.valid === true ? "hit" : d.valid === false ? "miss" : "pending"}`} />)}</div>
+            <span className={`personal-challenge-status ${c.status}`}>{c.status === "completed" ? T.personalChallenges.statusCompleted : c.status === "failed" ? T.personalChallenges.failedShort : T.personalChallenges.statusActive(c.completedCount, c.length_days)}</span>
+          </div>)}
+        </div>
+      </div>
 
       <div className="admin-summary-card">
         <span className="admin-summary-label">{T.admin.achievementsLabel}</span>

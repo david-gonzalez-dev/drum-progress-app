@@ -1491,3 +1491,78 @@ create policy "group admins can create challenges" on public.challenges for inse
     select 1 from public.group_members m where m.group_id = challenges.group_id and m.user_id = auth.uid()
   )
 );
+
+-- ASSIGN A CHALLENGE (admin gives a student a personal challenge, no shared group needed).
+-- Reuses personal_challenges. assigned_by is the admin who gave it (null = the student's own challenge).
+-- A student can add/change/delete only her OWN challenges; assigned ones are read-only for her, and only
+-- the admin who assigned it can remove it. No new table, so no extra grants are needed.
+alter table public.personal_challenges add column if not exists assigned_by uuid references public.profiles(id) on delete set null;
+
+drop policy if exists "users manage their personal challenges" on public.personal_challenges;
+drop policy if exists "users view their personal challenges" on public.personal_challenges;
+drop policy if exists "users add their own personal challenges" on public.personal_challenges;
+drop policy if exists "users change their own personal challenges" on public.personal_challenges;
+drop policy if exists "users delete their own personal challenges" on public.personal_challenges;
+drop policy if exists "admins assign personal challenges" on public.personal_challenges;
+drop policy if exists "admins remove challenges they assigned" on public.personal_challenges;
+
+create policy "users view their personal challenges" on public.personal_challenges for select to authenticated using (auth.uid() = user_id);
+create policy "users add their own personal challenges" on public.personal_challenges for insert to authenticated with check (auth.uid() = user_id and assigned_by is null);
+create policy "users change their own personal challenges" on public.personal_challenges for update to authenticated using (auth.uid() = user_id and assigned_by is null) with check (auth.uid() = user_id and assigned_by is null);
+create policy "users delete their own personal challenges" on public.personal_challenges for delete to authenticated using (auth.uid() = user_id and assigned_by is null);
+create policy "admins assign personal challenges" on public.personal_challenges for insert to authenticated with check (public.is_admin() and assigned_by = auth.uid());
+create policy "admins remove challenges they assigned" on public.personal_challenges for delete to authenticated using (public.is_admin() and assigned_by = auth.uid());
+
+-- GROUP CHEERS (replaces the chat): members tap a ready-made message to cheer the whole group or one
+-- member. Nobody types anything: cheer_key must be one of the fixed keys below (keep this list in sync
+-- with CHEER_KEYS in page.tsx), so there is no free text to moderate. NEW TABLE, so it has explicit grants.
+create table if not exists public.group_cheers (
+  id uuid primary key default uuid_generate_v4(),
+  group_id uuid not null references public.groups(id) on delete cascade,
+  from_user uuid not null,
+  to_user uuid,
+  cheer_key text not null check (cheer_key in ('letsgo','keepitup','greatpractice','streak','proud','gopractice')),
+  created_at timestamptz not null default now(),
+  constraint group_cheers_from_user_fkey foreign key (from_user) references public.profiles(id) on delete cascade,
+  constraint group_cheers_to_user_fkey foreign key (to_user) references public.profiles(id) on delete cascade
+);
+create index if not exists group_cheers_group_created_idx on public.group_cheers (group_id, created_at desc);
+alter table public.group_cheers enable row level security;
+
+-- Read: a cheer for the whole group (to_user is null), one addressed to me, or one I sent.
+drop policy if exists "members read their cheers" on public.group_cheers;
+create policy "members read their cheers" on public.group_cheers for select to authenticated using (
+  public.is_group_member(group_id) and (to_user is null or to_user = auth.uid() or from_user = auth.uid())
+);
+-- Send: only as myself, inside a group I belong to, and only to someone in that same group.
+drop policy if exists "members send cheers" on public.group_cheers;
+create policy "members send cheers" on public.group_cheers for insert to authenticated with check (
+  from_user = auth.uid() and public.is_group_member(group_id)
+  and (to_user is null or exists (select 1 from public.group_members gm where gm.group_id = group_cheers.group_id and gm.user_id = to_user))
+);
+
+grant select, insert on public.group_cheers to authenticated;
+grant select, insert, update, delete on public.group_cheers to service_role;
+
+-- Anti-spam (max 5 cheers a minute and 60 a day per person) and tidy-up (cheers older than 14 days are
+-- deleted), both run after every insert. security definer so the cleanup can delete other people's rows.
+create or replace function public.group_cheers_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if (select count(*) from public.group_cheers where from_user = new.from_user and created_at > now() - interval '1 minute') > 5 then
+    raise exception 'Too many cheers, slow down a little.';
+  end if;
+  if (select count(*) from public.group_cheers where from_user = new.from_user and created_at > now() - interval '1 day') > 60 then
+    raise exception 'Daily cheer limit reached.';
+  end if;
+  delete from public.group_cheers where group_id = new.group_id and created_at < now() - interval '14 days';
+  return new;
+end;
+$$;
+revoke execute on function public.group_cheers_guard() from anon, public;
+drop trigger if exists group_cheers_guard_trg on public.group_cheers;
+create trigger group_cheers_guard_trg after insert on public.group_cheers for each row execute function public.group_cheers_guard();
