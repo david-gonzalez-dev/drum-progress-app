@@ -355,7 +355,7 @@ const translations = {
     group: {
       yourCrew: "YOUR CREW", youreIn: "You're in.", inviteMsg: "Invite drummers with this code:", copyInvite: "Copy invite code",
       challenges: "CHALLENGES",
-      practiseTogether: "PRACTISE TOGETHER", yourGroup: "YOUR GROUP", switchGroup: "SWITCH GROUP", findCrew: "Find your crew.", startGroup: "Start a group", joinCrew: "Join your crew",
+      practiseTogether: "PRACTISE TOGETHER", yourGroup: "YOUR GROUP", switchGroup: "SWITCH GROUP", moreOptions: "More", inviteShort: "Invite code", noChallengesShort: "No challenges yet.", showMore: (n: number) => `Show ${n} more`, showLess: "Show less", findCrew: "Find your crew.", startGroup: "Start a group", joinCrew: "Join your crew",
       intro: "Stay accountable, climb the leaderboard, and make practice more fun.", createGroupBtn: "Create a group", joinWithCode: "Join with invite code",
       groupNamePlaceholder: "Group name", inviteCodePlaceholder: "Invite code", pleaseWait: "Please wait...", createGroup: "Create group",
       joinGroup: "Join group", back: "Back", inviteNotFound: "That invite code was not found.", couldNotCreate: "Could not create group.",
@@ -369,12 +369,12 @@ const translations = {
       dateModeCalendar: "Jan 1", dateModeToday: "Group start", dateModeCustom: "Custom date",
       countFromCreationDesc: "Sets the starting date for this group's practice-day and time-practised leaderboards.",
       noChallenges: "No challenges yet. Start one with your crew!", noChallengesMember: "No challenges yet. Your teacher can start one.", newChallenge: "+ New challenge", cancel: "Cancel", challengeNamePlaceholder: "Challenge name",
-      typeDaily: "Every day", typeMinutes: "Total minutes", typeSessions: "Days practised", goalLabel: "GOAL", startLabel: "START", endLabel: "END", quickStart: "QUICK START", typeLabel: "TYPE", lengthLabel: "LENGTH", lengthDays: (n: number) => `${n} day${n === 1 ? "" : "s"}`, lengthCustom: "Custom", stakesToggle: "Reward or punishment (optional)",
-      rewardPlaceholder: "Reward (optional)", punishmentPlaceholder: "Punishment (optional)", createChallengeBtn: "Create challenge",
+      typeDaily: "Every day", typeMinutes: "Total minutes", typeSessions: "Days practised", goalLabel: "GOAL", startLabel: "START", endLabel: "END", quickStart: "QUICK START", typeLabel: "TYPE", lengthLabel: "LENGTH", lengthDays: (n: number) => `${n} day${n === 1 ? "" : "s"}`, lengthCustom: "Custom", stakesToggle: "Reward / If you lose (optional)",
+      rewardPlaceholder: "Reward (optional)", punishmentPlaceholder: "If you lose (optional)", createChallengeBtn: "Create challenge",
       joinChallengeBtn: "Join challenge", joined: "Joined", participants: (n: number) => `${n} joined`,
       dailyGoalDesc: (min: number) => `${min}+ min every day`, minutesGoalDesc: (total: number) => `Reach ${total} total min`,
       sessionsGoalDesc: (days: number) => `Practise on ${days} days`, daysProgress: (p: number, t: number) => `${p}/${t} days`,
-      minutesProgress: (p: number, t: number) => `${p}/${t} min`, reward: "Reward:", punishment: "Punishment:", couldNotCreateChallenge: "Could not create challenge.",
+      minutesProgress: (p: number, t: number) => `${p}/${t} min`, reward: "Reward:", punishment: "If you lose:", couldNotCreateChallenge: "Could not create challenge.",
       presetDaily5: "3 min every day", presetDaily30x5: "30+ min, 5 days straight", presetSessions3weekly: "3 sessions this week", presetDaily5x20: "20-day challenge: 5+ min daily",
       noOnePractised: "No one practised on this day.",
       weekdaysMon: ["M", "T", "W", "T", "F", "S", "S"], copied: "Copied!", progress: "PROGRESS", leaveGroup: "Leave group",
@@ -515,7 +515,7 @@ const translations = {
     group: {
       yourCrew: "TU GRUPO", youreIn: "Ya estás dentro.", inviteMsg: "Invita a otros bateristas con este código:", copyInvite: "Copiar código de invitación",
       challenges: "DESAFÍOS",
-      practiseTogether: "PRACTICA EN GRUPO", yourGroup: "TU GRUPO", switchGroup: "CAMBIAR DE GRUPO", findCrew: "Encuentra tu grupo.", startGroup: "Crear un grupo", joinCrew: "Únete a un grupo",
+      practiseTogether: "PRACTICA EN GRUPO", yourGroup: "TU GRUPO", switchGroup: "CAMBIAR DE GRUPO", moreOptions: "Más", inviteShort: "Código de invitación", noChallengesShort: "Aún no hay desafíos.", showMore: (n: number) => `Ver ${n} más`, showLess: "Ver menos", findCrew: "Encuentra tu grupo.", startGroup: "Crear un grupo", joinCrew: "Únete a un grupo",
       intro: "Mantente responsable, sube en la clasificación y haz que practicar sea más divertido.", createGroupBtn: "Crear un grupo", joinWithCode: "Unirse con código de invitación",
       groupNamePlaceholder: "Nombre del grupo", inviteCodePlaceholder: "Código de invitación", pleaseWait: "Un momento...", createGroup: "Crear grupo",
       joinGroup: "Unirse al grupo", back: "Atrás", inviteNotFound: "No se encontró ese código de invitación.", couldNotCreate: "No se pudo crear el grupo.",
@@ -529,12 +529,12 @@ const translations = {
       dateModeCalendar: "1 de enero", dateModeToday: "Inicio del grupo", dateModeCustom: "Fecha personalizada",
       countFromCreationDesc: "Define la fecha desde la que se cuentan los días y el tiempo de práctica del grupo.",
       noChallenges: "Aún no hay desafíos. ¡Empieza uno con tu grupo!", noChallengesMember: "Aún no hay desafíos. Tu profesor puede empezar uno.", newChallenge: "+ Nuevo desafío", cancel: "Cancelar", challengeNamePlaceholder: "Nombre del desafío",
-      typeDaily: "Todos los días", typeMinutes: "Minutos totales", typeSessions: "Días practicados", goalLabel: "META", startLabel: "INICIO", endLabel: "FIN", quickStart: "INICIO RÁPIDO", typeLabel: "TIPO", lengthLabel: "DURACIÓN", lengthDays: (n: number) => `${n} día${n === 1 ? "" : "s"}`, lengthCustom: "Personalizado", stakesToggle: "Recompensa o penalización (opcional)",
-      rewardPlaceholder: "Recompensa (opcional)", punishmentPlaceholder: "Penalización (opcional)", createChallengeBtn: "Crear desafío",
+      typeDaily: "Todos los días", typeMinutes: "Minutos totales", typeSessions: "Días practicados", goalLabel: "META", startLabel: "INICIO", endLabel: "FIN", quickStart: "INICIO RÁPIDO", typeLabel: "TIPO", lengthLabel: "DURACIÓN", lengthDays: (n: number) => `${n} día${n === 1 ? "" : "s"}`, lengthCustom: "Personalizado", stakesToggle: "Recompensa / Si pierdes (opcional)",
+      rewardPlaceholder: "Recompensa (opcional)", punishmentPlaceholder: "Si pierdes (opcional)", createChallengeBtn: "Crear desafío",
       joinChallengeBtn: "Unirse al desafío", joined: "Unido", participants: (n: number) => `${n} unidos`,
       dailyGoalDesc: (min: number) => `${min}+ min cada día`, minutesGoalDesc: (total: number) => `Llega a ${total} min en total`,
       sessionsGoalDesc: (days: number) => `Practica ${days} días`, daysProgress: (p: number, t: number) => `${p}/${t} días`,
-      minutesProgress: (p: number, t: number) => `${p}/${t} min`, reward: "Recompensa:", punishment: "Penalización:", couldNotCreateChallenge: "No se pudo crear el desafío.",
+      minutesProgress: (p: number, t: number) => `${p}/${t} min`, reward: "Recompensa:", punishment: "Si pierdes:", couldNotCreateChallenge: "No se pudo crear el desafío.",
       presetDaily5: "3 min cada día", presetDaily30x5: "30+ min, 5 días seguidos", presetSessions3weekly: "3 sesiones esta semana", presetDaily5x20: "Reto de 20 días: 5+ min diarios",
       noOnePractised: "Nadie practicó ese día.",
       weekdaysMon: ["L", "M", "X", "J", "V", "S", "D"], copied: "¡Copiado!", progress: "PROGRESO", leaveGroup: "Salir del grupo",
@@ -2057,6 +2057,11 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   }
   const [lastSentCheerId, setLastSentCheerId] = useState<string | null>(null);
   const [showCheerInbox, setShowCheerInbox] = useState(false);
+  const [challengeMenuId, setChallengeMenuId] = useState<string | null>(null);
+  const [showAllImprovements, setShowAllImprovements] = useState(false);
+  const [showGroupMore, setShowGroupMore] = useState(false);
+  // The "tap a name" hint is only needed until someone has sent their first cheer to a person.
+  const [cheerHintSeen, setCheerHintSeen] = useState(() => { try { return localStorage.getItem("cheer_hint_seen") === "1"; } catch { return false; } });
   // Tapping the Group tab again (or the group's name) opens a small list to switch between groups.
   const [showGroupPicker, setShowGroupPicker] = useState(false);
   const pickerKeySeen = useRef(groupPickerKey);
@@ -2068,7 +2073,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [inboxSeenAt, setInboxSeenAt] = useState("");
   // Opening the bell marks everything as seen, but the cheers that were new stay highlighted while it is open.
   function openCheerInbox() { setInboxSeenAt(cheersSeenAt); setShowCheerInbox(true); onCheersSeen(); }
-  function openCheerFor(userId: string | null) { setCheerTo(userId); setShowCheerInbox(false); setShowCheerSheet(true); }
+  function openCheerFor(userId: string | null) { if (userId) { setCheerHintSeen(true); try { localStorage.setItem("cheer_hint_seen", "1"); } catch {} } setCheerTo(userId); setShowCheerInbox(false); setShowCheerSheet(true); }
   async function sendCheer(key: string) {
     if (!group || cheerBusy) return;
     setCheerBusy(true);
@@ -2470,7 +2475,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const weekRangeLabel = [weekStartKey, shiftDateKey(weekStartKey, 6)].map(formatDMY).join(" - ");
     return <section className="page">
       <header className="simple-head group-head">
-        <div><p className="eyebrow">{T.group.yourCrew}</p>{groups.length > 1 ? <h1 className="group-title-switch" onClick={() => setShowGroupPicker(true)}>{group.name}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></h1> : <h1>{group.name}</h1>}</div>
+        <div>{groups.length > 1 ? <h1 className="group-title-switch" onClick={() => setShowGroupPicker(true)}>{group.name}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></h1> : <h1>{group.name}</h1>}</div>
         <div className="group-head-actions">
           <button type="button" className="group-add-btn group-bell-btn" onClick={openCheerInbox} aria-label={T.cheers.bellTitle} title={T.cheers.bellTitle}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 20a2 2 0 01-3.4 0" /></svg>
@@ -2487,10 +2492,10 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       </header>
       <div className="leaderboard time-card">
         <span className="section-label">{T.group.leaderboard}</span>
-        {members.length > 1 && <span className="section-sublabel cheer-hint">{T.cheers.tapNameHint}</span>}
+        {members.length > 1 && !cheerHintSeen && <span className="section-sublabel cheer-hint">{T.cheers.tapNameHint}</span>}
         {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? member.name : <span role="button" tabIndex={0} className="name-cheer" onClick={() => openCheerFor(member.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCheerFor(member.id); }}>{member.name}</span>}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
       </div>
-      <div className="time-card"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{timeView === "week" ? weekRangeLabel : sinceLabel}</span>
+      <div className="time-card"><span className="section-label">{T.group.timePractised}</span>
         <div className="equipment-toggle time-view-toggle">
           <button type="button" className={timeView === "all" ? "equipment-option selected" : "equipment-option"} onClick={() => setTimeView("all")}>{T.group.medalBoardAllTime}</button>
           <button type="button" className={timeView === "week" ? "equipment-option selected" : "equipment-option"} onClick={() => setTimeView("week")}>{T.group.medalBoardThisWeek}</button>
@@ -2499,17 +2504,74 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           {(timeView === "week" ? weekTotals : totals).map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.id === user.id ? member.name : <span role="button" tabIndex={0} className="name-cheer" onClick={() => openCheerFor(member.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCheerFor(member.id); }}>{member.name}</span>}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / Math.max(1, (timeView === "week" ? weekTotals : totals)[0]?.total ?? 0)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
         </div>
       </div>
-      <div className="time-card">
+      <div className="challenges-section">
+        <div className="section-head"><span className="section-label">{T.group.challenges}</span>{user.id === teacherId && <button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button>}</div>
+        {showNewChallenge && <div className="challenge-form">
+          <span className="cf-label">{T.group.quickStart}</span>
+          <div className="preset-row">{presetOptions.map((p) => <button key={p.key} className="chip" onClick={() => applyPreset(p)}>{p.label}</button>)}</div>
+          <input className="group-input" value={challengeName} onChange={e => setChallengeName(e.target.value)} placeholder={T.group.challengeNamePlaceholder} maxLength={80} />
+          <span className="cf-label">{T.group.typeLabel}</span>
+          <div className="admin-mini-toggle admin-mini-toggle-wide">
+            <button type="button" className={challengeType === "sessions" ? "selected" : ""} onClick={() => setChallengeType("sessions")}>{T.group.typeSessions}</button>
+            <button type="button" className={challengeType === "daily" ? "selected" : ""} onClick={() => setChallengeType("daily")}>{T.group.typeDaily}</button>
+            <button type="button" className={challengeType === "minutes" ? "selected" : ""} onClick={() => setChallengeType("minutes")}>{T.group.typeMinutes}</button>
+          </div>
+          <div className="cf-goal">
+            <div className="cf-goal-text"><span className="cf-label">{T.group.goalLabel}</span><p className="cf-hint">{goalSentence}</p></div>
+            <div className="cf-stepper">
+              <button type="button" aria-label="-" onClick={() => setChallengeGoal(String(Math.max(1, goalNum - goalStep)))}>−</button>
+              <input inputMode="numeric" value={challengeGoal} onChange={e => setChallengeGoal(e.target.value.replace(/\D/g, ""))} />
+              <button type="button" aria-label="+" onClick={() => setChallengeGoal(String(goalNum + goalStep))}>+</button>
+            </div>
+          </div>
+          <span className="cf-label">{T.group.lengthLabel}</span>
+          <div className="admin-mini-toggle admin-mini-toggle-wide">
+            {[7, 14, 30].map((n) => <button key={n} type="button" className={!showCustomDates && challengeLen === n ? "selected" : ""} onClick={() => { setShowCustomDates(false); setChallengeEnd(shiftDateKey(challengeStart, n - 1)); }}>{T.group.lengthDays(n)}</button>)}
+            <button type="button" className={showCustomDates || ![7, 14, 30].includes(challengeLen) ? "selected" : ""} onClick={() => setShowCustomDates(!showCustomDates)}>{T.group.lengthCustom}</button>
+          </div>
+          <p className="cf-hint cf-range">{formatDMY(challengeStart)} - {formatDMY(challengeEnd)} · {T.group.lengthDays(Math.max(1, challengeLen))}</p>
+          {showCustomDates && <div className="cf-dates">
+            <div className="cf-date-row"><span>{T.group.startLabel}</span><DateDMY value={challengeStart} onChange={(v) => { setChallengeStart(v); setChallengeEnd(shiftDateKey(v, Math.max(1, challengeLen) - 1)); }} /></div>
+            <div className="cf-date-row"><span>{T.group.endLabel}</span><DateDMY value={challengeEnd} min={challengeStart} onChange={setChallengeEnd} /></div>
+          </div>}
+          <button type="button" className="cf-more" onClick={() => setShowStakes(!showStakes)}>{showStakes ? "−" : "+"} {T.group.stakesToggle}</button>
+          {showStakes && <>
+            <input className="group-input" value={challengeReward} onChange={e => setChallengeReward(e.target.value)} placeholder={T.group.rewardPlaceholder} maxLength={120} />
+            <input className="group-input" value={challengePunishment} onChange={e => setChallengePunishment(e.target.value)} placeholder={T.group.punishmentPlaceholder} maxLength={120} />
+          </>}
+          <button className="primary cf-create" disabled={challengeBusy || !challengeName || challengeEnd < challengeStart || goalNum < 1} onClick={createChallenge}>{challengeBusy ? T.group.pleaseWait : T.group.createChallengeBtn}</button>
+        </div>}
+        {!challenges.length && !showNewChallenge && <p className="hint">{T.group.noChallengesShort}</p>}
+        {challenges.map((c) => {
+          const desc = c.goal_type === "daily" ? T.group.dailyGoalDesc(c.goal_value) : c.goal_type === "minutes" ? T.group.minutesGoalDesc(c.goal_value) : T.group.sessionsGoalDesc(c.goal_value);
+          const progressLabel = c.goal_type === "minutes" ? T.group.minutesProgress(c.progress, c.target) : T.group.daysProgress(c.progress, c.target);
+          const pct = Math.min(100, (c.progress / Math.max(1, c.target)) * 100);
+          const stakes = [c.reward && `${T.group.reward} ${c.reward}`, c.punishment && `${T.group.punishment} ${c.punishment}`].filter(Boolean);
+          return <div key={c.id} className="challenge-card challenge-compact">
+            <div className="challenge-head"><h3>{c.name}{c.joined && <i className="challenge-tick" role="img" aria-label={T.group.joined} title={T.group.joined}>✓</i>}</h3>
+              <div className="challenge-head-right">{c.created_by === user.id && <button type="button" className="challenge-more" aria-label="Menu" onClick={() => setChallengeMenuId(challengeMenuId === c.id ? null : c.id)}>⋯</button>}</div>
+            </div>
+            {challengeMenuId === c.id && <div className="challenge-menu"><button type="button" className="challenge-delete" onClick={() => { setChallengeMenuId(null); deleteChallenge(c.id); }}>{T.group.deleteChallenge}</button></div>}
+            <p className="challenge-desc">{desc} · {formatDMY(c.start_date).slice(0, 5)} - {formatDMY(c.end_date).slice(0, 5)}</p>
+            {c.ranking.length <= 1 && <div className="challenge-bar-row"><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${pct}%` }} /></div><span className="challenge-progress-label">{progressLabel}</span></div>}
+            {c.ranking.length > 1 && <div className="challenge-ranking">{c.ranking.map((r: any, idx: number) => <div key={r.id} className={r.id === user.id ? "challenge-rank-row is-me" : "challenge-rank-row"}><span className="rank-medal">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`}</span><span className="rank-name">{r.name}</span><div className="rank-bar"><div style={{ width: `${Math.min(100, (r.progress / Math.max(1, r.target)) * 100)}%` }} /></div><span className="rank-value">{c.goal_type === "minutes" ? T.group.minutesProgress(r.progress, r.target) : T.group.daysProgress(r.progress, r.target)}</span></div>)}</div>}
+            {stakes.length > 0 && <p className="challenge-stakes">{stakes.join("  ·  ")}</p>}
+            {!c.joined && <div className="challenge-actions"><button className="secondary challenge-join" onClick={() => joinChallenge(c.id)}>{T.group.joinChallengeBtn}</button></div>}
+          </div>;
+        })}
+      </div>
+      {groupImprovements.length > 0 && <div className="time-card">
         <span className="section-label">{T.admin.improvementsLabel}</span>
-        {groupImprovements.length === 0 ? <p className="hint speed-empty">{T.admin.improvementsEmpty}</p> : <div className="admin-log-list admin-log-list-compact">
-          {groupImprovements.map((ev) => <div key={ev.key} className="admin-log-row improvement-row">
+        <div className="admin-log-list admin-log-list-compact">
+          {(showAllImprovements ? groupImprovements : groupImprovements.slice(0, 3)).map((ev) => <div key={ev.key} className="admin-log-row improvement-row">
             <span className="improvement-chip">{ev.name}</span>
             <span className="improvement-text">{T.admin.improvedTo(PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language as Lang] ?? ev.exerciseEn, ev.bpm)}</span>
-            <span className="improvement-date">{formatDMY(ev.date)}</span>
+            <span className="improvement-date">{formatDMY(ev.date).slice(0, 5)}</span>
           </div>)}
-        </div>}
-      </div>
-      <div className="group-progress"><span className="section-label">{T.group.progress}</span><div className="calendar-card">
+        </div>
+        {groupImprovements.length > 3 && <button type="button" className="cf-more" onClick={() => setShowAllImprovements(!showAllImprovements)}>{showAllImprovements ? T.group.showLess : T.group.showMore(groupImprovements.length - 3)}</button>}
+      </div>}
+      <div className="group-progress"><div className="calendar-card">
         <div className="cal-head"><button onClick={() => setViewDate(new Date(year, month - 1, 1))}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => setViewDate(new Date(year, month + 1, 1))}>›</button></div>
         <div className="week">{T.group.weekdaysMon.map((x: string, i: number) => <span key={i}>{x}</span>)}</div>
         <div className="days">
@@ -2558,70 +2620,14 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       </div></div>}
       {cheerToast && <div className="cheer-toast">✓ {T.cheers.sent}{lastSentCheerId && <button type="button" onClick={async () => { const id = lastSentCheerId; setLastSentCheerId(null); setCheerToast(false); if (id) await removeCheer({ id, from_user: user.id }); }}>{T.cheers.undo}</button>}</div>}
       {showGroupSettings && <GroupSettingsModal group={group} setGroupSetting={setGroupSetting} setGroupDateMode={setGroupDateMode} onClose={() => setShowGroupSettings(false)} T={T} />}
-      <div className="challenges-section">
-        <div className="section-head"><span className="section-label">{T.group.challenges}</span>{user.id === teacherId && <button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button>}</div>
-        {showNewChallenge && <div className="challenge-form">
-          <span className="cf-label">{T.group.quickStart}</span>
-          <div className="preset-row">{presetOptions.map((p) => <button key={p.key} className="chip" onClick={() => applyPreset(p)}>{p.label}</button>)}</div>
-          <input className="group-input" value={challengeName} onChange={e => setChallengeName(e.target.value)} placeholder={T.group.challengeNamePlaceholder} maxLength={80} />
-          <span className="cf-label">{T.group.typeLabel}</span>
-          <div className="admin-mini-toggle admin-mini-toggle-wide">
-            <button type="button" className={challengeType === "sessions" ? "selected" : ""} onClick={() => setChallengeType("sessions")}>{T.group.typeSessions}</button>
-            <button type="button" className={challengeType === "daily" ? "selected" : ""} onClick={() => setChallengeType("daily")}>{T.group.typeDaily}</button>
-            <button type="button" className={challengeType === "minutes" ? "selected" : ""} onClick={() => setChallengeType("minutes")}>{T.group.typeMinutes}</button>
-          </div>
-          <div className="cf-goal">
-            <div className="cf-goal-text"><span className="cf-label">{T.group.goalLabel}</span><p className="cf-hint">{goalSentence}</p></div>
-            <div className="cf-stepper">
-              <button type="button" aria-label="-" onClick={() => setChallengeGoal(String(Math.max(1, goalNum - goalStep)))}>−</button>
-              <input inputMode="numeric" value={challengeGoal} onChange={e => setChallengeGoal(e.target.value.replace(/\D/g, ""))} />
-              <button type="button" aria-label="+" onClick={() => setChallengeGoal(String(goalNum + goalStep))}>+</button>
-            </div>
-          </div>
-          <span className="cf-label">{T.group.lengthLabel}</span>
-          <div className="admin-mini-toggle admin-mini-toggle-wide">
-            {[7, 14, 30].map((n) => <button key={n} type="button" className={!showCustomDates && challengeLen === n ? "selected" : ""} onClick={() => { setShowCustomDates(false); setChallengeEnd(shiftDateKey(challengeStart, n - 1)); }}>{T.group.lengthDays(n)}</button>)}
-            <button type="button" className={showCustomDates || ![7, 14, 30].includes(challengeLen) ? "selected" : ""} onClick={() => setShowCustomDates(!showCustomDates)}>{T.group.lengthCustom}</button>
-          </div>
-          <p className="cf-hint cf-range">{formatDMY(challengeStart)} - {formatDMY(challengeEnd)} · {T.group.lengthDays(Math.max(1, challengeLen))}</p>
-          {showCustomDates && <div className="cf-dates">
-            <div className="cf-date-row"><span>{T.group.startLabel}</span><DateDMY value={challengeStart} onChange={(v) => { setChallengeStart(v); setChallengeEnd(shiftDateKey(v, Math.max(1, challengeLen) - 1)); }} /></div>
-            <div className="cf-date-row"><span>{T.group.endLabel}</span><DateDMY value={challengeEnd} min={challengeStart} onChange={setChallengeEnd} /></div>
-          </div>}
-          <button type="button" className="cf-more" onClick={() => setShowStakes(!showStakes)}>{showStakes ? "−" : "+"} {T.group.stakesToggle}</button>
-          {showStakes && <>
-            <input className="group-input" value={challengeReward} onChange={e => setChallengeReward(e.target.value)} placeholder={T.group.rewardPlaceholder} maxLength={120} />
-            <input className="group-input" value={challengePunishment} onChange={e => setChallengePunishment(e.target.value)} placeholder={T.group.punishmentPlaceholder} maxLength={120} />
-          </>}
-          <button className="primary cf-create" disabled={challengeBusy || !challengeName || challengeEnd < challengeStart || goalNum < 1} onClick={createChallenge}>{challengeBusy ? T.group.pleaseWait : T.group.createChallengeBtn}</button>
-        </div>}
-        {!challenges.length && !showNewChallenge && <p className="hint">{user.id === teacherId ? T.group.noChallenges : T.group.noChallengesMember}</p>}
-        {challenges.map((c) => {
-          const desc = c.goal_type === "daily" ? T.group.dailyGoalDesc(c.goal_value) : c.goal_type === "minutes" ? T.group.minutesGoalDesc(c.goal_value) : T.group.sessionsGoalDesc(c.goal_value);
-          const progressLabel = c.goal_type === "minutes" ? T.group.minutesProgress(c.progress, c.target) : T.group.daysProgress(c.progress, c.target);
-          const pct = Math.min(100, (c.progress / Math.max(1, c.target)) * 100);
-          return <div key={c.id} className="challenge-card">
-            <div className="challenge-head"><h3>{c.name}</h3><span>{T.group.participants(c.participantCount)}</span></div>
-            <p className="challenge-desc">{desc}</p>
-            <div className="challenge-range">{formatDMY(c.start_date)} - {formatDMY(c.end_date)}</div>
-            <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${pct}%` }} /></div>
-            <div className="challenge-progress-label">{progressLabel}</div>
-            {c.ranking.length > 1 && <div className="challenge-ranking">{c.ranking.map((r: any, idx: number) => <div key={r.id} className="challenge-rank-row"><span className="rank-medal">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`}</span><span className="rank-name">{r.name}</span><span className="rank-value">{c.goal_type === "minutes" ? T.group.minutesProgress(r.progress, r.target) : T.group.daysProgress(r.progress, r.target)}</span></div>)}</div>}
-            {(c.reward || c.punishment) && <div className="challenge-stakes">{c.reward && <p><b>{T.group.reward}</b> {c.reward}</p>}{c.punishment && <p><b>{T.group.punishment}</b> {c.punishment}</p>}</div>}
-            <div className="challenge-actions">
-              {!c.joined && <button className="secondary" onClick={() => joinChallenge(c.id)}>{T.group.joinChallengeBtn}</button>}
-              {c.joined && <span className="challenge-joined">✓ {T.group.joined}</span>}
-              {c.created_by === user.id && <button className="challenge-delete" onClick={() => deleteChallenge(c.id)}>{T.group.deleteChallenge}</button>}
-            </div>
-          </div>;
-        })}
-      </div>
       <div className="group-invite-footer">
-        <span className="section-sublabel">{T.group.inviteMsg}</span>
-        <button className="invite-chip" onClick={copyInvite}>{copied ? T.group.copied : group.invite_code}</button>
+        <button type="button" className="group-more-btn" onClick={() => setShowGroupMore(!showGroupMore)}>{T.group.moreOptions} {showGroupMore ? "▴" : "▾"}</button>
+        {showGroupMore && <>
+          <div className="group-invite-row"><span className="section-sublabel">{T.group.inviteShort}</span><button className="invite-chip" onClick={copyInvite}>{copied ? T.group.copied : group.invite_code}</button></div>
+          <button className="leave-group-btn" onClick={leaveGroup}>{T.group.leaveGroup}</button>
+          {group.created_by === user.id && <button className="delete-group-btn" onClick={deleteGroup}>{T.group.deleteGroupBtn}</button>}
+        </>}
       </div>
-      <button className="leave-group-btn" onClick={leaveGroup}>{T.group.leaveGroup}</button>
-      {group.created_by === user.id && <button className="delete-group-btn" onClick={deleteGroup}>{T.group.deleteGroupBtn}</button>}
     </section>;
   }
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.group.practiseTogether}</p><h1>{T.group.yourGroup}</h1></header>
