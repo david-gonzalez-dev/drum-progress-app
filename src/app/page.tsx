@@ -389,7 +389,7 @@ const translations = {
       achievements: "ACHIEVEMENTS", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
     },
     cheers: {
-      sendBtn: "Send a cheer", sheetTitle: "SEND A CHEER", toLabel: "TO", everyone: "Everyone", sent: "Cheer sent!",
+      sendBtn: "Send a cheer", recentTitle: "RECENT CHEERS", remove: "Remove", you: "You", sheetTitle: "SEND A CHEER", toLabel: "TO", everyone: "Everyone", sent: "Cheer sent!",
       newCount: (n: number) => n === 1 ? "1 new cheer" : `${n} new cheers`, gotIt: "Got it", toYou: "to you",
       couldNotSend: "Could not send the cheer.",
     },
@@ -482,7 +482,7 @@ const translations = {
       timeSignature: "BEATS / BAR", subdivisionLabel: "CLICKS / BEAT", historyTitle: (n: number) => `HISTORY (${n})`,
     },
     sessionTimer: {
-      pillLabel: "Session Timer", title: "SESSION TIMER", modeStopwatch: "Stopwatch", modeTimer: "Timer",
+      pillLabel: "Session Timer", title: "SESSION TIMER", metronomeShared: "Session timer", allAlreadyLogged: "All of this time was already logged from Skill Trainer.", alreadyLogged: (t: string) => `${t} of this was already logged from Skill Trainer, so it is not counted twice.`, modeStopwatch: "Stopwatch", modeTimer: "Timer",
       durationLabel: "DURATION", timeUp: "Time's up!", sessionFinished: "Session finished", tapToOpen: "tap to open", tapToLog: "tap to log it", longSessionWarning: "That is over 3 hours. If you forgot to stop it, adjust the time below or tap Not now.", adjustHint: "ADJUST TIME", resetTime: (original: string) => `Reset to ${original}`,
     },
   },
@@ -549,7 +549,7 @@ const translations = {
       achievements: "LOGROS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
     },
     cheers: {
-      sendBtn: "Enviar ánimo", sheetTitle: "ENVIAR ÁNIMO", toLabel: "PARA", everyone: "Todos", sent: "¡Ánimo enviado!",
+      sendBtn: "Enviar ánimo", recentTitle: "ÁNIMOS RECIENTES", remove: "Quitar", you: "Tú", sheetTitle: "ENVIAR ÁNIMO", toLabel: "PARA", everyone: "Todos", sent: "¡Ánimo enviado!",
       newCount: (n: number) => n === 1 ? "1 ánimo nuevo" : `${n} ánimos nuevos`, gotIt: "Entendido", toYou: "para ti",
       couldNotSend: "No se pudo enviar el ánimo.",
     },
@@ -642,7 +642,7 @@ const translations = {
       timeSignature: "TIEMPOS / COMPÁS", subdivisionLabel: "CLICS / TIEMPO", historyTitle: (n: number) => `HISTORIAL (${n})`,
     },
     sessionTimer: {
-      pillLabel: "Temporizador de Sesión", title: "TEMPORIZADOR DE SESIÓN", modeStopwatch: "Cronómetro", modeTimer: "Temporizador",
+      pillLabel: "Temporizador de Sesión", title: "TEMPORIZADOR DE SESIÓN", metronomeShared: "Temporizador de sesión", allAlreadyLogged: "Todo este tiempo ya se registró desde el Skill Trainer.", alreadyLogged: (t: string) => `${t} de esto ya se registró desde el Skill Trainer, así que no se cuenta dos veces.`, modeStopwatch: "Cronómetro", modeTimer: "Temporizador",
       durationLabel: "DURACIÓN", timeUp: "¡Se acabó el tiempo!", sessionFinished: "Sesión terminada", tapToOpen: "toca para abrir", tapToLog: "toca para registrarla", longSessionWarning: "Son más de 3 horas. Si olvidaste pararlo, ajusta el tiempo abajo o toca Ahora no.", adjustHint: "AJUSTAR TIEMPO", resetTime: (original: string) => `Restablecer a ${original}`,
     },
   },
@@ -657,8 +657,17 @@ const CHEER_KEYS: { key: string; en: string; es: string }[] = [
   { key: "streak", en: "Don't break the streak!", es: "¡No rompas la racha!" },
   { key: "proud", en: "Proud of you all!", es: "¡Orgulloso de todos!" },
   { key: "gopractice", en: "Go practice!", es: "¡A practicar!" },
+  { key: "goodjob", en: "Good job!", es: "¡Buen trabajo!" },
+  { key: "yes", en: "Yes!", es: "¡Sí!" },
 ];
 type Cheer = { id: string; group_id: string; from_user: string; to_user: string | null; cheer_key: string; created_at: string; from_name: string };
+function cheerAge(iso: string) {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  if (mins < 1440) return `${Math.floor(mins / 60)}h`;
+  return `${Math.floor(mins / 1440)}d`;
+}
 function cheerText(key: string, language: Lang) {
   const c = CHEER_KEYS.find((x) => x.key === key);
   return c ? c[language] : "";
@@ -848,6 +857,26 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   // Group cheers: loaded for every group the user is in (RLS decides what is visible), polled gently so the
   // Group tab can show an "unread" dot. "Seen" is a per-device convenience, so it lives in localStorage.
+  // Session Timer <-> everything else. While the timer RUNS, the free metronome shares its clock instead of keeping its
+  // own, and minutes that Skill Trainer (or the metronome) adds to today's total during the run are remembered as
+  // "credit", so the timer doesn't add them a second time when it is logged. Stored so a reload doesn't lose it.
+  const [timerRun, setTimerRun] = useState<{ startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null>(null);
+  const [timerCredit, setTimerCredit] = useState<{ startedAt: number; seconds: number; metronome: boolean } | null>(null);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("session_timer_credit_v1") ?? "null");
+      if (saved && Number.isFinite(saved.startedAt) && Number.isFinite(saved.seconds)) setTimerCredit({ startedAt: saved.startedAt, seconds: saved.seconds, metronome: !!saved.metronome });
+    } catch { /* ignore unreadable data */ }
+  }, []);
+  function saveTimerCredit(next: { startedAt: number; seconds: number; metronome: boolean } | null) {
+    setTimerCredit(next);
+    try { if (next) localStorage.setItem("session_timer_credit_v1", JSON.stringify(next)); else localStorage.removeItem("session_timer_credit_v1"); } catch {}
+  }
+  function addTimerCredit(seconds: number, metronome: boolean) {
+    if (!timerRun) return;
+    const base = timerCredit && timerCredit.startedAt === timerRun.startedAt ? timerCredit : { startedAt: timerRun.startedAt, seconds: 0, metronome: false };
+    saveTimerCredit({ startedAt: base.startedAt, seconds: base.seconds + Math.max(0, Math.round(seconds)), metronome: base.metronome || metronome });
+  }
   const [cheers, setCheers] = useState<Cheer[]>([]);
   const [cheersSeenAt, setCheersSeenAt] = useState("");
   const loadCheers = useCallback(async () => {
@@ -1146,6 +1175,7 @@ export default function Home() {
     const newSeconds = totalSeconds % 60;
     setMinutes(String(newMinutes));
     setSeconds(String(newSeconds));
+    addTimerCredit(elapsedSeconds, false);
     // Quick Practice's own "what did you practice" tags stay independent of Skill Trainer --
     // finishing a rudiment/exercise session here no longer auto-checks it in that picker, since
     // the two are meant to be separate logs of what was actually intentionally tagged.
@@ -1233,8 +1263,8 @@ export default function Home() {
       </div>
     </div>}
     <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}{id === "group" && hasUnreadCheers && tab !== "group" && <i className="nav-dot" />}</span>{T.nav[id]}</button>)}</nav>
-    <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
-    <SessionTimer open={sessionTimer} close={() => setSessionTimer(false)} onOpen={() => setSessionTimer(true)} onBannerChange={setTimerBanner} onAddPractice={(seconds, items, customItems) => addMetronomePractice(seconds, items, customItems, false)}userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
+    <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} sharedTimer={timerRun} onUsedDuringTimer={() => addTimerCredit(0, true)} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
+    <SessionTimer open={sessionTimer} close={() => setSessionTimer(false)} onOpen={() => setSessionTimer(true)} onBannerChange={setTimerBanner} onRunChange={setTimerRun} timerCredit={timerCredit} onCreditReset={() => saveTimerCredit(null)} onAddPractice={(seconds, items, customItems, usedMetronome) => addMetronomePractice(seconds, items, customItems, usedMetronome)} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
     {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onTogglePin={togglePin} onClose={() => setShowPinManager(false)} language={language} T={T} />}
     {showPointsDetail && <PointsDetailModal user={user} onClose={() => setShowPointsDetail(false)} T={T} />}
@@ -1950,6 +1980,21 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [cheerTo, setCheerTo] = useState<string | null>(null);
   const [cheerToast, setCheerToast] = useState(false);
   const [cheerBusy, setCheerBusy] = useState(false);
+  // Removing a cheer from the board: your own cheers are deleted for everyone; cheers from others are only hidden on
+  // this device (a per-viewer convenience, so it lives in localStorage).
+  const hiddenKey = `cheers_hidden_${user.id}`;
+  const [hiddenCheers, setHiddenCheers] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem(hiddenKey) ?? "[]"); } catch { return []; } });
+  async function removeCheer(c: Cheer) {
+    if (c.from_user === user.id) {
+      const { error } = await supabase.from("group_cheers").delete().eq("id", c.id);
+      if (error) { setError(error.message); return; }
+      onCheersChanged();
+      return;
+    }
+    const next = [...hiddenCheers, c.id].slice(-200);
+    setHiddenCheers(next);
+    try { localStorage.setItem(hiddenKey, JSON.stringify(next)); } catch {}
+  }
   async function sendCheer(key: string) {
     if (!group || cheerBusy) return;
     setCheerBusy(true);
@@ -1962,7 +2007,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     window.setTimeout(() => setCheerToast(false), 2200);
     onCheersChanged();
   }
-  const groupCheers = group ? cheers.filter((c) => c.group_id === group.id) : [];
+  const groupCheers = group ? cheers.filter((c) => c.group_id === group.id && !hiddenCheers.includes(c.id)) : [];
   const unreadCheers = groupCheers.filter((c) => c.from_user !== user.id && c.created_at > cheersSeenAt);
   const presetOptions = [
     { ...CHALLENGE_PRESETS[0], label: T.group.presetDaily5 },
@@ -2364,6 +2409,18 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         {unreadCheers.slice(0, 3).map((c) => <p key={c.id} className="cheer-banner-row"><b>{c.from_name}</b>{c.to_user === user.id && <em> ({T.cheers.toYou})</em>}: {cheerText(c.cheer_key, language)}</p>)}
       </div>}
       <div className="group-hof-row"><button type="button" className="group-cheer-btn" onClick={() => { setCheerTo(null); setShowCheerSheet(true); }}>{T.cheers.sendBtn}</button></div>
+      {groupCheers.length > 0 && <div className="cheer-board">
+        <span className="section-label">{T.cheers.recentTitle}</span>
+        <div className="cheer-board-list">{groupCheers.slice(0, 30).map((c) => {
+          const toName = c.to_user === null ? T.cheers.everyone : c.to_user === user.id ? T.cheers.you : (members.find((m) => m.id === c.to_user)?.name ?? "Drummer");
+          return <div key={c.id} className="cheer-board-row">
+            <span className="cheer-board-who"><b>{c.from_user === user.id ? T.cheers.you : c.from_name}</b> → {toName}</span>
+            <span className="cheer-board-text">{cheerText(c.cheer_key, language)}</span>
+            <span className="cheer-board-age">{cheerAge(c.created_at)}</span>
+            <button type="button" className="cheer-board-x" aria-label={T.cheers.remove} title={T.cheers.remove} onClick={() => removeCheer(c)}>×</button>
+          </div>;
+        })}</div>
+      </div>}
       <div className="group-hof-row"><button type="button" className="group-hof-btn" onClick={() => setShowMedalBoard(true)}>{T.group.medalBoard}<span>→</span></button></div>
       <div className="leaderboard time-card">
         <span className="section-label">{T.group.leaderboard}</span>
@@ -3388,7 +3445,7 @@ const TONE_PRESETS: Record<string, ToneDef> = {
 const TONE_KEYS = ["click", "beep", "wood", "clave"];
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, sessions, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; onSessionEnd?: (seconds: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; language?: Lang; T: any }) {
+function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, sessions, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; sharedTimer?: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null; onUsedDuringTimer?: () => void; onSessionEnd?: (seconds: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; language?: Lang; T: any }) {
   const [bpm, setBpm] = useState(initialBpm ?? 100);
   const [playing, setPlaying] = useState(false);
   const [beatsPerBar, setBeatsPerBar] = useState(4);
@@ -3497,6 +3554,15 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     const timer = window.setInterval(() => setElapsed((value) => value + 1), 1000);
     return () => window.clearInterval(timer);
   }, [playing]);
+  // While the Session Timer is running, the (free-play) metronome shows ITS clock instead of keeping a second one.
+  const sharing = !!sharedTimer && !lockTempo && !onSessionEnd;
+  const startedSharedRef = useRef(false); // was the Session Timer already running when this metronome run started?
+  const [, setShareTick] = useState(0);
+  useEffect(() => {
+    if (!sharing || !open) return;
+    const timer = window.setInterval(() => setShareTick((v) => v + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [sharing, open]);
 
   function clearBeatTimeouts() {
     beatTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
@@ -3553,7 +3619,8 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   }
 
   function formatMMSS(totalSeconds: number) { return String(Math.floor(totalSeconds / 60)).padStart(2, "0") + ":" + String(totalSeconds % 60).padStart(2, "0"); }
-  const elapsedLabel = formatMMSS(elapsed);
+  const sharedSeconds = sharedTimer ? Math.max(0, Math.floor((Date.now() - sharedTimer.startedAt) / 1000)) : 0;
+  const elapsedLabel = sharing && sharedTimer ? formatMMSS(sharedTimer.mode === "timer" ? Math.max(0, sharedTimer.durationMinutes * 60 - sharedSeconds) : sharedSeconds) : formatMMSS(elapsed);
   function formatMinSecLabel(totalSeconds: number) {
     const m = Math.floor(totalSeconds / 60);
     const s = totalSeconds % 60;
@@ -3564,6 +3631,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
   }
   async function togglePlaying() {
     if (!playing) {
+      startedSharedRef.current = sharing;
       setElapsed(0);
       setActiveBeat(0);
       setPlaying(true);
@@ -3585,6 +3653,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     setPlaying(false);
     if (schedulerRef.current !== null) { window.clearInterval(schedulerRef.current); schedulerRef.current = null; }
     clearBeatTimeouts();
+    if (startedSharedRef.current) { startedSharedRef.current = false; onUsedDuringTimer?.(); return; }
     if (elapsed > 0) {
       // Pass the exact elapsed seconds rather than pre-rounding to a whole minute here -- the
       // caller needs the raw value to merge into today's practice_logs total without losing the
@@ -3683,7 +3752,7 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
     </div> : <>
       <div className={playing ? "pulse playing" : "pulse"} style={{ animationDuration: `${60 / bpm}s` }}><span>{bpm}</span><small>BPM</small></div>
       <div className="beat-dots">{Array.from({ length: beatsPerMeasure }).map((_, i) => <i key={i} className={playing && activeBeat === i ? "beat-dot active" : "beat-dot"} />)}</div>
-      <div className="metronome-timer">{playing ? T.metronome.practiceTimer : T.metronome.sessionTime}<strong>{elapsedLabel}</strong></div>
+      <div className="metronome-timer">{sharing ? T.sessionTimer.metronomeShared : playing ? T.metronome.practiceTimer : T.metronome.sessionTime}<strong>{elapsedLabel}</strong></div>
       <input className="range" type="range" min="40" max={exerciseEn ? Math.max(240, ...bpmLevelsFor(exerciseEn)) : 240} value={bpm} onChange={e => setBpm(+e.target.value)}/>
       <div className="tempo-actions"><button onClick={() => setBpm(Math.max(40, bpm - 1))}>−</button><button className="tap" onClick={tapTempo}>{T.metronome.tapTempo}</button><button onClick={() => setBpm(Math.min(240, bpm + 1))}>+</button></div>
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
@@ -3717,7 +3786,7 @@ function persistSessionTimer(value: object | null) {
 // time the same way Metronome's free-play mode does, reusing the exact same "what did you
 // practice" picker (duplicated here rather than extracted, since Metronome's version is tightly
 // coupled to its own large block of local state).
-function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onOpen?: () => void; onBannerChange?: (active: boolean) => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; language?: Lang; T: any }) {
+function SessionTimer({ open, close, onOpen, onBannerChange, onRunChange, timerCredit, onCreditReset, onAddPractice, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onOpen?: () => void; onBannerChange?: (active: boolean) => void; onRunChange?: (run: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null) => void; timerCredit?: { startedAt: number; seconds: number; metronome: boolean } | null; onCreditReset?: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[], usedMetronome: boolean) => void; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; language?: Lang; T: any }) {
   const [mode, setMode] = useState<"stopwatch" | "timer">("stopwatch");
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -3805,6 +3874,8 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
   // setInterval, so tick-counting would silently under-report. Also recomputes the moment the app
   // becomes visible again.
   const startedAtRef = useRef<number | null>(null);
+  // When the current/last run started: ties Skill Trainer minutes logged during the run to this timer (see timerCredit).
+  const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
   // Restores a session saved before the app/tab was closed: a still-running one resumes from its
   // start time, and a Timer that ran out in the meantime opens straight to the log prompt (capped
   // at its set duration, no alert sound -- nothing can play while the app is closed).
@@ -3816,19 +3887,23 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
     const savedDuration = Number.isFinite(saved.durationMinutes) ? Math.min(120, Math.max(1, saved.durationMinutes)) : 10;
     setMode(savedMode);
     setDurationMinutes(savedDuration);
-    function restoreFinished(seconds: number) {
+    function restoreFinished(seconds: number, savedStart: number | null) {
       const total = Math.min(Math.floor(seconds), MAX_SESSION_SECONDS);
       if (total <= 0) { persistSessionTimer(null); return; }
+      setRunStartedAt(savedStart);
       setElapsed(total);
       setAddPromptSeconds(total);
       setShowAddPrompt(true);
-      persistSessionTimer({ phase: "finished", mode: savedMode, durationMinutes: savedDuration, seconds: total });
+      persistSessionTimer({ phase: "finished", mode: savedMode, durationMinutes: savedDuration, seconds: total, startedAt: savedStart });
     }
-    if (saved.phase === "finished") { restoreFinished(Number(saved.seconds) || 0); return; }
+    const savedStartedAt = Number.isFinite(saved.startedAt) ? Number(saved.startedAt) : null;
+    if (saved.phase === "finished") { restoreFinished(Number(saved.seconds) || 0, savedStartedAt); return; }
     if (saved.phase === "running" && Number.isFinite(saved.startedAt)) {
       const live = Math.max(0, Math.floor((Date.now() - saved.startedAt) / 1000));
-      if (savedMode === "timer" && live >= savedDuration * 60) { restoreFinished(savedDuration * 60); return; }
+      if (savedMode === "timer" && live >= savedDuration * 60) { restoreFinished(savedDuration * 60, saved.startedAt); return; }
       startedAtRef.current = saved.startedAt;
+      setRunStartedAt(saved.startedAt);
+      onRunChange?.({ startedAt: saved.startedAt, mode: savedMode, durationMinutes: savedDuration });
       setElapsed(live);
       setPlaying(true);
       return;
@@ -3891,11 +3966,13 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
     // this runs, so its logged time is capped at the set duration.
     const live = startedAtRef.current !== null ? Math.floor((Date.now() - startedAtRef.current) / 1000) : elapsed;
     const total = Math.min(mode === "timer" ? Math.min(live, durationMinutes * 60) : live, MAX_SESSION_SECONDS);
+    const runStart = startedAtRef.current ?? runStartedAt;
     startedAtRef.current = null;
     setPlaying(false);
+    onRunChange?.(null);
     setElapsed(total);
     if (playAlert) playAlertTone();
-    persistSessionTimer(total > 0 ? { phase: "finished", mode, durationMinutes, seconds: total } : null);
+    persistSessionTimer(total > 0 ? { phase: "finished", mode, durationMinutes, seconds: total, startedAt: runStart } : null);
     if (total > 0) { setAddPromptSeconds(total); setAddItems([]); setAddCustomItems([]); setRudimentsOpenRaw(false); setBooksOpenRaw(false); setMyItemsOpenRaw(false); setShowAddPrompt(true); }
   }
   // A Timer counts up the same `elapsed` seconds as a Stopwatch internally (simpler than a
@@ -3909,6 +3986,9 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
     if (!playing) {
       startedAtRef.current = Date.now();
       persistSessionTimer({ phase: "running", mode, durationMinutes, startedAt: startedAtRef.current });
+      onCreditReset?.();
+      setRunStartedAt(startedAtRef.current);
+      onRunChange?.({ startedAt: startedAtRef.current, mode, durationMinutes });
       setElapsed(0);
       setPlaying(true);
       const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -3924,8 +4004,14 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
     }
     stopAndPrompt(false);
   }
-  function addTime() { if (addPromptSeconds <= 0) return; onAddPractice?.(addPromptSeconds, addItems, addCustomItems); persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); close(); }
-  function discardTime() { persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); }
+  // Minutes already added to today's total from Skill Trainer (or the metronome) WHILE this timer was running are
+  // part of this session's time, so they are taken off before the timer adds its own -- otherwise they'd count twice.
+  const ownCredit = timerCredit && runStartedAt !== null && timerCredit.startedAt === runStartedAt ? timerCredit : null;
+  const creditApplied = Math.min(ownCredit?.seconds ?? 0, addPromptSeconds);
+  const netSeconds = Math.max(0, addPromptSeconds - creditApplied);
+  const metronomeUsed = !!ownCredit?.metronome;
+  function addTime() { if (addPromptSeconds <= 0) return; onAddPractice?.(netSeconds, addItems, addCustomItems, metronomeUsed); onCreditReset?.(); persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); close(); }
+  function discardTime() { onCreditReset?.(); persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); }
   function nudgeAddPromptSeconds(delta: number) { setAddPromptSeconds((current) => Math.min(MAX_SESSION_SECONDS, Math.max(0, current + delta))); }
   function toggleAddItem(item: string) { setAddItems((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item]); }
   // With the modal closed, a running session (or a finished one still waiting to be logged) shows
@@ -3946,8 +4032,9 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onAddPractice, user
   return <div className="modal modal-center"><div className="metro"><button className="close" onClick={close}>×</button><p className="eyebrow">{T.sessionTimer.title}</p>
     {showAddPrompt ? <div className="add-time">
       <span>{T.metronome.sessionComplete}</span>
-      <h3>{addPromptSeconds > 0 ? T.metronome.addTimeQuestion(formatMinSecLabel(addPromptSeconds)) : T.metronome.addTimeTooShort}</h3>
+      <h3>{netSeconds > 0 ? T.metronome.addTimeQuestion(formatMinSecLabel(netSeconds)) : addPromptSeconds > 0 ? T.sessionTimer.allAlreadyLogged : T.metronome.addTimeTooShort}</h3>
       <p>{T.metronome.sessionLasted(formatMMSS(elapsed))}</p>
+      {creditApplied > 0 && <p className="add-time-credit">{T.sessionTimer.alreadyLogged(formatMinSecLabel(creditApplied))}</p>}
       {addPromptSeconds > LONG_SESSION_WARNING_SECONDS && <p className="add-time-warning">{T.sessionTimer.longSessionWarning}</p>}
       <span className="metro-section-label">{T.sessionTimer.adjustHint}</span>
       <div className="add-time-minutes">

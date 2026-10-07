@@ -519,3 +519,13 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .cheer-toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:60;padding:10px 18px;border-radius:999px;background:#68d391;color:#0b2417;font:700 14px 'DM Sans';box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .bottom-nav button>span{position:relative}
 .nav-dot{position:absolute;top:-2px;right:-6px;width:9px;height:9px;border-radius:50%;background:#ff7a3c;border:2px solid #0f1110;box-sizing:content-box}
+.cheer-board{margin:0 0 14px;padding:12px 14px;border-radius:16px;border:1px solid #232826;background:#131614}
+.cheer-board-list{max-height:164px;overflow-y:auto;margin-top:2px;overscroll-behavior:contain}
+.cheer-board-row{display:grid;grid-template-columns:1fr auto auto;gap:2px 10px;padding:8px 0;border-top:1px solid #1d211f}
+.cheer-board-row:first-of-type{border-top:0}
+.cheer-board-who{font-size:12px;color:#8d9690;grid-column:1}
+.cheer-board-who b{color:#d9dcd9}
+.cheer-board-text{grid-column:1;font-size:15px;font-weight:600;color:#f6f7f5}
+.cheer-board-x{grid-column:3;grid-row:1 / span 2;align-self:center;width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:#8d9690;font-size:20px;line-height:1;padding:0}
+.cheer-board-age{grid-column:2;grid-row:1 / span 2;align-self:center;font-size:12px;color:#6f7772}
+.add-time-credit{margin:6px 0 0;padding:8px 10px;border-radius:10px;background:rgba(104,211,145,.1);border:1px solid rgba(104,211,145,.3);color:#9fe3b8;font-size:13px;line-height:1.35}

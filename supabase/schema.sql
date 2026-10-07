@@ -1566,3 +1566,11 @@ $$;
 revoke execute on function public.group_cheers_guard() from anon, public;
 drop trigger if exists group_cheers_guard_trg on public.group_cheers;
 create trigger group_cheers_guard_trg after insert on public.group_cheers for each row execute function public.group_cheers_guard();
+
+-- CHEERS, round 2: two more ready-made cheers ("Good job!", "Yes!") and the sender can delete their own
+-- cheer. Keep the key list in sync with CHEER_KEYS in page.tsx.
+alter table public.group_cheers drop constraint if exists group_cheers_cheer_key_check;
+alter table public.group_cheers add constraint group_cheers_cheer_key_check check (cheer_key in ('letsgo','keepitup','greatpractice','streak','proud','gopractice','goodjob','yes'));
+drop policy if exists "senders delete their cheers" on public.group_cheers;
+create policy "senders delete their cheers" on public.group_cheers for delete to authenticated using (from_user = auth.uid());
+grant delete on public.group_cheers to authenticated;
