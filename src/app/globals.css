@@ -567,3 +567,20 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .group-invite-row .invite-chip{margin-top:0}
 .group-invite-footer .leave-group-btn{margin-top:22px;font-size:15px}
 .time-card .time-view-toggle{margin-top:12px;margin-bottom:10px}
+.give-challenge{padding-top:12px;padding-bottom:12px}
+.give-toggle{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:0;color:inherit;text-align:left}
+.give-toggle .admin-summary-label{margin:0;flex:1}
+.give-count{min-width:22px;height:22px;border-radius:99px;background:#232826;color:#d2d6d3;font:700 12px/22px 'DM Sans';text-align:center}
+.give-chev{width:18px;height:18px;color:#8d9690;transition:transform .2s}
+.give-chev.open{transform:rotate(180deg)}
+.give-challenge .group-input{margin:12px 0 10px;padding:9px 12px}
+.give-row{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.give-row .cf-stepper button{width:34px;height:34px}
+.give-row .cf-stepper input{width:48px;padding:6px 4px;font-size:18px}
+.give-unit{font-size:13px;color:#8d9690;white-space:nowrap}
+.give-row .give-bpm{margin:0;flex:1;min-width:0;padding:8px 10px;font-size:14px}
+.give-challenge .cf-create{padding:11px;font-size:15px}
+.given-list{margin-top:12px;gap:8px}
+.given-row{padding-top:8px;gap:3px}
+.given-row .personal-challenge-dots{margin:4px 0 0;gap:4px}
+.given-meta .personal-challenge-status{font-size:13px}

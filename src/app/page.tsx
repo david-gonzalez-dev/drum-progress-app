@@ -403,7 +403,7 @@ const translations = {
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practice ${minutes} min at ${bpm}+ BPM every day for ${days} consecutive days.` : `Practice ${minutes} min every day for ${days} consecutive days.`,
       statusActive: (done: number, total: number) => `${done}/${total} days`, statusCompleted: "✓ Completed — achievement unlocked!", statusFailed: "Challenge failed. Want to start over?",
       deleteChallenge: "Delete", confirmDelete: "Delete this challenge? This can't be undone.",
-      fromTeacher: "From your teacher", failedShort: "Missed a day",
+      fromTeacher: "From your teacher", failedShort: "Missed a day", statusCompletedShort: "Completed", perDayShort: "min / day", bpmShort: "BPM",
       giveTitle: "GIVE A CHALLENGE", giveBtn: "Give challenge", giveHint: "Shows on their Home and Challenges as \"From your teacher\". They can't delete it.", givenLabel: "CHALLENGES", noneGiven: "No challenges yet.", givenBadge: "Given by you", confirmRemove: "Remove this challenge from the student?", remove: "Remove", perDay: (m: number) => `${m} min a day`, couldNotGive: "Could not give the challenge.", lengthDaysN: (n: number) => `${n} days`, lengthCustomShort: "Other",
       resetChallenge: "Try again", confirmReset: "Restart this challenge from day 1?",
       couldNotCreate: "Could not create challenge.",
@@ -563,7 +563,7 @@ const translations = {
       challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Practica ${minutes} min a ${bpm}+ BPM cada día durante ${days} días consecutivos.` : `Practica ${minutes} min cada día durante ${days} días consecutivos.`,
       statusActive: (done: number, total: number) => `${done}/${total} días`, statusCompleted: "✓ Completado — ¡logro desbloqueado!", statusFailed: "Reto fallido. ¿Quieres empezar de nuevo?",
       deleteChallenge: "Eliminar", confirmDelete: "¿Eliminar este reto? Esta acción no se puede deshacer.",
-      fromTeacher: "De tu profesor", failedShort: "Falló un día",
+      fromTeacher: "De tu profesor", failedShort: "Falló un día", statusCompletedShort: "Completado", perDayShort: "min / día", bpmShort: "BPM",
       giveTitle: "DAR UN RETO", giveBtn: "Dar reto", giveHint: "Le aparece en Inicio y en Retos como \"De tu profesor\". No puede borrarlo.", givenLabel: "RETOS", noneGiven: "Aún no hay retos.", givenBadge: "Dado por ti", confirmRemove: "¿Quitar este reto al alumno?", remove: "Quitar", perDay: (m: number) => `${m} min al día`, couldNotGive: "No se pudo dar el reto.", lengthDaysN: (n: number) => `${n} días`, lengthCustomShort: "Otro",
       resetChallenge: "Intentar de nuevo", confirmReset: "¿Reiniciar este reto desde el día 1?",
       couldNotCreate: "No se pudo crear el reto.",
@@ -4272,6 +4272,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
   const [giveBpm, setGiveBpm] = useState("");
   const [giveLength, setGiveLength] = useState("7");
   const [giveBusy, setGiveBusy] = useState(false);
+  const [giveOpen, setGiveOpen] = useState(false);
   const [giveError, setGiveError] = useState<string | null>(null);
   const [awardAmount, setAwardAmount] = useState("1");
   const [awardReason, setAwardReason] = useState("");
@@ -4473,38 +4474,41 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
       </div>}
 
       <div className="admin-summary-card give-challenge">
-        <span className="admin-summary-label">{T.personalChallenges.giveTitle}</span>
-        <select className="group-input" value={giveExercise} onChange={(e) => { setGiveExercise(e.target.value); setGiveBpm(""); }}>
-          {CHALLENGE_EXERCISE_OPTIONS.map((opt) => <option key={opt.en} value={opt.en}>{opt[language as Lang]}</option>)}
-        </select>
-        <div className="cf-goal">
-          <div className="cf-goal-text"><span className="cf-label">{T.personalChallenges.minutesLabel.toUpperCase()}</span></div>
-          <div className="cf-stepper">
-            <button type="button" aria-label="-" onClick={() => setGiveMinutes(String(Math.max(1, (Number(giveMinutes) || 1) - 1)))}>−</button>
-            <input inputMode="numeric" value={giveMinutes} onChange={(e) => setGiveMinutes(e.target.value.replace(/\D/g, ""))} />
-            <button type="button" aria-label="+" onClick={() => setGiveMinutes(String((Number(giveMinutes) || 0) + 1))}>+</button>
-          </div>
-        </div>
-        {PRACTICE_EXERCISES.some((e) => e.en === giveExercise) && <input className="group-input" inputMode="numeric" value={giveBpm} onChange={(e) => setGiveBpm(e.target.value.replace(/\D/g, ""))} placeholder={`${T.personalChallenges.bpmLabel} - ${T.personalChallenges.bpmPlaceholder}`} />}
-        <span className="cf-label">{T.personalChallenges.lengthLabel.toUpperCase()}</span>
-        <div className="admin-mini-toggle admin-mini-toggle-wide">
-          {[7, 14, 30].map((n) => <button key={n} type="button" className={Number(giveLength) === n ? "selected" : ""} onClick={() => setGiveLength(String(n))}>{T.personalChallenges.lengthDaysN(n)}</button>)}
-          <input className="give-length-input" inputMode="numeric" aria-label={T.personalChallenges.lengthLabel} value={![7, 14, 30].includes(Number(giveLength)) ? giveLength : ""} placeholder={T.personalChallenges.lengthCustomShort} onChange={(e) => setGiveLength(e.target.value.replace(/\D/g, "").slice(0, 2))} />
-        </div>
-        <p className="cf-hint">{T.personalChallenges.giveHint}</p>
-        {giveError && <p className="give-error">{giveError}</p>}
-        <button type="button" className="primary cf-create" disabled={giveBusy || !giveExercise || !Number(giveMinutes) || !Number(giveLength) || Number(giveLength) > 90} onClick={giveChallenge}>{giveBusy ? T.personalChallenges.pleaseWait : T.personalChallenges.giveBtn}</button>
-        <div className="given-list">
-          {studentChallenges.length === 0 ? <p className="hint">{T.personalChallenges.noneGiven}</p> : studentChallenges.map((c) => <div key={c.id} className="given-row">
-            <div className="given-head">
-              <span className="given-name">{challengeExerciseLabel(c.exercise_en, language)}</span>
-              {c.assigned_by === user.id && <button type="button" className="challenge-delete" onClick={() => removeGivenChallenge(c.id)}>{T.personalChallenges.remove}</button>}
+        <button type="button" className="give-toggle" aria-expanded={giveOpen} onClick={() => setGiveOpen(!giveOpen)}>
+          <span className="admin-summary-label">{T.personalChallenges.giveTitle}</span>
+          {studentChallenges.length > 0 && <span className="give-count">{studentChallenges.length}</span>}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={giveOpen ? "give-chev open" : "give-chev"}><path d="M6 9l6 6 6-6" /></svg>
+        </button>
+        {giveOpen && <>
+          <select className="group-input" value={giveExercise} onChange={(e) => { setGiveExercise(e.target.value); setGiveBpm(""); }}>
+            {CHALLENGE_EXERCISE_OPTIONS.map((opt) => <option key={opt.en} value={opt.en}>{opt[language as Lang]}</option>)}
+          </select>
+          <div className="give-row">
+            <div className="cf-stepper">
+              <button type="button" aria-label="-" onClick={() => setGiveMinutes(String(Math.max(1, (Number(giveMinutes) || 1) - 1)))}>−</button>
+              <input inputMode="numeric" value={giveMinutes} onChange={(e) => setGiveMinutes(e.target.value.replace(/\D/g, ""))} />
+              <button type="button" aria-label="+" onClick={() => setGiveMinutes(String((Number(giveMinutes) || 0) + 1))}>+</button>
             </div>
-            <span className="given-meta">{T.personalChallenges.perDay(c.target_minutes)}{c.target_bpm ? ` · ${c.target_bpm}+ BPM` : ""} · {T.personalChallenges.lengthDaysN(c.length_days)}{c.assigned_by === user.id ? ` · ${T.personalChallenges.givenBadge}` : ""}</span>
-            <div className="personal-challenge-dots">{c.days.map((d: any) => <i key={d.date} className={`pc-dot ${d.valid === true ? "hit" : d.valid === false ? "miss" : "pending"}`} />)}</div>
-            <span className={`personal-challenge-status ${c.status}`}>{c.status === "completed" ? T.personalChallenges.statusCompleted : c.status === "failed" ? T.personalChallenges.failedShort : T.personalChallenges.statusActive(c.completedCount, c.length_days)}</span>
-          </div>)}
-        </div>
+            <span className="give-unit">{T.personalChallenges.perDayShort}</span>
+            {PRACTICE_EXERCISES.some((e) => e.en === giveExercise) && <input className="group-input give-bpm" inputMode="numeric" value={giveBpm} onChange={(e) => setGiveBpm(e.target.value.replace(/\D/g, ""))} placeholder={T.personalChallenges.bpmShort} />}
+          </div>
+          <div className="admin-mini-toggle admin-mini-toggle-wide">
+            {[7, 14, 30].map((n) => <button key={n} type="button" className={Number(giveLength) === n ? "selected" : ""} onClick={() => setGiveLength(String(n))}>{T.personalChallenges.lengthDaysN(n)}</button>)}
+            <input className="give-length-input" inputMode="numeric" aria-label={T.personalChallenges.lengthLabel} value={![7, 14, 30].includes(Number(giveLength)) ? giveLength : ""} placeholder={T.personalChallenges.lengthCustomShort} onChange={(e) => setGiveLength(e.target.value.replace(/\D/g, "").slice(0, 2))} />
+          </div>
+          {giveError && <p className="give-error">{giveError}</p>}
+          <button type="button" className="primary cf-create" disabled={giveBusy || !giveExercise || !Number(giveMinutes) || !Number(giveLength) || Number(giveLength) > 90} onClick={giveChallenge}>{giveBusy ? T.personalChallenges.pleaseWait : T.personalChallenges.giveBtn}</button>
+          {studentChallenges.length > 0 && <div className="given-list">
+            {studentChallenges.map((c) => <div key={c.id} className="given-row">
+              <div className="given-head">
+                <span className="given-name">{challengeExerciseLabel(c.exercise_en, language)}</span>
+                {c.assigned_by === user.id && <button type="button" className="challenge-delete" onClick={() => removeGivenChallenge(c.id)}>{T.personalChallenges.remove}</button>}
+              </div>
+              <span className="given-meta">{T.personalChallenges.perDay(c.target_minutes)}{c.target_bpm ? ` · ${c.target_bpm}+ BPM` : ""} · {T.personalChallenges.lengthDaysN(c.length_days)} · <span className={`personal-challenge-status ${c.status}`}>{c.status === "completed" ? T.personalChallenges.statusCompletedShort : c.status === "failed" ? T.personalChallenges.failedShort : T.personalChallenges.statusActive(c.completedCount, c.length_days)}</span></span>
+              <div className="personal-challenge-dots">{c.days.map((d: any) => <i key={d.date} className={`pc-dot ${d.valid === true ? "hit" : d.valid === false ? "miss" : "pending"}`} />)}</div>
+            </div>)}
+          </div>}
+        </>}
       </div>
 
       <div className="admin-summary-card">
