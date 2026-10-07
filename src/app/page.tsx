@@ -444,6 +444,7 @@ const translations = {
       libraryLabel: "CONTENT LIBRARY", libraryFull: "Full Library", libraryEssentials: "Essentials", libraryHint: "Essentials shows a shorter, beginner-friendly list of rudiments and exercises. You can change this anytime.",
       changeEmail: "Change email", newEmailPlaceholder: "New email address", updateEmail: "Update email", emailChangeSent: "Check your new email to confirm the change.",
       changePassword: "Change password", newPasswordPlaceholder: "New password", confirmPasswordPlaceholder: "Confirm new password", updatePassword: "Update password", passwordChanged: "✓ Password updated", passwordMismatch: "Passwords don't match.", passwordTooShort: "Password must be at least 6 characters.",
+      privacyPolicy: "Privacy Policy", termsOfUse: "Terms of Use", support: "Support",
       deleteAccount: "Delete account", deleteAccountWarning: "This permanently deletes your account and all your practice history. This can't be undone.", deleteAccountConfirmPrompt: (email: string) => `Type your email (${email}) to confirm:`, deleteAccountBtn: "Delete my account", deleteAccountBusy: "Deleting…", couldNotDeleteAccount: "Could not delete your account.",
     },
     admin: {
@@ -596,6 +597,7 @@ const translations = {
       libraryLabel: "BIBLIOTECA DE CONTENIDO", libraryFull: "Biblioteca Completa", libraryEssentials: "Esenciales", libraryHint: "Esenciales muestra una lista más corta y sencilla de rudimentos y ejercicios. Puedes cambiarlo cuando quieras.",
       changeEmail: "Cambiar correo electrónico", newEmailPlaceholder: "Nuevo correo electrónico", updateEmail: "Actualizar correo", emailChangeSent: "Revisa tu nuevo correo para confirmar el cambio.",
       changePassword: "Cambiar contraseña", newPasswordPlaceholder: "Nueva contraseña", confirmPasswordPlaceholder: "Confirmar nueva contraseña", updatePassword: "Actualizar contraseña", passwordChanged: "✓ Contraseña actualizada", passwordMismatch: "Las contraseñas no coinciden.", passwordTooShort: "La contraseña debe tener al menos 6 caracteres.",
+      privacyPolicy: "Política de privacidad", termsOfUse: "Términos de uso", support: "Soporte",
       deleteAccount: "Eliminar cuenta", deleteAccountWarning: "Esto elimina tu cuenta y todo tu historial de práctica de forma permanente. Esta acción no se puede deshacer.", deleteAccountConfirmPrompt: (email: string) => `Escribe tu correo (${email}) para confirmar:`, deleteAccountBtn: "Eliminar mi cuenta", deleteAccountBusy: "Eliminando…", couldNotDeleteAccount: "No se pudo eliminar tu cuenta.",
     },
     admin: {
@@ -1306,7 +1308,7 @@ function OnboardingModal({ currentGoal, onSkip, onFinish, language, T }: { curre
 }
 
 function Login({ error, setError }: { error: string; setError: (message: string) => void }) {
-  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [mode, setMode] = useState<"login" | "signup" | "forgot">("login"); const [busy, setBusy] = useState(false);
+  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [mode, setMode] = useState<"login" | "signup" | "forgot">("login"); const [consent, setConsent] = useState(false); const [busy, setBusy] = useState(false);
   async function submit() {
     setBusy(true); setError("");
     if (mode === "forgot") {
@@ -1315,7 +1317,7 @@ function Login({ error, setError }: { error: string; setError: (message: string)
       if (resetError) setError(resetError.message); else setError("Check your email for a password reset link.");
       return;
     }
-    const result = mode === "login" ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password });
+    const result = mode === "login" ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password, options: { data: { consent_at: new Date().toISOString(), consent_version: LEGAL_VERSION } } });
     // When email confirmation is on, Supabase deliberately doesn't say whether an email is already
     // registered (prevents an attacker from probing which emails have accounts), so signUp()
     // "succeeds" with no session either way and the message below has to make sense for both cases.
@@ -1329,11 +1331,13 @@ function Login({ error, setError }: { error: string; setError: (message: string)
     <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} />
     {mode !== "forgot" && <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />}
     {mode === "login" && <button className="auth-forgot" onClick={() => { setMode("forgot"); setError(""); }}>Forgot password?</button>}
-    <button className="auth-primary" disabled={busy || !email || (mode !== "forgot" && !password)} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}</button>
+    {mode === "signup" && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>I am 16 or older, or I am a parent or guardian creating this account for my child (or the child&apos;s teacher, with the parent&apos;s permission). I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label>}
+    <button className="auth-primary" disabled={busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && !consent)} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}</button>
     {mode !== "forgot" && <div className="or">OR</div>}
-    {mode !== "forgot" && <button className="google" disabled={busy} onClick={google}>G <span>Continue with Google</span></button>}
+    {mode !== "forgot" && <button className="google" disabled={busy || (mode === "signup" && !consent)} onClick={google}>G <span>Continue with Google</span></button>}
     <button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : mode === "signup" ? "Already have an account? Log in" : "Back to log in"}</button>
-  </div>{error && <p className="auth-error">{error}</p>}</section></main>;
+  </div>{error && <p className="auth-error">{error}</p>}
+  <p className="auth-legal"><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy</a> · <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> · <a href="/support" target="_blank" rel="noopener noreferrer">Support</a></p></section></main>;
 }
 function ResetPassword({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
@@ -1615,7 +1619,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale,
             <div className="roster-detail-head"><span className="rank-name">{m.name}</span><span className="rank-value">{formatMinutes(m.minutes)}</span></div>
             {m.equipment && <span className="roster-equipment">{equipmentSplitLabel(m.drumsetMinutes, m.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(m.equipment, T))}</span>}
             {((m.items && m.items.length > 0) || (m.customItems && m.customItems.length > 0)) && <div className="detail-chips">{Array.from(new Set([...(m.items ?? []), ...(m.customItems ?? [])])).map((item) => <PracticedChip key={item} item={item} skill={(m.skillItems ?? []).includes(item)} language={language} />)}</div>}
-            {m.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {m.notes}</p>}
+            {m.id === roster?.currentUserId && log?.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
           </div>
         </div>)}</div> : <p className="hint">{T.group.noOnePractised}</p>
       ) : (
@@ -1918,9 +1922,9 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       const yearEnd = effectiveStart ? dateKey : `${dateKey.slice(0, 4)}-12-31`;
       const totalDaysElapsed = effectiveStart ? Math.max(1, Math.round((new Date(dateKey + "T12:00:00").getTime() - new Date(yearStart + "T12:00:00").getTime()) / 86400000) + 1) : 365;
       const [logsRes, yearRes, sessionsRes, exerciseRows] = await Promise.all([
-        supabase.from("practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since),
-        supabase.from("practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd),
-        supabase.from("practice_sessions").select("user_id,practice_exercise_id,bpm,rating,duration_minutes,practiced_on").in("user_id", memberIds).order("practiced_on"),
+        supabase.from("group_practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since),
+        supabase.from("group_practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd),
+        supabase.from("group_practice_sessions").select("user_id,practice_exercise_id,bpm,rating,duration_minutes,practiced_on").in("user_id", memberIds).order("practiced_on"),
         supabase.from("practice_exercises").select("id,name_en"),
       ]);
       const sums: Record<string, number> = {};
@@ -2044,7 +2048,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     // days before it are outside the group's tracking window, so the calendar shouldn't show
     // activity for them even though the underlying practice_logs rows exist.
     const statsStart = groupStatsStart(group);
-    supabase.from("practice_logs").select("practiced_on, user_id, minutes").in("user_id", memberIds).gte("practiced_on", monthStart).lte("practiced_on", monthEnd).then(({ data }) => {
+    supabase.from("group_practice_logs").select("practiced_on, user_id, minutes").in("user_id", memberIds).gte("practiced_on", monthStart).lte("practiced_on", monthEnd).then(({ data }) => {
       // Same hide-admin-stats rule as the leaderboards, applied to everyone including the
       // admin's own view -- students already get this for free via RLS (they never receive
       // the admin's rows at all when hidden), but the admin's own query still gets their own
@@ -2070,8 +2074,8 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     // TODAY card, Admin's daily logs, and Home's own calendar, so a group member's day that was
     // entirely Skill Trainer doesn't show a blank/incomplete chip list to the rest of the group.
     Promise.all([
-      supabase.from("practice_logs").select("user_id,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("practiced_on", summaryDayKey).in("user_id", memberIds),
-      supabase.from("practice_sessions").select("user_id,practice_exercises(name_en)").eq("practiced_on", summaryDayKey).in("user_id", memberIds),
+      supabase.from("group_practice_logs").select("user_id,minutes,seconds,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("practiced_on", summaryDayKey).in("user_id", memberIds),
+      supabase.from("group_practice_sessions").select("user_id,practice_exercises(name_en)").eq("practiced_on", summaryDayKey).in("user_id", memberIds),
     ]).then(([logsRes, sessionsRes]) => {
       const byUser: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string; skillItems: string[] }> = {};
       (logsRes.data ?? []).forEach((row: any) => {
@@ -2111,7 +2115,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const { data: memberRows } = await supabase.from("challenge_members").select("challenge_id,user_id").in("challenge_id", ids);
     const earliestStart = list.reduce((min: string, c: any) => (c.start_date < min ? c.start_date : min), list[0].start_date);
     const memberIds = members.map((m) => m.id);
-    const { data: logRows } = await supabase.from("practice_logs").select("practiced_on,minutes,user_id").in("user_id", memberIds).gte("practiced_on", earliestStart);
+    const { data: logRows } = await supabase.from("group_practice_logs").select("practiced_on,minutes,user_id").in("user_id", memberIds).gte("practiced_on", earliestStart);
     const logsByUser: Record<string, Record<string, number>> = {};
     (logRows ?? []).forEach((row: any) => { logsByUser[row.user_id] = { ...(logsByUser[row.user_id] ?? {}), [row.practiced_on]: row.minutes }; });
     const enriched = list.map((c: any) => {
@@ -3240,6 +3244,7 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
       <input type="password" className="account-confirm-input" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={T.settings.confirmPasswordPlaceholder} />
       {passwordMsg && <p className="settings-hint">{passwordMsg}</p>}
       <button className="secondary-btn" disabled={passwordBusy || !newPassword || !confirmPassword} onClick={changePassword}>{passwordBusy ? T.settings.pleaseWait : T.settings.updatePassword}</button>
+      <p className="settings-legal"><a href="/privacy" target="_blank" rel="noopener noreferrer">{T.settings.privacyPolicy}</a> · <a href="/terms" target="_blank" rel="noopener noreferrer">{T.settings.termsOfUse}</a> · <a href="/support" target="_blank" rel="noopener noreferrer">{T.settings.support}</a></p>
       <button className="logout" onClick={signOut}>{T.settings.logout}</button>
       <div className="danger-zone">
         <p className="danger-title">{T.settings.deleteAccount}</p>
@@ -3568,6 +3573,8 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
 
 // A running (or finished-but-unlogged) Session Timer is saved on the device so it survives closing
 // the tab/app: only the start time is stored, and elapsed time is recomputed from it on reopen.
+// Bump when the privacy policy / terms change in a way people must re-agree to; saved with each sign-up.
+const LEGAL_VERSION = "2026-10-07";
 const SESSION_TIMER_STORAGE_KEY = "session_timer_v1";
 // A stopwatch left running for days shouldn't log days: capped at 12h, and anything over 3h gets
 // a "did you forget to stop it?" warning on the add-time prompt.

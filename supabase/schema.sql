@@ -1409,3 +1409,43 @@ alter table public.point_awards add constraint point_awards_awarded_by_fkey fore
 -- purge them.
 drop policy if exists "group members read messages" on public.group_messages;
 drop policy if exists "group members send messages" on public.group_messages;
+
+-- PRIVATE PRACTICE NOTES, PART 1 (additive, safe to run any time). Group members used to read each
+-- other's whole practice_logs / practice_sessions rows (a row-level policy can't hide one column),
+-- which exposed the free-text notes (and Skill Trainer issue tags) of children to their group. The
+-- group screens now read other members through these two views instead: same rows the old group
+-- policies allowed (including the "teacher can hide their stats" rule), minus notes and issues.
+-- The views run with the view owner's rights on purpose (so they can see rows the caller's own
+-- policies would hide) but only ever return rows for people the caller shares a group with.
+create or replace view public.group_practice_logs as
+select pl.id, pl.user_id, pl.practiced_on, pl.minutes, pl.seconds, pl.equipment, pl.drumset_minutes, pl.pad_minutes, pl.custom_items
+from public.practice_logs pl
+where exists (
+  select 1 from public.group_members gm1
+  join public.group_members gm2 on gm1.group_id = gm2.group_id
+  join public.groups g on g.id = gm1.group_id
+  where gm1.user_id = pl.user_id and gm2.user_id = auth.uid()
+    and (g.show_teacher_stats = true or not public.is_admin_user(pl.user_id))
+);
+create or replace view public.group_practice_sessions as
+select ps.id, ps.user_id, ps.practice_exercise_id, ps.bpm, ps.rating, ps.duration_minutes, ps.practiced_on, ps.created_at
+from public.practice_sessions ps
+where exists (
+  select 1 from public.group_members gm1
+  join public.group_members gm2 on gm1.group_id = gm2.group_id
+  join public.groups g on g.id = gm1.group_id
+  where gm1.user_id = ps.user_id and gm2.user_id = auth.uid()
+    and (g.show_teacher_stats = true or not public.is_admin_user(ps.user_id))
+);
+revoke all on public.group_practice_logs from anon, public;
+revoke all on public.group_practice_sessions from anon, public;
+grant select on public.group_practice_logs to authenticated;
+grant select on public.group_practice_sessions to authenticated;
+notify pgrst, 'reload schema';
+
+-- PRIVATE PRACTICE NOTES, PART 2 -- RUN ONLY AFTER the app version that reads the two views above
+-- is live (before that, the old app still needs these policies to show the group screens). With
+-- these two policies gone, only the owner (and an admin/teacher, via their own existing policies)
+-- can read the base tables, so notes are private at the database level.
+drop policy if exists "group members can view each other's practice logs" on public.practice_logs;
+drop policy if exists "group members can view each other's practice sessions" on public.practice_sessions;

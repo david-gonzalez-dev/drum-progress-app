@@ -22,15 +22,15 @@ export default function PrivacyPage() {
     <h2>3. Who can see your information</h2>
     <ul>
       <li><b>You</b> can see all of your own information.</li>
-      <li><b>Members of the same group</b> can see your practice days, time practiced, what you practiced, the notes on those days, and your Skill Trainer progress.</li>
+      <li><b>Members of the same group</b> can see your practice days, time practiced, what you practiced, and your Skill Trainer progress. Your notes are private: only you and your teacher can see them.</li>
       <li><b>Your teacher</b> (the administrator of your group) can see the practice information of their students and can give points.</li>
-      <li><b>Service providers</b> that run the app for us: our database and login provider (Supabase) and our web hosting provider. They only handle data to provide the service. If you choose Google sign-in, Google handles that login. The app also loads its fonts from Google Fonts, so Google can see your device&apos;s IP address when the app loads.</li>
+      <li><b>Service providers</b> that run the app for us: our database and login provider (Supabase) and our web hosting provider. They only handle data to provide the service. If you choose Google sign-in, Google handles that login. The app&apos;s fonts are served from our own site, so no font provider sees your visit.</li>
       <li><b>Anyone else</b> only if the law requires us to share it.</li>
     </ul>
 
     <h2>4. Children</h2>
-    <p>Drum Progress is used by drum students of all ages, including children under 13, who practice with a teacher or a parent. We keep the information we collect from children to what the app needs: a name (a first name or nickname is enough), an email address and their practice information. We never use children&apos;s information for advertising, tracking or profiling, and we never sell it.</p>
-    <p>A parent or guardian can ask us at any time to show, correct or delete their child&apos;s information by writing to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>, or can delete the account directly in the app. The app has no chat. Parents and teachers should be aware that practice notes and group challenges are visible to the other members of the group.</p>
+    <p>Drum Progress is used by drum students of all ages, including children, who practice with a teacher or a parent. In many countries a parent or guardian must give permission for a child to have an account (for example under 13 in the United States, and under 16 in the Netherlands and much of Europe). Accounts for children below that age must be created by a parent or guardian, or by the child&apos;s teacher with the parent&apos;s permission, and whoever creates the account confirms this when signing up. We keep the information we collect from children to what the app needs: a name (a first name or nickname is enough), an email address and their practice information. We never use children&apos;s information for advertising, tracking or profiling, and we never sell it.</p>
+    <p>A parent or guardian can ask us at any time to show, correct or delete their child&apos;s information by writing to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>, or can delete the account directly in the app. The app has no chat. Parents and teachers should be aware that group names, challenges and the names and practice of group members are visible to the other members of the group.</p>
 
     <h2>5. Keeping and deleting your information</h2>
     <p>We keep your information while your account exists. You can permanently delete your account and all of your practice information at any time in the app under Settings, Delete account, or by writing to us.</p>

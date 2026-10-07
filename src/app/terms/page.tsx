@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Terms of Use | Drum Progress", robot
 
 export default function TermsPage() {
   return <LegalShell title="Terms of Use">
-    <p>These terms apply when you use Drum Progress. By creating an account or using the app you agree to them. If you are under the age of 18, please read them together with a parent or guardian, who must agree on your behalf if you are under 13.</p>
+    <p>These terms apply when you use Drum Progress. By creating an account or using the app you agree to them. If you are under the age of 18, please read them together with a parent or guardian. If you are under 16, a parent or guardian (or your teacher, with your parent&apos;s permission) must create the account and agree to these terms on your behalf.</p>
 
     <h2>1. Your account</h2>
     <p>Give accurate information, keep your password private, and tell us if you think someone else has used your account. You are responsible for what happens under your account.</p>
@@ -18,7 +18,7 @@ export default function TermsPage() {
     </ul>
 
     <h2>3. Groups and teachers</h2>
-    <p>A group&apos;s administrator (usually a teacher) can see the practice information of the group&apos;s members, manage group settings, and give points. Members of a group can see each other&apos;s practice and notes. Only join groups you know.</p>
+    <p>A group&apos;s administrator (usually a teacher) can see the practice information of the group&apos;s members, manage group settings, and give points. Members of a group can see each other&apos;s practice. Your notes stay private to you and your teacher. Only join groups you know.</p>
 
     <h2>4. Your content</h2>
     <p>The notes and other things you enter remain yours. You allow us to store and show them inside the app as described in the Privacy Policy. We may remove content that breaks these terms.</p>
