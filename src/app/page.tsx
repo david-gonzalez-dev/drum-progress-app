@@ -2397,6 +2397,9 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       <header className="simple-head group-head">
         <div><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></div>
         <div className="group-head-actions">
+          <button type="button" className="group-add-btn" onClick={() => setShowMedalBoard(true)} aria-label={T.group.medalBoard} title={T.group.medalBoard}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3" /></svg>
+          </button>
           {user.id === teacherId && <button type="button" className="group-add-btn" onClick={() => setShowGroupSettings(true)} aria-label={T.group.groupSettings} title={T.group.groupSettings}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>
           </button>}
@@ -2421,7 +2424,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           </div>;
         })}</div>
       </div>}
-      <div className="group-hof-row"><button type="button" className="group-hof-btn" onClick={() => setShowMedalBoard(true)}>{T.group.medalBoard}<span>→</span></button></div>
       <div className="leaderboard time-card">
         <span className="section-label">{T.group.leaderboard}</span>
         {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
