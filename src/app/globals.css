@@ -504,28 +504,37 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .given-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .given-name{font-weight:700;font-size:15px;color:#f6f7f5}
 .given-meta{font-size:13px;color:#8d9690}
-.group-cheer-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:14px;border:1px solid rgba(255,155,80,.4);background:rgba(255,155,80,.1);color:#ff9b50;font:700 15px 'DM Sans'}
-.cheer-banner{margin:0 0 12px;padding:12px 14px;border-radius:16px;border:1px solid rgba(255,155,80,.45);background:linear-gradient(135deg,rgba(255,155,80,.16),rgba(255,155,80,.05))}
-.cheer-banner-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px;color:#f6f7f5;font-size:15px}
-.cheer-banner-head button{background:#ff9b50;color:#250d02;border:0;border-radius:999px;padding:6px 14px;font:700 13px 'DM Sans'}
-.cheer-banner-row{margin:4px 0 0;font-size:14px;color:#d9dcd9;line-height:1.35}
-.cheer-banner-row em{color:#ff9b50;font-style:normal}
 .cheer-sheet{display:flex;flex-direction:column;gap:10px}
-.cheer-to-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
-.cheer-to-row .chip{white-space:nowrap;flex-shrink:0}
 .cheer-list{display:flex;flex-direction:column;gap:6px;max-height:48vh;overflow-y:auto}
 .cheer-option{display:flex;align-items:center;gap:10px;text-align:left;padding:11px 12px;border-radius:12px;border:1px solid #2c312e;background:#161918;color:#f6f7f5;font:600 15px 'DM Sans'}
 .cheer-option:active{background:#1f2421}
 .cheer-toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:60;padding:10px 18px;border-radius:999px;background:#68d391;color:#0b2417;font:700 14px 'DM Sans';box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .bottom-nav button>span{position:relative}
 .nav-dot{position:absolute;top:-2px;right:-6px;width:9px;height:9px;border-radius:50%;background:#ff7a3c;border:2px solid #0f1110;box-sizing:content-box}
-.cheer-board{margin:0 0 14px;padding:12px 14px;border-radius:16px;border:1px solid #232826;background:#131614}
-.cheer-board-list{max-height:164px;overflow-y:auto;margin-top:2px;overscroll-behavior:contain}
-.cheer-board-row{display:grid;grid-template-columns:1fr auto auto;gap:2px 10px;padding:8px 0;border-top:1px solid #1d211f}
-.cheer-board-row:first-of-type{border-top:0}
-.cheer-board-who{font-size:12px;color:#8d9690;grid-column:1}
-.cheer-board-who b{color:#d9dcd9}
-.cheer-board-text{grid-column:1;font-size:15px;font-weight:600;color:#f6f7f5}
-.cheer-board-x{grid-column:3;grid-row:1 / span 2;align-self:center;width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:#8d9690;font-size:20px;line-height:1;padding:0}
-.cheer-board-age{grid-column:2;grid-row:1 / span 2;align-self:center;font-size:12px;color:#6f7772}
 .add-time-credit{margin:6px 0 0;padding:8px 10px;border-radius:10px;background:rgba(104,211,145,.1);border:1px solid rgba(104,211,145,.3);color:#9fe3b8;font-size:13px;line-height:1.35}
+
+.group-bell-btn{position:relative}
+.bell-badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ff5a3c;color:#fff;font:700 10px/17px 'DM Sans';font-style:normal;text-align:center;border:2px solid #0f1110;box-sizing:content-box}
+.name-cheer{cursor:pointer}
+.cheer-hint{display:block;margin:-2px 0 8px}
+.cheer-inbox-row{position:relative;display:flex;flex-direction:column;gap:2px;padding-right:40px!important;padding:10px 12px;border-radius:12px;border:1px solid #232826;background:#131614}
+.cheer-inbox-row.is-new{border-color:rgba(255,155,80,.5);background:rgba(255,155,80,.08)}
+.cheer-inbox-who{font-size:12px;color:#8d9690}
+.cheer-inbox-who b{color:#d9dcd9}
+.cheer-inbox-text{font-size:15px;font-weight:600;color:#f6f7f5}
+.cheer-incoming{position:fixed;left:50%;top:calc(env(safe-area-inset-top, 0px) + 10px);transform:translateX(-50%);z-index:80;width:min(92%,420px);display:flex;flex-direction:column;gap:2px;text-align:left;padding:11px 16px;border-radius:16px;border:1px solid rgba(255,155,80,.5);background:rgba(28,20,14,.97);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.5);color:#f6f7f5;animation:cheer-slide .35s ease-out}
+.cheer-incoming strong{font:700 13px 'DM Sans';color:#ff9b50}
+.cheer-incoming span{font:600 16px 'DM Sans'}
+@keyframes cheer-slide{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
+.cheer-inbox-x{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:#8d9690;font-size:20px;line-height:1;padding:0}
+.cheer-toast{display:flex;align-items:center;gap:12px;white-space:nowrap}
+.cheer-toast button{background:rgba(11,36,23,.15);border:0;border-radius:999px;color:#0b2417;font:700 13px 'DM Sans';padding:4px 12px;text-decoration:underline}
+.cheer-heart{position:absolute;top:50%;right:40px;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:0;background:transparent;color:#8d9690;display:flex;align-items:center;justify-content:center;padding:0}
+.cheer-heart.on{color:#ff5a6e}
+.cheer-inbox-row:has(.cheer-heart){padding-right:76px!important}
+.cheer-hearts{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:13px;color:#ff7a8a}
+.group-title-switch{display:flex;align-items:center;gap:8px;cursor:pointer}
+.group-title-switch svg{width:20px;height:20px;color:#ff9b50;flex-shrink:0;margin-top:4px}
+.group-pick{justify-content:space-between}
+.group-pick.selected{border-color:rgba(255,155,80,.6);background:rgba(255,155,80,.1)}
+.group-pick-check{color:#ff9b50;font-weight:700}

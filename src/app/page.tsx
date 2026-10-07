@@ -355,7 +355,7 @@ const translations = {
     group: {
       yourCrew: "YOUR CREW", youreIn: "You're in.", inviteMsg: "Invite drummers with this code:", copyInvite: "Copy invite code",
       challenges: "CHALLENGES",
-      practiseTogether: "PRACTISE TOGETHER", yourGroup: "YOUR GROUP", findCrew: "Find your crew.", startGroup: "Start a group", joinCrew: "Join your crew",
+      practiseTogether: "PRACTISE TOGETHER", yourGroup: "YOUR GROUP", switchGroup: "SWITCH GROUP", findCrew: "Find your crew.", startGroup: "Start a group", joinCrew: "Join your crew",
       intro: "Stay accountable, climb the leaderboard, and make practice more fun.", createGroupBtn: "Create a group", joinWithCode: "Join with invite code",
       groupNamePlaceholder: "Group name", inviteCodePlaceholder: "Invite code", pleaseWait: "Please wait...", createGroup: "Create group",
       joinGroup: "Join group", back: "Back", inviteNotFound: "That invite code was not found.", couldNotCreate: "Could not create group.",
@@ -389,7 +389,7 @@ const translations = {
       achievements: "ACHIEVEMENTS", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
     },
     cheers: {
-      sendBtn: "Send a cheer", recentTitle: "RECENT CHEERS", remove: "Remove", you: "You", sheetTitle: "SEND A CHEER", toLabel: "TO", everyone: "Everyone", sent: "Cheer sent!",
+      sendBtn: "Send a cheer", recentTitle: "RECENT CHEERS", remove: "Remove", undo: "Undo", undoSent: "Undo (removes it for everyone)", you: "You", bellTitle: "CHEERS", heart: "Like", heartedYours: (name: string) => `${name} liked your cheer`, inboxEmpty: "No cheers yet.", cheerGroupBtn: "Cheer the whole group", cheerGroup: "CHEER THE GROUP", cheerPerson: (name: string) => `CHEER ${name.toUpperCase()}`, tapNameHint: "Tap a name to send a cheer.", incoming: (name: string) => `${name} sent a cheer`, sheetTitle: "SEND A CHEER", toLabel: "TO", everyone: "Everyone", sent: "Cheer sent!",
       newCount: (n: number) => n === 1 ? "1 new cheer" : `${n} new cheers`, gotIt: "Got it", toYou: "to you",
       couldNotSend: "Could not send the cheer.",
     },
@@ -515,7 +515,7 @@ const translations = {
     group: {
       yourCrew: "TU GRUPO", youreIn: "Ya estás dentro.", inviteMsg: "Invita a otros bateristas con este código:", copyInvite: "Copiar código de invitación",
       challenges: "DESAFÍOS",
-      practiseTogether: "PRACTICA EN GRUPO", yourGroup: "TU GRUPO", findCrew: "Encuentra tu grupo.", startGroup: "Crear un grupo", joinCrew: "Únete a un grupo",
+      practiseTogether: "PRACTICA EN GRUPO", yourGroup: "TU GRUPO", switchGroup: "CAMBIAR DE GRUPO", findCrew: "Encuentra tu grupo.", startGroup: "Crear un grupo", joinCrew: "Únete a un grupo",
       intro: "Mantente responsable, sube en la clasificación y haz que practicar sea más divertido.", createGroupBtn: "Crear un grupo", joinWithCode: "Unirse con código de invitación",
       groupNamePlaceholder: "Nombre del grupo", inviteCodePlaceholder: "Código de invitación", pleaseWait: "Un momento...", createGroup: "Crear grupo",
       joinGroup: "Unirse al grupo", back: "Atrás", inviteNotFound: "No se encontró ese código de invitación.", couldNotCreate: "No se pudo crear el grupo.",
@@ -549,7 +549,7 @@ const translations = {
       achievements: "LOGROS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
     },
     cheers: {
-      sendBtn: "Enviar ánimo", recentTitle: "ÁNIMOS RECIENTES", remove: "Quitar", you: "Tú", sheetTitle: "ENVIAR ÁNIMO", toLabel: "PARA", everyone: "Todos", sent: "¡Ánimo enviado!",
+      sendBtn: "Enviar ánimo", recentTitle: "ÁNIMOS RECIENTES", remove: "Quitar", undo: "Deshacer", undoSent: "Deshacer (lo quita para todos)", you: "Tú", bellTitle: "ÁNIMOS", heart: "Me gusta", heartedYours: (name: string) => `A ${name} le gustó tu ánimo`, inboxEmpty: "Aún no hay ánimos.", cheerGroupBtn: "Animar a todo el grupo", cheerGroup: "ANIMAR AL GRUPO", cheerPerson: (name: string) => `ANIMAR A ${name.toUpperCase()}`, tapNameHint: "Toca un nombre para enviar ánimo.", incoming: (name: string) => `${name} envió un ánimo`, sheetTitle: "ENVIAR ÁNIMO", toLabel: "PARA", everyone: "Todos", sent: "¡Ánimo enviado!",
       newCount: (n: number) => n === 1 ? "1 ánimo nuevo" : `${n} ánimos nuevos`, gotIt: "Entendido", toYou: "para ti",
       couldNotSend: "No se pudo enviar el ánimo.",
     },
@@ -660,7 +660,25 @@ const CHEER_KEYS: { key: string; en: string; es: string }[] = [
   { key: "goodjob", en: "Good job!", es: "¡Buen trabajo!" },
   { key: "yes", en: "Yes!", es: "¡Sí!" },
 ];
-type Cheer = { id: string; group_id: string; from_user: string; to_user: string | null; cheer_key: string; created_at: string; from_name: string };
+type CheerHeart = { user_id: string; created_at: string; name: string };
+type Cheer = { id: string; group_id: string; from_user: string; to_user: string | null; cheer_key: string; created_at: string; from_name: string; hearts: CheerHeart[] };
+// TEST ONLY: lets a sender heart their own cheer so hearts can be tried with a single account. Set to false (and
+// run the "revert" SQL at the end of schema.sql) to go back to hearts from other people only.
+const ALLOW_SELF_HEART = true;
+const countsAsHeart = (heartUserId: string, me: string) => ALLOW_SELF_HEART || heartUserId !== me;
+// Unread = cheers sent to me that are newer than what I last saw, plus new hearts other people put on cheers I sent.
+function cheerUnreadCount(cheers: Cheer[], me: string, seenAt: string, groupId?: string) {
+  let count = 0;
+  cheers.forEach((c) => {
+    if (groupId && c.group_id !== groupId) return;
+    if (c.from_user !== me && c.created_at > seenAt) count++;
+    if (c.from_user === me) count += c.hearts.filter((h) => countsAsHeart(h.user_id, me) && h.created_at > seenAt).length;
+  });
+  return count;
+}
+function HeartIcon({ filled }: { filled?: boolean }) {
+  return <svg viewBox="0 0 24 24" width="18" height="18" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20.5s-7.5-4.6-9.2-9.3C1.7 8 3.4 5 6.5 5c1.9 0 3.5 1.1 4.3 2.5L12 9.2l1.2-1.7C14 6.1 15.6 5 17.5 5c3.1 0 4.8 3 3.7 6.2-1.7 4.7-9.2 9.3-9.2 9.3z" /></svg>;
+}
 function cheerAge(iso: string) {
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
   if (mins < 1) return "now";
@@ -879,13 +897,39 @@ export default function Home() {
   }
   const [cheers, setCheers] = useState<Cheer[]>([]);
   const [cheersSeenAt, setCheersSeenAt] = useState("");
+  const [groupPickerKey, setGroupPickerKey] = useState(0);
+  // A new cheer from someone else slides in at the top (like a message notification) and fades after a few seconds.
+  const knownCheerIds = useRef<Set<string> | null>(null);
+  const knownHeartKeys = useRef<Set<string> | null>(null);
+  const [incomingCheer, setIncomingCheer] = useState<{ kind: "cheer" | "heart"; name: string; cheerKey: string } | null>(null);
+  useEffect(() => {
+    if (!incomingCheer) return;
+    const timer = window.setTimeout(() => setIncomingCheer(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [incomingCheer]);
   const loadCheers = useCallback(async () => {
     if (!user) return;
     const since = new Date(Date.now() - 3 * 86400000).toISOString();
-    const { data } = await supabase.from("group_cheers").select("id,group_id,from_user,to_user,cheer_key,created_at,from_profile:profiles!group_cheers_from_user_fkey(name)").gte("created_at", since).order("created_at", { ascending: false }).limit(50);
-    setCheers((data ?? []).map((row: any) => ({ id: row.id, group_id: row.group_id, from_user: row.from_user, to_user: row.to_user, cheer_key: row.cheer_key, created_at: row.created_at, from_name: row.from_profile?.name || "Drummer" })));
+    const base = "id,group_id,from_user,to_user,cheer_key,created_at,from_profile:profiles!group_cheers_from_user_fkey(name)";
+    let { data, error } = (await supabase.from("group_cheers").select(`${base},hearts:group_cheer_hearts(user_id,created_at,profile:profiles(name))`).gte("created_at", since).order("created_at", { ascending: false }).limit(50)) as { data: any[] | null; error: any };
+    // If the hearts table isn't set up yet, still show the cheers themselves.
+    if (error) ({ data } = await supabase.from("group_cheers").select(base).gte("created_at", since).order("created_at", { ascending: false }).limit(50));
+    const list: Cheer[] = (data ?? []).map((row: any) => ({ id: row.id, group_id: row.group_id, from_user: row.from_user, to_user: row.to_user, cheer_key: row.cheer_key, created_at: row.created_at, from_name: row.from_profile?.name || "Drummer", hearts: (row.hearts ?? []).map((h: any) => ({ user_id: h.user_id, created_at: h.created_at, name: h.profile?.name || "Drummer" })) }));
+    const known = knownCheerIds.current;
+    const knownHearts = knownHeartKeys.current;
+    if (known && knownHearts) {
+      const fresh = list.filter((c) => !known.has(c.id) && c.from_user !== user.id);
+      const freshHearts = list.filter((c) => c.from_user === user.id).flatMap((c) => c.hearts.filter((h) => countsAsHeart(h.user_id, user.id) && !knownHearts.has(`${c.id}:${h.user_id}`)).map((h) => ({ cheer: c, heart: h })));
+      if (fresh.length) setIncomingCheer({ kind: "cheer", name: fresh[0].from_name, cheerKey: fresh[0].cheer_key });
+      else if (freshHearts.length) setIncomingCheer({ kind: "heart", name: freshHearts[0].heart.name, cheerKey: freshHearts[0].cheer.cheer_key });
+    }
+    knownHeartKeys.current = new Set(list.flatMap((c) => c.hearts.map((h) => `${c.id}:${h.user_id}`)));
+    knownCheerIds.current = new Set(list.map((c) => c.id));
+    setCheers(list);
   }, [user?.id]);
   useEffect(() => {
+    knownCheerIds.current = null;
+    knownHeartKeys.current = null;
     if (!user) { setCheers([]); return; }
     const storageKey = `cheers_seen_${user.id}`;
     let seen = "";
@@ -893,13 +937,16 @@ export default function Home() {
     if (!seen) { seen = new Date().toISOString(); try { localStorage.setItem(storageKey, seen); } catch {} }
     setCheersSeenAt(seen);
     loadCheers();
-    const timer = window.setInterval(() => { if (document.visibilityState === "visible") loadCheers(); }, 60000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") loadCheers(); }, 45000);
+    const onVisible = () => { if (document.visibilityState === "visible") loadCheers(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
   }, [user?.id, loadCheers]);
   useEffect(() => { if (user && tab === "group") loadCheers(); }, [tab]);
   function markCheersSeen() {
     if (!user) return;
-    const latest = cheers[0]?.created_at ?? new Date().toISOString();
+    const stamps = cheers.flatMap((c) => [c.created_at, ...c.hearts.map((h) => h.created_at)]);
+    const latest = stamps.length ? stamps.reduce((max, v) => (v > max ? v : max), stamps[0]) : new Date().toISOString();
     setCheersSeenAt(latest);
     try { localStorage.setItem(`cheers_seen_${user.id}`, latest); } catch {}
   }
@@ -1245,15 +1292,19 @@ export default function Home() {
   if (passwordRecovery) return <ResetPassword onDone={() => setPasswordRecovery(false)} />;
   if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
-  const hasUnreadCheers = cheers.some((c) => c.from_user !== user.id && c.created_at > cheersSeenAt);
+  const hasUnreadCheers = cheerUnreadCount(cheers, user.id, cheersSeenAt) > 0;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className={timerBanner ? "shell has-timer-banner" : "shell"}>
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => setTab("practice")} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
-    {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} />}
+    {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage key={adminResetKey} user={user} language={language} T={T} />}
+    {incomingCheer && <button type="button" className="cheer-incoming" onClick={() => { setTab("group"); setIncomingCheer(null); }}>
+      <strong>{incomingCheer.kind === "heart" ? T.cheers.heartedYours(incomingCheer.name) : T.cheers.incoming(incomingCheer.name)}</strong>
+      <span>{cheerText(incomingCheer.cheerKey, language)}</span>
+    </button>}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
     {progressToast && <div className="modal modal-center" onClick={() => setProgressToast("")}>
       <div className="confirm-card progress-card" onClick={(e) => e.stopPropagation()}>
@@ -1262,7 +1313,7 @@ export default function Home() {
         <button className="save" onClick={() => setProgressToast("")}>{T.practiceMode.niceBtn}</button>
       </div>
     </div>}
-    <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}{id === "group" && hasUnreadCheers && tab !== "group" && <i className="nav-dot" />}</span>{T.nav[id]}</button>)}</nav>
+    <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); if (id === "group" && tab === "group") setGroupPickerKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}{id === "group" && hasUnreadCheers && tab !== "group" && <i className="nav-dot" />}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} sharedTimer={timerRun} onUsedDuringTimer={() => addTimerCredit(0, true)} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     <SessionTimer open={sessionTimer} close={() => setSessionTimer(false)} onOpen={() => setSessionTimer(true)} onBannerChange={setTimerBanner} onRunChange={setTimerRun} timerCredit={timerCredit} onCreditReset={() => saveTimerCredit(null)} onAddPractice={(seconds, items, customItems, usedMetronome) => addMetronomePractice(seconds, items, customItems, usedMetronome)} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
@@ -1936,7 +1987,7 @@ function GroupSettingsModal({ group, setGroupSetting, setGroupDateMode, onClose,
   </div></div>;
 }
 
-function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T, cheers, cheersSeenAt, onCheersSeen, onCheersChanged }: { cheers: Cheer[]; cheersSeenAt: string; onCheersSeen: () => void; onCheersChanged: () => void; user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
+function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T, cheers, cheersSeenAt, onCheersSeen, onCheersChanged, groupPickerKey }: { groupPickerKey: number; cheers: Cheer[]; cheersSeenAt: string; onCheersSeen: () => void; onCheersChanged: () => void; user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
   const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [groups, setGroups] = useState<any[]>([]); const [activeGroupId, setActiveGroupId] = useState<string | null>(null); const [addingGroup, setAddingGroup] = useState(false); const [busy, setBusy] = useState(false);
   // New-group setup defaults -- practice tracking defaults to "from today" (matching the
   // suggested creation-form layout), everything else defaults on. Existing groups are
@@ -1980,35 +2031,59 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [cheerTo, setCheerTo] = useState<string | null>(null);
   const [cheerToast, setCheerToast] = useState(false);
   const [cheerBusy, setCheerBusy] = useState(false);
-  // Removing a cheer from the board: your own cheers are deleted for everyone; cheers from others are only hidden on
-  // this device (a per-viewer convenience, so it lives in localStorage).
+  // Removing a cheer: your own are deleted for everyone (an undo); cheers from others are only hidden on this device
+  // (a per-viewer convenience, so it lives in localStorage).
   const hiddenKey = `cheers_hidden_${user.id}`;
   const [hiddenCheers, setHiddenCheers] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem(hiddenKey) ?? "[]"); } catch { return []; } });
-  async function removeCheer(c: Cheer) {
+  async function removeCheer(c: { id: string; from_user: string }) {
     if (c.from_user === user.id) {
       const { error } = await supabase.from("group_cheers").delete().eq("id", c.id);
-      if (error) { setError(error.message); return; }
+      if (error) { setError(error.message); return false; }
       onCheersChanged();
-      return;
+      return true;
     }
     const next = [...hiddenCheers, c.id].slice(-200);
     setHiddenCheers(next);
     try { localStorage.setItem(hiddenKey, JSON.stringify(next)); } catch {}
+    return true;
   }
+  async function toggleHeart(c: Cheer) {
+    const mineHeart = c.hearts.some((h) => h.user_id === user.id);
+    const { error } = mineHeart
+      ? await supabase.from("group_cheer_hearts").delete().eq("cheer_id", c.id).eq("user_id", user.id)
+      : await supabase.from("group_cheer_hearts").insert({ cheer_id: c.id, user_id: user.id });
+    if (error) { setError(error.message); return; }
+    onCheersChanged();
+  }
+  const [lastSentCheerId, setLastSentCheerId] = useState<string | null>(null);
+  const [showCheerInbox, setShowCheerInbox] = useState(false);
+  // Tapping the Group tab again (or the group's name) opens a small list to switch between groups.
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
+  const pickerKeySeen = useRef(groupPickerKey);
+  useEffect(() => {
+    if (groupPickerKey === pickerKeySeen.current) return;
+    pickerKeySeen.current = groupPickerKey;
+    if (groups.length > 1) setShowGroupPicker(true);
+  }, [groupPickerKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [inboxSeenAt, setInboxSeenAt] = useState("");
+  // Opening the bell marks everything as seen, but the cheers that were new stay highlighted while it is open.
+  function openCheerInbox() { setInboxSeenAt(cheersSeenAt); setShowCheerInbox(true); onCheersSeen(); }
+  function openCheerFor(userId: string | null) { setCheerTo(userId); setShowCheerInbox(false); setShowCheerSheet(true); }
   async function sendCheer(key: string) {
     if (!group || cheerBusy) return;
     setCheerBusy(true);
-    const { error } = await supabase.from("group_cheers").insert({ group_id: group.id, from_user: user.id, to_user: cheerTo, cheer_key: key });
+    const { data: inserted, error } = await supabase.from("group_cheers").insert({ group_id: group.id, from_user: user.id, to_user: cheerTo, cheer_key: key }).select("id").single();
     setCheerBusy(false);
     if (error) { setError(error.message || T.cheers.couldNotSend); return; }
     setShowCheerSheet(false);
     setCheerTo(null);
+    setLastSentCheerId(inserted?.id ?? null);
     setCheerToast(true);
-    window.setTimeout(() => setCheerToast(false), 2200);
+    window.setTimeout(() => setCheerToast(false), 5000);
     onCheersChanged();
   }
   const groupCheers = group ? cheers.filter((c) => c.group_id === group.id && !hiddenCheers.includes(c.id)) : [];
-  const unreadCheers = groupCheers.filter((c) => c.from_user !== user.id && c.created_at > cheersSeenAt);
+  const unreadCount = cheerUnreadCount(groupCheers, user.id, cheersSeenAt);
   const presetOptions = [
     { ...CHALLENGE_PRESETS[0], label: T.group.presetDaily5 },
     { ...CHALLENGE_PRESETS[1], label: T.group.presetDaily30x5 },
@@ -2395,8 +2470,12 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const weekRangeLabel = [weekStartKey, shiftDateKey(weekStartKey, 6)].map(formatDMY).join(" - ");
     return <section className="page">
       <header className="simple-head group-head">
-        <div><p className="eyebrow">{T.group.yourCrew}</p><h1>{group.name}</h1></div>
+        <div><p className="eyebrow">{T.group.yourCrew}</p>{groups.length > 1 ? <h1 className="group-title-switch" onClick={() => setShowGroupPicker(true)}>{group.name}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></h1> : <h1>{group.name}</h1>}</div>
         <div className="group-head-actions">
+          <button type="button" className="group-add-btn group-bell-btn" onClick={openCheerInbox} aria-label={T.cheers.bellTitle} title={T.cheers.bellTitle}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 20a2 2 0 01-3.4 0" /></svg>
+            {unreadCount > 0 && <i className="bell-badge">{unreadCount > 9 ? "9+" : unreadCount}</i>}
+          </button>
           <button type="button" className="group-add-btn" onClick={() => setShowMedalBoard(true)} aria-label={T.group.medalBoard} title={T.group.medalBoard}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3" /></svg>
           </button>
@@ -2406,27 +2485,10 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           <button type="button" className="group-add-btn" onClick={() => { setAddingGroup(true); setMode("start"); }}>+</button>
         </div>
       </header>
-      {groups.length > 1 && <div className="group-switcher">{groups.map((g) => <button key={g.id} className={g.id === activeGroupId ? "chip selected" : "chip"} onClick={() => setActiveGroupId(g.id)}>{g.name}</button>)}</div>}
-      {unreadCheers.length > 0 && <div className="cheer-banner">
-        <div className="cheer-banner-head"><strong>📣 {T.cheers.newCount(unreadCheers.length)}</strong><button type="button" onClick={onCheersSeen}>{T.cheers.gotIt}</button></div>
-        {unreadCheers.slice(0, 3).map((c) => <p key={c.id} className="cheer-banner-row"><b>{c.from_name}</b>{c.to_user === user.id && <em> ({T.cheers.toYou})</em>}: {cheerText(c.cheer_key, language)}</p>)}
-      </div>}
-      <div className="group-hof-row"><button type="button" className="group-cheer-btn" onClick={() => { setCheerTo(null); setShowCheerSheet(true); }}>{T.cheers.sendBtn}</button></div>
-      {groupCheers.length > 0 && <div className="cheer-board">
-        <span className="section-label">{T.cheers.recentTitle}</span>
-        <div className="cheer-board-list">{groupCheers.slice(0, 30).map((c) => {
-          const toName = c.to_user === null ? T.cheers.everyone : c.to_user === user.id ? T.cheers.you : (members.find((m) => m.id === c.to_user)?.name ?? "Drummer");
-          return <div key={c.id} className="cheer-board-row">
-            <span className="cheer-board-who"><b>{c.from_user === user.id ? T.cheers.you : c.from_name}</b> → {toName}</span>
-            <span className="cheer-board-text">{cheerText(c.cheer_key, language)}</span>
-            <span className="cheer-board-age">{cheerAge(c.created_at)}</span>
-            <button type="button" className="cheer-board-x" aria-label={T.cheers.remove} title={T.cheers.remove} onClick={() => removeCheer(c)}>×</button>
-          </div>;
-        })}</div>
-      </div>}
       <div className="leaderboard time-card">
         <span className="section-label">{T.group.leaderboard}</span>
-        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
+        {members.length > 1 && <span className="section-sublabel cheer-hint">{T.cheers.tapNameHint}</span>}
+        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? member.name : <span role="button" tabIndex={0} className="name-cheer" onClick={() => openCheerFor(member.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCheerFor(member.id); }}>{member.name}</span>}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
       </div>
       <div className="time-card"><span className="section-label">{T.group.timePractised}</span><span className="section-sublabel">{timeView === "week" ? weekRangeLabel : sinceLabel}</span>
         <div className="equipment-toggle time-view-toggle">
@@ -2434,7 +2496,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           <button type="button" className={timeView === "week" ? "equipment-option selected" : "equipment-option"} onClick={() => setTimeView("week")}>{T.group.medalBoardThisWeek}</button>
         </div>
         <div className="leaderboard">
-          {(timeView === "week" ? weekTotals : totals).map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.name}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / Math.max(1, (timeView === "week" ? weekTotals : totals)[0]?.total ?? 0)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
+          {(timeView === "week" ? weekTotals : totals).map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.id === user.id ? member.name : <span role="button" tabIndex={0} className="name-cheer" onClick={() => openCheerFor(member.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCheerFor(member.id); }}>{member.name}</span>}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / Math.max(1, (timeView === "week" ? weekTotals : totals)[0]?.total ?? 0)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
         </div>
       </div>
       <div className="time-card">
@@ -2466,16 +2528,35 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         roster={{ members, dayLogs: dayDetailLogs, currentUserId: user.id }}
         onNavigateDay={(delta) => setSummaryDayKey((current) => current ? shiftDateKey(current, delta) : current)} />}
       {showMedalBoard && <MedalBoardModal daysTotals={daysTotals} totals={totals} weeklyRows={group.weekly_awards_enabled ? [...weeklyAwards, ...(challengeAward ? [challengeAward] : [])] : []} onClose={() => setShowMedalBoard(false)} T={T} />}
+      {showGroupPicker && <div className="modal modal-center" onClick={() => setShowGroupPicker(false)}><div className="day-summary cheer-sheet" onClick={(e) => e.stopPropagation()}>
+        <span className="section-label">{T.group.switchGroup}</span>
+        <div className="cheer-list">{groups.map((g) => <button key={g.id} type="button" className={g.id === activeGroupId ? "cheer-option group-pick selected" : "cheer-option group-pick"} onClick={() => { setActiveGroupId(g.id); setShowGroupPicker(false); }}>{g.name}{g.id === activeGroupId && <span className="group-pick-check">✓</span>}</button>)}</div>
+      </div></div>}
+      {showCheerInbox && <div className="modal modal-center" onClick={() => setShowCheerInbox(false)}><div className="day-summary cheer-sheet" onClick={(e) => e.stopPropagation()}>
+        <span className="section-label">{T.cheers.bellTitle}</span>
+        {groupCheers.length === 0 ? <p className="hint">{T.cheers.inboxEmpty}</p> : <div className="cheer-list">
+          {groupCheers.slice(0, 40).map((c) => {
+            const mine = c.from_user === user.id;
+            const toName = c.to_user === null ? T.cheers.everyone : c.to_user === user.id ? T.cheers.you : (members.find((m) => m.id === c.to_user)?.name ?? "Drummer");
+            const heartsFromOthers = c.hearts.filter((h) => countsAsHeart(h.user_id, user.id));
+            const iHearted = c.hearts.some((h) => h.user_id === user.id);
+            const isNew = mine ? heartsFromOthers.some((h) => h.created_at > inboxSeenAt) : c.created_at > inboxSeenAt;
+            return <div key={c.id} className={isNew ? "cheer-inbox-row is-new" : "cheer-inbox-row"}>
+              <span className="cheer-inbox-who">{mine ? <><b>{T.cheers.you}</b> → {toName}</> : <><b>{c.from_name}</b>{c.to_user === user.id ? ` (${T.cheers.toYou})` : ""}</>} · {cheerAge(c.created_at)}</span>
+              <span className="cheer-inbox-text">{cheerText(c.cheer_key, language)}</span>
+              {mine && heartsFromOthers.length > 0 && <span className="cheer-hearts"><HeartIcon filled />{heartsFromOthers.map((h) => h.name).join(", ")}</span>}
+              {(!mine || ALLOW_SELF_HEART) && <button type="button" className={iHearted ? "cheer-heart on" : "cheer-heart"} aria-label={T.cheers.heart} title={T.cheers.heart} onClick={() => toggleHeart(c)}><HeartIcon filled={iHearted} /></button>}
+              <button type="button" className="cheer-inbox-x" aria-label={mine ? T.cheers.undoSent : T.cheers.remove} title={mine ? T.cheers.undoSent : T.cheers.remove} onClick={() => removeCheer(c)}>×</button>
+            </div>;
+          })}
+        </div>}
+        <button type="button" className="primary cf-create" onClick={() => openCheerFor(null)}>{T.cheers.cheerGroupBtn}</button>
+      </div></div>}
       {showCheerSheet && <div className="modal modal-center" onClick={() => setShowCheerSheet(false)}><div className="day-summary cheer-sheet" onClick={(e) => e.stopPropagation()}>
-        <span className="section-label">{T.cheers.sheetTitle}</span>
-        <span className="cf-label">{T.cheers.toLabel}</span>
-        <div className="cheer-to-row">
-          <button type="button" className={cheerTo === null ? "chip selected" : "chip"} onClick={() => setCheerTo(null)}>{T.cheers.everyone}</button>
-          {members.filter((m) => m.id !== user.id).map((m) => <button key={m.id} type="button" className={cheerTo === m.id ? "chip selected" : "chip"} onClick={() => setCheerTo(m.id)}>{m.name}</button>)}
-        </div>
+        <span className="section-label">{cheerTo ? T.cheers.cheerPerson(members.find((m) => m.id === cheerTo)?.name ?? "") : T.cheers.cheerGroup}</span>
         <div className="cheer-list">{CHEER_KEYS.map((c) => <button key={c.key} type="button" className="cheer-option" disabled={cheerBusy} onClick={() => sendCheer(c.key)}>{c[language as Lang]}</button>)}</div>
       </div></div>}
-      {cheerToast && <div className="cheer-toast">✓ {T.cheers.sent}</div>}
+      {cheerToast && <div className="cheer-toast">✓ {T.cheers.sent}{lastSentCheerId && <button type="button" onClick={async () => { const id = lastSentCheerId; setLastSentCheerId(null); setCheerToast(false); if (id) await removeCheer({ id, from_user: user.id }); }}>{T.cheers.undo}</button>}</div>}
       {showGroupSettings && <GroupSettingsModal group={group} setGroupSetting={setGroupSetting} setGroupDateMode={setGroupDateMode} onClose={() => setShowGroupSettings(false)} T={T} />}
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span>{user.id === teacherId && <button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button>}</div>

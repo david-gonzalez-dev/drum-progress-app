@@ -1574,3 +1574,39 @@ alter table public.group_cheers add constraint group_cheers_cheer_key_check chec
 drop policy if exists "senders delete their cheers" on public.group_cheers;
 create policy "senders delete their cheers" on public.group_cheers for delete to authenticated using (from_user = auth.uid());
 grant delete on public.group_cheers to authenticated;
+
+-- CHEER HEARTS: a member who receives a cheer can heart it; the sender sees who did. One row per
+-- (cheer, member), so hearting twice is impossible and un-hearting just deletes the row. NEW TABLE, so it has
+-- explicit grants. A member can only heart a cheer they can already see (RLS on group_cheers applies inside the
+-- check) and never their own.
+create table if not exists public.group_cheer_hearts (
+  cheer_id uuid not null references public.group_cheers(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (cheer_id, user_id)
+);
+alter table public.group_cheer_hearts enable row level security;
+drop policy if exists "see hearts on cheers I can see" on public.group_cheer_hearts;
+create policy "see hearts on cheers I can see" on public.group_cheer_hearts for select to authenticated using (
+  exists (select 1 from public.group_cheers c where c.id = group_cheer_hearts.cheer_id)
+);
+drop policy if exists "heart a cheer sent to me" on public.group_cheer_hearts;
+create policy "heart a cheer sent to me" on public.group_cheer_hearts for insert to authenticated with check (
+  user_id = auth.uid() and exists (select 1 from public.group_cheers c where c.id = group_cheer_hearts.cheer_id and c.from_user <> auth.uid())
+);
+drop policy if exists "remove my heart" on public.group_cheer_hearts;
+create policy "remove my heart" on public.group_cheer_hearts for delete to authenticated using (user_id = auth.uid());
+grant select, insert, delete on public.group_cheer_hearts to authenticated;
+grant select, insert, update, delete on public.group_cheer_hearts to service_role;
+
+-- TEST ONLY: let a sender heart their own cheer (so hearts can be tried with one account). Pair with
+-- ALLOW_SELF_HEART in page.tsx. To go back, run the "revert" policy below instead.
+drop policy if exists "heart a cheer sent to me" on public.group_cheer_hearts;
+create policy "heart a cheer sent to me" on public.group_cheer_hearts for insert to authenticated with check (
+  user_id = auth.uid() and exists (select 1 from public.group_cheers c where c.id = group_cheer_hearts.cheer_id)
+);
+-- REVERT (run later, with ALLOW_SELF_HEART = false):
+-- drop policy if exists "heart a cheer sent to me" on public.group_cheer_hearts;
+-- create policy "heart a cheer sent to me" on public.group_cheer_hearts for insert to authenticated with check (
+--   user_id = auth.uid() and exists (select 1 from public.group_cheers c where c.id = group_cheer_hearts.cheer_id and c.from_user <> auth.uid())
+-- );
