@@ -2475,7 +2475,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     const weekRangeLabel = [weekStartKey, shiftDateKey(weekStartKey, 6)].map(formatDMY).join(" - ");
     return <section className="page">
       <header className="simple-head group-head">
-        <div>{groups.length > 1 ? <h1 className="group-title-switch" onClick={() => setShowGroupPicker(true)}>{group.name}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></h1> : <h1>{group.name}</h1>}</div>
+        <div>{groups.length > 1 ? <h1 className="group-title-switch" onClick={() => setShowGroupPicker(true)}>{group.name}</h1> : <h1>{group.name}</h1>}</div>
         <div className="group-head-actions">
           <button type="button" className="group-add-btn group-bell-btn" onClick={openCheerInbox} aria-label={T.cheers.bellTitle} title={T.cheers.bellTitle}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 20a2 2 0 01-3.4 0" /></svg>

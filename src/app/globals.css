@@ -533,8 +533,7 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .cheer-heart.on{color:#ff5a6e}
 .cheer-inbox-row:has(.cheer-heart){padding-right:76px!important}
 .cheer-hearts{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:13px;color:#ff7a8a}
-.group-title-switch{display:flex;align-items:center;gap:8px;cursor:pointer}
-.group-title-switch svg{width:20px;height:20px;color:#ff9b50;flex-shrink:0;margin-top:4px}
+.group-title-switch{cursor:pointer}
 .group-pick{justify-content:space-between}
 .group-pick.selected{border-color:rgba(255,155,80,.6);background:rgba(255,155,80,.1)}
 .group-pick-check{color:#ff9b50;font-weight:700}
