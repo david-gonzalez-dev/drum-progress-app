@@ -1457,3 +1457,37 @@ drop policy if exists "group members can view each other's practice sessions" on
 -- This is safe: the row-level policy ("auth.uid() = user_id" in with check) still stops anyone from
 -- pointing a row at another user. points_enabled stays admin-only (still not granted).
 grant update (user_id) on public.settings to authenticated;
+
+-- GROUP VIEW: ONLY STANDARD EXERCISES AND BOOKS (part A, safe to run any time). custom_items also holds
+-- free text students type themselves ("My items", their own books), which every other group member could
+-- read. The group view now returns only items from the app's own lists: exercise names from the
+-- practice_exercises catalog and the built-in books (keep this list in sync with PRACTICE_BOOKS in
+-- page.tsx). Same columns and order as before, so "create or replace" is allowed.
+create or replace view public.group_practice_logs as
+select pl.id, pl.user_id, pl.practiced_on, pl.minutes, pl.seconds, pl.equipment, pl.drumset_minutes, pl.pad_minutes,
+  array(
+    select t.ci from unnest(pl.custom_items) with ordinality as t(ci, ord)
+    where t.ci in (select pe.name_en from public.practice_exercises pe)
+       or t.ci in ('Stick Control', 'Syncopation', '4-Way Coordination', 'Rhythmic Illusions', '150 Rudimental Solos')
+    order by t.ord
+  ) as custom_items
+from public.practice_logs pl
+where exists (
+  select 1 from public.group_members gm1
+  join public.group_members gm2 on gm1.group_id = gm2.group_id
+  join public.groups g on g.id = gm1.group_id
+  where gm1.user_id = pl.user_id and gm2.user_id = auth.uid()
+    and (g.show_teacher_stats = true or not public.is_admin_user(pl.user_id))
+);
+
+-- ONLY GROUP ADMINS CREATE CHALLENGES (part B -- RUN ONLY AFTER the app update that hides the "New
+-- challenge" button for students is live). Challenge names, rewards and punishments are free text that
+-- the whole group sees; with children in groups, only the admin (teacher) may write them. Members can
+-- still join challenges; challenges that students created earlier stay as they are.
+drop policy if exists "group members can create challenges" on public.challenges;
+drop policy if exists "group admins can create challenges" on public.challenges;
+create policy "group admins can create challenges" on public.challenges for insert to authenticated with check (
+  auth.uid() = created_by and public.is_admin() and exists (
+    select 1 from public.group_members m where m.group_id = challenges.group_id and m.user_id = auth.uid()
+  )
+);

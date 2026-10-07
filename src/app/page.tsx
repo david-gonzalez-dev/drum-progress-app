@@ -368,7 +368,7 @@ const translations = {
       groupSettings: "GROUP SETTINGS", countFromCreation: "Stats start tracking from", enableWeeklyAwards: "Enable weekly awards",
       dateModeCalendar: "Jan 1", dateModeToday: "Group start", dateModeCustom: "Custom date",
       countFromCreationDesc: "Sets the starting date for this group's practice-day and time-practised leaderboards.",
-      noChallenges: "No challenges yet. Start one with your crew!", newChallenge: "+ New challenge", cancel: "Cancel", challengeNamePlaceholder: "Challenge name",
+      noChallenges: "No challenges yet. Start one with your crew!", noChallengesMember: "No challenges yet. Your teacher can start one.", newChallenge: "+ New challenge", cancel: "Cancel", challengeNamePlaceholder: "Challenge name",
       typeDaily: "Every day", typeMinutes: "Total minutes", typeSessions: "Days practised", goalLabel: "GOAL", startLabel: "START", endLabel: "END",
       rewardPlaceholder: "Reward (optional)", punishmentPlaceholder: "Punishment (optional)", createChallengeBtn: "Create challenge",
       joinChallengeBtn: "Join challenge", joined: "Joined", participants: (n: number) => `${n} joined`,
@@ -521,7 +521,7 @@ const translations = {
       groupSettings: "AJUSTES DEL GRUPO", countFromCreation: "Las estadísticas empiezan desde", enableWeeklyAwards: "Activar premios semanales",
       dateModeCalendar: "1 de enero", dateModeToday: "Inicio del grupo", dateModeCustom: "Fecha personalizada",
       countFromCreationDesc: "Define la fecha desde la que se cuentan los días y el tiempo de práctica del grupo.",
-      noChallenges: "Aún no hay desafíos. ¡Empieza uno con tu grupo!", newChallenge: "+ Nuevo desafío", cancel: "Cancelar", challengeNamePlaceholder: "Nombre del desafío",
+      noChallenges: "Aún no hay desafíos. ¡Empieza uno con tu grupo!", noChallengesMember: "Aún no hay desafíos. Tu profesor puede empezar uno.", newChallenge: "+ Nuevo desafío", cancel: "Cancelar", challengeNamePlaceholder: "Nombre del desafío",
       typeDaily: "Todos los días", typeMinutes: "Minutos totales", typeSessions: "Días practicados", goalLabel: "META", startLabel: "INICIO", endLabel: "FIN",
       rewardPlaceholder: "Recompensa (opcional)", punishmentPlaceholder: "Penalización (opcional)", createChallengeBtn: "Crear desafío",
       joinChallengeBtn: "Unirse al desafío", joined: "Unido", participants: (n: number) => `${n} unidos`,
@@ -1317,7 +1317,7 @@ function Login({ error, setError }: { error: string; setError: (message: string)
   async function submit() {
     setBusy(true); setError("");
     if (mode === "forgot") {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: WEB_URL || window.location.origin });
       setBusy(false);
       if (resetError) setError(resetError.message); else setError("Check your email for a password reset link.");
       return;
@@ -1336,13 +1336,13 @@ function Login({ error, setError }: { error: string; setError: (message: string)
     <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} />
     {mode !== "forgot" && <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />}
     {mode === "login" && <button className="auth-forgot" onClick={() => { setMode("forgot"); setError(""); }}>Forgot password?</button>}
-    {mode === "signup" && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>I am 16 or older, or I am a parent or guardian creating this account for my child (or the child&apos;s teacher, with the parent&apos;s permission). I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label>}
+    {mode === "signup" && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>I am 16 or older, or I am a parent or guardian creating this account for my child (or the child&apos;s teacher, with the parent&apos;s permission). I agree to the <a href={`${WEB_URL}/terms`} target="_blank" rel="noopener noreferrer">Terms</a> and <a href={`${WEB_URL}/privacy`} target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label>}
     <button className="auth-primary" disabled={busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && !consent)} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}</button>
-    {mode !== "forgot" && <div className="or">OR</div>}
-    {mode !== "forgot" && <button className="google" disabled={busy || (mode === "signup" && !consent)} onClick={google}>G <span>Continue with Google</span></button>}
+    {mode !== "forgot" && !IS_NATIVE_BUILD && <div className="or">OR</div>}
+    {mode !== "forgot" && !IS_NATIVE_BUILD && <button className="google" disabled={busy || (mode === "signup" && !consent)} onClick={google}>G <span>Continue with Google</span></button>}
     <button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : mode === "signup" ? "Already have an account? Log in" : "Back to log in"}</button>
   </div>{error && <p className="auth-error">{error}</p>}
-  <p className="auth-legal"><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy</a> · <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> · <a href="/support" target="_blank" rel="noopener noreferrer">Support</a></p></section></main>;
+  <p className="auth-legal"><a href={`${WEB_URL}/privacy`} target="_blank" rel="noopener noreferrer">Privacy</a> · <a href={`${WEB_URL}/terms`} target="_blank" rel="noopener noreferrer">Terms</a> · <a href={`${WEB_URL}/support`} target="_blank" rel="noopener noreferrer">Support</a></p></section></main>;
 }
 function ResetPassword({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
@@ -2322,7 +2322,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       {showMedalBoard && <MedalBoardModal daysTotals={daysTotals} totals={totals} weeklyRows={group.weekly_awards_enabled ? [...weeklyAwards, ...(challengeAward ? [challengeAward] : [])] : []} onClose={() => setShowMedalBoard(false)} T={T} />}
       {showGroupSettings && <GroupSettingsModal group={group} setGroupSetting={setGroupSetting} setGroupDateMode={setGroupDateMode} onClose={() => setShowGroupSettings(false)} T={T} />}
       <div className="challenges-section">
-        <div className="section-head"><span className="section-label">{T.group.challenges}</span><button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button></div>
+        <div className="section-head"><span className="section-label">{T.group.challenges}</span>{user.id === teacherId && <button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button>}</div>
         {showNewChallenge && <div className="challenge-form">
           <div className="preset-row">{presetOptions.map((p) => <button key={p.key} className="chip" onClick={() => applyPreset(p)}>{p.label}</button>)}</div>
           <input className="group-input" value={challengeName} onChange={e => setChallengeName(e.target.value)} placeholder={T.group.challengeNamePlaceholder} />
@@ -2341,7 +2341,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           <input className="group-input" value={challengePunishment} onChange={e => setChallengePunishment(e.target.value)} placeholder={T.group.punishmentPlaceholder} />
           <button className="primary" disabled={challengeBusy || !challengeName || challengeEnd < challengeStart} onClick={createChallenge}>{challengeBusy ? T.group.pleaseWait : T.group.createChallengeBtn}</button>
         </div>}
-        {!challenges.length && !showNewChallenge && <p className="hint">{T.group.noChallenges}</p>}
+        {!challenges.length && !showNewChallenge && <p className="hint">{user.id === teacherId ? T.group.noChallenges : T.group.noChallengesMember}</p>}
         {challenges.map((c) => {
           const desc = c.goal_type === "daily" ? T.group.dailyGoalDesc(c.goal_value) : c.goal_type === "minutes" ? T.group.minutesGoalDesc(c.goal_value) : T.group.sessionsGoalDesc(c.goal_value);
           const progressLabel = c.goal_type === "minutes" ? T.group.minutesProgress(c.progress, c.target) : T.group.daysProgress(c.progress, c.target);
@@ -3218,7 +3218,7 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
     setDeleteBusy(true);
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
-    const res = await fetch("/api/delete-account", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(`${WEB_URL}/api/delete-account`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       setDeleteBusy(false);
@@ -3249,7 +3249,7 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
       <input type="password" className="account-confirm-input" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={T.settings.confirmPasswordPlaceholder} />
       {passwordMsg && <p className="settings-hint">{passwordMsg}</p>}
       <button className="secondary-btn" disabled={passwordBusy || !newPassword || !confirmPassword} onClick={changePassword}>{passwordBusy ? T.settings.pleaseWait : T.settings.updatePassword}</button>
-      <p className="settings-legal"><a href="/privacy" target="_blank" rel="noopener noreferrer">{T.settings.privacyPolicy}</a> · <a href="/terms" target="_blank" rel="noopener noreferrer">{T.settings.termsOfUse}</a> · <a href="/support" target="_blank" rel="noopener noreferrer">{T.settings.support}</a></p>
+      <p className="settings-legal"><a href={`${WEB_URL}/privacy`} target="_blank" rel="noopener noreferrer">{T.settings.privacyPolicy}</a> · <a href={`${WEB_URL}/terms`} target="_blank" rel="noopener noreferrer">{T.settings.termsOfUse}</a> · <a href={`${WEB_URL}/support`} target="_blank" rel="noopener noreferrer">{T.settings.support}</a></p>
       <button className="logout" onClick={signOut}>{T.settings.logout}</button>
       <div className="danger-zone">
         <p className="danger-title">{T.settings.deleteAccount}</p>
@@ -3580,6 +3580,11 @@ function Metronome({ open, close, onAddPractice, onSessionEnd, initialBpm, tone,
 // the tab/app: only the start time is stored, and elapsed time is recomputed from it on reopen.
 // Bump when the privacy policy / terms change in a way people must re-agree to; saved with each sign-up.
 const LEGAL_VERSION = "2026-10-07";
+// The iPhone app is the same code bundled inside a native shell (see scripts/build-ios.mjs). These two
+// build-time values are how it differs: where the live website is (legal pages, account deletion,
+// password-reset links all point there) and a flag that hides Google login (email + password only).
+const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL ?? "";
+const IS_NATIVE_BUILD = process.env.NEXT_PUBLIC_NATIVE === "1";
 const SESSION_TIMER_STORAGE_KEY = "session_timer_v1";
 // A stopwatch left running for days shouldn't log days: capped at 12h, and anything over 3h gets
 // a "did you forget to stop it?" warning on the add-time prompt.

@@ -4,3 +4,7 @@ node_modules
 !.env.example
 .DS_Store
 *.tsbuildinfo
+
+# iPhone app build helpers
+/.ios-build
+/ios-www

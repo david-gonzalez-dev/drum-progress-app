@@ -467,3 +467,8 @@
 .auth-consent a,.auth-legal a,.settings-legal a{color:#ff9b50}
 .auth-legal{text-align:center;font-size:13px;color:#7d746d;margin:18px 0 0}
 .settings-legal{text-align:center;font-size:13px;color:#7c837e;margin:22px 0 4px}
+/* iPhone app only (html.native): content is drawn under the status bar / notch, so push the page down by the safe area. */
+html.native .page{padding-top:calc(30px + env(safe-area-inset-top))}
+html.native .auth-shell{padding-top:calc(86px + env(safe-area-inset-top))}
+html.native .session-timer-banner{padding-top:calc(9px + env(safe-area-inset-top))}
+html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-top))}
