@@ -2868,7 +2868,11 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
-    if (next === "both") { setDrumsetMinutes(String(Number(minutes) || 0)); setPadMinutes("0"); }
+    if (next === "both") {
+      // Minutes typed in the quick-add box but not saved yet become part of the split, so the split always adds up to the day's total.
+      const total = (Number(minutes) || 0) + (Number(quickAddMinutes) || 0);
+      setDrumsetMinutes(String(total)); setPadMinutes("0"); setMinutes(String(total)); setQuickAddMinutes("0");
+    }
     else { setDrumsetMinutes(""); setPadMinutes(""); }
   }
   function updateDrumsetMinutes(value: string) { setDrumsetMinutes(value); setMinutes(String((Number(value) || 0) + (Number(padMinutes) || 0))); }
@@ -3144,24 +3148,7 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
       </div>
       <div className="form-card quick-start"><label className="input-label">{T.today.practiceTimeHeading}</label>
         {equipment === "both" ? (
-          <div className="split-minutes">
-            <div className="split-minutes-field">
-              <span className="split-minutes-label">{T.today.drumset}</span>
-              <div className="minutes-island compact">
-                <button className="minutes-step" onClick={() => updateDrumsetMinutes(String(Math.max(0, (Number(drumsetMinutes) || 0) - 5)))}>-5</button>
-                <div className="minutes-value"><input inputMode="numeric" size={3} value={drumsetMinutes} onChange={(e: any) => updateDrumsetMinutes(e.target.value.replace(/\D/g, ""))}/><span>min</span></div>
-                <button className="minutes-step" onClick={() => updateDrumsetMinutes(String((Number(drumsetMinutes) || 0) + 5))}>+5</button>
-              </div>
-            </div>
-            <div className="split-minutes-field">
-              <span className="split-minutes-label">{T.today.pad}</span>
-              <div className="minutes-island compact">
-                <button className="minutes-step" onClick={() => updatePadMinutes(String(Math.max(0, (Number(padMinutes) || 0) - 5)))}>-5</button>
-                <div className="minutes-value"><input inputMode="numeric" size={3} value={padMinutes} onChange={(e: any) => updatePadMinutes(e.target.value.replace(/\D/g, ""))}/><span>min</span></div>
-                <button className="minutes-step" onClick={() => updatePadMinutes(String((Number(padMinutes) || 0) + 5))}>+5</button>
-              </div>
-            </div>
-          </div>
+          <p className="quick-split-summary">{equipmentSplitLabel(Number(drumsetMinutes) || 0, Number(padMinutes) || 0, T)}</p>
         ) : (
           <div className="minutes-island">
             <button className="minutes-step" onClick={() => setQuickAddMinutes(String(Math.max(0, (Number(quickAddMinutes) || 0) - 5)))}>-5</button>
@@ -3171,12 +3158,6 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
             <button className="minutes-step" onClick={() => setQuickAddMinutes(String((Number(quickAddMinutes) || 0) + 5))}>+5</button>
           </div>
         )}
-        {Number(seconds) > 0 && <p className="seconds-note">+{seconds}s {T.today.secondsCarried}</p>}
-        {equipment !== "both" && Number(minutes) > 0 && <p className="quick-add-today-note">{T.today.todaySoFar(formatMinutes(Number(minutes)))}</p>}
-        <div className="equipment-toggle">
-          <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
-          <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("pad")}>{T.today.pad}</button>
-        </div>
         <button className={saved ? "save saved" : "save"} onClick={handleSaveClick} disabled={equipment === "both" ? (Number(drumsetMinutes) || 0) + (Number(padMinutes) || 0) <= 0 : (Number(quickAddMinutes) || 0) <= 0}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
         <button className="reset-practice" onClick={handleResetPractice}>{T.today.resetPractice}</button>
       </div>
@@ -3201,6 +3182,29 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
         <button className="close" onClick={() => setShowWhatModal(false)}>×</button>
         <h2 className="edit-rating-title">{T.today.whatDidYouPractiseTitle}</h2>
         <p className="confirm-message">{T.today.whatDidYouPractiseSubtitle}</p>
+        <div className="equipment-toggle modal-equipment">
+          <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
+          <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("pad")}>{T.today.pad}</button>
+        </div>
+        {equipment === "both" && <div className="modal-split">          <div className="split-minutes">
+            <div className="split-minutes-field">
+              <span className="split-minutes-label">{T.today.drumset}</span>
+              <div className="minutes-island compact">
+                <button className="minutes-step" onClick={() => updateDrumsetMinutes(String(Math.max(0, (Number(drumsetMinutes) || 0) - 5)))}>-5</button>
+                <div className="minutes-value"><input inputMode="numeric" size={3} value={drumsetMinutes} onChange={(e: any) => updateDrumsetMinutes(e.target.value.replace(/\D/g, ""))}/><span>min</span></div>
+                <button className="minutes-step" onClick={() => updateDrumsetMinutes(String((Number(drumsetMinutes) || 0) + 5))}>+5</button>
+              </div>
+            </div>
+            <div className="split-minutes-field">
+              <span className="split-minutes-label">{T.today.pad}</span>
+              <div className="minutes-island compact">
+                <button className="minutes-step" onClick={() => updatePadMinutes(String(Math.max(0, (Number(padMinutes) || 0) - 5)))}>-5</button>
+                <div className="minutes-value"><input inputMode="numeric" size={3} value={padMinutes} onChange={(e: any) => updatePadMinutes(e.target.value.replace(/\D/g, ""))}/><span>min</span></div>
+                <button className="minutes-step" onClick={() => updatePadMinutes(String((Number(padMinutes) || 0) + 5))}>+5</button>
+              </div>
+            </div>
+          </div>
+        </div>}
         <div className="chips">
           <ChipDropdown label={T.today.rudiments} selectedCount={selectedRudimentsCount} open={rudimentsOpen} onToggleOpen={() => setRudimentsOpen(!rudimentsOpen)}
             searchable searchValue={rudimentSearch} onSearchChange={setRudimentSearch} searchPlaceholder={T.today.searchRudiments}
