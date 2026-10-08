@@ -598,3 +598,60 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .quick-start .minutes-island:not(.compact) .minutes-value input{width:50px;max-width:50px}
 .quick-start .minutes-island:not(.compact){gap:10px}
 .quick-start .minutes-island:not(.compact) .minutes-value{margin:0 6px;gap:4px}
+.challenge-card:not(.challenge-compact) .challenge-head h3{font:400 17px/1.25 'DM Sans';letter-spacing:0}
+.quick-start .save{padding:9px;font-size:16px;margin-top:4px}
+.quick-reset{margin-left:auto;flex-shrink:0;background:transparent;border:1px solid #303531;border-radius:99px;color:#8a9187;font:600 13px 'DM Sans';padding:6px 12px}
+.ach-section{margin-top:4px}
+.ach-summary{background:#121413;border:1px solid #222724;border-radius:18px;padding:14px 16px;margin-bottom:12px}
+.ach-summary-top{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.ach-count{font:600 20px 'DM Sans';color:#8d9690}
+.ach-count b{font:800 34px 'Barlow Condensed';color:#f6f7f5}
+.ach-count-label{color:#8d9690;font-size:14px}
+.ach-bar{height:8px;border-radius:99px;background:#232826;overflow:hidden}
+.ach-bar>div{height:100%;border-radius:99px;background:linear-gradient(90deg,#ff9b50,#ff6b1a)}
+.ach-bar.small{height:5px;width:100%;margin-top:6px}
+.ach-next{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid #222724}
+.ach-next-text{display:flex;flex-direction:column;flex:1;min-width:0}
+.ach-next-label{font:700 10px 'DM Sans';letter-spacing:1.2px;color:#8d9690}
+.ach-next-title{font:600 15px 'DM Sans';color:#f6f7f5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ach-next-value{font:600 13px 'DM Sans';color:#a5ada7;flex-shrink:0}
+.ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ach-tile{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:14px 10px 12px;border-radius:18px;border:1px solid #222724;background:#121413;color:inherit}
+.ach-tile:active{background:#171b19}
+.ach-badge{filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));margin-bottom:4px}
+.ach-badge.locked{filter:none}
+.ach-tile-name{font:700 15px 'DM Sans';color:#f6f7f5}
+.ach-tile-level{font:500 12px 'DM Sans';color:#8d9690}
+.ach-tile-progress{font:600 12px 'DM Sans';color:#a5ada7;margin-top:5px}
+.ach-trophies{margin-top:12px}
+.ach-row{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;border:1px solid #232826;background:#131614;opacity:.7}
+.ach-row.done{opacity:1;border-color:rgba(255,155,80,.4);background:rgba(255,155,80,.06)}
+.ach-row-text{display:flex;flex-direction:column;flex:1;min-width:0}
+.ach-row-title{font:600 15px 'DM Sans';color:#f6f7f5}
+.ach-row-sub{font:500 12px 'DM Sans';color:#8d9690}
+.ach-check{color:#68d391;font-weight:800;font-size:18px}
+/* Achievements: compact, muted version */
+.ach-summary{padding:10px 12px;margin-bottom:8px;border-radius:14px}
+.ach-summary-top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 10px;margin-bottom:6px}
+.ach-count{font:500 13px 'DM Sans';color:#8d9690}
+.ach-count b{font:700 22px 'Barlow Condensed';color:#f6f7f5}
+.ach-next-inline{font:500 12px 'DM Sans';color:#8d9690}
+.ach-bar{height:5px}
+.ach-bar>div{background:#b98a5c}
+.ach-grid{grid-template-columns:repeat(4,1fr);gap:6px}
+.ach-tile{padding:8px 2px 8px;gap:3px;border-radius:12px;background:#111413}
+.ach-badge{filter:none;margin-bottom:0}
+.ach-tile-name{font:600 11px 'DM Sans';color:#d2d6d3;line-height:1.15;min-height:26px;display:flex;align-items:center}
+.ach-bar.small{height:3px;width:70%;margin-top:2px}
+.ach-bar.small>div{background:#8a9187}
+.ach-row{padding:6px 8px}
+.ach-bar>div{background:linear-gradient(90deg,#ff9b50,#ff7a2e)}
+.ach-bar.small>div{background:#ff7a3c;opacity:.75}
+.ach-grid{grid-template-columns:repeat(3,1fr);gap:8px}
+.ach-tile{padding:10px 4px 9px}
+.ach-tile-name{font-size:12px;min-height:0}
+.ach-tile{padding:8px 4px 8px;gap:2px}
+.ach-tile-name{font-size:11.5px}
+.ach-segs{display:flex;gap:2px;width:78%;margin-top:3px}
+.ach-segs>span{flex:1;height:4px;border-radius:99px;background:#232826;overflow:hidden}
+.ach-segs>span>i{display:block;height:100%;border-radius:99px;background:#ff7a3c}

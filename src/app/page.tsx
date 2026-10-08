@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 type Tab = "today" | "practice" | "group" | "progress" | "settings" | "admin";
@@ -382,11 +382,29 @@ const translations = {
       deleteChallenge: "Delete", since: (date: string) => `Since ${date}`, couldNotLeave: "Could not leave the group.", couldNotDeleteChallenge: "Could not delete the challenge.",
       deleteGroupBtn: "Delete group", confirmDeleteGroup: "Delete this group? This removes it for everyone and can't be undone.", couldNotDeleteGroup: "Could not delete the group.",
     },
+    achievements: {
+      unlocked: "unlocked", nextUp: "Next", allDone: "All unlocked", done: "Unlocked",
+      level: (l: number, n: number) => l === 0 ? "Locked" : `Level ${l} of ${n}`,
+      category: { time: "Time", streak: "Streak", days: "Consistency", sessions: "Skill Trainer", tempo: "Tempo", variety: "Variety", long: "Long day", challenges: "Challenges", mastery: "Mastery" } as Record<string, string>,
+      label: (key: string, n: number) => {
+        switch (key) {
+          case "time": return `${n} ${n === 1 ? "hour" : "hours"} practised`;
+          case "streak": return `${n}-day streak`;
+          case "days": return `${n} days practised`;
+          case "sessions": return n === 1 ? "First Skill Trainer session" : `${n} Skill Trainer sessions`;
+          case "tempo": return `5 rudiments at ${n} BPM`;
+          case "variety": return `${n} different exercises`;
+          case "long": return `${n} min in one day`;
+          case "mastery": return n === 1 ? "First session rated mastered" : `${n} sessions rated mastered`;
+          default: return n === 1 ? "First challenge won" : `${n} challenges won`;
+        }
+      },
+    },
     progressPage: {
       eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", yourPractice: "YOUR PRACTICE",
       noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS", generalPractice: "General Practice", seeMore: "See more", seeLess: "See less",
       skillProgress: "SKILL PROGRESS", noSkillData: "Train an exercise's BPM levels to see your skill progress here.",
-      achievements: "ACHIEVEMENTS", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
+      achievements: "MILESTONES", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
     },
     cheers: {
       sendBtn: "Send a cheer", recentTitle: "RECENT CHEERS", remove: "Remove", undo: "Undo", undoSent: "Undo (removes it for everyone)", you: "You", bellTitle: "CHEERS", heart: "Like", heartedYours: (name: string) => `${name} liked your cheer`, inboxEmpty: "No cheers yet.", cheerGroupBtn: "Cheer the whole group", cheerGroup: "CHEER THE GROUP", cheerPerson: (name: string) => `CHEER ${name.toUpperCase()}`, tapNameHint: "Tap a name to send a cheer.", incoming: (name: string) => `${name} sent a cheer`, sheetTitle: "SEND A CHEER", toLabel: "TO", everyone: "Everyone", sent: "Cheer sent!",
@@ -542,11 +560,29 @@ const translations = {
       deleteChallenge: "Eliminar", since: (date: string) => `Desde ${date}`, couldNotLeave: "No se pudo salir del grupo.", couldNotDeleteChallenge: "No se pudo eliminar el desafío.",
       deleteGroupBtn: "Eliminar grupo", confirmDeleteGroup: "¿Eliminar este grupo? Se eliminará para todos y no se puede deshacer.", couldNotDeleteGroup: "No se pudo eliminar el grupo.",
     },
+    achievements: {
+      unlocked: "desbloqueados", nextUp: "Siguiente", allDone: "Todo desbloqueado", done: "Desbloqueado",
+      level: (l: number, n: number) => l === 0 ? "Bloqueado" : `Nivel ${l} de ${n}`,
+      category: { time: "Tiempo", streak: "Racha", days: "Constancia", sessions: "Skill Trainer", tempo: "Tempo", variety: "Variedad", long: "Día largo", challenges: "Retos", mastery: "Maestría" } as Record<string, string>,
+      label: (key: string, n: number) => {
+        switch (key) {
+          case "time": return `${n} ${n === 1 ? "hora" : "horas"} practicadas`;
+          case "streak": return `Racha de ${n} días`;
+          case "days": return `${n} días practicados`;
+          case "sessions": return n === 1 ? "Primera sesión de Skill Trainer" : `${n} sesiones de Skill Trainer`;
+          case "tempo": return `5 rudimentos a ${n} BPM`;
+          case "variety": return `${n} ejercicios distintos`;
+          case "long": return `${n} min en un día`;
+          case "mastery": return n === 1 ? "Primera sesión dominada" : `${n} sesiones dominadas`;
+          default: return n === 1 ? "Primer reto ganado" : `${n} retos ganados`;
+        }
+      },
+    },
     progressPage: {
       eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", yourPractice: "TU PRÁCTICA",
       noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE", generalPractice: "Práctica general", seeMore: "Ver más", seeLess: "Ver menos",
       skillProgress: "PROGRESO TÉCNICO", noSkillData: "Entrena los niveles de BPM de un ejercicio para ver tu progreso técnico aquí.",
-      achievements: "LOGROS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
+      achievements: "HITOS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
     },
     cheers: {
       sendBtn: "Enviar ánimo", recentTitle: "ÁNIMOS RECIENTES", remove: "Quitar", undo: "Deshacer", undoSent: "Deshacer (lo quita para todos)", you: "Tú", bellTitle: "ÁNIMOS", heart: "Me gusta", heartedYours: (name: string) => `A ${name} le gustó tu ánimo`, inboxEmpty: "Aún no hay ánimos.", cheerGroupBtn: "Animar a todo el grupo", cheerGroup: "ANIMAR AL GRUPO", cheerPerson: (name: string) => `ANIMAR A ${name.toUpperCase()}`, tapNameHint: "Toca un nombre para enviar ánimo.", incoming: (name: string) => `${name} envió un ánimo`, sheetTitle: "ENVIAR ÁNIMO", toLabel: "PARA", everyone: "Todos", sent: "¡Ánimo enviado!",
@@ -2677,6 +2713,111 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     </>}
     </div></section>;
 }
+// ---------- Achievements (Progress tab) ----------
+// Everything is worked out from data the app already has (logs, Skill Trainer sessions, won challenges), so there is
+// nothing to store: an achievement is unlocked the moment the numbers reach its target.
+type AchievementCategory = { key: string; targets: number[] };
+const ACHIEVEMENT_CATEGORIES: AchievementCategory[] = [
+  { key: "time", targets: [1, 5, 10, 25, 50, 100] },       // hours practised in total
+  { key: "streak", targets: [3, 7, 14, 30, 60, 100] },     // longest streak in days
+  { key: "days", targets: [5, 15, 30, 60, 100, 200] },     // days practised in total
+  { key: "sessions", targets: [1, 10, 25, 50, 100, 250] }, // Skill Trainer sessions
+  { key: "tempo", targets: [60, 80, 100, 120, 150, 200] }, // each tempo: 5 different rudiments played at it (or faster)
+  { key: "variety", targets: [3, 8, 15, 25, 40] },         // different Skill Trainer exercises
+  { key: "long", targets: [30, 60, 90, 120, 180] },        // most minutes in a single day
+  { key: "challenges", targets: [1, 3, 5, 10, 25] },       // personal challenges won
+  { key: "mastery", targets: [1, 5, 15, 30, 60] },         // Skill Trainer sessions rated "mastered"
+];
+// Badges use the app's own orange-on-dark palette: low levels are dark chips with an orange outline (like the other
+// orange buttons in the app), and the higher the level, the more the badge fills up with solid orange.
+const TEMPO_RUDIMENTS_NEEDED = 5;
+const ACHIEVEMENT_TIERS = [
+  { from: "#1c130d", to: "#1c130d", stroke: "#5a2f17", glyph: "#b7743f", rim: "rgba(255,155,80,.14)" },
+  { from: "#2a170a", to: "#2a170a", stroke: "#7a4220", glyph: "#d98543", rim: "rgba(255,155,80,.18)" },
+  { from: "#351d0d", to: "#351d0d", stroke: "#a35a24", glyph: "#ef9248", rim: "rgba(255,155,80,.22)" },
+  { from: "#4a2610", to: "#3a1e0c", stroke: "#d9773a", glyph: "#ff9b50", rim: "rgba(255,155,80,.28)" },
+  { from: "#ff9b50", to: "#ff7a2e", stroke: "#ffb27a", glyph: "#241508", rim: "rgba(0,0,0,.18)" },
+  { from: "#ffb27a", to: "#ff6b1a", stroke: "#ffd0a8", glyph: "#241508", rim: "rgba(0,0,0,.2)" },
+];
+const ACHIEVEMENT_GLYPHS: Record<string, React.ReactNode> = {
+  time: <><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3.2 2" /></>,
+  streak: <path d="M12 3c.8 3.2 5 5 5 10a5 5 0 01-10 0c0-2 1-3.2 2-4.2 0 2 .9 3 2 3 0-3-1-5 1-8.8z" />,
+  days: <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M4 10h16M8 3v4M16 3v4M9 15l2 2 4-4" /></>,
+  sessions: <><ellipse cx="12" cy="9" rx="8" ry="3" /><path d="M4 9v7c0 1.7 3.6 3 8 3s8-1.3 8-3V9M7 3.5l4 4M17 3.5l-4 4" /></>,
+  tempo: <path d="M13 2.5L5.5 14H11l-1 7.5L18.5 10H13l0-7.5z" />,
+  variety: <path d="M12 3l2.3 4.7 5.2.8-3.8 3.6.9 5.1-4.6-2.5-4.6 2.5.9-5.1L4.5 8.5l5.2-.8L12 3z" />,
+  long: <path d="M7 3h10M7 21h10M8 3c0 5 4 6 4 9s-4 4-4 9M16 3c0 5-4 6-4 9s4 4 4 9" />,
+  mastery: <path d="M3 8l5 4 4-7 4 7 5-4-2 11H5L3 8z" />,
+  challenges: <><path d="M8 4h8v5a4 4 0 01-8 0V4zM8 6H5v1a3 3 0 003 3M16 6h3v1a3 3 0 01-3 3M12 13v4M9 20h6M10 17h4" /></>,
+};
+function AchievementBadge({ glyph, tier, locked, size = 56 }: { glyph: string; tier: number; locked?: boolean; size?: number }) {
+  const gid = useId().replace(/:/g, "");
+  const t = ACHIEVEMENT_TIERS[Math.min(tier, ACHIEVEMENT_TIERS.length - 1)];
+  return <svg className={locked ? "ach-badge locked" : "ach-badge"} width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+    <defs><linearGradient id={gid} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={t.from} /><stop offset="1" stopColor={t.to} /></linearGradient></defs>
+    <polygon points="32,3 57,17.5 57,46.5 32,61 7,46.5 7,17.5" fill={locked ? "#1b1f1d" : `url(#${gid})`} stroke={locked ? "#2c3330" : t.stroke} strokeWidth="2.2" strokeLinejoin="round" />
+    {!locked && <polygon points="32,9 52,20.5 52,43.5 32,55 12,43.5 12,20.5" fill="none" stroke={t.rim} strokeWidth="1.5" strokeLinejoin="round" />}
+    <g transform="translate(17.5 17.5) scale(1.25)" fill="none" stroke={locked ? "#4a554f" : t.glyph} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{ACHIEVEMENT_GLYPHS[glyph]}</g>
+  </svg>;
+}
+function AchievementsSection({ stats, tempoCounts, wonChallenges, language, T }: { stats: Record<string, number>; tempoCounts: number[]; wonChallenges: any[]; language: Lang; T: any }) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const rows = ACHIEVEMENT_CATEGORIES.map((cat) => {
+    if (cat.key === "tempo") {
+      // Tempos unlock in order; the progress shown is "rudiments played at the next tempo, out of 5".
+      let level = 0;
+      while (level < cat.targets.length && (tempoCounts[level] ?? 0) >= TEMPO_RUDIMENTS_NEEDED) level++;
+      const next = level < cat.targets.length ? cat.targets[level] : null;
+      const value = next === null ? TEMPO_RUDIMENTS_NEEDED : Math.min(tempoCounts[level] ?? 0, TEMPO_RUDIMENTS_NEEDED);
+      return { cat, value, level, next, denom: TEMPO_RUDIMENTS_NEEDED, pct: (value / TEMPO_RUDIMENTS_NEEDED) * 100 };
+    }
+    const value = stats[cat.key] ?? 0;
+    const level = cat.targets.filter((target) => value >= target).length;
+    const prev = level > 0 ? cat.targets[level - 1] : 0;
+    const next = level < cat.targets.length ? cat.targets[level] : null;
+    const pct = next === null ? 100 : Math.max(0, Math.min(100, ((value - prev) / (next - prev)) * 100));
+    return { cat, value, level, next, denom: next ?? 0, pct };
+  });
+  const unlocked = rows.reduce((sum, r) => sum + r.level, 0);
+  const total = rows.reduce((sum, r) => sum + r.cat.targets.length, 0);
+  const A = T.achievements;
+  const fmt = (key: string, v: number) => key === "time" ? (Math.round(v * 10) / 10).toString() : String(Math.floor(v));
+  // "Next up": the locked achievement that is closest to being reached.
+  const upcoming = rows.filter((r) => r.next !== null).sort((a, b) => b.pct - a.pct)[0];
+  const open = rows.find((r) => r.cat.key === openKey) ?? null;
+  return <div className="progress-section ach-section">
+    <span className="section-label">{T.progressPage.achievements}</span>
+    <div className="ach-summary">
+      <div className="ach-summary-top"><span className="ach-count"><b>{unlocked}</b> / {total} {A.unlocked}</span>{upcoming && upcoming.next !== null && <span className="ach-next-inline">{A.nextUp}: {A.label(upcoming.cat.key, upcoming.next)} ({fmt(upcoming.cat.key, upcoming.value)}/{upcoming.denom})</span>}</div>
+      <div className="ach-bar"><div style={{ width: `${(unlocked / Math.max(1, total)) * 100}%` }} /></div>
+    </div>
+    <div className="ach-grid">
+      {rows.map((r) => <button key={r.cat.key} type="button" className="ach-tile" onClick={() => setOpenKey(r.cat.key)}>
+        <AchievementBadge glyph={r.cat.key} tier={Math.max(0, r.level - 1)} locked={r.level === 0} size={34} />
+        <span className="ach-tile-name">{A.category[r.cat.key]}</span>
+        <div className="ach-segs">{r.cat.targets.map((_, i) => <span key={i}><i style={{ width: i < r.level ? "100%" : i === r.level ? `${r.pct}%` : "0%" }} /></span>)}</div>
+      </button>)}
+    </div>
+    {wonChallenges.length > 0 && <div className="trophy-list ach-trophies">
+      {wonChallenges.map((c) => <span key={c.id} className="trophy-chip">🏆 {T.personalChallenges.challengeTitle(challengeExerciseLabel(c.exercise_en, language), c.length_days)}</span>)}
+    </div>}
+    {open && <div className="modal modal-center" onClick={() => setOpenKey(null)}><div className="day-summary cheer-sheet" onClick={(e) => e.stopPropagation()}>
+      <button className="close" onClick={() => setOpenKey(null)}>×</button>
+      <span className="section-label">{A.category[open.cat.key]}</span>
+      <div className="cheer-list">
+        {open.cat.targets.map((target, i) => {
+          const done = i < open.level;
+          const sub = open.cat.key === "tempo" ? `${Math.min(tempoCounts[i] ?? 0, TEMPO_RUDIMENTS_NEEDED)} / ${TEMPO_RUDIMENTS_NEEDED}` : `${fmt(open.cat.key, open.value)} / ${target}`;
+          return <div key={target} className={done ? "ach-row done" : "ach-row"}>
+            <AchievementBadge glyph={open.cat.key} tier={i} locked={!done} size={42} />
+            <div className="ach-row-text"><span className="ach-row-title">{A.label(open.cat.key, target)}</span><span className="ach-row-sub">{done ? A.done : sub}</span></div>
+            {done && <span className="ach-check">✓</span>}
+          </div>;
+        })}
+      </div>
+    </div></div>}
+  </div>;
+}
 function Progress({ practiceSessions, logs, user, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const VISIBLE_LIMIT = 5;
@@ -2734,7 +2875,28 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
       .filter((t) => t.minutes > 0)
       .sort((a, b) => b.minutes - a.minutes);
   }, [practiceSessions, logs, language, T]);
+  const achievementStats = useMemo(() => {
+    const entries = Object.values(logs);
+    const totalMinutes = entries.reduce((sum, l) => sum + (l.minutes || 0) + (l.seconds || 0) / 60, 0);
+    return {
+      time: totalMinutes / 60,
+      streak: calculateStreaks(logs, dateKey).longest,
+      days: entries.filter((l) => l.minutes > 0).length,
+      sessions: practiceSessions.length,
+      variety: new Set(practiceSessions.map((s) => s.item_en)).size,
+      long: entries.reduce((max, l) => Math.max(max, l.minutes || 0), 0),
+      challenges: wonChallenges.length,
+      mastery: practiceSessions.filter((s) => s.rating === "mastered").length,
+    } as Record<string, number>;
+  }, [logs, practiceSessions, wonChallenges]);
+  // Tempo milestones: a tempo counts once 5 different rudiments were played at it (or faster) and felt at least "almost" ready.
+  const tempoCounts = useMemo(() => {
+    const rudiments = new Set(PRACTICE_EXERCISES.filter((e) => e.category === "rudiments").map((e) => e.en));
+    const targets = ACHIEVEMENT_CATEGORIES.find((c) => c.key === "tempo")!.targets;
+    return targets.map((t) => new Set(practiceSessions.filter((s) => rudiments.has(s.item_en) && s.bpm >= t && (RATING_RANK[s.rating] ?? 0) >= 3).map((s) => s.item_en)).size);
+  }, [practiceSessions]);
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.progressPage.eyebrow}</p><h1>{T.progressPage.title}</h1></header>
+    <AchievementsSection stats={achievementStats} tempoCounts={tempoCounts} wonChallenges={wonChallenges} language={language} T={T} />
     {!totals.length ? <p className="hint">{T.progressPage.noData}</p> : <div className="progress-section">
       <span className="section-label">{T.progressPage.yourPractice}</span>
       <div className="minutes-chart">
@@ -2763,13 +2925,6 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
       </div>
       {skillExercises.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSkill(!showAllSkill)}>{showAllSkill ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
       </>}
-    </div>
-    <div className="progress-section achievements-teaser">
-      <span className="section-label">{T.progressPage.achievements}</span>
-      <p className="achievements-intro">{T.progressPage.achievementsIntro}</p>
-      {wonChallenges.length > 0 && <div className="trophy-list">
-        {wonChallenges.map((c) => <span key={c.id} className="trophy-chip">🏆 {T.personalChallenges.challengeTitle(challengeExerciseLabel(c.exercise_en, language), c.length_days)}</span>)}
-      </div>}
     </div>
   </section>;
 }
@@ -3145,6 +3300,7 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
       <div className="mode-header quick-header">
         <img src="/icons/lightning.png" alt="" className="mode-icon quick" />
         <div className="mode-copy"><h2>{T.practiceMode.quickTitle}</h2></div>
+        <button type="button" className="quick-reset" onClick={handleResetPractice}>{T.today.resetPractice}</button>
       </div>
       <div className="form-card quick-start"><label className="input-label">{T.today.practiceTimeHeading}</label>
         {equipment === "both" ? (
@@ -3159,7 +3315,6 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
           </div>
         )}
         <button className={saved ? "save saved" : "save"} onClick={handleSaveClick} disabled={equipment === "both" ? (Number(drumsetMinutes) || 0) + (Number(padMinutes) || 0) <= 0 : (Number(quickAddMinutes) || 0) <= 0}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
-        <button className="reset-practice" onClick={handleResetPractice}>{T.today.resetPractice}</button>
       </div>
 
       <div className="mode-header train-header skill-header">
