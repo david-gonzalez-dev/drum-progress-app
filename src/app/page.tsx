@@ -2963,7 +2963,6 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
     return targets.map((t) => new Set(practiceSessions.filter((s) => rudiments.has(s.item_en) && s.bpm >= t && (RATING_RANK[s.rating] ?? 0) >= 3).map((s) => s.item_en)).size);
   }, [practiceSessions]);
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.progressPage.eyebrow}</p><h1>{T.progressPage.title}</h1></header>
-    <AchievementsSection stats={achievementStats} tempoCounts={tempoCounts} wonChallenges={wonChallenges} language={language} T={T} />
     <div className="progress-section">
       <span className="section-label">{T.progressPage.skillProgress}</span>
       {!skillExercises.length ? <p className="hint">{T.progressPage.noSkillData}</p> : <><div className="tier-strip tier-strip-header">
@@ -2980,6 +2979,7 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
       {skillExercises.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSkill(!showAllSkill)}>{showAllSkill ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
       </>}
     </div>
+    <AchievementsSection stats={achievementStats} tempoCounts={tempoCounts} wonChallenges={wonChallenges} language={language} T={T} />
     {!totals.length ? <p className="hint">{T.progressPage.noData}</p> : <div className="progress-section">
       <span className="section-label">{T.progressPage.yourPractice}</span>
       <div className="minutes-chart">
