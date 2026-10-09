@@ -459,7 +459,7 @@ const translations = {
       maxPinnedReached: (max: number) => `You can pin up to ${max} exercises. Unpin one first.`,
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} PINNED`, pinManagerTitle: "Your Focus", pinManagerDone: "Done",
       pinManagerAddBtn: "+ Add exercise", pinManagerSearchPlaceholder: "Search exercises...", pinManagerEmpty: "Nothing pinned yet. Add up to 5 to track here.",
-      quickTitle: "Quick Practice", quickSub: "Log minutes, metronome, timer", continueLabel: "Continue where you left off", skillSearchPlaceholder: "Search rudiments and exercises", skillNoMatch: "Nothing matches that search.", skillSub: "Rudiments and exercises", challengesSub: "Set your own practice goal",
+      quickTitle: "Quick Practice", quickSub: "Log minutes, metronome, timer", continueLabel: "Continue where you left off", recentDays: "RECENT DAYS", noRecentDays: "Nothing logged yet.", skillSearchPlaceholder: "Search rudiments and exercises", skillNoMatch: "Nothing matches that search.", skillSub: "Rudiments and exercises", challengesSub: "Set your own practice goal",
       trainTitle: "Skill Trainer",
       rudimentListIntro: "Unlock 2 tempos to open the next rudiment.",
       tempoCompleteIntro: (min: number) => `Practice a tempo for ${min} min to complete it.`,
@@ -637,7 +637,7 @@ const translations = {
       maxPinnedReached: (max: number) => `Puedes fijar hasta ${max} ejercicios. Quita uno primero.`,
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} FIJADOS`, pinManagerTitle: "Tu enfoque", pinManagerDone: "Listo",
       pinManagerAddBtn: "+ Añadir ejercicio", pinManagerSearchPlaceholder: "Buscar ejercicios...", pinManagerEmpty: "Aún no hay nada fijado. Añade hasta 5 para verlos aquí.",
-      quickTitle: "Práctica rápida", quickSub: "Registra minutos, metrónomo, temporizador", continueLabel: "Continúa donde lo dejaste", skillSearchPlaceholder: "Buscar rudimentos y ejercicios", skillNoMatch: "Nada coincide con esa búsqueda.", skillSub: "Rudimentos y ejercicios", challengesSub: "Ponte tu propia meta de práctica",
+      quickTitle: "Práctica rápida", quickSub: "Registra minutos, metrónomo, temporizador", continueLabel: "Continúa donde lo dejaste", recentDays: "DÍAS RECIENTES", noRecentDays: "Aún no hay registros.", skillSearchPlaceholder: "Buscar rudimentos y ejercicios", skillNoMatch: "Nada coincide con esa búsqueda.", skillSub: "Rudimentos y ejercicios", challengesSub: "Ponte tu propia meta de práctica",
       trainTitle: "Entrenador de habilidades",
       rudimentListIntro: "Desbloquea 2 tempos para abrir el siguiente rudimento.",
       tempoCompleteIntro: (min: number) => `Practica un tempo durante ${min} min para completarlo.`,
@@ -3467,6 +3467,10 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
   if (step === "quick") {
     return <section className="page">
       <div className="back-row"><button onClick={() => setStep("home")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.pageTitle}</p></div></div>
+      <div className="hub-today">
+        <div className="hub-today-top"><span>{T.today.todaySummary}</span><strong>{formatMinutes(Math.floor((Number(minutes) || 0) + (Number(seconds) || 0) / 60))}{dailyGoal ? ` / ${formatMinutes(dailyGoal)}` : ""}</strong></div>
+        {dailyGoal ? <div className="goal-progress-track"><div className={(Number(minutes) || 0) >= dailyGoal ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${Math.min(100, ((Number(minutes) || 0) / Math.max(1, dailyGoal)) * 100)}%` }} /></div> : null}
+      </div>
       <div className="practice-tools">
         <button type="button" className="practice-tool" onClick={openMetronome}>
           <span className="practice-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 21l1.8-16.5a.7.7 0 01.7-.5h2a.7.7 0 01.7.5L15.5 21z" /><path d="M12 17.5L15.2 8" /><circle cx="14.3" cy="11.2" r="1" fill="currentColor" /><path d="M6.5 21h11" /></svg></span>
@@ -3497,6 +3501,22 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
         <button className={saved ? "save saved" : "save"} onClick={handleSaveClick} disabled={equipment === "both" ? (Number(drumsetMinutes) || 0) + (Number(padMinutes) || 0) <= 0 : (Number(quickAddMinutes) || 0) <= 0}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
       </div>
 
+      <div className="quick-recent">
+        <span className="section-label">{T.practiceMode.recentDays}</span>
+        {(() => {
+          const recentDays = Object.keys(logs ?? {}).filter((d) => (logs[d]?.minutes ?? 0) > 0).sort().reverse().slice(0, 5);
+          if (!recentDays.length) return <p className="hint">{T.practiceMode.noRecentDays}</p>;
+          return recentDays.map((d) => {
+            const entry = logs[d];
+            const names = Array.from(new Set([...(entry.items ?? []), ...(entry.customItems ?? [])])).map((n: string) => practiceItemLabel(n, language));
+            return <div key={d} className="quick-recent-row">
+              <span className="quick-recent-date">{new Date(d + "T12:00:00").toLocaleDateString(language === "es" ? "es-ES" : "en-US", { weekday: "short" })} {formatDMY(d).slice(0, 5)}</span>
+              <span className="quick-recent-items">{names.slice(0, 3).join(", ") || ""}</span>
+              <span className="quick-recent-min">{formatMinutes(entry.minutes)}</span>
+            </div>;
+          });
+        })()}
+      </div>
       {showWhatModal && <div className="modal modal-center" onClick={() => setShowWhatModal(false)}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
         <button className="close" onClick={() => setShowWhatModal(false)}>×</button>
         <h2 className="edit-rating-title">{T.today.whatDidYouPractiseTitle}</h2>

@@ -884,3 +884,27 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .progress-section .seg-bar-fill{background:#68d391}
 /* Skill progress keeps the app's orange bars (the milestone bars above it are the green ones) */
 .progress-section .seg-bar-fill{background:#ff6b1a}
+/* Skill progress: each tier has its own shade of orange, from light (Beginner) to deep (Legend) */
+.progress-section .tier-seg:nth-child(1) .seg-bar-fill{background:#ffbf8c}
+.progress-section .tier-seg:nth-child(2) .seg-bar-fill{background:#ff9b50}
+.progress-section .tier-seg:nth-child(3) .seg-bar-fill{background:#ff7425}
+.progress-section .tier-seg:nth-child(4) .seg-bar-fill{background:#d9501a}
+/* milestone bars: a slightly deeper green */
+.ach-bar>div{background:linear-gradient(90deg,#3a9f68,#4fb57a)}
+.ach-bar.small>div{background:#4fb57a}
+/* Quick Practice page: presets and recent days */
+.quick-presets{display:flex;gap:8px;overflow-x:auto;margin:0 0 12px;padding:2px;scrollbar-width:none}
+.quick-presets::-webkit-scrollbar{display:none}
+.quick-presets .chip{flex-shrink:0;white-space:nowrap}
+.quick-recent{margin-top:18px;background:#121413;border:1px solid #222724;border-radius:18px;padding:14px 16px 8px}
+.quick-recent .section-label{margin-bottom:6px}
+.quick-recent-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid #1d211f}
+.quick-recent-row:first-of-type{border-top:0}
+.quick-recent-date{font:600 14px 'DM Sans';color:#e7e9e6;white-space:nowrap}
+.quick-recent-items{font-size:13px;color:#8d9690;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quick-recent-min{font:700 14px 'DM Sans';color:#f6f7f5;white-space:nowrap}
+.page .hub-today + .practice-tools{margin-top:0}
+/* Metronome and Session Timer tiles: tinted in shades of orange like the Practice buttons */
+.practice-tool{--c:255,100,24;background:linear-gradient(135deg,rgba(var(--c),.22) 0%,#131514 78%);border-color:rgba(var(--c),.42)}
+.practice-tool:nth-child(2){--c:255,150,72}
+.practice-tool .practice-tool-icon{background:rgba(var(--c),.18);border-color:rgba(var(--c),.5);color:rgb(var(--c))}
