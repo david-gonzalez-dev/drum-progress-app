@@ -2660,17 +2660,6 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           </div>;
         })}
       </div>
-      {groupImprovements.length > 0 && <div className="time-card">
-        <span className="section-label">{T.admin.improvementsLabel}</span>
-        <div className="admin-log-list admin-log-list-compact">
-          {(showAllImprovements ? groupImprovements : groupImprovements.slice(0, 3)).map((ev) => <div key={ev.key} className="admin-log-row improvement-row">
-            <span className="improvement-chip">{ev.name}</span>
-            <span className="improvement-text">{T.admin.improvedTo(PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language as Lang] ?? ev.exerciseEn, ev.bpm)}</span>
-            <span className="improvement-date">{formatDMY(ev.date).slice(0, 5)}</span>
-          </div>)}
-        </div>
-        {groupImprovements.length > 3 && <button type="button" className="cf-more" onClick={() => setShowAllImprovements(!showAllImprovements)}>{showAllImprovements ? T.group.showLess : T.group.showMore(groupImprovements.length - 3)}</button>}
-      </div>}
       <div className="group-progress"><div className="calendar-card">
         <div className="cal-head"><button onClick={() => setViewDate(new Date(year, month - 1, 1))}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => setViewDate(new Date(year, month + 1, 1))}>›</button></div>
         <div className="week">{T.group.weekdaysMon.map((x: string, i: number) => <span key={i}>{x}</span>)}</div>
@@ -2685,6 +2674,17 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         </div>
         <div className="calendar-legend">{members.map((m) => <span key={m.id}><i style={{ background: m.color }} />{m.name}{m.id === teacherId && <TeacherBadge T={T} />}</span>)}</div>
       </div></div>
+      {groupImprovements.length > 0 && <div className="time-card">
+        <span className="section-label">{T.admin.improvementsLabel}</span>
+        <div className="admin-log-list admin-log-list-compact">
+          {(showAllImprovements ? groupImprovements : groupImprovements.slice(0, 3)).map((ev) => <div key={ev.key} className="admin-log-row improvement-row">
+            <span className="improvement-chip">{ev.name}</span>
+            <span className="improvement-text">{T.admin.improvedTo(PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language as Lang] ?? ev.exerciseEn, ev.bpm)}</span>
+            <span className="improvement-date">{formatDMY(ev.date).slice(0, 5)}</span>
+          </div>)}
+        </div>
+        {groupImprovements.length > 3 && <button type="button" className="cf-more" onClick={() => setShowAllImprovements(!showAllImprovements)}>{showAllImprovements ? T.group.showLess : T.group.showMore(groupImprovements.length - 3)}</button>}
+      </div>}
       {summaryDayKey && <DaySummaryModal date={summaryDayKey} log={logs[summaryDayKey]} dailyGoal={dailyGoal} logs={logs} locale={locale} language={language} T={T}
         onClose={() => setSummaryDayKey(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm}
         roster={{ members, dayLogs: dayDetailLogs, currentUserId: user.id }}
@@ -2792,16 +2792,16 @@ const ACHIEVEMENT_CATEGORIES: AchievementCategory[] = [
   { key: "challenges", targets: [1, 3, 5, 10, 25] },       // personal challenges won
   { key: "mastery", targets: [1, 5, 15, 30, 60] },         // Skill Trainer sessions rated "mastered"
 ];
-// Badges use the app's own orange-on-dark palette: low levels are dark chips with an orange outline (like the other
-// orange buttons in the app), and the higher the level, the more the badge fills up with solid orange.
 const TEMPO_RUDIMENTS_NEEDED = 5;
+// Badges are quiet greys on the dark background; only the two highest levels turn orange, so the Progress tab
+// is not a wall of orange. The higher the level, the lighter the outline and icon.
 const ACHIEVEMENT_TIERS = [
-  { from: "#1c130d", to: "#1c130d", stroke: "#5a2f17", glyph: "#b7743f", rim: "rgba(255,155,80,.14)" },
-  { from: "#2a170a", to: "#2a170a", stroke: "#7a4220", glyph: "#d98543", rim: "rgba(255,155,80,.18)" },
-  { from: "#351d0d", to: "#351d0d", stroke: "#a35a24", glyph: "#ef9248", rim: "rgba(255,155,80,.22)" },
+  { from: "#1b1d1c", to: "#1b1d1c", stroke: "#3a3f3b", glyph: "#8d9690", rim: "rgba(255,255,255,.05)" },
+  { from: "#1f2221", to: "#1f2221", stroke: "#4a504b", glyph: "#a5ada7", rim: "rgba(255,255,255,.07)" },
+  { from: "#232726", to: "#232726", stroke: "#5c635e", glyph: "#c0c6c1", rim: "rgba(255,255,255,.09)" },
+  { from: "#2a2e2c", to: "#262a27", stroke: "#7a827c", glyph: "#e1e4e1", rim: "rgba(255,255,255,.12)" },
   { from: "#4a2610", to: "#3a1e0c", stroke: "#d9773a", glyph: "#ff9b50", rim: "rgba(255,155,80,.28)" },
-  { from: "#ff9b50", to: "#ff7a2e", stroke: "#ffb27a", glyph: "#241508", rim: "rgba(0,0,0,.18)" },
-  { from: "#ffb27a", to: "#ff6b1a", stroke: "#ffd0a8", glyph: "#241508", rim: "rgba(0,0,0,.2)" },
+  { from: "#ff9b50", to: "#ff7a2e", stroke: "#ffb27a", glyph: "#241508", rim: "rgba(0,0,0,.2)" },
 ];
 const ACHIEVEMENT_GLYPHS: Record<string, React.ReactNode> = {
   time: <><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3.2 2" /></>,
@@ -2857,9 +2857,9 @@ function AchievementsSection({ stats, tempoCounts, wonChallenges, language, T }:
     </div>
     <div className="ach-grid">
       {rows.map((r) => <button key={r.cat.key} type="button" className="ach-tile" onClick={() => setOpenKey(r.cat.key)}>
-        <AchievementBadge glyph={r.cat.key} tier={Math.max(0, r.level - 1)} locked={r.level === 0} size={34} />
+        <AchievementBadge glyph={r.cat.key} tier={Math.max(0, r.level - 1)} locked={r.level === 0} size={42} />
         <span className="ach-tile-name">{A.category[r.cat.key]}</span>
-        <div className="ach-segs">{r.cat.targets.map((_, i) => <span key={i}><i style={{ width: i < r.level ? "100%" : i === r.level ? `${r.pct}%` : "0%" }} /></span>)}</div>
+        <div className="ach-bar small"><div style={{ width: `${Math.min(100, ((r.level + (r.next === null ? 0 : r.pct / 100)) / r.cat.targets.length) * 100)}%` }} /></div>
       </button>)}
     </div>
     {wonChallenges.length > 0 && <div className="trophy-list ach-trophies">
@@ -2961,19 +2961,6 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
   }, [practiceSessions]);
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.progressPage.eyebrow}</p><h1>{T.progressPage.title}</h1></header>
     <AchievementsSection stats={achievementStats} tempoCounts={tempoCounts} wonChallenges={wonChallenges} language={language} T={T} />
-    {!totals.length ? <p className="hint">{T.progressPage.noData}</p> : <div className="progress-section">
-      <span className="section-label">{T.progressPage.yourPractice}</span>
-      <div className="minutes-chart">
-        {(showAllPractice ? totals : totals.slice(0, VISIBLE_LIMIT)).map((t, idx) => <div key={t.en} className="minutes-row">
-          <span className="minutes-rank">{idx + 1}</span>
-          <div className="minutes-info">
-            <span className="minutes-name">{t.label}</span>
-            <span className="list-minutes-value">{formatMinutes(t.minutes)}</span>
-          </div>
-        </div>)}
-      </div>
-      {totals.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllPractice(!showAllPractice)}>{showAllPractice ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
-    </div>}
     <div className="progress-section">
       <span className="section-label">{T.progressPage.skillProgress}</span>
       {!skillExercises.length ? <p className="hint">{T.progressPage.noSkillData}</p> : <><div className="tier-strip tier-strip-header">
@@ -2990,6 +2977,19 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
       {skillExercises.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSkill(!showAllSkill)}>{showAllSkill ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
       </>}
     </div>
+    {!totals.length ? <p className="hint">{T.progressPage.noData}</p> : <div className="progress-section">
+      <span className="section-label">{T.progressPage.yourPractice}</span>
+      <div className="minutes-chart">
+        {(showAllPractice ? totals : totals.slice(0, VISIBLE_LIMIT)).map((t, idx) => <div key={t.en} className="minutes-row">
+          <span className="minutes-rank">{idx + 1}</span>
+          <div className="minutes-info">
+            <span className="minutes-name">{t.label}</span>
+            <span className="list-minutes-value">{formatMinutes(t.minutes)}</span>
+          </div>
+        </div>)}
+      </div>
+      {totals.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllPractice(!showAllPractice)}>{showAllPractice ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+    </div>}
   </section>;
 }
 function PersonalChallenges({ user, practiceSessions, confirm, setError, language, T }: any) {
