@@ -3609,9 +3609,9 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
                 {struggled && <span className="rung-struggled-flag" title={T.practiceMode.struggledFlagTitle}><svg viewBox="0 0 20 20" fill="currentColor"><rect x="4" y="2" width="1.6" height="16" rx="0.8" /><path d="M6.2 3L16 6.5 6.2 10V3z" /></svg></span>}
                 <button className="rung-tap" onClick={() => startSession(level)}>
                   <span className="bpm">{level}</span>
+                  <span className="rung-progress-label">{unlocked ? (rating === "mastered" ? "⭐" : "✓") : `${Math.min(totalMinutes, UNLOCK_MINUTES)}/${UNLOCK_MINUTES} min`}</span>
                   <div className="rung-progress">
                     <div className="rung-progress-track"><div className="rung-progress-bar" style={{ width: `${pct}%`, background: barColor }} /></div>
-                    <span className="rung-progress-label">{unlocked ? (rating === "mastered" ? "⭐" : "✓") : `${Math.min(totalMinutes, UNLOCK_MINUTES)}/${UNLOCK_MINUTES} min`}</span>
                   </div>
                 </button>
                 {hasHistory && <button className="rung-edit" onClick={() => openEditRating(level)}>✎</button>}

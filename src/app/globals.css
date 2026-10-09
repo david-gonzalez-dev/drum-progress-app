@@ -908,3 +908,18 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .practice-tool{--c:255,100,24;background:linear-gradient(135deg,rgba(var(--c),.22) 0%,#131514 78%);border-color:rgba(var(--c),.42)}
 .practice-tool:nth-child(2){--c:255,150,72}
 .practice-tool .practice-tool-icon{background:rgba(var(--c),.18);border-color:rgba(var(--c),.5);color:rgb(var(--c))}
+/* Every tier progress bar (Home, Progress, each exercise, Admin): Beginner lightest orange, Legend deepest */
+.tier-seg:nth-child(1) .seg-bar-fill{background:#ffbf8c}
+.tier-seg:nth-child(2) .seg-bar-fill{background:#ff9b50}
+.tier-seg:nth-child(3) .seg-bar-fill{background:#ff7425}
+.tier-seg:nth-child(4) .seg-bar-fill{background:#d9501a}
+/* tempo cards: number, then the star/tick (or minutes) beside it, with the bar in the middle of the card */
+.rung-tap{align-items:center;gap:10px}
+.rung-progress-label{flex-shrink:0;width:50px;font-size:13px;margin:0;text-align:left;line-height:1}
+.rung.unlocked .rung-progress-label{font-size:17px;font-weight:700}
+.rung-progress-track{margin-bottom:0}
+/* tempo cards: slightly narrower and shorter */
+.rung{width:94%;margin-left:auto;margin-right:auto;padding:6px 12px;border-radius:12px}
+.rung .bpm{font-size:20px}
+.rung-edit,.rung-reset{width:24px;height:24px;font-size:13px}
+.rung-progress-track{height:5px}
