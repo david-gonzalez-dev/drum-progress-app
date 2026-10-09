@@ -1353,7 +1353,7 @@ export default function Home() {
   }
   async function signOut() { await supabase.auth.signOut(); }
   if (passwordRecovery) return <ResetPassword onDone={() => setPasswordRecovery(false)} />;
-  if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUM PROGRESS</p><h1>LOADING<span>.</span></h1></div></main>;
+  if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUMSKILLS</p><h1>LOADING<span>.</span></h1></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
   const hasUnreadCheers = cheerUnreadCount(cheers, user.id, cheersSeenAt) > 0;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
@@ -1533,7 +1533,7 @@ function Login({ error, setError }: { error: string; setError: (message: string)
     setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup" && !(result.data as { session?: unknown } | null)?.session) setError("If this is a new account, check your email to confirm it. Already have an account with this email? Just log in instead.");
   }
   async function google() { setBusy(true); const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); if (oauthError) { setError(oauthError.message); setBusy(false); } }
-  return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Build your daily drumming habit, one session at a time.</p><div className="auth-card">
+  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>Build your daily drumming habit, one session at a time.</p><div className="auth-card">
     <h2>{mode === "login" ? "Welcome back" : mode === "signup" ? "Start your streak" : "Reset your password"}</h2>
     <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} />
     {mode !== "forgot" && <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />}
@@ -1554,7 +1554,7 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
     setBusy(false);
     if (updateError) setError(updateError.message); else onDone();
   }
-  return <main className="shell"><section className="auth-shell"><h1>Drum Progress App</h1><p>Choose a new password for your account.</p><div className="auth-card"><h2>Set a new password</h2><input type="password" placeholder="New password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? "Please wait..." : "Update password"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
+  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>Choose a new password for your account.</p><div className="auth-card"><h2>Set a new password</h2><input type="password" placeholder="New password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? "Please wait..." : "Update password"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
 function YourPointsCard({ user, pointsEnabled, rows, onViewPoints, T }: any) {

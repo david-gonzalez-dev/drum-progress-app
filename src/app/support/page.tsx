@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { LegalShell, SUPPORT_EMAIL } from "../legal-shell";
 
-export const metadata: Metadata = { title: "Support | Drum Progress", robots: { index: false } };
+export const metadata: Metadata = { title: "Support | DrumSkills", robots: { index: false } };
 
 export default function SupportPage() {
   return <LegalShell title="Support">
-    <p>Need help with Drum Progress? Write to us at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> and we will get back to you.</p>
+    <p>Need help with DrumSkills? Write to us at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> and we will get back to you.</p>
 
     <h2>Common questions</h2>
     <p><b>I forgot my password.</b> On the login screen, tap Forgot password and follow the email we send you.</p>

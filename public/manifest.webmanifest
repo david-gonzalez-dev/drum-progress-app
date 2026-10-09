@@ -1,6 +1,6 @@
 {
-  "name": "Drum Progress",
-  "short_name": "Drum Progress",
+  "name": "DrumSkills",
+  "short_name": "DrumSkills",
   "description": "Build a daily drumming practice streak.",
   "start_url": "/",
   "display": "standalone",

@@ -3,10 +3,10 @@ import { headers } from "next/headers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Drum Progress",
+  title: "DrumSkills",
   description: "Keep your rhythm. Build your streak.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Drum Progress" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "DrumSkills" },
 };
 
 // The iPhone build draws edge to edge under the notch/status bar (padding comes from the safe-area CSS);
