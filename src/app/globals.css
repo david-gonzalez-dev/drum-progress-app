@@ -822,3 +822,37 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .tier-card-basics .tier-card-num,.tier-card-intermediate .tier-card-num,.tier-card-advanced .tier-card-num,.tier-card-hand .tier-card-num,.tier-card-footwork .tier-card-num,.tier-card-coordination .tier-card-num{color:#ff9b50}
 .tier-card-basics .tier-card-bar,.tier-card-intermediate .tier-card-bar,.tier-card-advanced .tier-card-bar,.tier-card-hand .tier-card-bar,.tier-card-footwork .tier-card-bar,.tier-card-coordination .tier-card-bar{background:#ff7a3c}
 .tier-card-count{font-weight:400}
+/* Group leaderboard: one card, a donut of the time share plus a ranked list (days practised sits next to the time) */
+.board-card{padding:14px 16px 12px}
+.board-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.board-head .section-label{margin:0}
+.board-toggle{display:flex;background:#161918;border:1px solid #232826;border-radius:99px;padding:3px;gap:2px}
+.board-toggle button{border:0;background:transparent;color:#8d9690;font:600 11px 'DM Sans';letter-spacing:.5px;text-transform:uppercase;padding:5px 10px;border-radius:99px}
+.board-toggle button.selected{background:#262b28;color:#f6f7f5}
+.board-body{display:flex;align-items:center;gap:14px}
+.board-donut{position:relative;width:118px;height:118px;flex-shrink:0}
+.board-donut svg{width:100%;height:100%;display:block}
+.board-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.board-donut-center strong{font:700 26px 'Barlow Condensed';color:#f6f7f5;line-height:1}
+.board-donut-center span{font-size:8.5px;letter-spacing:.8px;color:#8d9690;margin-top:3px;text-transform:uppercase;max-width:68px}
+.board-list{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.board-row{display:grid;grid-template-columns:10px 1fr auto;grid-template-areas:"dot name time" "dot name days";align-items:center;column-gap:8px;padding:6px 0;border-bottom:1px solid #1b1f1d}
+.board-row:last-child{border-bottom:0}
+.board-dot{grid-area:dot;width:10px;height:10px;border-radius:50%}
+.board-name{grid-area:name;font:500 15px 'DM Sans';color:#f1f2ef;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-time{grid-area:time;font:700 15px 'DM Sans';color:#f6f7f5;text-align:right;white-space:nowrap}
+.board-days{grid-area:days;font:500 12px 'DM Sans';color:#8d9690;text-align:right;white-space:nowrap}
+.board-days small{font-size:11px;margin-left:3px;color:#6f7772}
+.board-donut-center svg{width:30px;height:30px;color:#ff8a3d;position:static;inset:auto}
+.challenge-head-tap{cursor:pointer;align-items:center}
+.challenge-head-tap h3{flex:1;min-width:0}
+.challenge-mini{font-size:13px;color:#8d9690;white-space:nowrap}
+.challenge-join-chip{border:1px solid #4b2713;background:#2a170a;color:#ff9b50;border-radius:99px;padding:4px 11px;font:700 12px 'DM Sans'}
+.challenge-head-right .give-chev{width:16px;height:16px;color:#8d9690;transition:transform .2s;flex-shrink:0}
+.challenge-head-right .give-chev.open{transform:rotate(180deg)}
+.challenge-compact .challenge-desc{margin-top:8px}
+.challenge-compact .challenge-bar-row,.challenge-compact .challenge-ranking{margin-top:10px}
+.challenge-compact .challenge-desc{margin:10px 0 0}
+/* group challenge cards get a soft blue outline so they stand out from the orange cards */
+.challenge-compact{border-color:rgba(91,158,234,.6);box-shadow:0 0 0 1px rgba(91,158,234,.10),0 0 18px rgba(91,158,234,.08)}
+.challenge-compact{border:2px solid #2f6fd0;box-shadow:0 0 18px rgba(47,111,208,.10)}

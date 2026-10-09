@@ -95,6 +95,15 @@ function autoColorForUserId(userId: string) {
 // member's color (their own pick, or their auto-color) and bumps any later member who'd collide
 // with an already-used color onto the next unused one from the palette, so every member in a
 // given group is visually distinguishable on its leaderboards/calendar.
+// The Group tab uses one warm palette instead of each person's own colour pick, so it matches the rest of the app.
+// The viewer always gets the vivid orange; everyone else follows in a fixed order (sorted by id, so it is stable).
+const GROUP_PALETTE = ["#ff7a3c", "#f4d9bd", "#c4561f", "#ffb27a", "#8f5a34", "#e8c39a", "#6e4528", "#b9b1a8"];
+function applyGroupPalette<T extends { id: string; color: string }>(members: T[], viewerId: string): T[] {
+  const ordered = [...members].sort((a, b) => (a.id === viewerId ? -1 : b.id === viewerId ? 1 : a.id.localeCompare(b.id)));
+  const colorById: Record<string, string> = {};
+  ordered.forEach((m, i) => { colorById[m.id] = GROUP_PALETTE[i % GROUP_PALETTE.length]; });
+  return members.map((m) => ({ ...m, color: colorById[m.id] }));
+}
 function dedupeMemberColors<T extends { color: string }>(members: T[]): T[] {
   const used = new Set<string>();
   return members.map((m) => {
@@ -359,7 +368,7 @@ const translations = {
       intro: "Stay accountable, climb the leaderboard, and make practice more fun.", createGroupBtn: "Create a group", joinWithCode: "Join with invite code",
       groupNamePlaceholder: "Group name", inviteCodePlaceholder: "Invite code", pleaseWait: "Please wait...", createGroup: "Create group",
       joinGroup: "Join group", back: "Back", inviteNotFound: "That invite code was not found.", couldNotCreate: "Could not create group.",
-      leaderboard: "LEADERBOARD", timePractised: "TIME PRACTISED", you: "You",
+      leaderboard: "LEADERBOARD", timePractised: "TIME PRACTISED", daysShort: "days", you: "You",
       teacherBadge: "Admin", showTeacherStats: "Show admin stats",
       awardMostDays: "Most practice days this year", awardMostMinutes: "Most time practised",
       medalBoard: "Hall of Fame", medalBoardEmpty: "No one yet", medalBoardAllTime: "ALL-TIME", medalBoardThisWeek: "THIS WEEK",
@@ -537,7 +546,7 @@ const translations = {
       intro: "Mantente responsable, sube en la clasificación y haz que practicar sea más divertido.", createGroupBtn: "Crear un grupo", joinWithCode: "Unirse con código de invitación",
       groupNamePlaceholder: "Nombre del grupo", inviteCodePlaceholder: "Código de invitación", pleaseWait: "Un momento...", createGroup: "Crear grupo",
       joinGroup: "Unirse al grupo", back: "Atrás", inviteNotFound: "No se encontró ese código de invitación.", couldNotCreate: "No se pudo crear el grupo.",
-      leaderboard: "CLASIFICACIÓN", timePractised: "TIEMPO PRACTICADO", you: "Tú",
+      leaderboard: "CLASIFICACIÓN", timePractised: "TIEMPO PRACTICADO", daysShort: "días", you: "Tú",
       teacherBadge: "Admin", showTeacherStats: "Mostrar estadísticas del admin",
       awardMostDays: "Más días de práctica este año", awardMostMinutes: "Más tiempo practicado",
       medalBoard: "Salón de la Fama", medalBoardEmpty: "Nadie todavía", medalBoardAllTime: "SIEMPRE", medalBoardThisWeek: "ESTA SEMANA",
@@ -2118,6 +2127,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [lastSentCheerId, setLastSentCheerId] = useState<string | null>(null);
   const [showCheerInbox, setShowCheerInbox] = useState(false);
   const [challengeMenuId, setChallengeMenuId] = useState<string | null>(null);
+  const [openChallenge, setOpenChallenge] = useState<string | null>(null);
   const [showAllImprovements, setShowAllImprovements] = useState(false);
   const [showGroupMore, setShowGroupMore] = useState(false);
   // The "tap a name" hint is only needed until someone has sent their first cheer to a person.
@@ -2165,7 +2175,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
       supabase.rpc("group_teacher_id", { target_group_id: targetGroup.id }),
     ]);
     const resolvedTeacherId: string | null = teacherIdRes ?? null;
-    const memberList = dedupeMemberColors((data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) })));
+    const memberList = applyGroupPalette((data ?? []).map((row: any) => ({ id: row.user_id, name: row.profiles?.name ?? "Drummer", color: row.profiles?.color ?? autoColorForUserId(row.user_id) })), user.id);
     const memberIds = memberList.map((m: any) => m.id);
     // A group's admin stays a full member (roster/calendar legend) even with stats
     // hidden -- only the ranked leaderboard arrays below exclude them. This applies to the
@@ -2550,20 +2560,44 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           <button type="button" className="group-add-btn" onClick={() => { setAddingGroup(true); setMode("start"); }}>+</button>
         </div>
       </header>
-      <div className="leaderboard time-card">
-        <span className="section-label">{T.group.leaderboard}</span>
-        {members.length > 1 && !cheerHintSeen && <span className="section-sublabel cheer-hint">{T.cheers.tapNameHint}</span>}
-        {daysTotals.map((member, idx) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{(idx === 0 ? "🥇 " : idx === 1 ? "🥈 " : idx === 2 ? "🥉 " : "")}{member.id === user.id ? member.name : <span role="button" tabIndex={0} className="name-cheer" onClick={() => openCheerFor(member.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCheerFor(member.id); }}>{member.name}</span>}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.days / Math.max(1, member.totalDays)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{member.days} / {member.totalDays}</span></div>)}
-      </div>
-      <div className="time-card"><span className="section-label">{T.group.timePractised}</span>
-        <div className="equipment-toggle time-view-toggle">
-          <button type="button" className={timeView === "all" ? "equipment-option selected" : "equipment-option"} onClick={() => setTimeView("all")}>{T.group.medalBoardAllTime}</button>
-          <button type="button" className={timeView === "week" ? "equipment-option selected" : "equipment-option"} onClick={() => setTimeView("week")}>{T.group.medalBoardThisWeek}</button>
-        </div>
-        <div className="leaderboard">
-          {(timeView === "week" ? weekTotals : totals).map((member) => <div key={member.id} className="leaderboard-row"><span className="leaderboard-name">{member.id === user.id ? member.name : <span role="button" tabIndex={0} className="name-cheer" onClick={() => openCheerFor(member.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCheerFor(member.id); }}>{member.name}</span>}</span><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${(member.total / Math.max(1, (timeView === "week" ? weekTotals : totals)[0]?.total ?? 0)) * 100}%`, background: member.color }} /></div><span className="leaderboard-value">{formatMinutes(member.total)}</span></div>)}
-        </div>
-      </div>
+      {(() => {
+        const rows = (timeView === "week" ? weekTotals : totals).map((m) => ({ ...m, days: daysTotals.find((d) => d.id === m.id) }));
+        const sum = rows.reduce((acc, r) => acc + r.total, 0);
+        const R = 47, C = 2 * Math.PI * R;
+        let offset = 0;
+        return <div className="time-card board-card">
+          <div className="board-head">
+            <span className="section-label">{T.group.leaderboard}</span>
+            <div className="board-toggle">
+              <button type="button" className={timeView === "all" ? "selected" : ""} onClick={() => setTimeView("all")}>{T.group.medalBoardAllTime}</button>
+              <button type="button" className={timeView === "week" ? "selected" : ""} onClick={() => setTimeView("week")}>{T.group.medalBoardThisWeek}</button>
+            </div>
+          </div>
+          {members.length > 1 && !cheerHintSeen && <span className="section-sublabel cheer-hint">{T.cheers.tapNameHint}</span>}
+          <div className="board-body">
+            <div className="board-donut">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r={R} fill="none" stroke="#1d2220" strokeWidth="22" />
+                {sum > 0 && rows.map((r) => {
+                  const len = (r.total / sum) * C;
+                  const seg = <circle key={r.id} cx="60" cy="60" r={R} fill="none" stroke={r.color} strokeWidth="22" strokeDasharray={`${Math.max(0, len - (rows.length > 1 ? 2.5 : 0))} ${C}`} strokeDashoffset={-offset} transform="rotate(-90 60 60)" />;
+                  offset += len;
+                  return seg;
+                })}
+              </svg>
+              
+            </div>
+            <div className="board-list">
+              {rows.map((r, idx) => <div key={r.id} className="board-row">
+                <i className="board-dot" style={{ background: r.color }} />
+                <span className="board-name">{r.id === user.id ? r.name : <span role="button" tabIndex={0} className="name-cheer" onClick={() => openCheerFor(r.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCheerFor(r.id); }}>{r.name}</span>}</span>
+                <span className="board-time">{formatMinutes(r.total)}</span>
+                <span className="board-days">{r.days ? `${r.days.days} / ${r.days.totalDays}` : ""}<small>{T.group.daysShort}</small></span>
+              </div>)}
+            </div>
+          </div>
+        </div>;
+      })()}
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span>{user.id === teacherId && <button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button>}</div>
         {showNewChallenge && <div className="challenge-form">
@@ -2607,16 +2641,22 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
           const progressLabel = c.goal_type === "minutes" ? T.group.minutesProgress(c.progress, c.target) : T.group.daysProgress(c.progress, c.target);
           const pct = Math.min(100, (c.progress / Math.max(1, c.target)) * 100);
           const stakes = [c.reward && `${T.group.reward} ${c.reward}`, c.punishment && `${T.group.punishment} ${c.punishment}`].filter(Boolean);
+          const isOpen = openChallenge === c.id;
           return <div key={c.id} className="challenge-card challenge-compact">
-            <div className="challenge-head"><h3>{c.name}{c.joined && <i className="challenge-tick" role="img" aria-label={T.group.joined} title={T.group.joined}>✓</i>}</h3>
-              <div className="challenge-head-right">{c.created_by === user.id && <button type="button" className="challenge-more" aria-label="Menu" onClick={() => setChallengeMenuId(challengeMenuId === c.id ? null : c.id)}>⋯</button>}</div>
+            <div className="challenge-head challenge-head-tap" role="button" tabIndex={0} aria-expanded={isOpen} onClick={() => setOpenChallenge(isOpen ? null : c.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setOpenChallenge(isOpen ? null : c.id); }}><h3>{c.name}{c.joined && <i className="challenge-tick" role="img" aria-label={T.group.joined} title={T.group.joined}>✓</i>}</h3>
+              <div className="challenge-head-right">
+                {!c.joined ? <button type="button" className="challenge-join-chip" onClick={(e) => { e.stopPropagation(); joinChallenge(c.id); }}>{T.group.joinChallengeBtn}</button> : null}
+                {c.created_by === user.id && <button type="button" className="challenge-more" aria-label="Menu" onClick={(e) => { e.stopPropagation(); setChallengeMenuId(challengeMenuId === c.id ? null : c.id); }}>⋯</button>}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={isOpen ? "give-chev open" : "give-chev"} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+              </div>
             </div>
             {challengeMenuId === c.id && <div className="challenge-menu"><button type="button" className="challenge-delete" onClick={() => { setChallengeMenuId(null); deleteChallenge(c.id); }}>{T.group.deleteChallenge}</button></div>}
-            <p className="challenge-desc">{desc} · {formatDMY(c.start_date).slice(0, 5)} - {formatDMY(c.end_date).slice(0, 5)}</p>
             {c.ranking.length <= 1 && <div className="challenge-bar-row"><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${pct}%` }} /></div><span className="challenge-progress-label">{progressLabel}</span></div>}
             {c.ranking.length > 1 && <div className="challenge-ranking">{c.ranking.map((r: any, idx: number) => <div key={r.id} className={r.id === user.id ? "challenge-rank-row is-me" : "challenge-rank-row"}><span className="rank-medal">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`}</span><span className="rank-name">{r.name}</span><div className="rank-bar"><div style={{ width: `${Math.min(100, (r.progress / Math.max(1, r.target)) * 100)}%` }} /></div><span className="rank-value">{c.goal_type === "minutes" ? T.group.minutesProgress(r.progress, r.target) : T.group.daysProgress(r.progress, r.target)}</span></div>)}</div>}
+            {isOpen && <>
+            <p className="challenge-desc">{desc} · {formatDMY(c.start_date).slice(0, 5)} - {formatDMY(c.end_date).slice(0, 5)}</p>
             {stakes.length > 0 && <p className="challenge-stakes">{stakes.join("  ·  ")}</p>}
-            {!c.joined && <div className="challenge-actions"><button className="secondary challenge-join" onClick={() => joinChallenge(c.id)}>{T.group.joinChallengeBtn}</button></div>}
+            </>}
           </div>;
         })}
       </div>
