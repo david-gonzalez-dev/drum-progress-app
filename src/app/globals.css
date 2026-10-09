@@ -925,3 +925,5 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .rung-progress-track{height:5px}
 /* Your focus: tier names are plain labels again (no pills) */
 .focus-pill-label{background:none;border:0;border-radius:0;padding:0;overflow:visible;text-overflow:clip}
+/* group challenge cards: a very dark orange outline instead of blue */
+.challenge-compact{border:2px solid #7a3512;box-shadow:0 0 18px rgba(122,53,18,.14)}
