@@ -393,15 +393,15 @@ const translations = {
     },
     achievements: {
       unlocked: "unlocked", nextUp: "Next", allDone: "All unlocked", done: "Unlocked",
-      level: (l: number, n: number) => l === 0 ? "Locked" : `Level ${l} of ${n}`,
-      category: { time: "Time", streak: "Streak", days: "Consistency", sessions: "Skill Trainer", tempo: "Tempo", variety: "Variety", long: "Long day", challenges: "Challenges", mastery: "Mastery" } as Record<string, string>,
+      level: (l: number, n: number) => l === 0 ? "Locked" : `Level ${l} of ${n}`, levelShort: (l: number) => `Level ${l}`, notYet: "Not yet",
+      category: { time: "Time", streak: "Streak", days: "Consistency", sessions: "Trainer", tempo: "Tempo", variety: "Variety", long: "Long day", challenges: "Challenges", mastery: "Mastery" } as Record<string, string>,
       label: (key: string, n: number) => {
         switch (key) {
-          case "time": return `${n} ${n === 1 ? "hour" : "hours"} practised`;
+          case "time": return n < 1 ? `${Math.round(n * 60)} minutes practised` : `${n} ${n === 1 ? "hour" : "hours"} practised`;
           case "streak": return `${n}-day streak`;
           case "days": return `${n} days practised`;
           case "sessions": return n === 1 ? "First Skill Trainer session" : `${n} Skill Trainer sessions`;
-          case "tempo": return `5 rudiments at ${n} BPM`;
+          case "tempo": { const need = TEMPO_REQUIRED_BY_BPM[n] ?? 5; return `${need} ${need === 1 ? "rudiment" : "rudiments"} at ${n} BPM`; }
           case "variety": return `${n} different exercises`;
           case "long": return `${n} min in one day`;
           case "mastery": return n === 1 ? "First session rated mastered" : `${n} sessions rated mastered`;
@@ -571,15 +571,15 @@ const translations = {
     },
     achievements: {
       unlocked: "desbloqueados", nextUp: "Siguiente", allDone: "Todo desbloqueado", done: "Desbloqueado",
-      level: (l: number, n: number) => l === 0 ? "Bloqueado" : `Nivel ${l} de ${n}`,
-      category: { time: "Tiempo", streak: "Racha", days: "Constancia", sessions: "Skill Trainer", tempo: "Tempo", variety: "Variedad", long: "Día largo", challenges: "Retos", mastery: "Maestría" } as Record<string, string>,
+      level: (l: number, n: number) => l === 0 ? "Bloqueado" : `Nivel ${l} de ${n}`, levelShort: (l: number) => `Nivel ${l}`, notYet: "Aún no",
+      category: { time: "Tiempo", streak: "Racha", days: "Constancia", sessions: "Entrenador", tempo: "Tempo", variety: "Variedad", long: "Día largo", challenges: "Retos", mastery: "Maestría" } as Record<string, string>,
       label: (key: string, n: number) => {
         switch (key) {
-          case "time": return `${n} ${n === 1 ? "hora" : "horas"} practicadas`;
+          case "time": return n < 1 ? `${Math.round(n * 60)} minutos practicados` : `${n} ${n === 1 ? "hora" : "horas"} practicadas`;
           case "streak": return `Racha de ${n} días`;
           case "days": return `${n} días practicados`;
           case "sessions": return n === 1 ? "Primera sesión de Skill Trainer" : `${n} sesiones de Skill Trainer`;
-          case "tempo": return `5 rudimentos a ${n} BPM`;
+          case "tempo": { const need = TEMPO_REQUIRED_BY_BPM[n] ?? 5; return `${need} ${need === 1 ? "rudimento" : "rudimentos"} a ${n} BPM`; }
           case "variety": return `${n} ejercicios distintos`;
           case "long": return `${n} min en un día`;
           case "mastery": return n === 1 ? "Primera sesión dominada" : `${n} sesiones dominadas`;
@@ -2780,26 +2780,29 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
 // nothing to store: an achievement is unlocked the moment the numbers reach its target.
 type AchievementCategory = { key: string; targets: number[] };
 const ACHIEVEMENT_CATEGORIES: AchievementCategory[] = [
-  { key: "time", targets: [1, 5, 10, 25, 50, 100] },       // hours practised in total
-  { key: "streak", targets: [3, 7, 14, 30, 60, 100] },     // longest streak in days
-  { key: "days", targets: [5, 15, 30, 60, 100, 200] },     // days practised in total
-  { key: "sessions", targets: [1, 10, 25, 50, 100, 250] }, // Skill Trainer sessions
-  { key: "tempo", targets: [60, 80, 100, 120, 150, 200] }, // each tempo: 5 different rudiments played at it (or faster)
-  { key: "variety", targets: [3, 8, 15, 25, 40] },         // different Skill Trainer exercises
-  { key: "long", targets: [30, 60, 90, 120, 180] },        // most minutes in a single day
-  { key: "challenges", targets: [1, 3, 5, 10, 25] },       // personal challenges won
-  { key: "mastery", targets: [1, 5, 15, 30, 60] },         // Skill Trainer sessions rated "mastered"
+  { key: "time", targets: [0.5, 2, 6, 15, 40] },          // hours practised in total (level 1 = just 30 minutes)
+  { key: "streak", targets: [2, 4, 7, 14, 30] },          // longest streak in days
+  { key: "days", targets: [1, 3, 7, 20, 50] },            // days practised in total
+  { key: "sessions", targets: [1, 3, 6, 15, 40] },        // Skill Trainer sessions
+  { key: "tempo", targets: [60, 80, 100, 120, 150] },     // tempos where enough different rudiments were played (see TEMPO_REQUIRED)
+  { key: "variety", targets: [2, 5, 10, 18, 30] },        // different Skill Trainer exercises
+  { key: "challenges", targets: [1, 2, 4, 7, 12] },       // personal challenges won
+  { key: "mastery", targets: [1, 3, 8, 20, 40] },         // Skill Trainer sessions rated "mastered"
 ];
-const TEMPO_RUDIMENTS_NEEDED = 5;
-// Badges are quiet greys on the dark background; only the two highest levels turn orange, so the Progress tab
-// is not a wall of orange. The higher the level, the lighter the outline and icon.
+// Tempo milestone: level 1 needs 1 rudiment played at 60 BPM, level 2 needs 2 at 80 BPM, ... level 5 needs 5 at 150 BPM.
+const TEMPO_REQUIRED = [1, 2, 3, 4, 5];
+const TEMPO_REQUIRED_BY_BPM: Record<number, number> = { 60: 1, 80: 2, 100: 3, 120: 4, 150: 5 };
+// Level 5 (the top) gets the brightest badge; the others step up through the darker oranges.
+const badgeTierFor = (levelIndex: number, total: number) => Math.min(ACHIEVEMENT_TIERS.length - 1, levelIndex + (levelIndex === total - 1 ? 1 : 0));
+// A badge is grey while it is locked and turns orange the moment it is achieved; higher levels fill up with more
+// orange (a dark chip with an orange outline at level 1, solid bright orange at the top).
 const ACHIEVEMENT_TIERS = [
-  { from: "#1b1d1c", to: "#1b1d1c", stroke: "#3a3f3b", glyph: "#8d9690", rim: "rgba(255,255,255,.05)" },
-  { from: "#1f2221", to: "#1f2221", stroke: "#4a504b", glyph: "#a5ada7", rim: "rgba(255,255,255,.07)" },
-  { from: "#232726", to: "#232726", stroke: "#5c635e", glyph: "#c0c6c1", rim: "rgba(255,255,255,.09)" },
-  { from: "#2a2e2c", to: "#262a27", stroke: "#7a827c", glyph: "#e1e4e1", rim: "rgba(255,255,255,.12)" },
+  { from: "#1c130d", to: "#1c130d", stroke: "#5a2f17", glyph: "#b7743f", rim: "rgba(255,155,80,.14)" },
+  { from: "#2a170a", to: "#2a170a", stroke: "#7a4220", glyph: "#d98543", rim: "rgba(255,155,80,.18)" },
+  { from: "#351d0d", to: "#351d0d", stroke: "#a35a24", glyph: "#ef9248", rim: "rgba(255,155,80,.22)" },
   { from: "#4a2610", to: "#3a1e0c", stroke: "#d9773a", glyph: "#ff9b50", rim: "rgba(255,155,80,.28)" },
-  { from: "#ff9b50", to: "#ff7a2e", stroke: "#ffb27a", glyph: "#241508", rim: "rgba(0,0,0,.2)" },
+  { from: "#ff9b50", to: "#ff7a2e", stroke: "#ffb27a", glyph: "#241508", rim: "rgba(0,0,0,.18)" },
+  { from: "#ffb27a", to: "#ff6b1a", stroke: "#ffd0a8", glyph: "#241508", rim: "rgba(0,0,0,.2)" },
 ];
 const ACHIEVEMENT_GLYPHS: Record<string, React.ReactNode> = {
   time: <><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3.2 2" /></>,
@@ -2828,10 +2831,11 @@ function AchievementsSection({ stats, tempoCounts, wonChallenges, language, T }:
     if (cat.key === "tempo") {
       // Tempos unlock in order; the progress shown is "rudiments played at the next tempo, out of 5".
       let level = 0;
-      while (level < cat.targets.length && (tempoCounts[level] ?? 0) >= TEMPO_RUDIMENTS_NEEDED) level++;
+      while (level < cat.targets.length && (tempoCounts[level] ?? 0) >= TEMPO_REQUIRED[level]) level++;
       const next = level < cat.targets.length ? cat.targets[level] : null;
-      const value = next === null ? TEMPO_RUDIMENTS_NEEDED : Math.min(tempoCounts[level] ?? 0, TEMPO_RUDIMENTS_NEEDED);
-      return { cat, value, level, next, denom: TEMPO_RUDIMENTS_NEEDED, pct: (value / TEMPO_RUDIMENTS_NEEDED) * 100 };
+      const need = next === null ? TEMPO_REQUIRED[TEMPO_REQUIRED.length - 1] : TEMPO_REQUIRED[level];
+      const value = next === null ? need : Math.min(tempoCounts[level] ?? 0, need);
+      return { cat, value, level, next, denom: need, pct: (value / need) * 100 };
     }
     const value = stats[cat.key] ?? 0;
     const level = cat.targets.filter((target) => value >= target).length;
@@ -2855,9 +2859,10 @@ function AchievementsSection({ stats, tempoCounts, wonChallenges, language, T }:
     </div>
     <div className="ach-grid">
       {rows.map((r) => <button key={r.cat.key} type="button" className="ach-tile" onClick={() => setOpenKey(r.cat.key)}>
-        <AchievementBadge glyph={r.cat.key} tier={Math.max(0, r.level - 1)} locked={r.level === 0} size={42} />
         <span className="ach-tile-name">{A.category[r.cat.key]}</span>
-        <div className="ach-bar small"><div style={{ width: `${Math.min(100, ((r.level + (r.next === null ? 0 : r.pct / 100)) / r.cat.targets.length) * 100)}%` }} /></div>
+        <AchievementBadge glyph={r.cat.key} tier={badgeTierFor(Math.max(0, r.level - 1), r.cat.targets.length)} locked={r.level === 0} size={36} />
+        <span className={r.level > 0 ? "ach-level on" : "ach-level"}>{r.level > 0 ? A.levelShort(r.level) : A.notYet}</span>
+        <div className="ach-pips" aria-hidden="true">{r.cat.targets.map((_, i) => <i key={i} className={i < r.level ? "on" : ""} />)}</div>
       </button>)}
     </div>
     {wonChallenges.length > 0 && <div className="trophy-list ach-trophies">
@@ -2869,10 +2874,10 @@ function AchievementsSection({ stats, tempoCounts, wonChallenges, language, T }:
       <div className="cheer-list">
         {open.cat.targets.map((target, i) => {
           const done = i < open.level;
-          const sub = open.cat.key === "tempo" ? `${Math.min(tempoCounts[i] ?? 0, TEMPO_RUDIMENTS_NEEDED)} / ${TEMPO_RUDIMENTS_NEEDED}` : `${fmt(open.cat.key, open.value)} / ${target}`;
+          const sub = open.cat.key === "tempo" ? `${Math.min(tempoCounts[i] ?? 0, TEMPO_REQUIRED[i])} / ${TEMPO_REQUIRED[i]}` : `${fmt(open.cat.key, open.value)} / ${target}`;
           return <div key={target} className={done ? "ach-row done" : "ach-row"}>
-            <AchievementBadge glyph={open.cat.key} tier={i} locked={!done} size={42} />
-            <div className="ach-row-text"><span className="ach-row-title">{A.label(open.cat.key, target)}</span><span className="ach-row-sub">{done ? A.done : sub}</span></div>
+            <AchievementBadge glyph={open.cat.key} tier={badgeTierFor(i, open.cat.targets.length)} locked={!done} size={42} />
+            <div className="ach-row-text"><span className="ach-row-title">{A.levelShort(i + 1)} · {A.label(open.cat.key, target)}</span><span className="ach-row-sub">{done ? A.done : sub}</span></div>
             {done && <span className="ach-check">✓</span>}
           </div>;
         })}

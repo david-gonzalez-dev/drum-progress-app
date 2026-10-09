@@ -927,3 +927,31 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .focus-pill-label{background:none;border:0;border-radius:0;padding:0;overflow:visible;text-overflow:clip}
 /* group challenge cards: a very dark orange outline instead of blue */
 .challenge-compact{border:2px solid #7a3512;box-shadow:0 0 18px rgba(122,53,18,.14)}
+/* Home: "No practice yet" is regular weight and a point smaller */
+.today-empty .today-empty-title{font-weight:400;font-size:22px}
+/* tempo cards: lighter numbers and a smaller star/tick */
+.rung .bpm{font:500 19px 'DM Sans';width:34px;letter-spacing:0}
+.rung.unlocked .rung-progress-label{font-size:14px}
+.rung .bpm{font-size:16px;width:30px}
+/* milestone tiles: "Level n" and five little pips instead of a bar */
+.ach-level{font:600 12px 'DM Sans';color:#6f7772;margin-top:2px}
+.ach-level.on{color:#ff9b50}
+.ach-pips{display:flex;gap:4px;margin-top:5px}
+.ach-pips i{width:7px;height:7px;border-radius:50%;background:#262b28}
+.ach-pips i.on{background:#ff9b50}
+.ach-tile-name{margin-bottom:6px}
+.ach-tile .ach-badge{margin-bottom:2px}
+.ach-tile-name{font-size:14px}
+.ach-level{font-size:11px}
+/* milestones: two rows of four, a shorter section */
+.ach-grid{grid-template-columns:repeat(4,1fr);gap:6px}
+.ach-tile{padding:8px 2px 8px;border-radius:12px}
+.ach-tile-name{font-size:12px;margin-bottom:4px}
+.ach-level{font-size:10.5px}
+.ach-pips{gap:3px;margin-top:4px}
+.ach-pips i{width:6px;height:6px}
+.ach-pips i.on{background:#4fb57a}
+.ach-pips i.on{background:#ff9b50}
+.ach-pips{gap:4px}
+.ach-pips i{width:8px;height:8px}
+.ach-pips i.on{background:#4fb57a}
