@@ -961,3 +961,8 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .stats-icons .stat-cell strong{font-size:17px}
 .today-empty .today-empty-title{font-size:19px}
 .today-empty .today-empty-title{color:#d2d6d3}
+/* menu bar: a little more room below the tab names */
+.bottom-nav{height:82px}
+.shell{padding-bottom:100px}
+/* menu bar: soft white glow along the top edge */
+.bottom-nav{border-top:1px solid rgba(255,255,255,.22);box-shadow:0 -4px 16px rgba(255,255,255,.07),0 -1px 3px rgba(255,255,255,.1)}
