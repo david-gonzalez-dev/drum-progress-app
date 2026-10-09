@@ -966,3 +966,6 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .shell{padding-bottom:100px}
 /* menu bar: soft white glow along the top edge */
 .bottom-nav{border-top:1px solid rgba(255,255,255,.22);box-shadow:0 -4px 16px rgba(255,255,255,.07),0 -1px 3px rgba(255,255,255,.1)}
+/* "What happened" picker: tags grouped under small headings */
+.issue-groups{display:flex;flex-direction:column;gap:14px;margin-bottom:14px}
+.issue-group-title{display:block;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:#7c837e;font-weight:700;margin-bottom:7px}

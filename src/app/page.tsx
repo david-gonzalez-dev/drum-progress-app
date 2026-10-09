@@ -7,16 +7,32 @@ type Tab = "today" | "practice" | "group" | "progress" | "settings" | "admin";
 type Log = { minutes: number; seconds: number; items: string[]; customItems: string[]; notes: string; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null };
 type Lang = "en" | "es";
 
-const SESSION_ISSUE_TAGS: { en: string; es: string }[] = [
-  { en: "Wrist tension", es: "Tensión en la muñeca" },
-  { en: "Thumb tension", es: "Tensión en el pulgar" },
-  { en: "Lost control of the stick", es: "Perdí el control de la baqueta" },
-  { en: "Messy dynamics", es: "Dinámica desordenada" },
-  { en: "Stick slides", es: "La baqueta se resbala" },
-  { en: "Index finger issue", es: "Problema con el dedo índice" },
-  { en: "Feels shaky", es: "Se siente inestable" },
-  { en: "Left hand", es: "Mano izquierda" },
+// Grouped so the "what happened" picker reads as four short rows instead of one wall of chips.
+const SESSION_ISSUE_GROUPS: { title: { en: string; es: string }; tags: { en: string; es: string }[] }[] = [
+  { title: { en: "Grip and tension", es: "Agarre y tensión" }, tags: [
+    { en: "Wrist tension", es: "Tensión en la muñeca" },
+    { en: "Thumb tension", es: "Tensión en el pulgar" },
+    { en: "Index finger issue", es: "Problema con el dedo índice" },
+    { en: "Stick slides", es: "La baqueta se resbala" },
+    { en: "Lost control of the stick", es: "Perdí el control de la baqueta" },
+  ] },
+  { title: { en: "Sound and timing", es: "Sonido y tiempo" }, tags: [
+    { en: "Uneven timing", es: "Tiempo irregular" },
+    { en: "Rushing", es: "Me aceleré" },
+    { en: "Messy dynamics", es: "Dinámica desordenada" },
+    { en: "Feels shaky", es: "Se siente inestable" },
+  ] },
+  { title: { en: "Weaker hand", es: "Mano más débil" }, tags: [
+    { en: "Left hand", es: "Mano izquierda" },
+    { en: "Right hand", es: "Mano derecha" },
+  ] },
+  { title: { en: "Mind and body", es: "Mente y cuerpo" }, tags: [
+    { en: "Getting tired", es: "Me cansé" },
+    { en: "Lost focus", es: "Perdí la concentración" },
+    { en: "Got stuck", es: "Me atasqué" },
+  ] },
 ];
+const SESSION_ISSUE_TAGS: { en: string; es: string }[] = SESSION_ISSUE_GROUPS.flatMap((g) => g.tags);
 const PRACTICE_ITEMS = [
   { en: "Rudiments", es: "Rudimentos" },
   { en: "Single Strokes", es: "Golpes simples" },
@@ -1679,7 +1695,7 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
       {(() => {
         const loggedItems = todayLog ? [...todayLog.items, ...todayLog.customItems] : [];
         const allItems: string[] = Array.from(new Set([...loggedItems, ...todaySkillExercises]));
-        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <PracticedChip key={item} item={item} skill={todaySkillExercises.includes(item)} language={language} />)}</div> : <p className="hint">{T.today.noPracticeYet}</p>;
+        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <PracticedChip key={item} item={item} skill={todaySkillExercises.includes(item)} language={language} />)}</div> : (todayMinutes === 0 ? <p className="hint">{T.today.noPracticeYet}</p> : null);
       })()}
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>}
@@ -2909,8 +2925,15 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
     const practicedEnSet = new Set(practiceSessions.map((s) => s.item_en));
     return PRACTICE_EXERCISES
       .filter((e) => practicedEnSet.has(e.en))
-      .map((e) => ({ en: e.en, label: e[language as Lang], unlockedCount: bpmLevelsFor(e.en).filter((level) => qualifyingMinutesFor(practiceSessions, e.en, level) >= UNLOCK_MINUTES).length }))
-      .sort((a, b) => b.unlockedCount - a.unlockedCount || a.label.localeCompare(b.label));
+      .map((e) => {
+        // Highest tier with any progress (0 = Beginner ... 3 = Legend), plus how far through it they are.
+        const tiers = tiersFor(e.en);
+        let maxTier = -1, maxTierPct = 0;
+        tiers.forEach((t, i) => { const pct = tierProgressFor(practiceSessions, e.en, t); if (pct > 0) { maxTier = i; maxTierPct = pct; } });
+        return { en: e.en, label: e[language as Lang], maxTier, maxTierPct, unlockedCount: bpmLevelsFor(e.en).filter((level) => qualifyingMinutesFor(practiceSessions, e.en, level) >= UNLOCK_MINUTES).length };
+      })
+      // Organised by the highest tier reached, then how far through that tier, then total levels unlocked.
+      .sort((a, b) => b.maxTier - a.maxTier || b.maxTierPct - a.maxTierPct || b.unlockedCount - a.unlockedCount || a.label.localeCompare(b.label));
   }, [practiceSessions, language]);
   const totals = useMemo(() => {
     const sums: Record<string, number> = {};
@@ -3318,10 +3341,9 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
     setStep("detail");
   }
   function handleRatingTap(r: string) {
-    // Comfortable/mastered don't need an explanation, so they save immediately; the struggling
-    // ratings reveal the issue tags/note step first since that's when context is actually useful.
-    if (RATINGS_NEEDING_NOTE.includes(r)) setSelectedRating(r);
-    else submitRating(r);
+    // Tapping a rating only selects it; a Save button then confirms. The struggling ratings also
+    // reveal the issue tags/note step first since that's when context is actually useful.
+    setSelectedRating(r);
   }
   function skipRating() {
     setJustPracticedLevel(bpm);
@@ -3511,10 +3533,12 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
           if (!recentDays.length) return <p className="hint">{T.practiceMode.noRecentDays}</p>;
           return recentDays.map((d) => {
             const entry = logs[d];
-            const names = Array.from(new Set([...(entry.items ?? []), ...(entry.customItems ?? [])])).map((n: string) => practiceItemLabel(n, language));
+            // Skill Trainer exercises practised that day are logged separately from Quick Practice's tags, so merge both.
+            const skillNames = (sessions ?? []).filter((s: any) => s.practiced_on === d).map((s: any) => s.item_en as string);
+            const names = Array.from(new Set([...(entry.items ?? []), ...(entry.customItems ?? []), ...skillNames])).map((n: string) => practicedItemLabel(n, language));
             return <div key={d} className="quick-recent-row">
               <span className="quick-recent-date">{new Date(d + "T12:00:00").toLocaleDateString(language === "es" ? "es-ES" : "en-US", { weekday: "short" })} {formatDMY(d).slice(0, 5)}</span>
-              <span className="quick-recent-items">{names.slice(0, 3).join(", ") || ""}</span>
+              <span className="quick-recent-items">{names.slice(0, 3).join(", ")}{names.length > 3 ? ` +${names.length - 3}` : ""}</span>
               <span className="quick-recent-min">{formatMinutes(entry.minutes)}</span>
             </div>;
           });
@@ -3632,7 +3656,7 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
         </div>
         {RATINGS_NEEDING_NOTE.includes(editRating ?? "") && <>
           <label className="input-label issue-label">{T.practiceMode.issueLabel}</label>
-          <div className="chips">{SESSION_ISSUE_TAGS.map((tag) => <button key={tag.en} onClick={() => toggleEditIssue(tag.en)} className={editIssues.includes(tag.en) ? "chip selected" : "chip"}>{editIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div>
+          <div className="issue-groups">{SESSION_ISSUE_GROUPS.map((g) => <div key={g.title.en} className="issue-group"><span className="issue-group-title">{g.title[language as Lang]}</span><div className="chips">{g.tags.map((tag) => <button key={tag.en} onClick={() => toggleEditIssue(tag.en)} className={editIssues.includes(tag.en) ? "chip selected" : "chip"}>{editIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div></div>)}</div>
           <textarea value={editNote} onChange={(e: any) => setEditNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
         </>}
         <button className="save" onClick={saveEditRating}>{T.practiceMode.saveRating}<span>→</span></button>
@@ -3662,9 +3686,10 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
       <div className="rating-grid">
         {RATING_ORDER.map((r) => <button key={r} className={selectedRating === r ? `rating-btn ${r} selected` : `rating-btn ${r}`} onClick={() => handleRatingTap(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
       </div>
-      {selectedRating && <div className="form-card">
+      {selectedRating && !RATINGS_NEEDING_NOTE.includes(selectedRating) && <button className="save" onClick={() => submitRating(selectedRating)}>{T.practiceMode.saveRating}<span>→</span></button>}
+      {selectedRating && RATINGS_NEEDING_NOTE.includes(selectedRating) && <div className="form-card">
         <label className="input-label issue-label">{T.practiceMode.issueLabel}</label>
-        <div className="chips">{SESSION_ISSUE_TAGS.map((tag) => <button key={tag.en} onClick={() => toggleSessionIssue(tag.en)} className={sessionIssues.includes(tag.en) ? "chip selected" : "chip"}>{sessionIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div>
+        <div className="issue-groups">{SESSION_ISSUE_GROUPS.map((g) => <div key={g.title.en} className="issue-group"><span className="issue-group-title">{g.title[language as Lang]}</span><div className="chips">{g.tags.map((tag) => <button key={tag.en} onClick={() => toggleSessionIssue(tag.en)} className={sessionIssues.includes(tag.en) ? "chip selected" : "chip"}>{sessionIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div></div>)}</div>
         <textarea value={sessionNote} onChange={(e: any) => setSessionNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
         <button className="save" onClick={() => submitRating(selectedRating)}>{T.practiceMode.saveRating}<span>→</span></button>
       </div>}
