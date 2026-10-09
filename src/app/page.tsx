@@ -1698,12 +1698,10 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
         {pinnedExercises.slice(0, MAX_PINNED_EXERCISES).map((en: string) => {
           const label = PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en;
           const unlockedLevels = bpmLevelsFor(en).filter((level) => qualifyingMinutesFor(practiceSessions, en, level) >= UNLOCK_MINUTES);
-          const bestBpm = unlockedLevels.length ? Math.max(...unlockedLevels) : null;
           const totalMinutes = practiceSessions.filter((s: any) => s.item_en === en).reduce((sum: number, s: any) => sum + s.duration_minutes, 0);
           return <button key={en} className="home-pinned-row" onClick={() => onOpenExercise(en)}>
             <div className="home-pinned-head"><span className="home-pinned-name">{label}</span><span className="home-pinned-time">{formatMinutes(totalMinutes)}</span></div>
             {unlockedLevels.length > 0 ? <>
-              <span className="home-pinned-bpm">{bestBpm} BPM</span>
               <div className="tier-strip home-pinned-tier-strip">
                 {tiersFor(en).map((tier) => <div key={tier.key} className="tier-seg">{renderTierSegBar(tierProgressFor(practiceSessions, en, tier), tierIsSkipped(practiceSessions, en, tier))}</div>)}
               </div>
