@@ -450,7 +450,7 @@ const translations = {
       maxPinnedReached: (max: number) => `You can pin up to ${max} exercises. Unpin one first.`,
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} PINNED`, pinManagerTitle: "Your Focus", pinManagerDone: "Done",
       pinManagerAddBtn: "+ Add exercise", pinManagerSearchPlaceholder: "Search exercises...", pinManagerEmpty: "Nothing pinned yet. Add up to 5 to track here.",
-      quickTitle: "Quick Practice",
+      quickTitle: "Quick Practice", quickSub: "Log minutes, metronome, timer", continueLabel: "Continue where you left off", skillSearchPlaceholder: "Search rudiments and exercises", skillNoMatch: "Nothing matches that search.", skillSub: "Rudiments and exercises", challengesSub: "Set your own practice goal",
       trainTitle: "Skill Trainer",
       rudimentListIntro: "Unlock 2 tempos to open the next rudiment.",
       tempoCompleteIntro: (min: number) => `Practice a tempo for ${min} min to complete it.`,
@@ -628,7 +628,7 @@ const translations = {
       maxPinnedReached: (max: number) => `Puedes fijar hasta ${max} ejercicios. Quita uno primero.`,
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} FIJADOS`, pinManagerTitle: "Tu enfoque", pinManagerDone: "Listo",
       pinManagerAddBtn: "+ Añadir ejercicio", pinManagerSearchPlaceholder: "Buscar ejercicios...", pinManagerEmpty: "Aún no hay nada fijado. Añade hasta 5 para verlos aquí.",
-      quickTitle: "Práctica rápida",
+      quickTitle: "Práctica rápida", quickSub: "Registra minutos, metrónomo, temporizador", continueLabel: "Continúa donde lo dejaste", skillSearchPlaceholder: "Buscar rudimentos y ejercicios", skillNoMatch: "Nada coincide con esa búsqueda.", skillSub: "Rudimentos y ejercicios", challengesSub: "Ponte tu propia meta de práctica",
       trainTitle: "Entrenador de habilidades",
       rudimentListIntro: "Desbloquea 2 tempos para abrir el siguiente rudimento.",
       tempoCompleteIntro: (min: number) => `Practica un tempo durante ${min} min para completarlo.`,
@@ -1024,7 +1024,8 @@ export default function Home() {
   // direct client write to this column; only the admin_set_points_enabled RPC can change it.
   const [pointsEnabled, setPointsEnabled] = useState(false);
   const T = translations[language];
-  const [practiceStep, setPracticeStep] = useState<"category" | "tiers" | "exerciseGroups" | "list" | "detail" | "session" | "rate">("category");
+  const [skillTab, setSkillTab] = useState<"rudiments" | "exercises">("rudiments");
+  const [practiceStep, setPracticeStep] = useState<"home" | "quick" | "skill" | "challenges" | "skillList" | "detail" | "session" | "rate">("home");
   const [practiceCategory, setPracticeCategory] = useState<string | null>(null);
   // Which of the Rudiments list's three tier cards (Foundation/Intermediate/Complex) is open --
   // separate from practiceCategory since it's only meaningful when category is "rudiments".
@@ -1332,8 +1333,8 @@ export default function Home() {
   const hasUnreadCheers = cheerUnreadCount(cheers, user.id, cheersSeenAt) > 0;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className={timerBanner ? "shell has-timer-banner" : "shell"}>
-    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("category"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setPracticeCategory("rudiments"); setPracticeStep("tiers"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("home"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setSkillTab("rudiments"); setPracticeStep("skill"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} displayName={displayName} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
@@ -1350,7 +1351,7 @@ export default function Home() {
         <button className="save" onClick={() => setProgressToast("")}>{T.practiceMode.niceBtn}</button>
       </div>
     </div>}
-    <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); if (id === "group" && tab === "group") setGroupPickerKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("category"); }}><span>{NAV_ICONS[id]}{id === "group" && hasUnreadCheers && tab !== "group" && <i className="nav-dot" />}</span>{T.nav[id]}</button>)}</nav>
+    <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); if (id === "group" && tab === "group") setGroupPickerKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("home"); }}><span>{NAV_ICONS[id]}{id === "group" && hasUnreadCheers && tab !== "group" && <i className="nav-dot" />}</span>{T.nav[id]}</button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} sharedTimer={timerRun} onUsedDuringTimer={() => addTimerCredit(0, true)} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     <SessionTimer open={sessionTimer} close={() => setSessionTimer(false)} onOpen={() => setSessionTimer(true)} onBannerChange={setTimerBanner} onRunChange={setTimerRun} timerCredit={timerCredit} onCreditReset={() => saveTimerCredit(null)} onAddPractice={(seconds, items, customItems, usedMetronome) => addMetronomePractice(seconds, items, customItems, usedMetronome)} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
@@ -3042,7 +3043,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setRudimentTier, exerciseGroup, setExerciseGroup, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, openSessionTimer, metronomeTone, user, setError, language, T }: any) {
+function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCategory, rudimentTier, setRudimentTier, exerciseGroup, setExerciseGroup, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, openSessionTimer, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -3060,6 +3061,10 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
   // The practice-element selector only exists inside this modal now -- Quick Practice's
   // top-level card never shows it, so tapping Save Practice always opens it first.
   const [showWhatModal, setShowWhatModal] = useState(false);
+  const [skillSearch, setSkillSearch] = useState("");
+  const [skillSection, setSkillSection] = useState<string | null>(null);
+  // Coming back to the Practice hub forgets which Skill Trainer section was open, so the exercise screen's back button never points at a stale list.
+  useEffect(() => { if (step === "home") setSkillSection(null); }, [step]);
   function handleSaveClick() { setShowWhatModal(true); }
   function handleModalSave() {
     if (selected.length === 0 && customItems.length === 0) return;
@@ -3242,10 +3247,11 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const CATEGORY_LABEL: Record<string, string> = { rudiments: T.practiceMode.categoryRudiments, exercises: T.practiceMode.categoryExercises, rhythms: T.practiceMode.categoryRhythms };
   const SUBDIVISION_LABEL: Record<string, string> = { quarter: T.practiceMode.subdivisionQuarter, eighth: T.practiceMode.subdivisionEighth, triplet: T.practiceMode.subdivisionTriplet, sixteenth: T.practiceMode.subdivisionSixteenth };
-  function openCategory(cat: string) { setCategory(cat); setStep(cat === "rudiments" ? "tiers" : cat === "exercises" ? "exerciseGroups" : "list"); }
-  function openRudimentTier(tier: string) { setRudimentTier(tier); setStep("list"); }
-  function openExerciseGroup(group: string) { setExerciseGroup(group); setStep("list"); }
-  function openExercise(itemEn: string) { setJustPracticedLevel(null); setExercise(itemEn); setStep("detail"); }
+  function openExercise(itemEn: string) {
+    const match = PRACTICE_EXERCISES.find((e) => e.en === itemEn);
+    if (match) { setCategory(match.category); setRudimentTier((match as any).tier ?? null); setExerciseGroup((match as any).exerciseGroup ?? null); }
+    setJustPracticedLevel(null); setExercise(itemEn); setStep("detail");
+  }
   function startSession(targetBpm: number) { setJustPracticedLevel(null); setBpm(targetBpm); setStep("session"); }
   async function handleSessionEnd(elapsedSeconds: number) {
     const sessionMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
@@ -3306,10 +3312,121 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
     </button>;
   }
 
-  if (step === "category") {
+  if (step === "home") {
+    const lastSession = sessions.length ? sessions.reduce((latest: any, x: any) => (x.created_at > latest.created_at ? x : latest), sessions[0]) : null;
+    const lastMatch = lastSession ? PRACTICE_EXERCISES.find((e) => e.en === lastSession.item_en) : null;
+    const todayTotal = (Number(minutes) || 0) + (Number(seconds) || 0) / 60;
+    const goalPctHub = dailyGoal ? Math.min(100, (todayTotal / Math.max(1, dailyGoal)) * 100) : 0;
     return <section className="page">
       <header className="simple-head"><p className="eyebrow">{T.practiceMode.pageEyebrow}</p><h1>{T.practiceMode.pageTitle}</h1></header>
-
+      <div className="hub-today">
+        <div className="hub-today-top"><span>{T.today.todaySummary}</span><strong>{formatMinutes(Math.floor(todayTotal))}{dailyGoal ? ` / ${formatMinutes(dailyGoal)}` : ""}</strong></div>
+        {dailyGoal ? <div className="goal-progress-track"><div className={todayTotal >= dailyGoal ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPctHub}%` }} /></div> : null}
+      </div>
+      {lastSession && lastMatch && <button type="button" className="hub-continue" onClick={() => { setCategory(lastMatch.category); setRudimentTier((lastMatch as any).tier ?? null); setExerciseGroup((lastMatch as any).exerciseGroup ?? null); openExercise(lastSession.item_en); }}>
+        <span className="hub-continue-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg></span>
+        <span className="hub-text"><small>{T.practiceMode.continueLabel}</small><strong>{lastMatch[language as Lang]}</strong></span>
+        <span className="hub-continue-bpm">{lastSession.bpm} BPM</span>
+      </button>}
+      {lastSession && lastMatch && <div className="hub-sep" aria-hidden="true" />}
+      <div className="practice-hub">
+        <button type="button" className="hub-card" onClick={() => setStep("quick")}>
+          <span className="hub-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 2.5L5.5 14H11l-1 7.5L18.5 10H13l0-7.5z" /></svg></span>
+          <span className="hub-text"><strong>{T.practiceMode.quickTitle}</strong><small>{T.practiceMode.quickSub}</small></span>
+          <span className="hub-chev">›</span>
+        </button>
+        <button type="button" className="hub-card" onClick={() => setStep("skill")}>
+          <span className="hub-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.4" fill="currentColor" /></svg></span>
+          <span className="hub-text"><strong>{T.practiceMode.trainTitle}</strong><small>{T.practiceMode.skillSub}</small></span>
+          <span className="hub-chev">›</span>
+        </button>
+        <button type="button" className="hub-card" onClick={() => setStep("challenges")}>
+          <span className="hub-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 01-8 0V4zM8 6H5v1a3 3 0 003 3M16 6h3v1a3 3 0 01-3 3M12 13v4M9 20h6M10 17h4" /></svg></span>
+          <span className="hub-text"><strong>{T.personalChallenges.title}</strong><small>{T.practiceMode.challengesSub}</small></span>
+          <span className="hub-chev">›</span>
+        </button>
+      </div>
+    </section>;
+  }
+  if (step === "skill") {
+    const RUDIMENT_TIERS: ("basics" | "intermediate" | "advanced")[] = ["basics", "intermediate", "advanced"];
+    const RUDIMENT_TIER_LABEL: Record<string, string> = { basics: T.practiceMode.rudimentTierBasics, intermediate: T.practiceMode.rudimentTierIntermediate, advanced: T.practiceMode.rudimentTierAdvanced };
+    const EXERCISE_GROUPS: ("hand" | "footwork" | "coordination")[] = ["hand", "footwork", "coordination"];
+    const EXERCISE_GROUP_LABEL: Record<string, string> = { hand: T.practiceMode.exerciseGroupHand, footwork: T.practiceMode.exerciseGroupFootwork, coordination: T.practiceMode.exerciseGroupCoordination };
+    const allRudiments = PRACTICE_EXERCISES.filter((e) => e.category === "rudiments" && (!kidMode || e.difficulty !== "advanced"));
+    const allExercisesList = PRACTICE_EXERCISES.filter((e) => e.category === "exercises" && (!kidMode || e.difficulty !== "advanced"));
+    const query = skillSearch.trim().toLowerCase();
+    const matches = query ? [...allRudiments, ...allExercisesList].filter((e) => e[language as Lang].toLowerCase().includes(query)) : [];
+    function openSection(key: string) { setSkillSection(key); setStep("skillList"); }
+    return <section className="page">
+      <div className="back-row"><button onClick={() => setStep("home")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.pageTitle}</p><h2>{T.practiceMode.trainTitle}</h2></div></div>
+      <div className="admin-mini-toggle admin-mini-toggle-wide skill-tabs">
+        <button type="button" className={skillTab === "rudiments" ? "selected" : ""} onClick={() => setSkillTab("rudiments")}>{CATEGORY_LABEL.rudiments}</button>
+        <button type="button" className={skillTab === "exercises" ? "selected" : ""} onClick={() => setSkillTab("exercises")}>{CATEGORY_LABEL.exercises}</button>
+      </div>
+      <input className="rudiment-search skill-search" value={skillSearch} onChange={(e) => setSkillSearch(e.target.value)} placeholder={T.practiceMode.skillSearchPlaceholder} />
+      {query ? (matches.length ? <div className="book-list">{matches.map((item) => <ExerciseRow key={item.en} item={item} />)}</div> : <p className="hint">{T.practiceMode.skillNoMatch}</p>)
+        : skillTab === "rudiments" ? <div className="tier-select-list">
+          {RUDIMENT_TIERS.map((tier, idx) => {
+            const tierItems = allRudiments.filter((e) => e.tier === tier);
+            if (!tierItems.length) return null;
+            const unlockedCount = tierItems.filter((item) => isRudimentUnlocked(item.en)).length;
+            return <button key={tier} className={`tier-card tier-card-${tier}`} onClick={() => openSection(`r-${tier}`)}>
+              <span className="tier-card-num">{String(idx + 1).padStart(2, "0")}</span>
+              <p className="tier-card-title">{RUDIMENT_TIER_LABEL[tier]}</p>
+              <div className="tier-card-progress">
+                <span className="tier-card-count">{T.practiceMode.tierUnlockedCount(unlockedCount, tierItems.length)}</span>
+                <div className="tier-card-bar-track"><div className="tier-card-bar" style={{ width: `${Math.max(4, (unlockedCount / tierItems.length) * 100)}%` }} /></div>
+              </div>
+              <span className="tier-card-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
+            </button>;
+          })}
+        </div> : <div className="tier-select-list">
+          {EXERCISE_GROUPS.map((group, idx) => {
+            const groupItems = allExercisesList.filter((e) => e.exerciseGroup === group);
+            if (!groupItems.length) return null;
+            const practicedCount = groupItems.filter((item) => sessions.some((x: any) => x.item_en === item.en)).length;
+            return <button key={group} className={`tier-card tier-card-${group}`} onClick={() => openSection(`e-${group}`)}>
+              <span className="tier-card-num">{String(idx + 1).padStart(2, "0")}</span>
+              <p className="tier-card-title">{EXERCISE_GROUP_LABEL[group]}</p>
+              <div className="tier-card-progress">
+                <span className="tier-card-count">{T.practiceMode.exercisesPracticedCount(practicedCount, groupItems.length)}</span>
+                <div className="tier-card-bar-track"><div className="tier-card-bar" style={{ width: `${Math.max(4, (practicedCount / groupItems.length) * 100)}%` }} /></div>
+              </div>
+              <span className="tier-card-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
+            </button>;
+          })}
+        </div>}
+    </section>;
+  }
+  if (step === "skillList" && skillSection) {
+    const isRudiments = skillSection.startsWith("r-");
+    const key = skillSection.slice(2);
+    const RUDIMENT_TIER_LABEL: Record<string, string> = { basics: T.practiceMode.rudimentTierBasics, intermediate: T.practiceMode.rudimentTierIntermediate, advanced: T.practiceMode.rudimentTierAdvanced };
+    const EXERCISE_GROUP_LABEL: Record<string, string> = { hand: T.practiceMode.exerciseGroupHand, footwork: T.practiceMode.exerciseGroupFootwork, coordination: T.practiceMode.exerciseGroupCoordination };
+    function lastPracticedOn(itemEn: string): string {
+      let latest = "";
+      sessions.forEach((x: any) => { if (x.item_en === itemEn && x.practiced_on > latest) latest = x.practiced_on; });
+      return latest;
+    }
+    const listItems = isRudiments
+      ? PRACTICE_EXERCISES.filter((e) => e.category === "rudiments" && e.tier === key && (!kidMode || e.difficulty !== "advanced"))
+      : PRACTICE_EXERCISES.filter((e) => e.category === "exercises" && e.exerciseGroup === key && (!kidMode || e.difficulty !== "advanced")).sort((a, b) => lastPracticedOn(b.en).localeCompare(lastPracticedOn(a.en)));
+    return <section className="page">
+      <div className="back-row"><button onClick={() => setStep("skill")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.trainTitle}</p><h2>{isRudiments ? RUDIMENT_TIER_LABEL[key] : EXERCISE_GROUP_LABEL[key]}</h2></div></div>
+      <p className="category-list-intro">{isRudiments ? T.practiceMode.rudimentListIntro : T.practiceMode.listIntroExercises(UNLOCK_MINUTES)}</p>
+      <div className="book-list">{listItems.map((item) => <ExerciseRow key={item.en} item={item} />)}</div>
+    </section>;
+  }
+  if (step === "challenges") {
+    return <section className="page">
+      <div className="back-row"><button onClick={() => setStep("home")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.pageTitle}</p></div></div>
+      <PersonalChallenges user={user} practiceSessions={sessions} confirm={confirm} setError={setError} language={language} T={T} />
+    </section>;
+  }
+  if (step === "quick") {
+    return <section className="page">
+      <div className="back-row"><button onClick={() => setStep("home")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.pageTitle}</p></div></div>
       <div className="practice-tools">
         <button type="button" className="practice-tool" onClick={openMetronome}>
           <span className="practice-tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 21l1.8-16.5a.7.7 0 01.7-.5h2a.7.7 0 01.7.5L15.5 21z" /><path d="M12 17.5L15.2 8" /><circle cx="14.3" cy="11.2" r="1" fill="currentColor" /><path d="M6.5 21h11" /></svg></span>
@@ -3340,22 +3457,6 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
         <button className={saved ? "save saved" : "save"} onClick={handleSaveClick} disabled={equipment === "both" ? (Number(drumsetMinutes) || 0) + (Number(padMinutes) || 0) <= 0 : (Number(quickAddMinutes) || 0) <= 0}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
       </div>
 
-      <div className="mode-header train-header skill-header">
-        <img src="/icons/target.png" alt="" className="mode-icon train" />
-        <div className="mode-copy"><h2>{T.practiceMode.trainTitle}</h2></div>
-      </div>
-      <div className="category-list">
-        {PRACTICE_CATEGORIES.map((cat) => {
-          return <button key={cat} className="category-card" onClick={() => openCategory(cat)}>
-            <img src={CATEGORY_ICON_SRC[cat]} alt="" className="category-icon" />
-            <div className="category-info">
-              <p className="category-title">{CATEGORY_LABEL[cat]}</p>
-            </div>
-            <span className="chev">›</span>
-          </button>;
-        })}
-      </div>
-      <PersonalChallenges user={user} practiceSessions={sessions} confirm={confirm} setError={setError} language={language} T={T} />
       {showWhatModal && <div className="modal modal-center" onClick={() => setShowWhatModal(false)}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
         <button className="close" onClick={() => setShowWhatModal(false)}>×</button>
         <h2 className="edit-rating-title">{T.today.whatDidYouPractiseTitle}</h2>
@@ -3404,118 +3505,13 @@ function PracticeMode({ step, setStep, category, setCategory, rudimentTier, setR
     </section>;
   }
 
-  if (step === "tiers") {
-    // The Rudiments category opens here instead of straight into the list -- three big tappable
-    // cards (Foundation/Intermediate/Complex, an app-defined learning order, not an official PAS
-    // difficulty rating), built dynamically from PRACTICE_EXERCISES' own `tier` field so this
-    // never needs updating if rudiments are added or removed.
-    const RUDIMENT_TIERS: ("basics" | "intermediate" | "advanced")[] = ["basics", "intermediate", "advanced"];
-    const RUDIMENT_TIER_LABEL: Record<string, string> = { basics: T.practiceMode.rudimentTierBasics, intermediate: T.practiceMode.rudimentTierIntermediate, advanced: T.practiceMode.rudimentTierAdvanced };
-    const allRudiments = PRACTICE_EXERCISES.filter((e) => e.category === "rudiments" && (!kidMode || e.difficulty !== "advanced"));
-    return <section className="page">
-      <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL.rudiments}</h2></div></div>
-      <div className="tier-select-list">
-        {RUDIMENT_TIERS.map((tier, idx) => {
-          const tierItems = allRudiments.filter((e) => e.tier === tier);
-          if (!tierItems.length) return null;
-          const unlockedCount = tierItems.filter((item) => isRudimentUnlocked(item.en)).length;
-          return <button key={tier} className={`tier-card tier-card-${tier}`} onClick={() => openRudimentTier(tier)}>
-            <span className="tier-card-num">{String(idx + 1).padStart(2, "0")}</span>
-            <p className="tier-card-title">{RUDIMENT_TIER_LABEL[tier]}</p>
-            <div className="tier-card-progress">
-              <span className="tier-card-count">{T.practiceMode.tierUnlockedCount(unlockedCount, tierItems.length)}</span>
-              <div className="tier-card-bar-track"><div className="tier-card-bar" style={{ width: `${Math.max(4, (unlockedCount / tierItems.length) * 100)}%` }} /></div>
-            </div>
-            <span className="tier-card-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
-          </button>;
-        })}
-      </div>
-    </section>;
-  }
-
-  if (step === "exerciseGroups") {
-    // Same pattern as the Rudiments tier screen, but grouping by exercise type (Hand
-    // Techniques/Footwork/Coordination) instead of a learning order -- built dynamically from
-    // PRACTICE_EXERCISES' own `exerciseGroup` field. There's no lock/prerequisite system here
-    // (exercises in this category aren't gated), so the per-card progress is a plain "how many
-    // of these have you tried" count -- any exercise with at least one logged session counts,
-    // deliberately not phrased as "unlocked" since nothing is actually locked.
-    const EXERCISE_GROUPS: ("hand" | "footwork" | "coordination")[] = ["hand", "footwork", "coordination"];
-    const EXERCISE_GROUP_LABEL: Record<string, string> = { hand: T.practiceMode.exerciseGroupHand, footwork: T.practiceMode.exerciseGroupFootwork, coordination: T.practiceMode.exerciseGroupCoordination };
-    const allExercisesList = PRACTICE_EXERCISES.filter((e) => e.category === "exercises" && (!kidMode || e.difficulty !== "advanced"));
-    return <section className="page">
-      <div className="back-row"><button onClick={() => setStep("category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{CATEGORY_LABEL.exercises}</h2></div></div>
-      <div className="tier-select-list">
-        {EXERCISE_GROUPS.map((group, idx) => {
-          const groupItems = allExercisesList.filter((e) => e.exerciseGroup === group);
-          if (!groupItems.length) return null;
-          const practicedCount = groupItems.filter((item) => sessions.some((s: any) => s.item_en === item.en)).length;
-          return <button key={group} className={`tier-card tier-card-${group}`} onClick={() => openExerciseGroup(group)}>
-            <span className="tier-card-num">{String(idx + 1).padStart(2, "0")}</span>
-            <p className="tier-card-title">{EXERCISE_GROUP_LABEL[group]}</p>
-            <div className="tier-card-progress">
-              <span className="tier-card-count">{T.practiceMode.exercisesPracticedCount(practicedCount, groupItems.length)}</span>
-              <div className="tier-card-bar-track"><div className="tier-card-bar" style={{ width: `${Math.max(4, (practicedCount / groupItems.length) * 100)}%` }} /></div>
-            </div>
-            <span className="tier-card-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
-          </button>;
-        })}
-      </div>
-    </section>;
-  }
-
-  if (step === "list" && category) {
-    const items = PRACTICE_EXERCISES.filter((e) => e.category === category && (!kidMode || e.difficulty !== "advanced"));
-    const LIST_INTRO: Record<string, string> = { rudiments: T.practiceMode.rudimentListIntro, exercises: T.practiceMode.listIntroExercises(UNLOCK_MINUTES), rhythms: T.practiceMode.listIntroRhythms(UNLOCK_MINUTES) };
-    function lastPracticedDate(itemEn: string): string | null {
-      let latest: string | null = null;
-      sessions.forEach((s: any) => { if (s.item_en === itemEn && (!latest || s.practiced_on > latest)) latest = s.practiced_on; });
-      return latest;
-    }
-    let listBody;
-    if (category === "exercises") {
-      // Reached via a group card on the "exerciseGroups" step -- a flat list of just that
-      // group's exercises, sorted by most recently practiced.
-      const sortedItems = [...items].filter((e) => e.exerciseGroup === exerciseGroup).sort((a, b) => {
-        const da = lastPracticedDate(a.en); const db = lastPracticedDate(b.en);
-        if (da && db) return db.localeCompare(da);
-        if (da && !db) return -1;
-        if (!da && db) return 1;
-        return 0;
-      });
-      listBody = <div className="book-list">{sortedItems.map((item) => <ExerciseRow key={item.en} item={item} />)}</div>;
-    } else if (category === "rudiments") {
-      // Reached via a tier card on the "tiers" step -- a flat list of just that tier's
-      // rudiments (locked ones included; ExerciseRow itself renders the locked state).
-      listBody = <div className="book-list">{items.filter((e) => e.tier === rudimentTier).map((item) => <ExerciseRow key={item.en} item={item} />)}</div>;
-    } else {
-      const subcats: { en: string; es: string }[] = [];
-      items.forEach((e) => { if (e.subcategory && !subcats.some((s) => s.en === e.subcategory!.en)) subcats.push(e.subcategory); });
-      const groups = [...subcats.map((s) => ({ key: s.en, label: s[language as Lang] })), ...(items.some((e) => !e.subcategory) ? [{ key: "", label: "" }] : [])];
-      listBody = <>{groups.map((g) => <div key={g.key || "__none"}>
-        {g.key && <span className="ladder-label">{g.label.toUpperCase()}</span>}
-        <div className="book-list">
-          {items.filter((e) => (e.subcategory?.en ?? "") === g.key).map((item) => <ExerciseRow key={item.en} item={item} />)}
-        </div>
-      </div>)}</>;
-    }
-    const RUDIMENT_TIER_LABEL: Record<string, string> = { basics: T.practiceMode.rudimentTierBasics, intermediate: T.practiceMode.rudimentTierIntermediate, advanced: T.practiceMode.rudimentTierAdvanced };
-    const EXERCISE_GROUP_LABEL: Record<string, string> = { hand: T.practiceMode.exerciseGroupHand, footwork: T.practiceMode.exerciseGroupFootwork, coordination: T.practiceMode.exerciseGroupCoordination };
-    const listTitle = category === "rudiments" && rudimentTier ? RUDIMENT_TIER_LABEL[rudimentTier] : category === "exercises" && exerciseGroup ? EXERCISE_GROUP_LABEL[exerciseGroup] : CATEGORY_LABEL[category];
-    return <section className="page">
-      <div className="back-row"><button onClick={() => setStep(category === "rudiments" ? "tiers" : category === "exercises" ? "exerciseGroups" : "category")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{listTitle}</h2></div></div>
-      <p className="category-list-intro">{LIST_INTRO[category]}</p>
-      {listBody}
-    </section>;
-  }
-
   if (step === "detail" && exercise) {
     const stats = exerciseStats(exercise);
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     const isPinned = pinnedExercises.includes(exercise);
     const subdivision = PRACTICE_EXERCISES.find((e) => e.en === exercise)?.subdivision;
     return <section className="page">
-      <div className="back-row"><button onClick={() => setStep("list")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2>{PRACTICE_EXERCISES.find((e) => e.en === exercise)?.pattern && <p className="exercise-pattern-note">{PRACTICE_EXERCISES.find((e) => e.en === exercise)!.pattern![language as Lang]}</p>}</div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
+      <div className="back-row"><button onClick={() => setStep(skillSection && !skillSearch.trim() ? "skillList" : "skill")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2>{PRACTICE_EXERCISES.find((e) => e.en === exercise)?.pattern && <p className="exercise-pattern-note">{PRACTICE_EXERCISES.find((e) => e.en === exercise)!.pattern![language as Lang]}</p>}</div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
       <div className="level-card">
         <div className="badge">{stats.bestRating ? RATING_ICON[stats.bestRating] : "🥁"}</div>
         <div>

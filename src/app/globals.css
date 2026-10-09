@@ -750,3 +750,75 @@ html.native .shell.has-timer-banner{padding-top:calc(44px + env(safe-area-inset-
 .focus-header{margin-bottom:10px}
 .focus-pill-label{display:block;text-align:center;background:#141715;border:1px solid #232826;border-radius:99px;padding:6px 2px;font:600 9.5px 'DM Sans';letter-spacing:.4px;color:#9aa19d;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .home-challenges-title{margin:0 0 12px}
+/* Practice tab hub: three big buttons */
+.practice-hub{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+.hub-card{display:flex;align-items:center;gap:16px;width:100%;min-height:118px;text-align:left;color:#f6f7f5;font-family:inherit;padding:18px 18px 18px 16px;border-radius:24px;border:1px solid #2a302c;background:linear-gradient(135deg,#1a1512 0%,#121413 60%)}
+.hub-card:first-child{border-color:#472a16;background:linear-gradient(135deg,#2a170a 0%,#141110 70%)}
+.hub-card:active{transform:scale(.99)}
+.hub-icon{width:64px;height:64px;border-radius:18px;flex-shrink:0;object-fit:cover;display:block}
+.hub-emoji{display:flex;align-items:center;justify-content:center;font-size:34px;background:#2a170a;border:1px solid #472315}
+.hub-text{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.hub-text strong{font:700 25px 'Barlow Condensed';letter-spacing:.3px;text-transform:uppercase}
+.hub-text small{font-size:14px;color:#9aa19d;line-height:1.3}
+.hub-chev{width:34px;height:34px;border-radius:50%;background:#1c211f;border:1px solid #2c312e;display:flex;align-items:center;justify-content:center;font-size:22px;color:#c8cdc9;flex-shrink:0}
+.hub-icon{display:flex;align-items:center;justify-content:center;width:62px;height:62px;border-radius:19px;background:#2a170a;border:1px solid #472315;color:#ff9b50;flex-shrink:0}
+.hub-icon svg{width:30px;height:30px}
+/* Practice hub: taller buttons plus a Today strip and a Continue card */
+.hub-card{min-height:148px;padding:22px 20px 22px 18px;border-radius:26px;gap:18px}
+.hub-icon{width:72px;height:72px;border-radius:22px}
+.hub-icon svg{width:34px;height:34px}
+.practice-hub{gap:16px}
+.hub-today{background:#121413;border:1px solid #222724;border-radius:18px;padding:12px 16px;margin:0 0 16px}
+.hub-today-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;font-size:13px;letter-spacing:1px;color:#8d9690;text-transform:uppercase;font-weight:700}
+.hub-today-top strong{font:700 17px 'DM Sans';letter-spacing:0;color:#f6f7f5;text-transform:none}
+.hub-today .goal-progress-track{margin:0}
+.hub-continue{display:flex;align-items:center;gap:14px;width:100%;margin-top:18px;text-align:left;color:#f6f7f5;font-family:inherit;padding:14px 16px;border-radius:20px;border:1px solid #472a16;background:linear-gradient(135deg,#2a170a,#141110 80%)}
+.hub-continue-play{width:42px;height:42px;border-radius:50%;background:#ff9b50;color:#2a1306;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hub-continue-play svg{width:20px;height:20px;margin-left:2px}
+.hub-continue .hub-text strong{font:600 17px 'DM Sans';text-transform:none;letter-spacing:0}
+.hub-continue .hub-text small{font-size:12px;color:#ff9b50}
+.hub-continue-bpm{font:700 14px 'DM Sans';color:#c8cdc9;flex-shrink:0}
+.hub-card{min-height:134px}
+.practice-hub{gap:14px}
+.hub-continue{margin-top:14px}
+.hub-card{min-height:118px;padding:18px 18px 18px 16px;border-radius:24px;gap:16px}
+.hub-icon{width:62px;height:62px;border-radius:19px}
+.hub-icon svg{width:30px;height:30px}
+.practice-hub{gap:14px}
+.hub-continue{margin:-4px 0 16px}
+.hub-sep{height:1px;margin:6px 6px 20px;background:linear-gradient(90deg,transparent,#3a2a1e 20%,#5a3a22 50%,#3a2a1e 80%,transparent)}
+.hub-continue{margin:-4px 0 14px}
+.hub-continue{margin-bottom:0}
+.hub-sep{margin:18px 6px}
+.practice-hub{margin-top:0}
+.hub-continue{background:#121413;border-color:#222724}
+/* each Practice category gets its own accent colour */
+.hub-card{--c:255,122,46;background:linear-gradient(135deg,rgba(var(--c),.24) 0%,#131514 72%);border-color:rgba(var(--c),.45)}
+.hub-card:nth-child(2){--c:124,104,255}
+.hub-card:nth-child(3){--c:240,180,41}
+.hub-card .hub-icon{background:rgba(var(--c),.18);border-color:rgba(var(--c),.5);color:rgb(var(--c))}
+.hub-card .hub-chev{background:rgba(var(--c),.14);border-color:rgba(var(--c),.4);color:rgb(var(--c))}
+/* Skill Trainer: one page with tabs, search and collapsible sections */
+.skill-next{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 14px;text-align:left;color:#f6f7f5;font-family:inherit;padding:14px 16px;border-radius:20px;border:1px solid #222724;background:#121413}
+.skill-next-play{width:40px;height:40px;border-radius:50%;background:#ff9b50;color:#2a1306;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.skill-next-play svg{width:19px;height:19px;margin-left:2px}
+.skill-next .hub-text small{font-size:11px;letter-spacing:1.2px;color:#ff9b50;font-weight:700}
+.skill-next .hub-text strong{font:600 17px 'DM Sans';text-transform:none;letter-spacing:0}
+.skill-next-meta{font:700 14px 'DM Sans';color:#a5ada7;flex-shrink:0}
+.skill-tabs{margin:0 0 12px}
+.skill-search{margin:0 0 14px}
+.skill-section{margin-bottom:12px}
+.skill-section-head{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:8px 2px;color:inherit;text-align:left;font-family:inherit}
+.skill-section-title{font:700 21px 'Barlow Condensed';letter-spacing:.3px;text-transform:uppercase;color:#f6f7f5}
+.skill-section-count{font-size:13px;color:#8d9690;flex:1}
+.skill-section-head .give-chev{width:18px;height:18px;color:#8d9690;transition:transform .2s}
+.skill-section-head .give-chev.open{transform:rotate(180deg)}
+/* Practice hub: shades of orange */
+.hub-card{--c:255,100,24}
+.hub-card:nth-child(2){--c:255,150,72}
+.hub-card:nth-child(3){--c:236,172,92}
+/* Skill Trainer category cards: one neutral look (no per-category colours), orange only as the accent */
+.tier-card-basics,.tier-card-intermediate,.tier-card-advanced,.tier-card-hand,.tier-card-footwork,.tier-card-coordination{background:#121413;border-color:#222724}
+.tier-card-basics .tier-card-num,.tier-card-intermediate .tier-card-num,.tier-card-advanced .tier-card-num,.tier-card-hand .tier-card-num,.tier-card-footwork .tier-card-num,.tier-card-coordination .tier-card-num{color:#ff9b50}
+.tier-card-basics .tier-card-bar,.tier-card-intermediate .tier-card-bar,.tier-card-advanced .tier-card-bar,.tier-card-hand .tier-card-bar,.tier-card-footwork .tier-card-bar,.tier-card-coordination .tier-card-bar{background:#ff7a3c}
+.tier-card-count{font-weight:400}
