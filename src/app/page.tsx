@@ -1538,13 +1538,13 @@ function Login({ error, setError }: { error: string; setError: (message: string)
     <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} />
     {mode !== "forgot" && <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />}
     {mode === "login" && <button className="auth-forgot" onClick={() => { setMode("forgot"); setError(""); }}>Forgot password?</button>}
-    {mode === "signup" && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>I am 16 or older, or I am a parent or guardian creating this account for my child (or the child&apos;s teacher, with the parent&apos;s permission). I agree to the <a href={`${WEB_URL}/terms`} target="_blank" rel="noopener noreferrer">Terms</a> and <a href={`${WEB_URL}/privacy`} target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label>}
+    {mode === "signup" && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>I am 16 or older, or I am a parent or guardian creating this account for my child (or the child&apos;s teacher, with the parent&apos;s permission). I agree to the <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">Terms</a> and <a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label>}
     <button className="auth-primary" disabled={busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && !consent)} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}</button>
     {mode !== "forgot" && !IS_NATIVE_BUILD && <div className="or">OR</div>}
     {mode !== "forgot" && !IS_NATIVE_BUILD && <button className="google" disabled={busy || (mode === "signup" && !consent)} onClick={google}>G <span>Continue with Google</span></button>}
     <button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : mode === "signup" ? "Already have an account? Log in" : "Back to log in"}</button>
   </div>{error && <p className="auth-error">{error}</p>}
-  <p className="auth-legal"><a href={`${WEB_URL}/privacy`} target="_blank" rel="noopener noreferrer">Privacy</a> · <a href={`${WEB_URL}/terms`} target="_blank" rel="noopener noreferrer">Terms</a> · <a href={`${WEB_URL}/support`} target="_blank" rel="noopener noreferrer">Support</a></p></section></main>;
+  <p className="auth-legal"><a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">Privacy</a> · <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">Terms</a> · <a href={LEGAL_URLS.support} target="_blank" rel="noopener noreferrer">Support</a></p></section></main>;
 }
 function ResetPassword({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
@@ -3776,7 +3776,7 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
       <input type="password" className="account-confirm-input" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={T.settings.confirmPasswordPlaceholder} />
       {passwordMsg && <p className="settings-hint">{passwordMsg}</p>}
       <button className="secondary-btn" disabled={passwordBusy || !newPassword || !confirmPassword} onClick={changePassword}>{passwordBusy ? T.settings.pleaseWait : T.settings.updatePassword}</button>
-      <p className="settings-legal"><a href={`${WEB_URL}/privacy`} target="_blank" rel="noopener noreferrer">{T.settings.privacyPolicy}</a> · <a href={`${WEB_URL}/terms`} target="_blank" rel="noopener noreferrer">{T.settings.termsOfUse}</a> · <a href={`${WEB_URL}/support`} target="_blank" rel="noopener noreferrer">{T.settings.support}</a></p>
+      <p className="settings-legal"><a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">{T.settings.privacyPolicy}</a> · <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">{T.settings.termsOfUse}</a> · <a href={LEGAL_URLS.support} target="_blank" rel="noopener noreferrer">{T.settings.support}</a></p>
       <button className="logout" onClick={signOut}>{T.settings.logout}</button>
       <div className="danger-zone">
         <p className="danger-title">{T.settings.deleteAccount}</p>
@@ -4123,6 +4123,8 @@ const LEGAL_VERSION = "2026-10-07";
 // build-time values are how it differs: where the live website is (legal pages, account deletion,
 // password-reset links all point there) and a flag that hides Google login (email + password only).
 const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL ?? "";
+// Public legal pages live on the Practice Masters website (WordPress), not in this app.
+const LEGAL_URLS = { privacy: "https://practice-masters.com/drumskills-privacy-policy/", terms: "https://practice-masters.com/drumskills-terms-of-use/", support: "https://practice-masters.com/drumskills-support/" };
 const IS_NATIVE_BUILD = process.env.NEXT_PUBLIC_NATIVE === "1";
 const SESSION_TIMER_STORAGE_KEY = "session_timer_v1";
 // A stopwatch left running for days shouldn't log days: capped at 12h, and anything over 3h gets
