@@ -1064,3 +1064,17 @@ select.sx-field{appearance:none;-webkit-appearance:none;font:15px 'DM Sans',sans
 .metro-tone button{flex:1;border:0;background:transparent;color:#9aa19d;font:600 13px 'DM Sans',sans-serif;padding:8px 4px;border-radius:8px;cursor:pointer}
 .metro-tone button.on{background:#2a170a;color:#ff9b50}
 select.sx-field{text-align:left;text-align-last:left}
+/* Group name: a small round chevron shows the name can be tapped to switch groups (only with 2+ groups) */
+.group-title-btn{display:inline-flex;align-items:center;gap:12px;background:transparent;border:0;padding:0;margin:0;color:inherit;font:inherit;text-align:left;cursor:pointer;max-width:100%}
+.group-title-btn h1{margin:0;min-width:0}
+.group-title-chev{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid #472315;background:#2a170a;color:#ff9b50;display:inline-flex;align-items:center;justify-content:center;margin-top:4px}
+.group-title-chev svg{width:16px;height:16px}
+.group-title-btn:active .group-title-chev{background:#3a2010}
+/* chevron follows the last word of the name, even when the name wraps onto two lines */
+.group-title-btn{display:block}
+.group-title-btn h1{display:block}
+.group-title-chev{display:inline-flex;vertical-align:middle;margin:0 0 4px 10px}
+.group-title-last{white-space:nowrap}
+/* Group tab: a small up-arrow next to the label shows that tapping it again opens the group picker */
+.bottom-nav button .nav-switch-hint{width:11px !important;height:11px !important;margin-left:3px;vertical-align:-1px;display:inline-block;opacity:.9}
+.bottom-nav .nav-label{font-style:normal;display:inline-flex;align-items:center;white-space:nowrap}
