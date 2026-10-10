@@ -1034,7 +1034,7 @@ export default function Home() {
   }, [logs]);
   const daysThisYear = useMemo(() => Object.keys(logs).filter((key) => key.startsWith(dateKey.slice(0, 4)) && logs[key].minutes > 0).length, [logs]);
   const [profileName, setProfileName] = useState("");
-  const displayName = profileName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Drummer";
+  const displayName = profileName || user?.user_metadata?.display_name || String(user?.user_metadata?.full_name ?? "").trim().split(/\s+/)[0] || user?.email?.split("@")[0] || "Drummer";
   const [language, setLanguage] = useState<Lang>("en");
   const [dailyGoal, setDailyGoal] = useState<number | null>(null);
   const [metronomeTone, setMetronomeTone] = useState("click");
@@ -1091,7 +1091,7 @@ export default function Home() {
     return () => listener.subscription.unsubscribe();
   }, []);
   async function loadUserData(currentUser: any, hydrateToday = true, isRetry = false) {
-    const fallbackName = currentUser.user_metadata?.full_name ?? currentUser.email?.split("@")[0] ?? "Drummer";
+    const fallbackName = (currentUser.user_metadata?.display_name?.trim() || String(currentUser.user_metadata?.full_name ?? "").trim().split(/\s+/)[0] || currentUser.email?.split("@")[0] || "Drummer");
     // is_admin() is security definer and checks the caller's own admin_users row
     // server-side -- this can't be spoofed by the client either way. Kept out of the
     // retry group below since worst case it just self-corrects on the next successful load.
@@ -1514,8 +1514,20 @@ function OnboardingModal({ currentGoal, onSkip, onFinish, language, T }: { curre
   </div></div>;
 }
 
+// Password box with a show/hide eye, so people can check what they typed.
+function PasswordField({ value, onChange, placeholder, isNew }: { value: string; onChange: (v: string) => void; placeholder: string; isNew?: boolean }) {
+  const [shown, setShown] = useState(false);
+  return <div className="pw-field">
+    <input type={shown ? "text" : "password"} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} autoComplete={isNew ? "new-password" : "current-password"} />
+    <button type="button" className="pw-toggle" onClick={() => setShown(!shown)} aria-label={shown ? "Hide password" : "Show password"} aria-pressed={shown}>
+      {shown
+        ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.1 10.1 0 0 1 12 20c-6.5 0-10-8-10-8a17.6 17.6 0 0 1 4.1-5.1M9.9 4.2A9.8 9.8 0 0 1 12 4c6.5 0 10 8 10 8a17.7 17.7 0 0 1-2.2 3.2M1 1l22 22M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+        : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
+    </button>
+  </div>;
+}
 function Login({ error, setError }: { error: string; setError: (message: string) => void }) {
-  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [mode, setMode] = useState<"login" | "signup" | "forgot">("login"); const [consent, setConsent] = useState(false); const [busy, setBusy] = useState(false);
+  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [mode, setMode] = useState<"login" | "signup" | "forgot">("login"); const [consent, setConsent] = useState(false); const [busy, setBusy] = useState(false); const [firstName, setFirstName] = useState("");
   async function submit() {
     setBusy(true); setError("");
     if (mode === "forgot") {
@@ -1524,7 +1536,7 @@ function Login({ error, setError }: { error: string; setError: (message: string)
       if (resetError) setError(resetError.message); else setError("Check your email for a password reset link.");
       return;
     }
-    const result = mode === "login" ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password, options: { data: { consent_at: new Date().toISOString(), consent_version: LEGAL_VERSION } } });
+    const result = mode === "login" ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password, options: { data: { display_name: firstName.trim(), consent_at: new Date().toISOString(), consent_version: LEGAL_VERSION } } });
     // When email confirmation is on, Supabase deliberately doesn't say whether an email is already
     // registered (prevents an attacker from probing which emails have accounts), so signUp()
     // "succeeds" with no session either way and the message below has to make sense for both cases.
@@ -1535,11 +1547,12 @@ function Login({ error, setError }: { error: string; setError: (message: string)
   async function google() { setBusy(true); const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); if (oauthError) { setError(oauthError.message); setBusy(false); } }
   return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>Build your daily drumming habit, one session at a time.</p><div className="auth-card">
     <h2>{mode === "login" ? "Welcome back" : mode === "signup" ? "Start your streak" : "Reset your password"}</h2>
+    {mode === "signup" && <input type="text" placeholder="First name or nickname" value={firstName} maxLength={20} autoComplete="given-name" onChange={e => setFirstName(e.target.value)} />}
     <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} />
-    {mode !== "forgot" && <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />}
+    {mode !== "forgot" && <PasswordField value={password} onChange={setPassword} placeholder="Password" isNew={mode === "signup"} />}
     {mode === "login" && <button className="auth-forgot" onClick={() => { setMode("forgot"); setError(""); }}>Forgot password?</button>}
     {mode === "signup" && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>I am 16 or older, or I am a parent or guardian creating this account for my child (or the child&apos;s teacher, with the parent&apos;s permission). I agree to the <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">Terms</a> and <a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label>}
-    <button className="auth-primary" disabled={busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && !consent)} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}</button>
+    <button className="auth-primary" disabled={busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && (!consent || !firstName.trim()))} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}</button>
     {mode !== "forgot" && !IS_NATIVE_BUILD && <div className="or">OR</div>}
     {mode !== "forgot" && !IS_NATIVE_BUILD && <button className="google" disabled={busy || (mode === "signup" && !consent)} onClick={google}>G <span>Continue with Google</span></button>}
     <button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : mode === "signup" ? "Already have an account? Log in" : "Back to log in"}</button>
@@ -1554,7 +1567,7 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
     setBusy(false);
     if (updateError) setError(updateError.message); else onDone();
   }
-  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>Choose a new password for your account.</p><div className="auth-card"><h2>Set a new password</h2><input type="password" placeholder="New password" value={password} onChange={e => setPassword(e.target.value)} /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? "Please wait..." : "Update password"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
+  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>Choose a new password for your account.</p><div className="auth-card"><h2>Set a new password</h2><PasswordField value={password} onChange={setPassword} placeholder="New password" isNew /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? "Please wait..." : "Update password"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
 function YourPointsCard({ user, pointsEnabled, rows, onViewPoints, T }: any) {
@@ -3431,6 +3444,11 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
       </div>
       <input className="rudiment-search skill-search" value={skillSearch} onChange={(e) => setSkillSearch(e.target.value)} placeholder={T.practiceMode.skillSearchPlaceholder} />
       {query ? (matches.length ? <div className="book-list">{matches.map((item) => <ExerciseRow key={item.en} item={item} />)}</div> : <p className="hint">{T.practiceMode.skillNoMatch}</p>)
+        : skillTab === "rudiments" && kidMode ? <>
+          {/* Essentials has so few rudiments that category cards just add a tap, so it shows one plain list (easiest tier first). */}
+          <p className="category-list-intro">{T.practiceMode.rudimentListIntro}</p>
+          <div className="book-list">{[...allRudiments].sort((a, b) => RUDIMENT_TIERS.indexOf(a.tier as any) - RUDIMENT_TIERS.indexOf(b.tier as any)).map((item) => <ExerciseRow key={item.en} item={item} />)}</div>
+        </>
         : skillTab === "rudiments" ? <div className="tier-select-list">
           {RUDIMENT_TIERS.map((tier, idx) => {
             const tierItems = allRudiments.filter((e) => e.tier === tier);
@@ -3446,7 +3464,10 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
               <span className="tier-card-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
             </button>;
           })}
-        </div> : <div className="tier-select-list">
+        </div> : kidMode ? <>
+          <p className="category-list-intro">{T.practiceMode.listIntroExercises(UNLOCK_MINUTES)}</p>
+          <div className="book-list">{[...allExercisesList].sort((a, b) => EXERCISE_GROUPS.indexOf(a.exerciseGroup as any) - EXERCISE_GROUPS.indexOf(b.exerciseGroup as any)).map((item) => <ExerciseRow key={item.en} item={item} />)}</div>
+        </> : <div className="tier-select-list">
           {EXERCISE_GROUPS.map((group, idx) => {
             const groupItems = allExercisesList.filter((e) => e.exerciseGroup === group);
             if (!groupItems.length) return null;

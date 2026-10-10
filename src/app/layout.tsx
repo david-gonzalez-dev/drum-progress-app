@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+import TabletScale from "./tablet-scale";
 
 export const metadata: Metadata = {
   title: "DrumSkills",
@@ -19,5 +20,5 @@ export const viewport: Viewport = IS_NATIVE ? { viewportFit: "cover", themeColor
 // (a statically cached page would keep serving the first request's nonce).
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   await headers();
-  return <html lang="en" className={IS_NATIVE ? "native" : undefined}><body>{children}</body></html>;
+  return <html lang="en" className={IS_NATIVE ? "native" : undefined}><body><TabletScale />{children}</body></html>;
 }
