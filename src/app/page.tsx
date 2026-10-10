@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { setTabletScale } from "./tablet-scale";
 import { createClient } from "@supabase/supabase-js";
 
 type Tab = "today" | "practice" | "group" | "progress" | "settings" | "admin";
@@ -1051,6 +1052,10 @@ export default function Home() {
   const T = translations[language];
   const [skillTab, setSkillTab] = useState<"rudiments" | "exercises">("rudiments");
   const [practiceStep, setPracticeStep] = useState<"home" | "quick" | "skill" | "challenges" | "skillList" | "detail" | "session" | "rate">("home");
+  // iPad only (no effect elsewhere): how much the phone layout is scaled up on each screen.
+  useEffect(() => {
+    setTabletScale(tab === "group" ? 1.4 : tab === "progress" ? 1.15 : tab === "practice" ? (practiceStep === "home" ? 1.15 : 1.35) : 1.35);
+  }, [tab, practiceStep]);
   const [practiceCategory, setPracticeCategory] = useState<string | null>(null);
   // Which of the Rudiments list's three tier cards (Foundation/Intermediate/Complex) is open --
   // separate from practiceCategory since it's only meaningful when category is "rudiments".
