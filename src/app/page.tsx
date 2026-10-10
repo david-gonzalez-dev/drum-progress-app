@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { setTabletScale } from "./tablet-scale";
 import { createClient } from "@supabase/supabase-js";
 
 type Tab = "today" | "practice" | "group" | "progress" | "settings" | "admin";
@@ -1052,10 +1051,6 @@ export default function Home() {
   const T = translations[language];
   const [skillTab, setSkillTab] = useState<"rudiments" | "exercises">("rudiments");
   const [practiceStep, setPracticeStep] = useState<"home" | "quick" | "skill" | "challenges" | "skillList" | "detail" | "session" | "rate">("home");
-  // iPad only (no effect elsewhere): how much the phone layout is scaled up on each screen.
-  useEffect(() => {
-    setTabletScale(tab === "group" ? 1.4 : tab === "progress" ? 1.15 : tab === "practice" ? (practiceStep === "home" ? 1.15 : 1.35) : 1.35);
-  }, [tab, practiceStep]);
   const [practiceCategory, setPracticeCategory] = useState<string | null>(null);
   // Which of the Rudiments list's three tier cards (Foundation/Intermediate/Complex) is open --
   // separate from practiceCategory since it's only meaningful when category is "rudiments".
@@ -1085,7 +1080,9 @@ export default function Home() {
   const [showPinManager, setShowPinManager] = useState(false);
   const [showPointsDetail, setShowPointsDetail] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // Remembered on this device so the menu never flickers between 4 and 5 items while the check runs.
   const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => { try { if (localStorage.getItem("is_admin_cache") === "1") setIsAdmin(true); } catch {} }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setLoading(false); });
@@ -1100,7 +1097,12 @@ export default function Home() {
     // is_admin() is security definer and checks the caller's own admin_users row
     // server-side -- this can't be spoofed by the client either way. Kept out of the
     // retry group below since worst case it just self-corrects on the next successful load.
-    supabase.rpc("is_admin").then(({ data }) => { setIsAdmin(!!data); });
+    // A failed or empty check (e.g. a network hiccup during a tab switch) must not hide the Admin tab.
+    supabase.rpc("is_admin").then(({ data, error }) => {
+      if (error || typeof data !== "boolean") return;
+      setIsAdmin(data);
+      try { localStorage.setItem("is_admin_cache", data ? "1" : "0"); } catch {}
+    });
     const [profileRes, settingsRes, logsRes, sessionsRes, pinnedRes, itemsRes] = await Promise.all([
       supabase.from("profiles").select("name").eq("id", currentUser.id).maybeSingle(),
       supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year, onboarded, kid_mode, points_enabled").eq("user_id", currentUser.id).maybeSingle(),
@@ -2564,7 +2566,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
     if (error) { setError(error.message); return; }
     setGroups((current) => current.map((g) => (g.id === group.id ? { ...g, count_days_from_creation: countFromCreation, stats_start_date: statsStartDate } : g)));
   }
-  if (groupLoading) return <section className="page"><p className="hint">…</p></section>;
+  if (groupLoading) return <PageSkeleton />;
   if (!addingGroup && group) {
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -2580,14 +2582,14 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
         <div>{groups.length > 1 ? <h1 className="group-title-switch" onClick={() => setShowGroupPicker(true)}>{group.name}</h1> : <h1>{group.name}</h1>}</div>
         <div className="group-head-actions">
           <button type="button" className="group-add-btn group-bell-btn" onClick={openCheerInbox} aria-label={T.cheers.bellTitle} title={T.cheers.bellTitle}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 20a2 2 0 01-3.4 0" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 20a2 2 0 01-3.4 0" /></svg>
             {unreadCount > 0 && <i className="bell-badge">{unreadCount > 9 ? "9+" : unreadCount}</i>}
           </button>
           <button type="button" className="group-add-btn" onClick={() => setShowMedalBoard(true)} aria-label={T.group.medalBoard} title={T.group.medalBoard}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3" /></svg>
           </button>
           {user.id === teacherId && <button type="button" className="group-add-btn" onClick={() => setShowGroupSettings(true)} aria-label={T.group.groupSettings} title={T.group.groupSettings}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>
           </button>}
           <button type="button" className="group-add-btn" onClick={() => { setAddingGroup(true); setMode("start"); }}>+</button>
         </div>
@@ -3624,6 +3626,7 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
     const isPinned = pinnedExercises.includes(exercise);
     const subdivision = PRACTICE_EXERCISES.find((e) => e.en === exercise)?.subdivision;
     return <section className="page">
+      <div className="detail-sticky">
       <div className="back-row"><button onClick={() => setStep(skillSection && !skillSearch.trim() ? "skillList" : "skill")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2>{PRACTICE_EXERCISES.find((e) => e.en === exercise)?.pattern && <p className="exercise-pattern-note">{PRACTICE_EXERCISES.find((e) => e.en === exercise)!.pattern![language as Lang]}</p>}</div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
       <div className="level-card">
         <div className="badge">{stats.bestRating ? RATING_ICON[stats.bestRating] : "🥁"}</div>
@@ -3639,6 +3642,7 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
       </div>
       <div className="tier-strip">
         {tiersFor(exercise).map((tier) => <div key={tier.key} className="tier-seg">{renderTierSegBar(tierProgress(exercise, tier), tierIsSkipped(sessions, exercise, tier))}<span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
+      </div>
       </div>
       {tiersFor(exercise).map((tier) => {
         const levels = bpmLevelsFor(exercise).filter((l) => l >= tier.min && l <= tier.max);
@@ -3723,6 +3727,12 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
     </section>;
   }
   return null;
+}
+// Placeholder blocks shown while a screen loads, instead of a blank page with three dots.
+function PageSkeleton({ bare }: { bare?: boolean }) {
+  const blocks = <div className="skeleton-stack" role="status" aria-label="Loading"><i className="skel skel-card" /><i className="skel skel-card" /><i className="skel skel-card skel-tall" /></div>;
+  if (bare) return blocks;
+  return <section className="page"><div className="skel skel-title" />{blocks}</section>;
 }
 function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, kidMode: currentKidMode, onKidModeSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; kidMode: boolean; onKidModeSaved: (value: boolean) => void; onBack: () => void; T: any }) {
   const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [kidMode, setKidMode] = useState(currentKidMode); const [saved, setSaved] = useState(false);
@@ -5057,7 +5067,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
 
   return <section className="page">
     <header className="simple-head"><p className="eyebrow">{T.admin.eyebrow}</p><h1>{T.admin.title}</h1></header>
-    {users === null ? <p className="hint">…</p> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : <>
+    {users === null ? <PageSkeleton bare /> : users.length === 0 ? <p className="hint">{T.admin.noUsers}</p> : <>
       <div className="admin-settings-row admin-settings-row-stack admin-exclude-row">
         <span>{T.admin.statsRangeLabel}</span>
         <div className="admin-mini-toggle admin-mini-toggle-wide">
