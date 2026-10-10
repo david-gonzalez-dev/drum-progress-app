@@ -1247,7 +1247,7 @@ export default function Home() {
   // Picked right inside the metronome; saved straight away.
   async function changeMetronomeTone(key: string) {
     setMetronomeTone(key);
-    if (user) await supabase.from("settings").upsert({ user_id: user.id, metronome_tone: key }, { onConflict: "user_id" });
+    if (user) failed(await supabase.from("settings").upsert({ user_id: user.id, metronome_tone: key }, { onConflict: "user_id" }));
   }
   const [showDaysThisYear, setShowDaysThisYear] = useState(true);
   // A self-service preference (set during onboarding, editable any time in Settings) that hides
@@ -1393,7 +1393,7 @@ export default function Home() {
   async function togglePin(itemEn: string) {
     if (!user) return;
     if (pinnedExercises.includes(itemEn)) {
-      await supabase.from("pinned_exercises").delete().eq("user_id", user.id).eq("exercise_en", itemEn);
+      if (failed(await supabase.from("pinned_exercises").delete().eq("user_id", user.id).eq("exercise_en", itemEn))) return;
       setPinnedExercises((current) => current.filter((en) => en !== itemEn));
       return;
     }
@@ -1415,7 +1415,7 @@ export default function Home() {
   }
   async function removeUserPracticeItem(kind: "item" | "book", name: string) {
     if (!user) return;
-    await supabase.from("user_practice_items").delete().eq("user_id", user.id).eq("kind", kind).eq("name", name);
+    failed(await supabase.from("user_practice_items").delete().eq("user_id", user.id).eq("kind", kind).eq("name", name));
     if (kind === "item") setUserItems((current) => current.filter((v) => v !== name));
     else setUserBooks((current) => current.filter((v) => v !== name));
     setCustomItems((current) => current.filter((v) => v !== name));
@@ -1423,26 +1423,27 @@ export default function Home() {
   async function skipOnboarding() {
     if (!user) return;
     setShowOnboarding(false);
-    await supabase.from("settings").upsert({ user_id: user.id, onboarded: true }, { onConflict: "user_id" });
+    failed(await supabase.from("settings").upsert({ user_id: user.id, onboarded: true }, { onConflict: "user_id" }));
   }
   async function finishOnboarding(selectedExercises: string[], goalMinutes: number | null, kidModeChoice: boolean) {
     if (!user) return;
     setShowOnboarding(false);
     if (selectedExercises.length) {
-      await Promise.all(selectedExercises.map((en, i) => supabase.from("pinned_exercises").insert({ user_id: user.id, exercise_en: en, sort_order: i })));
+      const pinResults = await Promise.all(selectedExercises.map((en, i) => supabase.from("pinned_exercises").insert({ user_id: user.id, exercise_en: en, sort_order: i })));
+      pinResults.forEach((res) => failed(res));
       setPinnedExercises((current) => [...current, ...selectedExercises]);
     }
     // goalMinutes is only null when skipping with no prior goal to fall back to -- leave
     // daily_goal_minutes untouched (still unset) rather than writing a fabricated number.
     const settingsRow: any = { user_id: user.id, onboarded: true, kid_mode: kidModeChoice };
     if (goalMinutes != null) settingsRow.daily_goal_minutes = goalMinutes;
-    await supabase.from("settings").upsert(settingsRow, { onConflict: "user_id" });
+    failed(await supabase.from("settings").upsert(settingsRow, { onConflict: "user_id" }));
     if (goalMinutes != null) setDailyGoal(goalMinutes);
     setKidMode(kidModeChoice);
   }
   async function unpinExercise(itemEn: string) {
     if (!user) return;
-    await supabase.from("pinned_exercises").delete().eq("user_id", user.id).eq("exercise_en", itemEn);
+    if (failed(await supabase.from("pinned_exercises").delete().eq("user_id", user.id).eq("exercise_en", itemEn))) return;
     setPinnedExercises((current) => current.filter((en) => en !== itemEn));
   }
   async function movePin(itemEn: string, direction: -1 | 1) {
@@ -1453,19 +1454,27 @@ export default function Home() {
     const next = [...pinnedExercises];
     [next[index], next[newIndex]] = [next[newIndex], next[index]];
     setPinnedExercises(next);
-    await Promise.all(next.map((en, i) => supabase.from("pinned_exercises").update({ sort_order: i }).eq("user_id", user.id).eq("exercise_en", en)));
+    const results = await Promise.all(next.map((en, i) => supabase.from("pinned_exercises").update({ sort_order: i }).eq("user_id", user.id).eq("exercise_en", en)));
+    results.forEach((res) => failed(res));
   }
+  // Shows the database's message if a write was refused (instead of failing silently). Returns true when it failed.
+  function failed(res: { error?: { message: string } | null } | null | undefined) { if (res?.error) { setAuthError(res.error.message); return true; } return false; }
   async function saveLogFor(targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[], targetUsedMetronome?: boolean) {
     if (!user) return false;
     // used_metronome is only ever included (and only ever true) when a metronome session
     // actually contributed to this save -- omitted otherwise so a later plain edit can't
     // clobber an earlier metronome session's flag back to false.
-    const { data: log, error } = await supabase.from("practice_logs").upsert({ user_id: user.id, practiced_on: targetDate, minutes: targetMinutes, seconds: targetSeconds ?? 0, notes: targetNotes, equipment: targetEquipment, drumset_minutes: targetDrumsetMinutes ?? null, pad_minutes: targetPadMinutes ?? null, custom_items: targetCustomItems ?? [], ...(targetUsedMetronome ? { used_metronome: true } : {}) }, { onConflict: "user_id,practiced_on" }).select().single();
+    // Look the tags up first: a tag the catalog doesn't know is kept as a custom item instead of being silently dropped.
+    const { data: itemRows, error: itemsError } = await supabase.from("practice_items").select("id,name_en").in("name_en", targetItems);
+    if (itemsError) { setAuthError(itemsError.message); return false; }
+    const knownTags = new Set((itemRows ?? []).map((row) => row.name_en));
+    const catalogTags = targetItems.filter((name) => knownTags.has(name));
+    const customToSave = Array.from(new Set([...(targetCustomItems ?? []), ...targetItems.filter((name) => !knownTags.has(name))]));
+    const { data: log, error } = await supabase.from("practice_logs").upsert({ user_id: user.id, practiced_on: targetDate, minutes: Math.min(1440, targetMinutes), seconds: targetSeconds ?? 0, notes: targetNotes, equipment: targetEquipment, drumset_minutes: targetDrumsetMinutes ?? null, pad_minutes: targetPadMinutes ?? null, custom_items: customToSave, ...(targetUsedMetronome ? { used_metronome: true } : {}) }, { onConflict: "user_id,practiced_on" }).select().single();
     if (error || !log) { setAuthError(error?.message ?? "Could not save your practice."); return false; }
-    const { data: itemRows } = await supabase.from("practice_items").select("id,name_en").in("name_en", targetItems);
-    await supabase.from("practice_log_items").delete().eq("log_id", log.id);
-    if (itemRows?.length) await supabase.from("practice_log_items").insert(itemRows.map((item) => ({ log_id: log.id, item_id: item.id })));
-    setLogs((current) => ({ ...current, [targetDate]: { minutes: targetMinutes, seconds: targetSeconds ?? 0, items: targetItems, customItems: targetCustomItems ?? [], notes: targetNotes, equipment: targetEquipment, drumsetMinutes: targetDrumsetMinutes ?? null, padMinutes: targetPadMinutes ?? null } }));
+    if (failed(await supabase.from("practice_log_items").delete().eq("log_id", log.id))) return false;
+    if (itemRows?.length && failed(await supabase.from("practice_log_items").insert(itemRows.map((item) => ({ log_id: log.id, item_id: item.id }))))) return false;
+    setLogs((current) => ({ ...current, [targetDate]: { minutes: targetMinutes, seconds: targetSeconds ?? 0, items: catalogTags, customItems: customToSave, notes: targetNotes, equipment: targetEquipment, drumsetMinutes: targetDrumsetMinutes ?? null, padMinutes: targetPadMinutes ?? null } }));
     return true;
   }
   async function deleteLogFor(targetDate: string) {
@@ -2194,7 +2203,7 @@ function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date
       <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
       <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("pad")}>{T.today.pad}</button>
     </div>
-    {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={T.calendar.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
+    {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={T.calendar.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
     <button className={saved ? "save saved" : "save"} onClick={handleSave} disabled={busy}>{saved ? T.today.practiceSaved : busy ? T.calendar.saving : T.today.savePractice}<span>→</span></button>
     {hasEntry && <button className="delete-entry" onClick={handleDelete} disabled={busy}>{T.calendar.deleteEntry}</button>}
   </div>
@@ -2700,7 +2709,8 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
     setChallengeBusy(true);
     const { data, error } = await supabase.from("challenges").insert({ group_id: group.id, created_by: user.id, name: challengeName, goal_type: challengeType, goal_value: Number(challengeGoal) || 1, start_date: challengeStart, end_date: challengeEnd, reward: challengeReward || null, punishment: challengePunishment || null }).select().single();
     if (error || !data) { setError(error?.message ?? T.group.couldNotCreateChallenge); setChallengeBusy(false); return; }
-    await supabase.from("challenge_members").insert({ challenge_id: data.id, user_id: user.id });
+    const joinRes = await supabase.from("challenge_members").insert({ challenge_id: data.id, user_id: user.id });
+    if (joinRes.error) setError(joinRes.error.message);
     setChallengeName(""); setChallengeGoal("5"); setChallengeReward(""); setChallengePunishment(""); setChallengeStart(dateKey); setChallengeEnd(shiftDateKey(dateKey, 6)); setShowCustomDates(false); setShowStakes(false); setShowNewChallenge(false); setChallengeBusy(false);
     loadChallenges();
   }
@@ -3293,7 +3303,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
 
   async function createChallenge() {
     setBusy(true);
-    const { error } = await supabase.from("personal_challenges").insert({ user_id: user.id, exercise_en: exerciseEn, target_minutes: Number(targetMinutes) || 1, target_bpm: isLadder && targetBpm ? Number(targetBpm) : null, length_days: Number(lengthDays) || 1, start_date: dateKey });
+    const { error } = await supabase.from("personal_challenges").insert({ user_id: user.id, exercise_en: exerciseEn, target_minutes: Number(targetMinutes) || 1, target_bpm: isLadder && targetBpm ? Number(targetBpm) : null, length_days: Math.min(90, Number(lengthDays) || 1), start_date: dateKey });
     setBusy(false);
     if (error) { setError(error.message ?? T.personalChallenges.couldNotCreate); return; }
     setShowNew(false); setTargetMinutes("10"); setTargetBpm(""); setLengthDays("7");
@@ -3846,7 +3856,7 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
             rows={userItems.map((name: string) => ({ key: name, label: name, selected: customItems.includes(name), onToggle: () => toggleMyItem(name), onDelete: () => onRemoveUserItem("item", name) }))}
             addValue={myItemAddText} onAddChange={setMyItemAddText} onAdd={addMyItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
         </div>
-        {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
+        {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea maxLength={2000} value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={T.today.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
         <button className="save" onClick={handleModalSave} disabled={selected.length === 0 && customItems.length === 0}>{T.today.savePractice}</button>
       </div></div>}
     </section>;
@@ -3919,7 +3929,7 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
         {RATINGS_NEEDING_NOTE.includes(editRating ?? "") && <>
           <label className="input-label issue-label">{T.practiceMode.issueLabel}</label>
           <div className="issue-groups">{SESSION_ISSUE_GROUPS.map((g) => <div key={g.title.en} className="issue-group"><span className="issue-group-title">{g.title[language as Lang]}</span><div className="chips">{g.tags.map((tag) => <button key={tag.en} onClick={() => toggleEditIssue(tag.en)} className={editIssues.includes(tag.en) ? "chip selected" : "chip"}>{editIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div></div>)}</div>
-          <textarea value={editNote} onChange={(e: any) => setEditNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
+          <textarea maxLength={2000} value={editNote} onChange={(e: any) => setEditNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
         </>}
         <button className="save" onClick={saveEditRating}>{T.practiceMode.saveRating}<span>→</span></button>
       </div></div>}
@@ -3952,7 +3962,7 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
       {selectedRating && RATINGS_NEEDING_NOTE.includes(selectedRating) && <div className="form-card">
         <label className="input-label issue-label">{T.practiceMode.issueLabel}</label>
         <div className="issue-groups">{SESSION_ISSUE_GROUPS.map((g) => <div key={g.title.en} className="issue-group"><span className="issue-group-title">{g.title[language as Lang]}</span><div className="chips">{g.tags.map((tag) => <button key={tag.en} onClick={() => toggleSessionIssue(tag.en)} className={sessionIssues.includes(tag.en) ? "chip selected" : "chip"}>{sessionIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div></div>)}</div>
-        <textarea value={sessionNote} onChange={(e: any) => setSessionNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
+        <textarea maxLength={2000} value={sessionNote} onChange={(e: any) => setSessionNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
         <button className="save" onClick={() => submitRating(selectedRating)}>{T.practiceMode.saveRating}<span>→</span></button>
       </div>}
       <button className="reset-practice" onClick={skipRating}>{T.practiceMode.skipRating}</button>
@@ -4887,7 +4897,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     setGiveBusy(true);
     setGiveError(null);
     const isLadderExercise = PRACTICE_EXERCISES.some((e) => e.en === giveExercise);
-    const { error } = await supabase.from("personal_challenges").insert({ user_id: selected.id, assigned_by: user.id, exercise_en: giveExercise, target_minutes: Number(giveMinutes) || 1, target_bpm: isLadderExercise && giveBpm ? Number(giveBpm) : null, length_days: Number(giveLength) || 1, start_date: dateKey });
+    const { error } = await supabase.from("personal_challenges").insert({ user_id: selected.id, assigned_by: user.id, exercise_en: giveExercise, target_minutes: Number(giveMinutes) || 1, target_bpm: isLadderExercise && giveBpm ? Number(giveBpm) : null, length_days: Math.min(90, Number(giveLength) || 1), start_date: dateKey });
     setGiveBusy(false);
     if (error) { setGiveError(error.message || T.personalChallenges.couldNotGive); return; }
     setGiveBpm("");
@@ -4912,12 +4922,15 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
   async function setKidModeValue(enabled: boolean) {
     if (!selected || enabled === kidMode) return;
     setKidMode(enabled);
-    await supabase.rpc("admin_set_kid_mode", { target_user_id: selected.id, enabled });
+    // If the database refuses, put the switch back so the screen never shows a setting that wasn't saved.
+    const { error } = await supabase.rpc("admin_set_kid_mode", { target_user_id: selected.id, enabled });
+    if (error) setKidMode(!enabled);
   }
   async function setPointsEnabledValue(enabled: boolean) {
     if (!selected || enabled === pointsEnabled) return;
     setPointsEnabled(enabled);
-    await supabase.rpc("admin_set_points_enabled", { target_user_id: selected.id, enabled });
+    const { error } = await supabase.rpc("admin_set_points_enabled", { target_user_id: selected.id, enabled });
+    if (error) setPointsEnabled(!enabled);
   }
 
   const ADMIN_HISTORY_LIMIT = 5;

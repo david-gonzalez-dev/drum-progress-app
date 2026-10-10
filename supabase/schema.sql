@@ -1615,3 +1615,16 @@ create policy "heart a cheer sent to me" on public.group_cheer_hearts for insert
 -- Safe to re-run.
 alter table public.settings drop constraint if exists settings_language_check;
 alter table public.settings add constraint settings_language_check check (language in ('en','es','nl'));
+
+-- 2026-10-10: the app offers Footwork, Fills and Songs as practice tags, but they were missing from this catalog, so
+-- ticking them saved nothing (the tag silently dropped). Safe to re-run.
+insert into public.practice_items (slug, name_en, name_es, sort_order) values
+  ('footwork', 'Footwork', 'Trabajo de pies', 20),
+  ('fills', 'Fills', 'Fills', 21),
+  ('songs', 'Songs', 'Canciones', 22)
+on conflict (slug) do nothing;
+
+-- 2026-10-10: the harder rudiments have tempo levels up to 280 BPM, but sessions were limited to 40-240 BPM,
+-- so saving a session at 245+ BPM would have been refused. Safe to re-run.
+alter table public.practice_sessions drop constraint if exists practice_sessions_bpm_check;
+alter table public.practice_sessions add constraint practice_sessions_bpm_check check (bpm between 40 and 300);
