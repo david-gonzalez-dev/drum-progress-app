@@ -31,7 +31,7 @@ export default function TermsPage() {
     <p>DrumSkills is provided as is. We work hard to keep it reliable, but we cannot promise it will always be available or error free, and we are not responsible for lost practice records beyond what the law requires. The app is a practice aid and not a replacement for a teacher.</p>
 
     <h2>7. Who runs the app and which law applies</h2>
-    <p>DrumSkills is run by David Gonzalez in the Netherlands. These terms are governed by Dutch law. This does not take away any rights you have as a consumer under the mandatory laws of the country where you live.</p>
+    <p>DrumSkills is run by David Gonzalez Arnesto in the Netherlands. These terms are governed by Dutch law. This does not take away any rights you have as a consumer under the mandatory laws of the country where you live.</p>
 
     <h2>8. Changes</h2>
     <p>We may update these terms. If we make an important change we will update the date above and tell you in the app where it matters.</p>

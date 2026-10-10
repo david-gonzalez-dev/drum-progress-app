@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Privacy Policy | DrumSkills", robots
 export default function PrivacyPage() {
   return <LegalShell title="Privacy Policy">
     <p>DrumSkills is a practice tracker for drum students and their teachers. This policy explains what information the app collects, how it is used, who can see it, and the choices you and your parents have. Questions can be sent to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
-    <p>DrumSkills is run by David Gonzalez in the Netherlands. He is the person responsible for the information described here (the &quot;controller&quot; under the European privacy law, the GDPR).</p>
+    <p>DrumSkills is run by David Gonzalez Arnesto in the Netherlands. He is the person responsible for the information described here (the &quot;controller&quot; under the European privacy law, the GDPR).</p>
 
     <h2>1. Information we collect</h2>
     <ul>
@@ -25,7 +25,7 @@ export default function PrivacyPage() {
     <ul>
       <li><b>You</b> can see all of your own information.</li>
       <li><b>Members of the same group</b> can see your practice days, time practiced, what you practiced, and your Skill Trainer progress. Your notes are private: group members cannot see them. Only you and the app administrator can.</li>
-      <li><b>The app administrator</b> (David Gonzalez, who runs DrumSkills and teaches drums) can see the practice information of all users, including notes, so that he can follow students&apos; progress and help with support questions. He can also give points and assign challenges.</li>
+      <li><b>The app administrator</b> (David Gonzalez Arnesto, who runs DrumSkills and teaches drums) can see the practice information of all users, including notes, so that he can follow students&apos; progress and help with support questions. He can also give points and assign challenges.</li>
       <li><b>A group&apos;s creator</b> manages the group and its challenges, and sees the same group information as every other member.</li>
       <li><b>Service providers</b> that run the app for us: our database and login provider (Supabase) and our web hosting provider. They only handle data to provide the service. If you choose Google sign-in, Google handles that login. The app&apos;s fonts are served from our own site, so no font provider sees your visit.</li>
       <li><b>Anyone else</b> only if the law requires us to share it.</li>
@@ -52,6 +52,6 @@ export default function PrivacyPage() {
     <p>If we change this policy in a meaningful way we will update the date above and, where it matters, tell you in the app.</p>
 
     <h2>10. Contact</h2>
-    <p>DrumSkills (David Gonzalez, the Netherlands), <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
+    <p>DrumSkills (David Gonzalez Arnesto, the Netherlands), <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
   </LegalShell>;
 }
