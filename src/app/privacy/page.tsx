@@ -12,9 +12,9 @@ export default function PrivacyPage() {
     <ul>
       <li><b>Account details:</b> your email address, a password (stored in scrambled form by our login provider, so we cannot read it) and the name you choose. If you sign in with Google, we receive your name and email address from Google.</li>
       <li><b>Practice information you enter:</b> practice days and minutes, whether you used a drum set or a practice pad, what you practiced, notes you write, Skill Trainer sessions (exercise, tempo, how it felt, optional notes and tags), pinned exercises, personal challenges, and your settings (language, daily goal, metronome sound).</li>
-      <li><b>Group information:</b> groups you create or join, your calendar color, group challenges, and challenges a teacher gives you.</li>
+      <li><b>Group information:</b> groups you create or join, your calendar color, group challenges, and challenges the administrator gives you.</li>
       <li><b>Cheers:</b> short ready-made messages (for example &quot;Go practice!&quot;) and hearts that group members send each other. There is no free-text chat. Cheers are deleted automatically after 14 days.</li>
-      <li><b>Points:</b> if your teacher uses the points game, the points and short reasons they give you.</li>
+      <li><b>Points:</b> if the administrator turns on the points game for you, the points and short reasons you are given.</li>
       <li><b>On your device:</b> the app keeps your login session, a few preferences and the state of a running Session Timer in your browser or app storage. We do not use advertising or tracking cookies.</li>
     </ul>
 
@@ -24,8 +24,9 @@ export default function PrivacyPage() {
     <h2>3. Who can see your information</h2>
     <ul>
       <li><b>You</b> can see all of your own information.</li>
-      <li><b>Members of the same group</b> can see your practice days, time practiced, what you practiced, and your Skill Trainer progress. Your notes are private: only you and your teacher can see them.</li>
-      <li><b>Your teacher</b> (the administrator of your group) can see the practice information of their students and can give points.</li>
+      <li><b>Members of the same group</b> can see your practice days, time practiced, what you practiced, and your Skill Trainer progress. Your notes are private: group members cannot see them. Only you and the app administrator can.</li>
+      <li><b>The app administrator</b> (David Gonzalez, who runs DrumSkills and teaches drums) can see the practice information of all users, including notes, so that he can follow students&apos; progress and help with support questions. He can also give points and assign challenges.</li>
+      <li><b>A group&apos;s creator</b> manages the group and its challenges, and sees the same group information as every other member.</li>
       <li><b>Service providers</b> that run the app for us: our database and login provider (Supabase) and our web hosting provider. They only handle data to provide the service. If you choose Google sign-in, Google handles that login. The app&apos;s fonts are served from our own site, so no font provider sees your visit.</li>
       <li><b>Anyone else</b> only if the law requires us to share it.</li>
     </ul>

@@ -18,8 +18,8 @@ export default function TermsPage() {
       <li>Do not try to break the app, get into other people&apos;s accounts, or change results such as practice time or points unfairly.</li>
     </ul>
 
-    <h2>3. Groups and teachers</h2>
-    <p>A teacher can also give you a challenge or points. A group&apos;s administrator (usually a teacher) can see the practice information of the group&apos;s members, manage group settings, and give points. Members of a group can see each other&apos;s practice. Your notes stay private to you and your teacher. Only join groups you know.</p>
+    <h2>3. Groups and the administrator</h2>
+    <p>The person who runs the app (the administrator, who is also a drum teacher) can see all users&apos; practice information, including notes, and can give you challenges or points. The person who creates a group manages it, and members of a group can see each other&apos;s practice. Your notes stay private from other group members. Only join groups you know.</p>
 
     <h2>4. Your content</h2>
     <p>The notes and other things you enter remain yours. You allow us to store and show them inside the app as described in the Privacy Policy. We may remove content that breaks these terms.</p>
