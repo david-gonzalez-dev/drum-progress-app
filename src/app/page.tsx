@@ -55,6 +55,8 @@ const SESSION_ISSUE_GROUPS_BASE: { title: { en: string; es: string }; tags: { en
 ];
 const SESSION_ISSUE_GROUPS = SESSION_ISSUE_GROUPS_BASE.map((g) => ({ title: { ...g.title, nl: nlName(g.title.en) }, tags: withNl(g.tags) }));
 const SESSION_ISSUE_TAGS = SESSION_ISSUE_GROUPS.flatMap((g) => g.tags);
+// Items named after rudiments or books also stay in English everywhere.
+const ENGLISH_ONLY_ITEMS = new Set(["Rudiments", "Single Strokes", "Double Strokes", "Paradiddles", "Stick Control", "Fills"]);
 const PRACTICE_ITEMS = withNl([
   { en: "Rudiments", es: "Rudimentos" },
   { en: "Single Strokes", es: "Golpes simples" },
@@ -67,7 +69,7 @@ const PRACTICE_ITEMS = withNl([
   { en: "Permutations", es: "Permutaciones" },
   { en: "Fills", es: "Fills" },
   { en: "Songs", es: "Canciones" },
-]);
+]).map((o) => ENGLISH_ONLY_ITEMS.has(o.en) ? { ...o, es: o.en, nl: o.en } : o);
 // Quick Practice's own top-level order (Rudiments renders separately as an expandable picker,
 // and Stick Control lives in the Books picker instead, so both are excluded here).
 const QUICK_PRACTICE_ITEM_ORDER = ["Rhythms", "Coordination", "Footwork", "Permutations", "Fills", "Songs"];
@@ -224,7 +226,8 @@ const PRACTICE_EXERCISES_BASE: { category: typeof PRACTICE_CATEGORIES[number]; s
   { category: "exercises", subcategory: null, en: "Three-Note Pattern #2", es: "Patrón de Tres Notas #2", difficulty: "core", exerciseGroup: "hand", pattern: { en: "2 sixteenth notes + 1 eighth note", es: "2 semicorcheas + 1 corchea" } },
   { category: "exercises", subcategory: null, en: "Three-Note Pattern #3", es: "Patrón de Tres Notas #3", difficulty: "core", exerciseGroup: "hand", pattern: { en: "1 sixteenth note + 1 eighth note + 1 sixteenth note", es: "1 semicorchea + 1 corchea + 1 semicorchea" } },
 ];
-const PRACTICE_EXERCISES = withNl(PRACTICE_EXERCISES_BASE);
+// Rudiment names stay in English in every language (they are international); exercise names are translated.
+const PRACTICE_EXERCISES = withNl(PRACTICE_EXERCISES_BASE).map((o) => o.category === "rudiments" ? { ...o, es: o.en, nl: o.en } : o);
 // Structured sticking data for the Practice Mode metronome's sticking panel. A token is one stroke:
 // hand ("R"/"L"), an optional grace flag (soft pre-stroke for flams/drags, rendered smaller/dimmer),
 // and an optional count (for repeated strokes shown as a superscript, e.g. R R -> R²). Authored below
@@ -514,7 +517,7 @@ const translations = {
       language: "LANGUAGE", showDaysThisYear: "Days practiced this year", showDaysThisYearDesc: "Adds a count of practice days this year to your Home stats.", on: "ON", off: "OFF", save: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR", autoColor: "Auto",
       metronomeTone: "METRONOME TONE", toneNames: { click: "Click", beep: "Beep", wood: "Wood", clave: "Clave" },
       profileSection: "PROFILE", practiceSection: "PRACTICE", preferencesSection: "PREFERENCES", accountSection: "ACCOUNT SETTINGS", pleaseWait: "Please wait...",
-      libraryLabel: "CONTENT LIBRARY", libraryFull: "Full Library", libraryEssentials: "Essentials", libraryHint: "Essentials shows a shorter, beginner-friendly list of rudiments and exercises. You can change this anytime.",
+      libraryLabel: "CONTENT LIBRARY", libraryFull: "Full Library", libraryEssentials: "Essentials", libraryHint: "Essentials shows a shorter list for beginners.",
       changeEmail: "Change email", newEmailPlaceholder: "New email address", updateEmail: "Update email", emailChangeSent: "Check your new email to confirm the change.",
       changePassword: "Change password", newPasswordPlaceholder: "New password", confirmPasswordPlaceholder: "Confirm new password", updatePassword: "Update password", passwordChanged: "✓ Password updated", passwordMismatch: "Passwords don't match.", passwordTooShort: "Password must be at least 6 characters.",
       privacyPolicy: "Privacy Policy", termsOfUse: "Terms of Use", support: "Support",
@@ -565,7 +568,7 @@ const translations = {
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
       whatDidYouPractiseTitle: "¿QUÉ PRACTICASTE?", whatDidYouPractiseSubtitle: "Elige al menos uno.", addOwnPlaceholder: "Añade lo tuyo...", addOwnBtn: "Añadir",
-      rudiments: "Rudimentos", searchRudiments: "Buscar rudimentos...", searchExercises: "Buscar ejercicios...", books: "Libros", myItems: "Mis elementos", addOwnBookPlaceholder: "Añade tu propio libro...", pickerDone: "Listo",
+      rudiments: "Rudiments", searchRudiments: "Buscar rudiments...", searchExercises: "Buscar ejercicios...", books: "Libros", myItems: "Mis elementos", addOwnBookPlaceholder: "Añade tu propio libro...", pickerDone: "Listo",
     },
     calendar: {
       title: "CALENDARIO", longestStreak: "Racha más larga", daysThisYear: "Días este año",
@@ -611,14 +614,14 @@ const translations = {
     achievements: {
       unlocked: "desbloqueados", nextUp: "Siguiente", allDone: "Todo desbloqueado", done: "Desbloqueado",
       level: (l: number, n: number) => l === 0 ? "Bloqueado" : `Nivel ${l} de ${n}`, levelShort: (l: number) => `Nivel ${l}`, notYet: "Aún no",
-      category: { time: "Tiempo", streak: "Racha", days: "Constancia", sessions: "Entrenador", tempo: "Tempo", variety: "Variedad", long: "Día largo", challenges: "Retos", mastery: "Maestría" } as Record<string, string>,
+      category: { time: "Tiempo", streak: "Racha", days: "Constancia", sessions: "Trainer", tempo: "Tempo", variety: "Variedad", long: "Día largo", challenges: "Retos", mastery: "Maestría" } as Record<string, string>,
       label: (key: string, n: number) => {
         switch (key) {
           case "time": return n < 1 ? `${Math.round(n * 60)} minutos practicados` : `${n} ${n === 1 ? "hora" : "horas"} practicadas`;
           case "streak": return `Racha de ${n} días`;
           case "days": return `${n} días practicados`;
           case "sessions": return n === 1 ? "Primera sesión de Skill Trainer" : `${n} sesiones de Skill Trainer`;
-          case "tempo": { const need = TEMPO_REQUIRED_BY_BPM[n] ?? 5; return `${need} ${need === 1 ? "rudimento" : "rudimentos"} a ${n} BPM`; }
+          case "tempo": { const need = TEMPO_REQUIRED_BY_BPM[n] ?? 5; return `${need} ${need === 1 ? "rudiment" : "rudiments"} a ${n} BPM`; }
           case "variety": return `${n} ejercicios distintos`;
           case "long": return `${n} min en un día`;
           case "mastery": return n === 1 ? "Primera sesión dominada" : `${n} sesiones dominadas`;
@@ -671,13 +674,13 @@ const translations = {
       rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Califica tu sesión a ${bpm} BPM para guardarla.`, skipRating: "Omitir, no guardar esto",
       issueLabel: "¿QUÉ PASÓ? (OPCIONAL)", sessionNotePlaceholder: "Añade una nota (opcional)", saveRating: "Guardar",
       backToBook: "Volver a Modo práctica", couldNotSaveSession: "No se pudo guardar esta sesión.",
-      categoryRudiments: "Rudimentos", categoryExercises: "Ejercicios", categoryRhythms: "Ritmos",
+      categoryRudiments: "Rudiments", categoryExercises: "Ejercicios", categoryRhythms: "Ritmos",
       pin: "Fijar", pinned: "Fijado",
       maxPinnedReached: (max: number) => `Puedes fijar hasta ${max} ejercicios. Quita uno primero.`,
       pinManagerEyebrow: (count: number, max: number) => `${count}/${max} FIJADOS`, pinManagerTitle: "Tu enfoque", pinManagerDone: "Listo",
       pinManagerAddBtn: "+ Añadir ejercicio", pinManagerSearchPlaceholder: "Buscar ejercicios...", pinManagerEmpty: "Aún no hay nada fijado. Añade hasta 5 para verlos aquí.",
-      quickTitle: "Práctica rápida", quickSub: "Registra minutos, metrónomo, temporizador", continueLabel: "Continúa donde lo dejaste", recentDays: "DÍAS RECIENTES", noRecentDays: "Aún no hay registros.", skillSearchPlaceholder: "Buscar rudimentos y ejercicios", skillNoMatch: "Nada coincide con esa búsqueda.", skillSub: "Rudimentos y ejercicios", challengesSub: "Ponte tu propia meta de práctica",
-      trainTitle: "Entrenador de habilidades",
+      quickTitle: "Práctica rápida", quickSub: "Registra minutos, metrónomo, temporizador", continueLabel: "Continúa donde lo dejaste", recentDays: "DÍAS RECIENTES", noRecentDays: "Aún no hay registros.", skillSearchPlaceholder: "Buscar rudiments y ejercicios", skillNoMatch: "Nada coincide con esa búsqueda.", skillSub: "Rudiments y ejercicios", challengesSub: "Ponte tu propia meta de práctica",
+      trainTitle: "Skill Trainer",
       rudimentListIntro: "Desbloquea 2 tempos para abrir el siguiente rudimento.",
       tempoCompleteIntro: (min: number) => `Practica un tempo durante ${min} min para completarlo.`,
       listIntroExercises: (min: number) => `Practica ${min} min en cada tempo para desbloquear el siguiente nivel.`,
@@ -692,7 +695,7 @@ const translations = {
       language: "IDIOMA", showDaysThisYear: "Días practicados este año", showDaysThisYearDesc: "Añade un contador de días practicados este año a tus estadísticas de Inicio.", on: "SÍ", off: "NO", save: "Guardar ajustes", saved: "✓ Ajustes guardados", logout: "Cerrar sesión", calendarColor: "COLOR DEL CALENDARIO DE GRUPO", autoColor: "Auto",
       metronomeTone: "SONIDO DEL METRÓNOMO", toneNames: { click: "Click", beep: "Bip", wood: "Madera", clave: "Clave" },
       profileSection: "PERFIL", practiceSection: "PRÁCTICA", preferencesSection: "PREFERENCIAS", accountSection: "AJUSTES DE CUENTA", pleaseWait: "Un momento...",
-      libraryLabel: "BIBLIOTECA DE CONTENIDO", libraryFull: "Biblioteca Completa", libraryEssentials: "Esenciales", libraryHint: "Esenciales muestra una lista más corta y sencilla de rudimentos y ejercicios. Puedes cambiarlo cuando quieras.",
+      libraryLabel: "BIBLIOTECA DE CONTENIDO", libraryFull: "Biblioteca Completa", libraryEssentials: "Esenciales", libraryHint: "Esenciales muestra una lista más corta para principiantes.",
       changeEmail: "Cambiar correo electrónico", newEmailPlaceholder: "Nuevo correo electrónico", updateEmail: "Actualizar correo", emailChangeSent: "Revisa tu nuevo correo para confirmar el cambio.",
       changePassword: "Cambiar contraseña", newPasswordPlaceholder: "Nueva contraseña", confirmPasswordPlaceholder: "Confirmar nueva contraseña", updatePassword: "Actualizar contraseña", passwordChanged: "✓ Contraseña actualizada", passwordMismatch: "Las contraseñas no coinciden.", passwordTooShort: "La contraseña debe tener al menos 6 caracteres.",
       privacyPolicy: "Política de privacidad", termsOfUse: "Términos de uso", support: "Soporte",
@@ -700,12 +703,12 @@ const translations = {
     },
     admin: {
       title: "ACTIVIDAD DE USUARIOS", eyebrow: "ADMIN", noUsers: "Aún no hay usuarios.", neverPracticed: "Nunca practicó",
-      dailyLogs: "REGISTROS DIARIOS", practiceSessions: "SESIONES DE ENTRENADOR DE HABILIDADES", noDailyLogs: "Aún no hay registros diarios.", noPracticeSessions: "Aún no hay sesiones de entrenador de habilidades.",
+      dailyLogs: "REGISTROS DIARIOS", practiceSessions: "SESIONES DE SKILL TRAINER", noDailyLogs: "Aún no hay registros diarios.", noPracticeSessions: "Aún no hay sesiones de Skill Trainer.",
       notesPrefix: "Notas:",
       usersLabel: (n: number) => n === 1 ? "USUARIO" : "USUARIOS",
       totalMinutesLabel: "total", totalLogsLabel: "registros", totalPracticeLabel: "Práctica total", focusLabel: "ENFOQUE", mostPracticedLabel: "MÁS PRACTICADO",
       pointsLabel: "PUNTOS", awardHint: "Otorgar o quitar puntos", reasonPlaceholder: "Motivo", awardBtn: "Dar", modeLabel: "MODO", modeStandard: "Biblioteca Completa", modeBeginner: "Esenciales", pointGameLabel: "JUEGO DE PUNTOS", pointGameOn: "Activado", pointGameOff: "Desactivado", pointsHistory: "HISTORIAL DE PUNTOS", noPoints: "Aún no se han otorgado puntos.",
-      metronomeBadge: "Metrónomo", skillTrainerBadge: "Entrenador de habilidades", quickEntryBadge: "Entrada rápida",
+      metronomeBadge: "Metrónomo", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Entrada rápida",
       mostMinutesTitle: "MÁS TIEMPO DE PRÁCTICA", allUsersTitle: "TODOS LOS USUARIOS", excludeSelfLabel: "Excluir mi cuenta de las estadísticas",
       statsRangeLabel: "Rango de tiempo", statsRangeAll: "Todo", statsRangeMonth: "Este Mes", statsRangeLastMonth: "Mes Pasado", statsRangeYear: "Año",
       skillProgressLabel: "PROGRESO DE HABILIDADES",
@@ -870,7 +873,7 @@ const translations = {
       language: "TAAL", showDaysThisYear: "Geoefende dagen dit jaar", showDaysThisYearDesc: "Voegt het aantal oefendagen dit jaar toe aan je Home-statistieken.", on: "AAN", off: "UIT", save: "Instellingen opslaan", saved: "✓ Instellingen opgeslagen", logout: "Uitloggen", calendarColor: "KALENDERKLEUR IN DE GROEP", autoColor: "Automatisch",
       metronomeTone: "METRONOOMGELUID", toneNames: { click: "Klik", beep: "Piep", wood: "Hout", clave: "Clave" },
       profileSection: "PROFIEL", practiceSection: "OEFENEN", preferencesSection: "VOORKEUREN", accountSection: "ACCOUNTINSTELLINGEN", pleaseWait: "Even geduld...",
-      libraryLabel: "INHOUDSBIBLIOTHEEK", libraryFull: "Volledige bibliotheek", libraryEssentials: "Basis", libraryHint: "Basis toont een kortere, beginnersvriendelijke lijst met rudiments en oefeningen. Je kunt dit altijd wijzigen.",
+      libraryLabel: "INHOUDSBIBLIOTHEEK", libraryFull: "Volledige bibliotheek", libraryEssentials: "Basis", libraryHint: "Basis toont een kortere lijst voor beginners.",
       changeEmail: "E-mailadres wijzigen", newEmailPlaceholder: "Nieuw e-mailadres", updateEmail: "E-mailadres bijwerken", emailChangeSent: "Controleer je nieuwe e-mail om de wijziging te bevestigen.",
       changePassword: "Wachtwoord wijzigen", newPasswordPlaceholder: "Nieuw wachtwoord", confirmPasswordPlaceholder: "Bevestig nieuw wachtwoord", updatePassword: "Wachtwoord bijwerken", passwordChanged: "✓ Wachtwoord bijgewerkt", passwordMismatch: "De wachtwoorden komen niet overeen.", passwordTooShort: "Het wachtwoord moet minstens 6 tekens hebben.",
       privacyPolicy: "Privacybeleid", termsOfUse: "Gebruiksvoorwaarden", support: "Ondersteuning",
@@ -1240,6 +1243,11 @@ export default function Home() {
   const [language, setLanguage] = useState<Lang>("en");
   const [dailyGoal, setDailyGoal] = useState<number | null>(null);
   const [metronomeTone, setMetronomeTone] = useState("click");
+  // Picked right inside the metronome; saved straight away.
+  async function changeMetronomeTone(key: string) {
+    setMetronomeTone(key);
+    if (user) await supabase.from("settings").upsert({ user_id: user.id, metronome_tone: key }, { onConflict: "user_id" });
+  }
   const [showDaysThisYear, setShowDaysThisYear] = useState(true);
   // A self-service preference (set during onboarding, editable any time in Settings) that hides
   // advanced rudiments/exercises from Skill Trainer -- the admin can also set a default for a
@@ -1568,7 +1576,7 @@ export default function Home() {
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className={timerBanner ? "shell has-timer-banner" : "shell"}>
     {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("home"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setSkillTab("rudiments"); setPracticeStep("skill"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
+    {tab === "practice" && <PracticeMode onMetronomeToneChange={changeMetronomeTone} skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
     {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
@@ -1586,7 +1594,7 @@ export default function Home() {
       </div>
     </div>}
     <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); if (id === "group" && tab === "group") setGroupPickerKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("home"); }}><span>{NAV_ICONS[id]}{id === "group" && hasUnreadCheers && tab !== "group" && <i className="nav-dot" />}</span>{T.nav[id]}</button>)}</nav>
-    <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} sharedTimer={timerRun} onUsedDuringTimer={() => addTimerCredit(0, true)} tone={metronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
+    <Metronome open={metronome} close={() => setMetronome(false)} onAddPractice={addMetronomePractice} sharedTimer={timerRun} onUsedDuringTimer={() => addTimerCredit(0, true)} tone={metronomeTone} onToneChange={changeMetronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     <SessionTimer open={sessionTimer} close={() => setSessionTimer(false)} onOpen={() => setSessionTimer(true)} onBannerChange={setTimerBanner} onRunChange={setTimerRun} timerCredit={timerCredit} onCreditReset={() => saveTimerCredit(null)} onAddPractice={(seconds, items, customItems, usedMetronome) => addMetronomePractice(seconds, items, customItems, usedMetronome)} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
     {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onTogglePin={togglePin} onClose={() => setShowPinManager(false)} language={language} T={T} />}
@@ -3349,7 +3357,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCategory, rudimentTier, setRudimentTier, exerciseGroup, setExerciseGroup, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, openSessionTimer, metronomeTone, user, setError, language, T }: any) {
+function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setStep, category, setCategory, rudimentTier, setRudimentTier, exerciseGroup, setExerciseGroup, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, openSessionTimer, metronomeTone, user, setError, language, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -3925,7 +3933,7 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
     return <section className="page">
       <div className="back-row"><button onClick={() => setStep("detail")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
-      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} exerciseLabel={label} exerciseEn={exercise} sessions={sessions} lockTempo language={language} T={T} />
+      <Metronome open={true} initialBpm={bpm} onSessionEnd={handleSessionEnd} close={() => setStep("detail")} tone={metronomeTone} onToneChange={onMetronomeToneChange} exerciseLabel={label} exerciseEn={exercise} sessions={sessions} lockTempo language={language} T={T} />
     </section>;
   }
 
@@ -3956,6 +3964,7 @@ function PageSkeleton({ bare }: { bare?: boolean }) {
 }
 function Settings({ signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, kidMode: currentKidMode, onKidModeSaved, onBack, T }: { signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; kidMode: boolean; onKidModeSaved: (value: boolean) => void; onBack: () => void; T: any }) {
   const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [kidMode, setKidMode] = useState(currentKidMode); const [saved, setSaved] = useState(false);
+  const [openPanel, setOpenPanel] = useState<"email" | "password" | "delete" | null>(null);
   const [newEmail, setNewEmail] = useState(""); const [emailBusy, setEmailBusy] = useState(false); const [emailMsg, setEmailMsg] = useState("");
   const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [passwordBusy, setPasswordBusy] = useState(false); const [passwordMsg, setPasswordMsg] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState(""); const [deleteBusy, setDeleteBusy] = useState(false);
@@ -3971,11 +3980,11 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
     // if there WAS one to begin with -- otherwise it just means the user never touched it,
     // and writing anything would fabricate a value they never chose.
     const shouldWriteGoal = (parsedGoal === null ? dailyGoal !== null : !Number.isNaN(parsedGoal));
-    const settingsRow: any = { user_id: user.id, language, metronome_tone: tone, show_days_this_year: showDaysThisYear, kid_mode: kidMode };
+    const settingsRow: any = { user_id: user.id, language, show_days_this_year: showDaysThisYear, kid_mode: kidMode };
     if (shouldWriteGoal) settingsRow.daily_goal_minutes = parsedGoal;
     const settings = await supabase.from("settings").upsert(settingsRow, { onConflict: "user_id" });
     if (profile.error || settings.error) setError(profile.error?.message ?? settings.error?.message ?? "Could not save settings.");
-    else { onProfileNameSaved(name); onLanguageSaved(language); if (shouldWriteGoal) onGoalSaved(parsedGoal); onMetronomeToneSaved(tone); onShowDaysThisYearSaved(showDaysThisYear); onKidModeSaved(kidMode); setSaved(true); setTimeout(() => setSaved(false), 1800); }
+    else { onProfileNameSaved(name); onLanguageSaved(language); if (shouldWriteGoal) onGoalSaved(parsedGoal); onShowDaysThisYearSaved(showDaysThisYear); onKidModeSaved(kidMode); setSaved(true); setTimeout(() => setSaved(false), 1800); }
   }
   async function changeEmail() {
     if (!newEmail.trim()) return;
@@ -4010,37 +4019,37 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
     }
     await supabase.auth.signOut();
   }
-  return <section className="page"><button className="page-back" onClick={onBack}>‹ {T.nav.today}</button><header className="simple-head"><p className="eyebrow">{T.settings.makeItYours}</p><h1>{T.settings.title}</h1></header>
-    <p className="settings-section-label">{T.settings.profileSection}</p>
-    <div className="settings-form">
-      <label>{T.settings.displayName}<input value={name} onChange={e => setName(e.target.value)} /></label>
+  const chev = <svg className="sx-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>;
+  return <section className="page"><button className="page-back" onClick={onBack}>‹ {T.nav.today}</button><header className="simple-head sx-head"><h1>{T.settings.title}</h1></header>
+    <p className="sx-title">{T.settings.profileSection}</p>
+    <div className="sx-card">
+      <label className="sx-row"><span className="sx-label sx-caps">{T.settings.displayName}</span><span className="sx-field"><input value={name} onChange={e => setName(e.target.value)} maxLength={30} /><svg className="sx-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg></span></label>
+      <label className="sx-row"><span className="sx-label sx-caps">{T.settings.language}</span><select className="sx-field sx-select" value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option><option value="nl">Nederlands</option></select></label>
     </div>
-    <p className="settings-section-label">{T.settings.practiceSection}</p>
-    <div className="settings-form">
-      <label>{T.settings.dailyGoal}<input inputMode="numeric" placeholder="30" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><small>{T.settings.minutes}</small></label>
-      <label>{T.settings.libraryLabel}<div className="equipment-toggle"><button type="button" className={!kidMode ? "equipment-option selected" : "equipment-option"} onClick={() => setKidMode(false)}>{T.settings.libraryFull}</button><button type="button" className={kidMode ? "equipment-option selected" : "equipment-option"} onClick={() => setKidMode(true)}>{T.settings.libraryEssentials}</button></div></label>
-      <p className="settings-neutral-hint">{T.settings.libraryHint}</p>
-    </div>
-    <p className="settings-section-label">{T.settings.preferencesSection}</p>
-    <div className="settings-form"><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option><option value="nl">Nederlands</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row toggle-row-with-desc" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span className="toggle-row-text"><span>{T.settings.showDaysThisYear}</span><span className="toggle-row-desc">{T.settings.showDaysThisYearDesc}</span></span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
-    <p className="settings-section-label">{T.settings.accountSection}</p>
-    <div className="settings-form account-settings">
-      <label>{T.settings.changeEmail}<input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={T.settings.newEmailPlaceholder} /></label>
-      {emailMsg && <p className="settings-hint">{emailMsg}</p>}
-      <button className="secondary-btn" disabled={emailBusy || !newEmail.trim()} onClick={changeEmail}>{emailBusy ? T.settings.pleaseWait : T.settings.updateEmail}</button>
-      <label className="account-field-spaced">{T.settings.changePassword}<input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder={T.settings.newPasswordPlaceholder} /></label>
-      <input type="password" className="account-confirm-input" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={T.settings.confirmPasswordPlaceholder} />
-      {passwordMsg && <p className="settings-hint">{passwordMsg}</p>}
-      <button className="secondary-btn" disabled={passwordBusy || !newPassword || !confirmPassword} onClick={changePassword}>{passwordBusy ? T.settings.pleaseWait : T.settings.updatePassword}</button>
-      <p className="settings-legal"><a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">{T.settings.privacyPolicy}</a> · <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">{T.settings.termsOfUse}</a> · <a href={LEGAL_URLS.support} target="_blank" rel="noopener noreferrer">{T.settings.support}</a></p>
-      <button className="logout" onClick={signOut}>{T.settings.logout}</button>
-      <div className="danger-zone">
-        <p className="danger-title">{T.settings.deleteAccount}</p>
-        <p className="danger-warning">{T.settings.deleteAccountWarning}</p>
-        <label className="account-field-spaced">{T.settings.deleteAccountConfirmPrompt(user.email ?? "")}<input value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder={user.email ?? ""} /></label>
-        <button className="danger-btn" disabled={deleteBusy || deleteConfirmText.trim().toLowerCase() !== (user.email ?? "").toLowerCase()} onClick={deleteAccount}>{deleteBusy ? T.settings.deleteAccountBusy : T.settings.deleteAccountBtn}</button>
+    <p className="sx-title">{T.settings.practiceSection}</p>
+    <div className="sx-card">
+      <div className="sx-row"><span className="sx-label sx-caps">{T.settings.dailyGoal}</span><span className="sx-stepper"><button type="button" aria-label="-5" onClick={() => setGoal(String(Math.max(5, (Number(goal) || 0) - 5)))}>−</button><input inputMode="numeric" placeholder="30" value={goal} onChange={e => setGoal(e.target.value.replace(/\D/g, ""))} /><button type="button" aria-label="+5" onClick={() => setGoal(String((Number(goal) || 0) + 5))}>+</button><small>{T.settings.minutes}</small></span></div>
+      <div className="sx-row sx-stack">
+        <span className="sx-label sx-caps">{T.settings.libraryLabel}</span>
+        <div className="sx-seg"><button type="button" className={!kidMode ? "on" : ""} onClick={() => setKidMode(false)}>{T.settings.libraryFull}</button><button type="button" className={kidMode ? "on" : ""} onClick={() => setKidMode(true)}>{T.settings.libraryEssentials}</button></div>
+        <span className="sx-sub">{T.settings.libraryHint}</span>
       </div>
+      <button type="button" className="sx-row sx-switch-row" onClick={() => setShowDaysThisYear(!showDaysThisYear)} role="switch" aria-checked={showDaysThisYear}><span className="sx-switch-text"><span className="sx-label">{T.settings.showDaysThisYear}</span><span className="sx-sub">{T.settings.showDaysThisYearDesc}</span></span><i className={showDaysThisYear ? "sx-switch on" : "sx-switch"}><b /></i></button>
     </div>
+    <button className={saved ? "save saved sx-save" : "save sx-save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button>
+    <p className="sx-title">{T.settings.accountSection}</p>
+    <div className="sx-card">
+      <button type="button" className="sx-row sx-link" onClick={() => setOpenPanel(openPanel === "email" ? null : "email")}><span className="sx-label">{T.settings.changeEmail}</span>{chev}</button>
+      {openPanel === "email" && <div className="sx-panel"><input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={T.settings.newEmailPlaceholder} />{emailMsg && <p className="sx-msg">{emailMsg}</p>}<button className="sx-btn" disabled={emailBusy || !newEmail.trim()} onClick={changeEmail}>{emailBusy ? T.settings.pleaseWait : T.settings.updateEmail}</button></div>}
+      <button type="button" className="sx-row sx-link" onClick={() => setOpenPanel(openPanel === "password" ? null : "password")}><span className="sx-label">{T.settings.changePassword}</span>{chev}</button>
+      {openPanel === "password" && <div className="sx-panel"><input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder={T.settings.newPasswordPlaceholder} /><input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={T.settings.confirmPasswordPlaceholder} />{passwordMsg && <p className="sx-msg">{passwordMsg}</p>}<button className="sx-btn" disabled={passwordBusy || !newPassword || !confirmPassword} onClick={changePassword}>{passwordBusy ? T.settings.pleaseWait : T.settings.updatePassword}</button></div>}
+      <a className="sx-row sx-link" href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer"><span className="sx-label">{T.settings.privacyPolicy}</span>{chev}</a>
+      <a className="sx-row sx-link" href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer"><span className="sx-label">{T.settings.termsOfUse}</span>{chev}</a>
+      <a className="sx-row sx-link" href={LEGAL_URLS.support} target="_blank" rel="noopener noreferrer"><span className="sx-label">{T.settings.support}</span>{chev}</a>
+      <button type="button" className="sx-row sx-logout" onClick={signOut}>{T.settings.logout}</button>
+    </div>
+    <button type="button" className="sx-delete-toggle" onClick={() => setOpenPanel(openPanel === "delete" ? null : "delete")}>{T.settings.deleteAccount}</button>
+    {openPanel === "delete" && <div className="sx-card sx-danger"><p className="sx-warn">{T.settings.deleteAccountWarning}</p><label className="sx-confirm">{T.settings.deleteAccountConfirmPrompt(user.email ?? "")}<input value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder={user.email ?? ""} /></label><button className="danger-btn" disabled={deleteBusy || deleteConfirmText.trim().toLowerCase() !== (user.email ?? "").toLowerCase()} onClick={deleteAccount}>{deleteBusy ? T.settings.deleteAccountBusy : T.settings.deleteAccountBtn}</button></div>}
   </section>;
 }
 function Setting({icon,label,value}:{icon:string;label:string;value:string}) { return <button className="setting"><span className="setting-icon">{icon}</span><span>{label}</span><em>{value} ›</em></button>; }
@@ -4056,7 +4065,7 @@ const TONE_PRESETS: Record<string, ToneDef> = {
 const TONE_KEYS = ["click", "beep", "wood", "clave"];
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, sessions, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; sharedTimer?: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null; onUsedDuringTimer?: () => void; onSessionEnd?: (seconds: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; language?: Lang; T: any }) {
+function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer, onSessionEnd, initialBpm, tone, onToneChange, exerciseLabel, exerciseEn, lockTempo, sessions, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; sharedTimer?: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null; onUsedDuringTimer?: () => void; onSessionEnd?: (seconds: number) => void; initialBpm?: number; tone?: string; onToneChange?: (key: string) => void; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; language?: Lang; T: any }) {
   const [bpm, setBpm] = useState(initialBpm ?? 100);
   const [playing, setPlaying] = useState(false);
   const [beatsPerBar, setBeatsPerBar] = useState(4);
@@ -4125,6 +4134,8 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   const bpmRef = useRef(bpm);
   const beatsPerMeasureRef = useRef(beatsPerBar);
   const subdivisionRef = useRef(subdivision);
+  const [toneKey, setToneKey] = useState(tone ?? "click");
+  useEffect(() => { setToneKey(tone ?? "click"); }, [tone]);
   const toneRef = useRef(TONE_PRESETS[tone ?? "click"] ?? TONE_PRESETS.click);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const schedulerRef = useRef<number | null>(null);
@@ -4158,7 +4169,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   useEffect(() => { bpmRef.current = bpm; }, [bpm]);
   useEffect(() => { beatsPerMeasureRef.current = beatsPerBar; }, [beatsPerBar]);
   useEffect(() => { subdivisionRef.current = subdivision; }, [subdivision]);
-  useEffect(() => { toneRef.current = TONE_PRESETS[tone ?? "click"] ?? TONE_PRESETS.click; }, [tone]);
+  useEffect(() => { toneRef.current = TONE_PRESETS[toneKey] ?? TONE_PRESETS.click; }, [toneKey]);
 
   useEffect(() => {
     if (!playing) return;
@@ -4333,6 +4344,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
         </div>}
       </div>}
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
+      <div className="metro-tone" role="group" aria-label={T.settings.metronomeTone}>{TONE_KEYS.map((key) => <button type="button" key={key} className={toneKey === key ? "on" : ""} onClick={() => { setToneKey(key); onToneChange?.(key); }}>{T.settings.toneNames[key]}</button>)}</div>
       <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : `▶ ${T.metronome.startPractice}`}</button>
     </div></div>;
   }
@@ -4367,6 +4379,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       <input className="range" type="range" min="40" max={exerciseEn ? Math.max(240, ...bpmLevelsFor(exerciseEn)) : 240} value={bpm} onChange={e => setBpm(+e.target.value)}/>
       <div className="tempo-actions"><button onClick={() => setBpm(Math.max(40, bpm - 1))}>−</button><button className="tap" onClick={tapTempo}>{T.metronome.tapTempo}</button><button onClick={() => setBpm(Math.min(240, bpm + 1))}>+</button></div>
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
+      <div className="metro-tone" role="group" aria-label={T.settings.metronomeTone}>{TONE_KEYS.map((key) => <button type="button" key={key} className={toneKey === key ? "on" : ""} onClick={() => { setToneKey(key); onToneChange?.(key); }}>{T.settings.toneNames[key]}</button>)}</div>
       <button className={playing ? "stop" : "start"} onClick={togglePlaying}>{playing ? T.metronome.stop : T.metronome.start}</button>
     </>}
   </div></div>; }
