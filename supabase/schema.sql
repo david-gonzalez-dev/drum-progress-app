@@ -1610,3 +1610,8 @@ create policy "heart a cheer sent to me" on public.group_cheer_hearts for insert
 -- create policy "heart a cheer sent to me" on public.group_cheer_hearts for insert to authenticated with check (
 --   user_id = auth.uid() and exists (select 1 from public.group_cheers c where c.id = group_cheer_hearts.cheer_id and c.from_user <> auth.uid())
 -- );
+
+-- 2026-10-10: Dutch language option. The settings table only allowed 'en' and 'es'.
+-- Safe to re-run.
+alter table public.settings drop constraint if exists settings_language_check;
+alter table public.settings add constraint settings_language_check check (language in ('en','es','nl'));

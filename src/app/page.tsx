@@ -5,10 +5,31 @@ import { createClient } from "@supabase/supabase-js";
 
 type Tab = "today" | "practice" | "group" | "progress" | "settings" | "admin";
 type Log = { minutes: number; seconds: number; items: string[]; customItems: string[]; notes: string; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null };
-type Lang = "en" | "es";
+type Lang = "en" | "es" | "nl";
+// Dutch names for the English-keyed lists below. Anything not listed keeps its English name (most rudiment
+// and exercise names are used in English by Dutch drummers too).
+const NL_NAMES: Record<string, string> = {
+  "Rudiments": "Rudiments", "Coordination": "Coördinatie", "Footwork": "Voetwerk", "Rhythms": "Ritmes", "Permutations": "Permutaties", "Songs": "Nummers",
+  "Push Pull - Right Hand": "Push Pull - Rechterhand", "Push Pull - Left Hand": "Push Pull - Linkerhand",
+  "Bass Drum - Heel Down": "Basdrum - Hiel omlaag", "Bass Drum - Heel Up": "Basdrum - Hiel omhoog", "Bass Drum - Slide Technique": "Basdrum - Slide-techniek",
+  "Double Bass Drum": "Dubbele basdrum", "Flow, 16th Notes": "Flow, zestiende noten", "R L L (Triplets)": "R L L (Triolen)",
+  "Finger Technique (Single-Handed)": "Vingertechniek (met één hand)", "16th Note Single Strokes Around the Set": "Zestiende noten Single Strokes rond het stel",
+  "Hi-hat Pedal - Heel Up": "Hi-hatpedaal - Hiel omhoog", "Hi-hat Pedal - Heel Down": "Hi-hatpedaal - Hiel omlaag",
+  "Three-Note Pattern #1": "Patroon van drie noten #1", "Three-Note Pattern #2": "Patroon van drie noten #2", "Three-Note Pattern #3": "Patroon van drie noten #3",
+  "Grip and tension": "Grip en spanning", "Wrist tension": "Spanning in de pols", "Thumb tension": "Spanning in de duim", "Index finger issue": "Probleem met de wijsvinger",
+  "Stick slides": "De stok glijdt weg", "Lost control of the stick": "Controle over de stok kwijt",
+  "Sound and timing": "Geluid en timing", "Uneven timing": "Onregelmatige timing", "Rushing": "Gehaast", "Messy dynamics": "Rommelige dynamiek", "Feels shaky": "Voelt wankel",
+  "Weaker hand": "Zwakkere hand", "Left hand": "Linkerhand", "Right hand": "Rechterhand",
+  "Mind and body": "Geest en lichaam", "Getting tired": "Moe worden", "Lost focus": "Concentratie kwijt", "Got stuck": "Liep vast",
+  "Let's go, you can do it!": "Kom op, je kunt het!", "Keep it up, team!": "Hou vol, team!", "Great practice today!": "Goed geoefend vandaag!", "Don't break the streak!": "Verbreek je reeks niet!",
+  "Proud of you all!": "Trots op jullie allemaal!", "Go practice!": "Ga oefenen!", "Good job!": "Goed gedaan!",
+};
+function localeFor(lang: string) { return lang === "es" ? "es-ES" : lang === "nl" ? "nl-NL" : "en-US"; }
+function nlName(en: string) { return NL_NAMES[en] ?? en; }
+function withNl<T extends { en: string }>(list: T[]): (T & { nl: string })[] { return list.map((o) => ({ ...o, nl: nlName(o.en) })); }
 
 // Grouped so the "what happened" picker reads as four short rows instead of one wall of chips.
-const SESSION_ISSUE_GROUPS: { title: { en: string; es: string }; tags: { en: string; es: string }[] }[] = [
+const SESSION_ISSUE_GROUPS_BASE: { title: { en: string; es: string }; tags: { en: string; es: string }[] }[] = [
   { title: { en: "Grip and tension", es: "Agarre y tensión" }, tags: [
     { en: "Wrist tension", es: "Tensión en la muñeca" },
     { en: "Thumb tension", es: "Tensión en el pulgar" },
@@ -32,8 +53,9 @@ const SESSION_ISSUE_GROUPS: { title: { en: string; es: string }; tags: { en: str
     { en: "Got stuck", es: "Me atasqué" },
   ] },
 ];
-const SESSION_ISSUE_TAGS: { en: string; es: string }[] = SESSION_ISSUE_GROUPS.flatMap((g) => g.tags);
-const PRACTICE_ITEMS = [
+const SESSION_ISSUE_GROUPS = SESSION_ISSUE_GROUPS_BASE.map((g) => ({ title: { ...g.title, nl: nlName(g.title.en) }, tags: withNl(g.tags) }));
+const SESSION_ISSUE_TAGS = SESSION_ISSUE_GROUPS.flatMap((g) => g.tags);
+const PRACTICE_ITEMS = withNl([
   { en: "Rudiments", es: "Rudimentos" },
   { en: "Single Strokes", es: "Golpes simples" },
   { en: "Double Strokes", es: "Golpes dobles" },
@@ -45,13 +67,13 @@ const PRACTICE_ITEMS = [
   { en: "Permutations", es: "Permutaciones" },
   { en: "Fills", es: "Fills" },
   { en: "Songs", es: "Canciones" },
-];
+]);
 // Quick Practice's own top-level order (Rudiments renders separately as an expandable picker,
 // and Stick Control lives in the Books picker instead, so both are excluded here).
 const QUICK_PRACTICE_ITEM_ORDER = ["Rhythms", "Coordination", "Footwork", "Permutations", "Fills", "Songs"];
 // Shared between Quick Practice's card and the Metronome's free-play "Add Time" prompt so both
 // offer the exact same top-level chips.
-const QUICK_PRACTICE_ITEMS = QUICK_PRACTICE_ITEM_ORDER.map((en) => PRACTICE_ITEMS.find((item) => item.en === en)).filter(Boolean) as { en: string; es: string }[];
+const QUICK_PRACTICE_ITEMS = QUICK_PRACTICE_ITEM_ORDER.map((en) => PRACTICE_ITEMS.find((item) => item.en === en)).filter(Boolean) as (typeof PRACTICE_ITEMS)[number][];
 // Curated method-book titles offered in the Books picker -- proper nouns, so no translation.
 // Students can add their own on top of this list (stored per-user, see user_practice_items).
 const PRACTICE_BOOKS = ["Stick Control", "Syncopation", "4-Way Coordination", "Rhythmic Illusions", "150 Rudimental Solos"];
@@ -140,7 +162,7 @@ const CHALLENGE_PRESETS: { key: string; type: "daily" | "minutes" | "sessions"; 
 
 const PRACTICE_CATEGORIES = ["rudiments", "exercises"] as const;
 const CATEGORY_ICON_SRC: Record<string, string> = { rudiments: "/icons/rudiments.png", exercises: "/icons/exercises.png", rhythms: "/icons/rhythms.png" };
-const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string; difficulty: "core" | "advanced"; subdivision?: "quarter" | "eighth" | "triplet" | "sixteenth"; tempoRange?: "extended" | "footwork"; tier?: "basics" | "intermediate" | "advanced"; prerequisites?: string[]; exerciseGroup?: "hand" | "footwork" | "coordination"; pattern?: { en: string; es: string } }[] = [
+const PRACTICE_EXERCISES_BASE: { category: typeof PRACTICE_CATEGORIES[number]; subcategory: { en: string; es: string } | null; en: string; es: string; difficulty: "core" | "advanced"; subdivision?: "quarter" | "eighth" | "triplet" | "sixteenth"; tempoRange?: "extended" | "footwork"; tier?: "basics" | "intermediate" | "advanced"; prerequisites?: string[]; exerciseGroup?: "hand" | "footwork" | "coordination"; pattern?: { en: string; es: string } }[] = [
   { category: "rudiments", subcategory: null, en: "Single Strokes", es: "Golpes simples", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: [] },
   { category: "rudiments", subcategory: null, en: "Double Strokes", es: "Golpes dobles", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: [] },
   { category: "rudiments", subcategory: null, en: "Single Paradiddle", es: "Paradiddle simple", difficulty: "core", subdivision: "sixteenth", tier: "basics", prerequisites: ["Single Strokes", "Double Strokes"] },
@@ -202,6 +224,7 @@ const PRACTICE_EXERCISES: { category: typeof PRACTICE_CATEGORIES[number]; subcat
   { category: "exercises", subcategory: null, en: "Three-Note Pattern #2", es: "Patrón de Tres Notas #2", difficulty: "core", exerciseGroup: "hand", pattern: { en: "2 sixteenth notes + 1 eighth note", es: "2 semicorcheas + 1 corchea" } },
   { category: "exercises", subcategory: null, en: "Three-Note Pattern #3", es: "Patrón de Tres Notas #3", difficulty: "core", exerciseGroup: "hand", pattern: { en: "1 sixteenth note + 1 eighth note + 1 sixteenth note", es: "1 semicorchea + 1 corchea + 1 semicorchea" } },
 ];
+const PRACTICE_EXERCISES = withNl(PRACTICE_EXERCISES_BASE);
 // Structured sticking data for the Practice Mode metronome's sticking panel. A token is one stroke:
 // hand ("R"/"L"), an optional grace flag (soft pre-stroke for flams/drags, rendered smaller/dimmer),
 // and an optional count (for repeated strokes shown as a superscript, e.g. R R -> R²). Authored below
@@ -271,11 +294,11 @@ const EXERCISE_STICKING: Record<string, StickingEntry> = Object.fromEntries(
     "R L L (Triplets)": "R L L",
   }).map(([key, shorthand]) => [key, parseStickingEntry(shorthand)])
 );
-const CHALLENGE_EXERCISE_OPTIONS: { en: string; es: string }[] = (() => {
+const CHALLENGE_EXERCISE_OPTIONS: { en: string; es: string; nl: string }[] = (() => {
   const seen = new Set<string>();
-  const combined: { en: string; es: string }[] = [];
+  const combined: { en: string; es: string; nl: string }[] = [];
   [...PRACTICE_EXERCISES, ...PRACTICE_ITEMS].forEach((item) => {
-    if (!seen.has(item.en)) { seen.add(item.en); combined.push({ en: item.en, es: item.es }); }
+    if (!seen.has(item.en)) { seen.add(item.en); combined.push({ en: item.en, es: item.es, nl: item.nl }); }
   });
   return combined;
 })();
@@ -707,11 +730,189 @@ const translations = {
       durationLabel: "DURACIÓN", timeUp: "¡Se acabó el tiempo!", sessionFinished: "Sesión terminada", tapToOpen: "toca para abrir", tapToLog: "toca para registrarla", longSessionWarning: "Son más de 3 horas. Si olvidaste pararlo, ajusta el tiempo abajo o toca Ahora no.", adjustHint: "AJUSTAR TIEMPO", resetTime: (original: string) => `Restablecer a ${original}`,
     },
   },
+  nl: {
+    nav: { today: "Home", practice: "Oefenen", group: "Groep", progress: "Voortgang", settings: "Instellingen", admin: "Beheer" },
+    confirm: { cancel: "Annuleren", confirm: "Bevestigen" },
+    today: {
+      heroLine1: "DISCIPLINE", heroLine1b: "BOUWT", heroLine2: "VAARDIGHEID.", startPracticeTitle: "Begin met oefenen", startPracticeSub: "Zet een timer en ga aan de slag", noPracticeTitle: "Nog niet geoefend", goalShort: "Doel", practiceRudiment: "Oefen een rudiment", seeAll: "Alles bekijken", currentStreak: "Huidige reeks", days: "dagen", pointsTitle: "PUNTEN",
+      pointsCardTitle: "JOUW PUNTEN", pointsCardCta: "Beloningen bekijken", pointsCardKickoff: "Begin met punten verdienen", pointsCardRankOne: "Je staat op nummer 1", pointsCardTop3: "Je staat in de top 3", pointsCardKeepGoing: "Ga zo door",
+      todaysPractice: "Oefening van vandaag", metronome: "Metronoom", howLong: "HOE LANG HEB JE GEOEFEND?", practiceTimeHeading: "OEFENTIJD", whatPractised: "VOEG TOE WAT JE GEOEFEND HEBT",
+      notes: "NOTITIES", notesPrefix: "Notities:", optional: "OPTIONEEL", notesPlaceholder: "Wat heb je vandaag geoefend?", savePractice: "Oefening opslaan", practiceSaved: "✓ Oefening opgeslagen",
+      todayGoal: "DOEL VAN VANDAAG", equipment: "GEOEFEND OP", drumset: "Drumstel", pad: "Oefenpad", equipmentBoth: "Drumstel en oefenpad", addNotes: "+ Notitie toevoegen", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} op ${equipmentName}`,
+      todaySummary: "VANDAAG", noPracticeYet: "Nog niet geoefend.", secondsCarried: "extra (nog niet meegeteld in minuten)", todaySoFar: (total: string) => `${total} vandaag al opgeslagen, dit komt erbij`,
+      resetPractice: "Wissen", confirmResetPractice: "De oefening van vandaag wissen en opnieuw beginnen? Dit kan niet ongedaan worden gemaakt.",
+      noGoalTitle: "Stel je dagelijkse doel in", noGoalSubtitle: "Een paar minuten per dag worden echte vooruitgang. Kies een doel en begin vandaag je reeks.", noGoalBtn: "Mijn doel instellen",
+      whatDidYouPractiseTitle: "WAT HEB JE GEOEFEND?", whatDidYouPractiseSubtitle: "Kies er minstens één.", addOwnPlaceholder: "Voeg je eigen toe...", addOwnBtn: "Toevoegen",
+      rudiments: "Rudiments", searchRudiments: "Zoek rudiments...", searchExercises: "Zoek oefeningen...", books: "Boeken", myItems: "Mijn items", addOwnBookPlaceholder: "Voeg je eigen boek toe...", pickerDone: "Klaar",
+    },
+    calendar: {
+      title: "KALENDER", longestStreak: "Langste reeks", daysThisYear: "Dagen dit jaar",
+      weekdays: ["M", "D", "W", "D", "V", "Z", "Z"], futureDay: "Je kunt geen oefening loggen voor een dag in de toekomst.",
+      noPractice: "Geen oefening gelogd voor deze dag. Log de oefening van vandaag via het tabblad Home.", minPractised: "geoefend",
+      notesPlaceholder: "Wat heb je die dag geoefend?", saving: "Opslaan...",
+      deleteEntry: "Invoer verwijderen", confirmDeleteEntry: "De oefening van deze dag verwijderen? Dit kan niet ongedaan worden gemaakt.", couldNotDeleteEntry: "Deze invoer kon niet worden verwijderd.",
+      goalMet: "🎯 Dagelijks doel bereikt", goalMissed: (done: string, total: string) => `${done} / ${total} richting je doel`,
+      onEquipment: (label: string) => `Op ${label}`,
+      streakOnDay: (n: number) => `🔥 Reeks van ${n} dagen`, noPracticeShort: "Geen oefening gelogd voor deze dag.",
+      editDay: "Deze dag bewerken", nothingToEdit: "+ Oefening loggen voor deze dag", todayBtn: "Vandaag",
+    },
+    group: {
+      yourCrew: "JOUW GROEP", youreIn: "Je doet mee.", inviteMsg: "Nodig drummers uit met deze code:", copyInvite: "Uitnodigingscode kopiëren",
+      challenges: "UITDAGINGEN",
+      practiseTogether: "SAMEN OEFENEN", yourGroup: "JOUW GROEP", switchGroup: "ANDERE GROEP KIEZEN", moreOptions: "Meer", inviteShort: "Uitnodigingscode", noChallengesShort: "Nog geen uitdagingen.", showMore: (n: number) => `Toon nog ${n}`, showLess: "Toon minder", findCrew: "Vind je groep.", startGroup: "Start een groep", joinCrew: "Sluit je aan bij je groep",
+      intro: "Hou elkaar scherp, klim op de ranglijst en maak oefenen leuker.", createGroupBtn: "Maak een groep", joinWithCode: "Meedoen met uitnodigingscode",
+      groupNamePlaceholder: "Naam van de groep", inviteCodePlaceholder: "Uitnodigingscode", pleaseWait: "Even geduld...", createGroup: "Groep maken",
+      joinGroup: "Meedoen", back: "Terug", inviteNotFound: "Die uitnodigingscode is niet gevonden.", couldNotCreate: "De groep kon niet worden gemaakt.",
+      leaderboard: "RANGLIJST", timePractised: "GEOEFENDE TIJD", daysShort: "dagen", you: "Jij",
+      teacherBadge: "Beheerder", showTeacherStats: "Toon statistieken van de beheerder",
+      awardMostDays: "Meeste oefendagen dit jaar", awardMostMinutes: "Meeste tijd geoefend",
+      medalBoard: "Hall of Fame", medalBoardEmpty: "Nog niemand", medalBoardAllTime: "ALLE TIJDEN", medalBoardThisWeek: "DEZE WEEK",
+      awardConsistency: "Meest regelmatig", awardStreak: "Op een reeks", awardChallenge: "Uitdagingskampioen", awardImproved: "Meest verbeterd",
+      awardDaysValue: (v: number) => `${v} ${v === 1 ? "dag" : "dagen"}`, awardUnlocksValue: (v: number) => `${v} ${v === 1 ? "nieuw tempo" : "nieuwe tempo's"}`, awardChallengeValue: (pct: number) => `${pct}% bereikt`,
+      groupSettings: "GROEPSINSTELLINGEN", countFromCreation: "Statistieken tellen vanaf", enableWeeklyAwards: "Wekelijkse prijzen aanzetten",
+      dateModeCalendar: "1 jan", dateModeToday: "Start groep", dateModeCustom: "Eigen datum",
+      countFromCreationDesc: "Bepaalt vanaf welke datum de ranglijsten voor oefendagen en geoefende tijd van deze groep tellen.",
+      noChallenges: "Nog geen uitdagingen. Begin er een met je groep!", noChallengesMember: "Nog geen uitdagingen. Je leraar kan er een starten.", newChallenge: "+ Nieuwe uitdaging", cancel: "Annuleren", challengeNamePlaceholder: "Naam van de uitdaging",
+      typeDaily: "Elke dag", typeMinutes: "Totaal aantal minuten", typeSessions: "Geoefende dagen", goalLabel: "DOEL", startLabel: "START", endLabel: "EINDE", quickStart: "SNELSTART", typeLabel: "SOORT", lengthLabel: "LENGTE", lengthDays: (n: number) => `${n} ${n === 1 ? "dag" : "dagen"}`, lengthCustom: "Eigen", stakesToggle: "Beloning / Als je verliest (optioneel)",
+      rewardPlaceholder: "Beloning (optioneel)", punishmentPlaceholder: "Als je verliest (optioneel)", createChallengeBtn: "Uitdaging maken",
+      joinChallengeBtn: "Meedoen met uitdaging", joined: "Meegedaan", participants: (n: number) => `${n} doen mee`,
+      dailyGoalDesc: (min: number) => `${min}+ min elke dag`, minutesGoalDesc: (total: number) => `Haal ${total} minuten in totaal`,
+      sessionsGoalDesc: (days: number) => `Oefen op ${days} dagen`, daysProgress: (p: number, t: number) => `${p}/${t} dagen`,
+      minutesProgress: (p: number, t: number) => `${p}/${t} min`, reward: "Beloning:", punishment: "Als je verliest:", couldNotCreateChallenge: "De uitdaging kon niet worden gemaakt.",
+      presetDaily5: "3 min elke dag", presetDaily30x5: "30+ min, 5 dagen op rij", presetSessions3weekly: "3 sessies deze week", presetDaily5x20: "Uitdaging van 20 dagen: 5+ min per dag",
+      noOnePractised: "Niemand heeft op deze dag geoefend.",
+      weekdaysMon: ["M", "D", "W", "D", "V", "Z", "Z"], copied: "Gekopieerd!", progress: "VOORTGANG", leaveGroup: "Groep verlaten",
+      confirmLeave: "Deze groep verlaten? Je kunt later weer meedoen met de uitnodigingscode.", confirmDeleteChallenge: "Deze uitdaging verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      deleteChallenge: "Verwijderen", since: (date: string) => `Sinds ${date}`, couldNotLeave: "De groep kon niet worden verlaten.", couldNotDeleteChallenge: "De uitdaging kon niet worden verwijderd.",
+      deleteGroupBtn: "Groep verwijderen", confirmDeleteGroup: "Deze groep verwijderen? Dit verwijdert de groep voor iedereen en kan niet ongedaan worden gemaakt.", couldNotDeleteGroup: "De groep kon niet worden verwijderd.",
+    },
+    achievements: {
+      unlocked: "ontgrendeld", nextUp: "Volgende", allDone: "Alles ontgrendeld", done: "Ontgrendeld",
+      level: (l: number, n: number) => l === 0 ? "Vergrendeld" : `Niveau ${l} van ${n}`, levelShort: (l: number) => `Niveau ${l}`, notYet: "Nog niet",
+      category: { time: "Tijd", streak: "Reeks", days: "Regelmaat", sessions: "Trainer", tempo: "Tempo", variety: "Variatie", long: "Lange dag", challenges: "Uitdagingen", mastery: "Beheersing" } as Record<string, string>,
+      label: (key: string, n: number) => {
+        switch (key) {
+          case "time": return n < 1 ? `${Math.round(n * 60)} minuten geoefend` : `${n} uur geoefend`;
+          case "streak": return `Reeks van ${n} dagen`;
+          case "days": return `${n} dagen geoefend`;
+          case "sessions": return n === 1 ? "Eerste Skill Trainer-sessie" : `${n} Skill Trainer-sessies`;
+          case "tempo": { const need = TEMPO_REQUIRED_BY_BPM[n] ?? 5; return `${need} ${need === 1 ? "rudiment" : "rudiments"} op ${n} BPM`; }
+          case "variety": return `${n} verschillende oefeningen`;
+          case "long": return `${n} min op één dag`;
+          case "mastery": return n === 1 ? "Eerste sessie als beheerst beoordeeld" : `${n} sessies als beheerst beoordeeld`;
+          default: return n === 1 ? "Eerste uitdaging gewonnen" : `${n} uitdagingen gewonnen`;
+        }
+      },
+    },
+    progressPage: {
+      eyebrow: "OEFENOVERZICHT", title: "VOORTGANG", yourPractice: "JOUW OEFENING",
+      noData: "Log wat oefening om hier je voortgang te zien.", pinned: "JOUW FOCUS", generalPractice: "Algemeen oefenen", seeMore: "Meer tonen", seeLess: "Minder tonen",
+      skillProgress: "VAARDIGHEIDSVOORTGANG", noSkillData: "Train de BPM-niveaus van een oefening om hier je vaardigheidsvoortgang te zien.",
+      achievements: "MIJLPALEN", achievementsIntro: "Voltooi een persoonlijke uitdaging op het tabblad Oefenen om hier een trofee te winnen. Meer mijlpalen komen eraan.",
+    },
+    cheers: {
+      sendBtn: "Stuur een aanmoediging", recentTitle: "RECENTE AANMOEDIGINGEN", remove: "Verwijderen", undo: "Ongedaan maken", undoSent: "Ongedaan maken (verwijdert het voor iedereen)", you: "Jij", bellTitle: "AANMOEDIGINGEN", heart: "Vind ik leuk", heartedYours: (name: string) => `${name} vond je aanmoediging leuk`, inboxEmpty: "Nog geen aanmoedigingen.", cheerGroupBtn: "Moedig de hele groep aan", cheerGroup: "MOEDIG DE GROEP AAN", cheerPerson: (name: string) => `MOEDIG ${name.toUpperCase()} AAN`, tapNameHint: "Tik op een naam om een aanmoediging te sturen.", incoming: (name: string) => `${name} stuurde een aanmoediging`, sheetTitle: "STUUR EEN AANMOEDIGING", toLabel: "AAN", everyone: "Iedereen", sent: "Aanmoediging verstuurd!",
+      newCount: (n: number) => n === 1 ? "1 nieuwe aanmoediging" : `${n} nieuwe aanmoedigingen`, gotIt: "Begrepen", toYou: "voor jou",
+      couldNotSend: "De aanmoediging kon niet worden verstuurd.",
+    },
+    personalChallenges: {
+      title: "Persoonlijke uitdagingen", homeTitle: "PERSOONLIJKE UITDAGINGEN", subtitle: "Stel je eigen oefendoel in.",
+      newChallenge: "+ Nieuwe uitdaging", cancel: "Annuleren",
+      exerciseLabel: "Oefening", minutesLabel: "Minuten per dag", bpmLabel: "Doeltempo in BPM (optioneel)", bpmPlaceholder: "Elk tempo",
+      lengthLabel: "Lengte van de uitdaging (dagen)", startChallenge: "Uitdaging starten", pleaseWait: "Even geduld...",
+      noChallenges: "Nog geen persoonlijke uitdagingen.",
+      challengeTitle: (exercise: string, days: number) => `${exercise}: uitdaging van ${days} dagen`,
+      challengeDescription: (minutes: number, bpm: number | null, days: number) => bpm ? `Oefen ${minutes} min op ${bpm}+ BPM, ${days} dagen achter elkaar, elke dag.` : `Oefen ${minutes} min, ${days} dagen achter elkaar, elke dag.`,
+      statusActive: (done: number, total: number) => `${done}/${total} dagen`, statusCompleted: "✓ Voltooid, prestatie ontgrendeld!", statusFailed: "Uitdaging mislukt. Opnieuw beginnen?",
+      deleteChallenge: "Verwijderen", confirmDelete: "Deze uitdaging verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      fromTeacher: "Van je leraar", failedShort: "Dag gemist", statusCompletedShort: "Voltooid", perDayShort: "min / dag", bpmShort: "BPM",
+      giveTitle: "GEEF EEN UITDAGING", giveBtn: "Uitdaging geven", giveHint: "Verschijnt bij de leerling op Home en bij Uitdagingen als \"Van je leraar\". De leerling kan hem niet verwijderen.", givenLabel: "UITDAGINGEN", noneGiven: "Nog geen uitdagingen.", givenBadge: "Door jou gegeven", confirmRemove: "Deze uitdaging bij de leerling weghalen?", remove: "Weghalen", perDay: (m: number) => `${m} min per dag`, couldNotGive: "De uitdaging kon niet worden gegeven.", lengthDaysN: (n: number) => `${n} dagen`, lengthCustomShort: "Anders",
+      resetChallenge: "Opnieuw proberen", confirmReset: "Deze uitdaging opnieuw starten vanaf dag 1?",
+      couldNotCreate: "De uitdaging kon niet worden gemaakt.",
+    },
+    practiceMode: {
+      eyebrow: "VOLG JE NIVEAUS", title: "OEFENMODUS", pageEyebrow: "TRAINEN", pageTitle: "OEFENEN",
+      currentLevel: "HUIDIG NIVEAU", levelsUnlocked: (n: number, total: number) => `${n} van ${total} niveaus ontgrendeld`,
+      notStarted: "Niet begonnen",
+      inProgress: "Bezig", unlockedLabel: "Ontgrendeld", confirmResetLevel: (bpm: number) => `Je voortgang op ${bpm} BPM terugzetten? Dit kan niet ongedaan worden gemaakt.`,
+      editRatingTitle: "Beoordeling wijzigen", skippedLabel: "Overgeslagen",
+      improvedToast: (from: string, to: string, exercise: string, bpm: number, days: number) => `Verbeterd van ${from} naar ${to} bij ${exercise} · ${bpm} BPM in ${days} ${days === 1 ? "dag" : "dagen"}`, niceBtn: "Mooi!",
+      struggledFlagTitle: "Je had vroeger moeite met dit tempo",
+      tierBeginner: "BEGINNER", tierIntermediate: "GEMIDDELD", tierAdvanced: "GEVORDERD", tierLegend: "LEGENDE",
+      rudimentTierBasics: "BASIS", rudimentTierIntermediate: "GEMIDDELD", rudimentTierAdvanced: "COMPLEX",
+      unlockFirst: (names: string) => `Ontgrendel eerst ${names}`,
+      tierUnlockedCount: (unlocked: number, total: number) => `${unlocked} van ${total} ontgrendeld`,
+      exerciseGroupHand: "HANDTECHNIEKEN", exerciseGroupFootwork: "VOETWERK", exerciseGroupCoordination: "COÖRDINATIE",
+      exercisesPracticedCount: (n: number, total: number) => `${n} van ${total} geoefend`,
+      subdivisionQuarter: "Kwartnoten", subdivisionEighth: "Achtste noten", subdivisionTriplet: "Triolen", subdivisionSixteenth: "Zestiende noten",
+      ratingNotReady: "Nog niet klaar", ratingTense: "Gespannen", ratingAlmost: "Bijna", ratingComfortable: "Comfortabel", ratingMastered: "Beheerst",
+      rateTitle: "HOE VOELDE DAT?", rateSubtitle: (bpm: number) => `Beoordeel je sessie op ${bpm} BPM om hem op te slaan.`, skipRating: "Overslaan, niet loggen",
+      issueLabel: "WAT GEBEURDE ER? (OPTIONEEL)", sessionNotePlaceholder: "Voeg een notitie toe (optioneel)", saveRating: "Opslaan",
+      backToBook: "Terug naar oefenmodus", couldNotSaveSession: "Deze sessie kon niet worden opgeslagen.",
+      categoryRudiments: "Rudiments", categoryExercises: "Oefeningen", categoryRhythms: "Ritmes",
+      pin: "Vastzetten", pinned: "Vastgezet",
+      maxPinnedReached: (max: number) => `Je kunt maximaal ${max} oefeningen vastzetten. Haal er eerst een los.`,
+      pinManagerEyebrow: (count: number, max: number) => `${count}/${max} VASTGEZET`, pinManagerTitle: "Jouw focus", pinManagerDone: "Klaar",
+      pinManagerAddBtn: "+ Oefening toevoegen", pinManagerSearchPlaceholder: "Zoek oefeningen...", pinManagerEmpty: "Nog niets vastgezet. Voeg er maximaal 5 toe om hier te volgen.",
+      quickTitle: "Snel oefenen", quickSub: "Minuten loggen, metronoom, timer", continueLabel: "Ga verder waar je gebleven was", recentDays: "RECENTE DAGEN", noRecentDays: "Nog niets gelogd.", skillSearchPlaceholder: "Zoek rudiments en oefeningen", skillNoMatch: "Niets gevonden voor die zoekopdracht.", skillSub: "Rudiments en oefeningen", challengesSub: "Stel je eigen oefendoel in",
+      trainTitle: "Skill Trainer",
+      rudimentListIntro: "Ontgrendel 2 tempo's om het volgende rudiment te openen.",
+      tempoCompleteIntro: (min: number) => `Oefen een tempo ${min} min om het te voltooien.`,
+      listIntroExercises: (min: number) => `Oefen ${min} min op elk tempo om het volgende niveau te ontgrendelen.`,
+      listIntroRhythms: (min: number) => `Grooves en stijlen om je muzikale woordenschat op te bouwen. Tik er een aan en log minstens ${min} comfortabele minuten op elk BPM-niveau om het te ontgrendelen en door te gaan.`,
+    },
+    onboarding: {
+      eyebrow: "WELKOM", exercisesTitle: "Kies je focus", goalTitle: "Dagelijks oefendoel", modeTitle: "Kies je inhoudsbibliotheek",
+      continueBtn: "Doorgaan", finishBtn: "Klaar", skipBtn: "Nu overslaan",
+    },
+    settings: {
+      makeItYours: "MAAK HET JOUW EIGEN", title: "INSTELLINGEN", displayName: "WEERGAVENAAM", dailyGoal: "DAGELIJKS OEFENDOEL", minutes: "minuten",
+      language: "TAAL", showDaysThisYear: "Geoefende dagen dit jaar", showDaysThisYearDesc: "Voegt het aantal oefendagen dit jaar toe aan je Home-statistieken.", on: "AAN", off: "UIT", save: "Instellingen opslaan", saved: "✓ Instellingen opgeslagen", logout: "Uitloggen", calendarColor: "KALENDERKLEUR IN DE GROEP", autoColor: "Automatisch",
+      metronomeTone: "METRONOOMGELUID", toneNames: { click: "Klik", beep: "Piep", wood: "Hout", clave: "Clave" },
+      profileSection: "PROFIEL", practiceSection: "OEFENEN", preferencesSection: "VOORKEUREN", accountSection: "ACCOUNTINSTELLINGEN", pleaseWait: "Even geduld...",
+      libraryLabel: "INHOUDSBIBLIOTHEEK", libraryFull: "Volledige bibliotheek", libraryEssentials: "Basis", libraryHint: "Basis toont een kortere, beginnersvriendelijke lijst met rudiments en oefeningen. Je kunt dit altijd wijzigen.",
+      changeEmail: "E-mailadres wijzigen", newEmailPlaceholder: "Nieuw e-mailadres", updateEmail: "E-mailadres bijwerken", emailChangeSent: "Controleer je nieuwe e-mail om de wijziging te bevestigen.",
+      changePassword: "Wachtwoord wijzigen", newPasswordPlaceholder: "Nieuw wachtwoord", confirmPasswordPlaceholder: "Bevestig nieuw wachtwoord", updatePassword: "Wachtwoord bijwerken", passwordChanged: "✓ Wachtwoord bijgewerkt", passwordMismatch: "De wachtwoorden komen niet overeen.", passwordTooShort: "Het wachtwoord moet minstens 6 tekens hebben.",
+      privacyPolicy: "Privacybeleid", termsOfUse: "Gebruiksvoorwaarden", support: "Ondersteuning",
+      deleteAccount: "Account verwijderen", deleteAccountWarning: "Hiermee verwijder je je account en je hele oefengeschiedenis definitief. Dit kan niet ongedaan worden gemaakt.", deleteAccountConfirmPrompt: (email: string) => `Typ je e-mailadres (${email}) om te bevestigen:`, deleteAccountBtn: "Mijn account verwijderen", deleteAccountBusy: "Verwijderen…", couldNotDeleteAccount: "Je account kon niet worden verwijderd.",
+    },
+    admin: {
+      title: "GEBRUIKERSACTIVITEIT", eyebrow: "BEHEER", noUsers: "Nog geen gebruikers.", neverPracticed: "Nooit geoefend",
+      dailyLogs: "DAGELIJKSE LOGS", practiceSessions: "SKILL TRAINER-SESSIES", noDailyLogs: "Nog geen dagelijkse logs.", noPracticeSessions: "Nog geen Skill Trainer-sessies.",
+      notesPrefix: "Notities:",
+      usersLabel: (n: number) => n === 1 ? "GEBRUIKER" : "GEBRUIKERS",
+      totalMinutesLabel: "totaal", totalLogsLabel: "logs", totalPracticeLabel: "Totaal geoefend", focusLabel: "FOCUS", mostPracticedLabel: "MEEST GEOEFEND",
+      pointsLabel: "PUNTEN", awardHint: "Punten geven of afnemen", reasonPlaceholder: "Reden", awardBtn: "Geven", modeLabel: "MODUS", modeStandard: "Volledige bibliotheek", modeBeginner: "Basis", pointGameLabel: "PUNTENSPEL", pointGameOn: "Aan", pointGameOff: "Uit", pointsHistory: "PUNTENGESCHIEDENIS", noPoints: "Nog geen punten gegeven.",
+      metronomeBadge: "Metronoom", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Snelle invoer",
+      mostMinutesTitle: "MEESTE OEFENTIJD", allUsersTitle: "ALLE GEBRUIKERS", excludeSelfLabel: "Mijn account uitsluiten van statistieken",
+      statsRangeLabel: "Periode", statsRangeAll: "Alles", statsRangeMonth: "Deze maand", statsRangeLastMonth: "Vorige maand", statsRangeYear: "Jaar",
+      skillProgressLabel: "VAARDIGHEIDSVOORTGANG",
+      monthlyPracticeLabel: "OEFENEN PER MAAND", achievementsLabel: "PRESTATIES", noAchievements: "Nog geen prestaties.",
+      historyBtn: "Geschiedenis", hideHistoryBtn: "Geschiedenis verbergen",
+      speedLabel: "SNELHEID PER OEFENING", speedHint: "Het hoogste BPM dat elke leerling comfortabel heeft gespeeld, in de loop van de tijd.",
+      speedNoData: "Nog geen sessies gelogd voor deze oefening.", speedNotQualified: "Aan het oefenen, nog niet op een vast tempo:",
+      speedBpmSuffix: "BPM",
+      improvementsLabel: "RECENTE VERBETERINGEN", improvementsEmpty: "Nog geen tempoverbeteringen.",
+      improvedTo: (exercise: string, bpm: number) => `${exercise} → ${bpm} BPM`,
+    },
+    metronome: {
+      practiceTool: "OEFENHULP", title: "METRONOOM", practiceTimer: "OEFENTIMER", sessionTime: "SESSIETIJD", tapTempo: "TEMPO TIKKEN",
+      startPractice: "Begin met oefenen", stickingLabel: "HANDENVOLGORDE",
+      start: "▶ Start", stop: "■ Stop", sessionComplete: "SESSIE VOLTOOID",
+      addTimeQuestion: (label: string) => `${label} toevoegen aan de oefening van vandaag?`, addTimeTooShort: "Te kort om te loggen, pas de timer hierboven aan", sessionLasted: (time: string) => `Je metronoomsessie duurde ${time}.`, minAbbr: "min", secAbbr: "sec",
+      notNow: "Nu niet", addTime: "Tijd toevoegen",
+      timeSignature: "SLAGEN / MAAT", subdivisionLabel: "KLIKS / SLAG", historyTitle: (n: number) => `GESCHIEDENIS (${n})`,
+    },
+    sessionTimer: {
+      pillLabel: "Sessietimer", title: "SESSIETIMER", metronomeShared: "Sessietimer", allAlreadyLogged: "Al deze tijd is al gelogd via de Skill Trainer.", alreadyLogged: (t: string) => `${t} hiervan was al gelogd via de Skill Trainer en wordt dus niet dubbel geteld.`, modeStopwatch: "Stopwatch", modeTimer: "Timer",
+      durationLabel: "DUUR", timeUp: "De tijd is om!", sessionFinished: "Sessie afgelopen", tapToOpen: "tik om te openen", tapToLog: "tik om te loggen", longSessionWarning: "Dat is meer dan 3 uur. Als je vergeten bent te stoppen, pas de tijd hieronder aan of tik op Nu niet.", adjustHint: "TIJD AANPASSEN", resetTime: (original: string) => `Terugzetten naar ${original}`,
+    },
+  },
 } as const;
 
 
 // Ready-made group cheers (no typing). Keep the keys in sync with the check constraint on group_cheers in schema.sql.
-const CHEER_KEYS: { key: string; en: string; es: string }[] = [
+const CHEER_KEYS_BASE: { key: string; en: string; es: string }[] = [
   { key: "letsgo", en: "Let's go, you can do it!", es: "¡Vamos, tú puedes!" },
   { key: "keepitup", en: "Keep it up, team!", es: "¡Sigan así, equipo!" },
   { key: "greatpractice", en: "Great practice today!", es: "¡Gran práctica hoy!" },
@@ -721,6 +922,7 @@ const CHEER_KEYS: { key: string; en: string; es: string }[] = [
   { key: "goodjob", en: "Good job!", es: "¡Buen trabajo!" },
   { key: "yes", en: "Yes!", es: "¡Sí!" },
 ];
+const CHEER_KEYS = withNl(CHEER_KEYS_BASE);
 type CheerHeart = { user_id: string; created_at: string; name: string };
 type Cheer = { id: string; group_id: string; from_user: string; to_user: string | null; cheer_key: string; created_at: string; from_name: string; hearts: CheerHeart[] };
 // TEST ONLY: lets a sender heart their own cheer so hearts can be tried with a single account. Set to false (and
@@ -1132,7 +1334,7 @@ export default function Home() {
       else supabase.from("profiles").update({ name: fallbackName }).eq("id", currentUser.id).then();
     }
     const settingsData = settingsRes.data;
-    if (settingsData?.language === "es" || settingsData?.language === "en") setLanguage(settingsData.language);
+    if (settingsData?.language === "es" || settingsData?.language === "en" || settingsData?.language === "nl") setLanguage(settingsData.language);
     if (settingsData?.daily_goal_minutes != null) setDailyGoal(settingsData.daily_goal_minutes);
     if (settingsData?.metronome_tone) setMetronomeTone(settingsData.metronome_tone);
     if (settingsData?.show_days_this_year != null) setShowDaysThisYear(settingsData.show_days_this_year);
@@ -1533,14 +1735,31 @@ function PasswordField({ value, onChange, placeholder, isNew }: { value: string;
     </button>
   </div>;
 }
+// Login and password-reset screens appear before the app knows the user's language, so they follow the phone/browser language.
+const AUTH_TEXT = {
+  en: { tagline: "Build your daily drumming habit, one session at a time.", welcome: "Welcome back", start: "Start your streak", reset: "Reset your password", firstName: "First name or nickname", email: "Email address", password: "Password", forgot: "Forgot password?",
+    consentA: "I am 16 or older, or I am a parent or guardian creating this account for my child (or the child's teacher, with the parent's permission). I agree to the ", terms: "Terms", and: " and ", privacy: "Privacy Policy", support: "Support", privacyShort: "Privacy",
+    wait: "Please wait...", logIn: "Log in", create: "Create account", sendLink: "Send reset link", or: "OR", google: "Continue with Google", newHere: "New here? Create an account", haveAccount: "Already have an account? Log in", back: "Back to log in",
+    resetSent: "Check your email for a password reset link.", checkEmail: "If this is a new account, check your email to confirm it. Already have an account with this email? Just log in instead.", newPasswordTitle: "Set a new password", newPasswordIntro: "Choose a new password for your account.", newPassword: "New password", update: "Update password" },
+  nl: { tagline: "Bouw je dagelijkse drumgewoonte op, sessie voor sessie.", welcome: "Welkom terug", start: "Begin je reeks", reset: "Wachtwoord opnieuw instellen", firstName: "Voornaam of bijnaam", email: "E-mailadres", password: "Wachtwoord", forgot: "Wachtwoord vergeten?",
+    consentA: "Ik ben 16 jaar of ouder, of ik ben een ouder of voogd die dit account maakt voor mijn kind (of de leraar van het kind, met toestemming van de ouder). Ik ga akkoord met de ", terms: "Gebruiksvoorwaarden", and: " en het ", privacy: "Privacybeleid", support: "Ondersteuning", privacyShort: "Privacy",
+    wait: "Even geduld...", logIn: "Inloggen", create: "Account maken", sendLink: "Herstellink sturen", or: "OF", google: "Doorgaan met Google", newHere: "Nieuw hier? Maak een account", haveAccount: "Heb je al een account? Log in", back: "Terug naar inloggen",
+    resetSent: "Controleer je e-mail voor een link om je wachtwoord opnieuw in te stellen.", checkEmail: "Als dit een nieuw account is, controleer dan je e-mail om het te bevestigen. Heb je al een account met dit e-mailadres? Log dan gewoon in.", newPasswordTitle: "Stel een nieuw wachtwoord in", newPasswordIntro: "Kies een nieuw wachtwoord voor je account.", newPassword: "Nieuw wachtwoord", update: "Wachtwoord bijwerken" },
+};
+function useAuthText() {
+  const [lang, setLang] = useState<"en" | "nl">("en");
+  useEffect(() => { try { if (navigator.language?.toLowerCase().startsWith("nl")) setLang("nl"); } catch {} }, []);
+  return AUTH_TEXT[lang];
+}
 function Login({ error, setError }: { error: string; setError: (message: string) => void }) {
   const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [mode, setMode] = useState<"login" | "signup" | "forgot">("login"); const [consent, setConsent] = useState(false); const [busy, setBusy] = useState(false); const [firstName, setFirstName] = useState("");
+  const A = useAuthText();
   async function submit() {
     setBusy(true); setError("");
     if (mode === "forgot") {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: WEB_URL || window.location.origin });
       setBusy(false);
-      if (resetError) setError(resetError.message); else setError("Check your email for a password reset link.");
+      if (resetError) setError(resetError.message); else setError(A.resetSent);
       return;
     }
     const result = mode === "login" ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password, options: { data: { display_name: firstName.trim(), consent_at: new Date().toISOString(), consent_version: LEGAL_VERSION } } });
@@ -1549,32 +1768,33 @@ function Login({ error, setError }: { error: string; setError: (message: string)
     // "succeeds" with no session either way and the message below has to make sense for both cases.
     // When confirmation is off, signUp() returns a live session and the user is simply logged in,
     // so there is nothing to tell them.
-    setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup" && !(result.data as { session?: unknown } | null)?.session) setError("If this is a new account, check your email to confirm it. Already have an account with this email? Just log in instead.");
+    setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup" && !(result.data as { session?: unknown } | null)?.session) setError(A.checkEmail);
   }
   async function google() { setBusy(true); const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); if (oauthError) { setError(oauthError.message); setBusy(false); } }
-  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>Build your daily drumming habit, one session at a time.</p><div className="auth-card">
-    <h2>{mode === "login" ? "Welcome back" : mode === "signup" ? "Start your streak" : "Reset your password"}</h2>
-    {mode === "signup" && <input type="text" placeholder="First name or nickname" value={firstName} maxLength={20} autoComplete="given-name" onChange={e => setFirstName(e.target.value)} />}
-    <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} />
-    {mode !== "forgot" && <PasswordField value={password} onChange={setPassword} placeholder="Password" isNew={mode === "signup"} />}
-    {mode === "login" && <button className="auth-forgot" onClick={() => { setMode("forgot"); setError(""); }}>Forgot password?</button>}
-    {mode === "signup" && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>I am 16 or older, or I am a parent or guardian creating this account for my child (or the child&apos;s teacher, with the parent&apos;s permission). I agree to the <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">Terms</a> and <a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label>}
-    <button className="auth-primary" disabled={busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && (!consent || !firstName.trim()))} onClick={submit}>{busy ? "Please wait..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Send reset link"}</button>
-    {mode !== "forgot" && !IS_NATIVE_BUILD && <div className="or">OR</div>}
-    {mode !== "forgot" && !IS_NATIVE_BUILD && <button className="google" disabled={busy || (mode === "signup" && !consent)} onClick={google}>G <span>Continue with Google</span></button>}
-    <button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : mode === "signup" ? "Already have an account? Log in" : "Back to log in"}</button>
+  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>{A.tagline}</p><div className="auth-card">
+    <h2>{mode === "login" ? A.welcome : mode === "signup" ? A.start : A.reset}</h2>
+    {mode === "signup" && <input type="text" placeholder={A.firstName} value={firstName} maxLength={20} autoComplete="given-name" onChange={e => setFirstName(e.target.value)} />}
+    <input type="email" placeholder={A.email} value={email} onChange={e => setEmail(e.target.value)} />
+    {mode !== "forgot" && <PasswordField value={password} onChange={setPassword} placeholder={A.password} isNew={mode === "signup"} />}
+    {mode === "login" && <button className="auth-forgot" onClick={() => { setMode("forgot"); setError(""); }}>{A.forgot}</button>}
+    {mode === "signup" && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>{A.consentA}<a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">{A.terms}</a>{A.and}<a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">{A.privacy}</a>.</span></label>}
+    <button className="auth-primary" disabled={busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && (!consent || !firstName.trim()))} onClick={submit}>{busy ? A.wait : mode === "login" ? A.logIn : mode === "signup" ? A.create : A.sendLink}</button>
+    {mode !== "forgot" && !IS_NATIVE_BUILD && <div className="or">{A.or}</div>}
+    {mode !== "forgot" && !IS_NATIVE_BUILD && <button className="google" disabled={busy || (mode === "signup" && !consent)} onClick={google}>G <span>{A.google}</span></button>}
+    <button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? A.newHere : mode === "signup" ? A.haveAccount : A.back}</button>
   </div>{error && <p className="auth-error">{error}</p>}
-  <p className="auth-legal"><a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">Privacy</a> · <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">Terms</a> · <a href={LEGAL_URLS.support} target="_blank" rel="noopener noreferrer">Support</a></p></section></main>;
+  <p className="auth-legal"><a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">{A.privacyShort}</a> · <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">{A.terms}</a> · <a href={LEGAL_URLS.support} target="_blank" rel="noopener noreferrer">{A.support}</a></p></section></main>;
 }
 function ResetPassword({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  const A = useAuthText();
   async function submit() {
     setBusy(true); setError("");
     const { error: updateError } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (updateError) setError(updateError.message); else onDone();
   }
-  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>Choose a new password for your account.</p><div className="auth-card"><h2>Set a new password</h2><PasswordField value={password} onChange={setPassword} placeholder="New password" isNew /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? "Please wait..." : "Update password"}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
+  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>{A.newPasswordIntro}</p><div className="auth-card"><h2>{A.newPasswordTitle}</h2><PasswordField value={password} onChange={setPassword} placeholder={A.newPassword} isNew /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? A.wait : A.update}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
 function YourPointsCard({ user, pointsEnabled, rows, onViewPoints, T }: any) {
@@ -1755,7 +1975,7 @@ type SaveLogFor = (targetDate: string, targetMinutes: number, targetItems: strin
 
 function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practiceSessions, language, T }: { logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; practiceSessions: any[]; language: Lang; T: any }) {
   const today = new Date(); const [selectedDate, setSelectedDate] = useState(dateKey); const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1)); const year = viewDate.getFullYear(); const month = viewDate.getMonth(); const days = new Date(year, month + 1, 0).getDate(); const starts = (new Date(year, month, 1).getDay() + 6) % 7; const selectedLog = logs[selectedDate];
-  const locale = language === "es" ? "es-ES" : "en-US";
+  const locale = localeFor(language);
   const [summaryDate, setSummaryDate] = useState<string | null>(null);
   function changeMonth(delta: number) { setViewDate(new Date(year, month + delta, 1)); }
   function tapDay(key: string) {
@@ -2129,7 +2349,7 @@ function Group({ user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, conf
   const [challengeReward, setChallengeReward] = useState("");
   const [challengePunishment, setChallengePunishment] = useState("");
   const [challengeBusy, setChallengeBusy] = useState(false);
-  const locale = language === "es" ? "es-ES" : "en-US";
+  const locale = localeFor(language);
   const [showCheerSheet, setShowCheerSheet] = useState(false);
   const [cheerTo, setCheerTo] = useState<string | null>(null);
   const [cheerToast, setCheerToast] = useState(false);
@@ -3171,8 +3391,8 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
   // Reuses Practice Mode's own rudiment/exercise catalog directly -- no separate list to
   // maintain, so anything added to Practice Mode's rudiments or exercises automatically shows
   // up here too. Ordered by this student's own practice history (most-logged first).
-  const rudimentExercises: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[] = sortedRudiments;
-  const exerciseItems: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[] = sortedExercises ?? [];
+  const rudimentExercises: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[] = sortedRudiments;
+  const exerciseItems: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[] = sortedExercises ?? [];
   // Only one of the four dropdowns (Rudiments/Exercises/Books/My Items) is open at a time --
   // opening one closes the others so their flyouts never stack on top of each other.
   const [rudimentsOpen, setRudimentsOpenRaw] = useState(false);
@@ -3369,7 +3589,7 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
     setJustPracticedLevel(bpm);
     setStep("detail");
   }
-  function ExerciseRow({ item }: { item: { en: string; es: string } }) {
+  function ExerciseRow({ item }: { item: { en: string; es: string; nl: string } }) {
     const stats = exerciseStats(item.en);
     const full = PRACTICE_EXERCISES.find((e) => e.en === item.en);
     const locked = full?.category === "rudiments" && !isRudimentUnlocked(item.en);
@@ -3379,7 +3599,7 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="lock-icon"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
         <div className="info">
           <p className="name">{item[language as Lang]}</p>
-          <p className="locked-hint">{T.practiceMode.unlockFirst(prereqLabels.join(language === "es" ? " y " : " and "))}</p>
+          <p className="locked-hint">{T.practiceMode.unlockFirst(prereqLabels.join(language === "es" ? " y " : language === "nl" ? " en " : " and "))}</p>
         </div>
       </div>;
     }
@@ -3565,7 +3785,7 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
             const skillNames = (sessions ?? []).filter((s: any) => s.practiced_on === d).map((s: any) => s.item_en as string);
             const names = Array.from(new Set([...(entry.items ?? []), ...(entry.customItems ?? []), ...skillNames])).map((n: string) => practicedItemLabel(n, language));
             return <div key={d} className="quick-recent-row">
-              <span className="quick-recent-date">{new Date(d + "T12:00:00").toLocaleDateString(language === "es" ? "es-ES" : "en-US", { weekday: "short" })} {formatDMY(d).slice(0, 5)}</span>
+              <span className="quick-recent-date">{new Date(d + "T12:00:00").toLocaleDateString(localeFor(language), { weekday: "short" })} {formatDMY(d).slice(0, 5)}</span>
               <span className="quick-recent-items">{names.slice(0, 3).join(", ")}{names.length > 3 ? ` +${names.length - 3}` : ""}</span>
               <span className="quick-recent-min">{formatMinutes(entry.minutes)}</span>
             </div>;
@@ -3627,7 +3847,7 @@ function PracticeMode({ skillTab, setSkillTab, step, setStep, category, setCateg
     const subdivision = PRACTICE_EXERCISES.find((e) => e.en === exercise)?.subdivision;
     return <section className="page">
       <div className="detail-sticky">
-      <div className="back-row"><button onClick={() => setStep(skillSection && !skillSearch.trim() ? "skillList" : "skill")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2>{PRACTICE_EXERCISES.find((e) => e.en === exercise)?.pattern && <p className="exercise-pattern-note">{PRACTICE_EXERCISES.find((e) => e.en === exercise)!.pattern![language as Lang]}</p>}</div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
+      <div className="back-row"><button onClick={() => setStep(skillSection && !skillSearch.trim() ? "skillList" : "skill")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label}</h2>{PRACTICE_EXERCISES.find((e) => e.en === exercise)?.pattern && <p className="exercise-pattern-note">{PRACTICE_EXERCISES.find((e) => e.en === exercise)!.pattern![language === "nl" ? "en" : (language as "en" | "es")]}</p>}</div><button className={isPinned ? "pin-toggle pinned" : "pin-toggle"} onClick={() => onTogglePin(exercise)} aria-label={isPinned ? T.practiceMode.pinned : T.practiceMode.pin} title={isPinned ? T.practiceMode.pinned : T.practiceMode.pin}><svg viewBox="0 0 24 24" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg></button></div>
       <div className="level-card">
         <div className="badge">{stats.bestRating ? RATING_ICON[stats.bestRating] : "🥁"}</div>
         <div>
@@ -3802,7 +4022,7 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
       <p className="settings-neutral-hint">{T.settings.libraryHint}</p>
     </div>
     <p className="settings-section-label">{T.settings.preferencesSection}</p>
-    <div className="settings-form"><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row toggle-row-with-desc" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span className="toggle-row-text"><span>{T.settings.showDaysThisYear}</span><span className="toggle-row-desc">{T.settings.showDaysThisYearDesc}</span></span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
+    <div className="settings-form"><label>{T.settings.language}<select value={language} onChange={e => setLanguage(e.target.value as Lang)}><option value="en">English</option><option value="es">Español</option><option value="nl">Nederlands</option></select></label><label>{T.settings.metronomeTone}<div className="tone-options">{TONE_KEYS.map((key) => <button type="button" key={key} className={tone === key ? "tone-option selected" : "tone-option"} onClick={() => setTone(key)}>{T.settings.toneNames[key]}</button>)}</div></label><label>{T.settings.calendarColor}<div className="color-swatches"><button type="button" className={color === null ? "swatch auto selected" : "swatch auto"} onClick={() => setColor(null)}>{T.settings.autoColor}</button>{MEMBER_COLORS.map((c) => <button key={c} type="button" className={color === c ? "swatch selected" : "swatch"} style={{ background: c }} onClick={() => setColor(c)} />)}</div></label><button className="toggle-row toggle-row-with-desc" onClick={() => setShowDaysThisYear(!showDaysThisYear)}><span className="toggle-row-text"><span>{T.settings.showDaysThisYear}</span><span className="toggle-row-desc">{T.settings.showDaysThisYearDesc}</span></span><b className={showDaysThisYear ? "on" : ""}>{showDaysThisYear ? T.settings.on : T.settings.off}</b></button><button className={saved ? "save saved" : "save"} onClick={saveSettings}>{saved ? T.settings.saved : T.settings.save}</button></div>
     <p className="settings-section-label">{T.settings.accountSection}</p>
     <div className="settings-form account-settings">
       <label>{T.settings.changeEmail}<input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={T.settings.newEmailPlaceholder} /></label>
@@ -3836,7 +4056,7 @@ const TONE_PRESETS: Record<string, ToneDef> = {
 const TONE_KEYS = ["click", "beep", "wood", "clave"];
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, sessions, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; sharedTimer?: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null; onUsedDuringTimer?: () => void; onSessionEnd?: (seconds: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; language?: Lang; T: any }) {
+function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer, onSessionEnd, initialBpm, tone, exerciseLabel, exerciseEn, lockTempo, sessions, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; sharedTimer?: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null; onUsedDuringTimer?: () => void; onSessionEnd?: (seconds: number) => void; initialBpm?: number; tone?: string; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; language?: Lang; T: any }) {
   const [bpm, setBpm] = useState(initialBpm ?? 100);
   const [playing, setPlaying] = useState(false);
   const [beatsPerBar, setBeatsPerBar] = useState(4);
@@ -4179,7 +4399,7 @@ function persistSessionTimer(value: object | null) {
 // time the same way Metronome's free-play mode does, reusing the exact same "what did you
 // practice" picker (duplicated here rather than extracted, since Metronome's version is tightly
 // coupled to its own large block of local state).
-function SessionTimer({ open, close, onOpen, onBannerChange, onRunChange, timerCredit, onCreditReset, onAddPractice, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onOpen?: () => void; onBannerChange?: (active: boolean) => void; onRunChange?: (run: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null) => void; timerCredit?: { startedAt: number; seconds: number; metronome: boolean } | null; onCreditReset?: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[], usedMetronome: boolean) => void; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string }[]; language?: Lang; T: any }) {
+function SessionTimer({ open, close, onOpen, onBannerChange, onRunChange, timerCredit, onCreditReset, onAddPractice, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onOpen?: () => void; onBannerChange?: (active: boolean) => void; onRunChange?: (run: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null) => void; timerCredit?: { startedAt: number; seconds: number; metronome: boolean } | null; onCreditReset?: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[], usedMetronome: boolean) => void; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; language?: Lang; T: any }) {
   const [mode, setMode] = useState<"stopwatch" | "timer">("stopwatch");
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -4735,7 +4955,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     const monthlyData: { key: string; label: string; minutes: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      monthlyData.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString(language === "es" ? "es" : "en", { month: "short" }), minutes: 0 });
+      monthlyData.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString(localeFor(language), { month: "short" }), minutes: 0 });
     }
     const monthlyByKey: Record<string, { key: string; label: string; minutes: number }> = Object.fromEntries(monthlyData.map((m) => [m.key, m]));
     (logs ?? []).forEach((l) => { const bucket = monthlyByKey[l.date.slice(0, 7)]; if (bucket) bucket.minutes += l.minutes; });
@@ -5011,7 +5231,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
   function speedXFromTime(t: number) { return SPEED_PAD_L + ((t - speedMinTime) / speedTimeSpan) * (SPEED_W - SPEED_PAD_L - SPEED_PAD_R); }
   function speedX(date: string) { return speedXFromTime(new Date(date + "T00:00:00").getTime()); }
   function speedY(bpm: number) { const frac = (bpm - speedMinBpm) / Math.max(1, speedMaxBpm - speedMinBpm); return SPEED_PAD_T + (1 - frac) * (SPEED_H - SPEED_PAD_T - SPEED_PAD_B); }
-  const speedLocale = language === "es" ? "es-ES" : "en-US";
+  const speedLocale = localeFor(language);
   const speedXTicks = Array.from(new Set([speedMinTime, speedMinTime + Math.round(speedTimeSpan / 2), speedMaxTime]));
   function speedPath(points: SpeedPoint[]) {
     const extended = points[points.length - 1].date !== dateKey ? [...points, { date: dateKey, bpm: points[points.length - 1].bpm }] : points;
