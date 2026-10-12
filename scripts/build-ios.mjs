@@ -27,7 +27,8 @@ writeFileSync(layoutPath, layout);
 writeFileSync(path.join(work, "next.config.mjs"), 'export default { output: "export", images: { unoptimized: true } };\n');
 
 // only public (NEXT_PUBLIC_*) values go into the app bundle; never the server-only keys
-const env = readFileSync(path.join(root, ".env.local"), "utf8").split("\n").filter((l) => l.startsWith("NEXT_PUBLIC_"));
+// the review-only unlock switch is never baked into a phone build unless KEEP_REVIEW_UNLOCK=1 is set on purpose
+const env = readFileSync(path.join(root, ".env.local"), "utf8").split("\n").filter((l) => l.startsWith("NEXT_PUBLIC_") && (process.env.KEEP_REVIEW_UNLOCK === "1" || !l.startsWith("NEXT_PUBLIC_REVIEW_UNLOCK_ALL")));
 env.push(`NEXT_PUBLIC_WEB_URL=${webUrl}`, "NEXT_PUBLIC_NATIVE=1");
 writeFileSync(path.join(work, ".env.production"), env.join("\n") + "\n");
 
@@ -38,6 +39,11 @@ rmSync(path.join(root, "ios-www"), { recursive: true, force: true });
 cpSync(path.join(work, "out"), path.join(root, "ios-www"), { recursive: true });
 console.log("ios-www ready");
 
+if (process.argv.includes("--sync-android")) {
+  // Same web bundle, copied into the Android project (package name app.drumskills.android).
+  const sync = spawnSync("npx", ["cap", "sync", "android"], { cwd: root, stdio: "inherit", env: { ...process.env, CAP_APP_ID: "app.drumskills.android" } });
+  process.exit(sync.status ?? 0);
+}
 if (process.argv.includes("--sync")) {
   const sync = spawnSync("npx", ["cap", "sync", "ios"], { cwd: root, stdio: "inherit", env: { ...process.env, DEVELOPER_DIR: process.env.DEVELOPER_DIR ?? "/Applications/Xcode.app/Contents/Developer" } });
   process.exit(sync.status ?? 0);

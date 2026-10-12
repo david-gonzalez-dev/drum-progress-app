@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 type Lang = "en" | "es" | "nl";
 export type BoardFilter = { category: "consistency" | "skill" | "points"; period: "month" | "year"; level: string };
-type Summary = { opted_in: boolean; eligible: boolean; pos: number | null; total: number; prev_pos: number | null; level: string };
+type Summary = { opted_in: boolean; eligible: boolean; pos: number | null; total: number; prev_pos: number | null; level: string; board: "under_10" | "10_17" | "18_plus" | null };
 type Row = { pos: number; display_name: string; score: number; detail: number; level: string; is_me: boolean };
 
 const TEXT = {
@@ -20,7 +20,7 @@ const TEXT = {
     unitDays: "days", unitTempos: "tempos", unitPoints: "points", you: "You", empty: "No one here yet. Be the first!", loadError: "The leaderboard isn't available right now.", loading: "Loading…",
     howConsistency: "Counts days with 5+ minutes of practice. Total minutes are never ranked.", howSkill: "Counts tempos you newly unlocked in the Skill Trainer.", howPoints: "Points awarded by teachers.", resets: "Resets automatically each month and year. Your history is never deleted.",
     gateTitle: "Join the worldwide leaderboard", gate1: "Your first name, last initial and scores will be visible to other players who join.", gate2: "Nothing else is shared: no email, notes or practice details.", gate3: "You can leave at any time. Your practice history stays yours.",
-    joinBtn: "Join", leaveBtn: "Leave the leaderboard", leaveConfirm: "Tap again to leave", hiddenNote: "You're not shown on the leaderboard right now (hidden by an admin or Kid Mode).", kidNote: "The worldwide leaderboard isn't available for Kid Mode accounts.", error: "Something went wrong. Please try again.",
+    joinBtn: "Join", leaveBtn: "Leave the leaderboard", leaveConfirm: "Tap again to leave", hiddenNote: "You're not shown on the leaderboard right now (hidden by an administrator).", needAgeTitle: "Add your date of birth to join", needAge: "Add your date of birth in Settings to join the leaderboard. It stays private.", boards: { under_10: "Under 10 leaderboard", "10_17": "10–17 leaderboard", "18_plus": "18+ leaderboard" }, gates: { under_10: "You are on the Under 10 board: you only see and are seen by other players under 10, with first names only.", "10_17": "You are on the 10–17 board: you only see and are seen by other players aged 10 to 17, with first names only.", "18_plus": "You are on the 18+ board: you only see and are seen by other players aged 18 and older." }, error: "Something went wrong. Please try again.",
   },
   es: {
     eyebrow: "RESUMEN DE PRÁCTICA", title: "TABLA UNIVERSAL", subtitle: "Compite con bateristas de todo el mundo", back: "Progreso",
@@ -32,7 +32,7 @@ const TEXT = {
     unitDays: "días", unitTempos: "tempos", unitPoints: "puntos", you: "Tú", empty: "Aún no hay nadie. ¡Sé el primero!", loadError: "La tabla no está disponible ahora mismo.", loading: "Cargando…",
     howConsistency: "Cuenta los días con 5+ minutos de práctica. Los minutos totales nunca se clasifican.", howSkill: "Cuenta los tempos que desbloqueaste de nuevo en el Skill Trainer.", howPoints: "Puntos concedidos por profesores.", resets: "Se reinicia sola cada mes y cada año. Tu historial nunca se borra.",
     gateTitle: "Únete a la tabla mundial", gate1: "Tu nombre, la inicial de tu apellido y tus puntuaciones serán visibles para otros jugadores que se unan.", gate2: "No se comparte nada más: ni email, ni notas, ni detalles de práctica.", gate3: "Puedes salir cuando quieras. Tu historial sigue siendo tuyo.",
-    joinBtn: "Unirme", leaveBtn: "Salir de la tabla", leaveConfirm: "Toca otra vez para salir", hiddenNote: "Ahora mismo no apareces en la tabla (oculto por un administrador o Modo Niño).", kidNote: "La tabla mundial no está disponible para cuentas en Modo Niño.", error: "Algo salió mal. Inténtalo de nuevo.",
+    joinBtn: "Unirme", leaveBtn: "Salir de la tabla", leaveConfirm: "Toca otra vez para salir", hiddenNote: "Ahora mismo no apareces en la tabla (oculto por un administrador).", needAgeTitle: "Añade tu fecha de nacimiento para unirte", needAge: "Añade tu fecha de nacimiento en Ajustes para unirte a la tabla. Se mantiene privada.", boards: { under_10: "Tabla de menores de 10", "10_17": "Tabla de 10–17", "18_plus": "Tabla de 18+" }, gates: { under_10: "Estás en la tabla de menores de 10: solo ves y te ven otros menores de 10, solo con el nombre.", "10_17": "Estás en la tabla de 10–17: solo ves y te ven jugadores de 10 a 17 años, solo con el nombre.", "18_plus": "Estás en la tabla de 18+: solo ves y te ven jugadores de 18 años o más." }, error: "Algo salió mal. Inténtalo de nuevo.",
   },
   nl: {
     eyebrow: "OEFENOVERZICHT", title: "UNIVERSELE RANGLIJST", subtitle: "Meet je met drummers wereldwijd", back: "Voortgang",
@@ -44,7 +44,7 @@ const TEXT = {
     unitDays: "dagen", unitTempos: "tempo's", unitPoints: "punten", you: "Jij", empty: "Nog niemand hier. Wees de eerste!", loadError: "De ranglijst is nu niet beschikbaar.", loading: "Laden…",
     howConsistency: "Telt dagen met 5+ minuten oefenen. Totale minuten tellen nooit mee.", howSkill: "Telt tempo's die je nieuw hebt ontgrendeld in de Skill Trainer.", howPoints: "Punten toegekend door leraren.", resets: "Begint automatisch opnieuw elke maand en elk jaar. Je geschiedenis wordt nooit verwijderd.",
     gateTitle: "Doe mee aan de wereldwijde ranglijst", gate1: "Je voornaam, de initiaal van je achternaam en je scores zijn zichtbaar voor andere spelers die meedoen.", gate2: "Er wordt niets anders gedeeld: geen e-mail, notities of oefendetails.", gate3: "Je kunt op elk moment stoppen. Je oefengeschiedenis blijft van jou.",
-    joinBtn: "Meedoen", leaveBtn: "Stop met de ranglijst", leaveConfirm: "Tik nogmaals om te stoppen", hiddenNote: "Je wordt nu niet getoond op de ranglijst (verborgen door een beheerder of Kindmodus).", kidNote: "De wereldwijde ranglijst is niet beschikbaar voor accounts in Kindmodus.", error: "Er ging iets mis. Probeer het opnieuw.",
+    joinBtn: "Meedoen", leaveBtn: "Stop met de ranglijst", leaveConfirm: "Tik nogmaals om te stoppen", hiddenNote: "Je wordt nu niet getoond op de ranglijst (verborgen door een beheerder).", needAgeTitle: "Voeg je geboortedatum toe om mee te doen", needAge: "Voeg je geboortedatum toe in Instellingen om mee te doen aan de ranglijst. Het blijft privé.", boards: { under_10: "Ranglijst onder 10", "10_17": "Ranglijst 10–17", "18_plus": "Ranglijst 18+" }, gates: { under_10: "Je staat op de ranglijst onder 10: je ziet en wordt gezien door andere spelers onder 10, alleen met voornaam.", "10_17": "Je staat op de ranglijst 10–17: je ziet en wordt gezien door spelers van 10 tot 17, alleen met voornaam.", "18_plus": "Je staat op de ranglijst 18+: je ziet en wordt gezien door spelers van 18 en ouder." }, error: "Er ging iets mis. Probeer het opnieuw.",
   },
 };
 
@@ -67,7 +67,7 @@ function Trophy() {
 }
 
 // The card at the top of the Progress tab.
-export function LeaderboardCard({ db: supabase, language, kidMode, refreshKey, onOpen }: { db: any; language: Lang; kidMode: boolean; refreshKey: number; onOpen: (f?: Partial<BoardFilter>) => void }) {
+export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen }: { db: any; language: Lang; refreshKey: number; onOpen: (f?: Partial<BoardFilter>) => void }) {
   const t = TEXT[language];
   const [summary, setSummary] = useState<Summary | null>(null);
   const [failed, setFailed] = useState(false);
@@ -77,7 +77,7 @@ export function LeaderboardCard({ db: supabase, language, kidMode, refreshKey, o
       if (cancelled) return;
       if (error || !data) { setFailed(true); return; }
       const row: any = Array.isArray(data) ? data[0] : data;
-      setSummary(row ? { opted_in: !!row.opted_in, eligible: !!row.eligible, pos: row.pos == null ? null : Number(row.pos), total: Number(row.total ?? 0), prev_pos: row.prev_pos == null ? null : Number(row.prev_pos), level: row.level ?? "beginner" } : null);
+      setSummary(row ? { opted_in: !!row.opted_in, eligible: !!row.eligible, pos: row.pos == null ? null : Number(row.pos), total: Number(row.total ?? 0), prev_pos: row.prev_pos == null ? null : Number(row.prev_pos), level: row.level ?? "beginner", board: row.board === "under_10" || row.board === "10_17" || row.board === "18_plus" ? row.board : null } : null);
     });
     return () => { cancelled = true; };
   }, [refreshKey]);
@@ -92,7 +92,8 @@ export function LeaderboardCard({ db: supabase, language, kidMode, refreshKey, o
       <Chevron />
     </button>
     <Trophy />
-    {kidMode || (!summary.eligible && summary.opted_in) ? <div className="lb-panel lb-panel-note"><span>{t.unavailable}</span></div>
+    {!summary.board ? <button type="button" className="lb-panel lb-panel-join" onClick={() => onOpen()}><span className="lb-join-title">{t.needAgeTitle}</span><span className="lb-join-sub">{t.needAge}</span></button>
+      : summary.opted_in && !summary.eligible ? <div className="lb-panel lb-panel-note"><span>{t.unavailable}</span></div>
       : !summary.opted_in ? <button type="button" className="lb-panel lb-panel-join" onClick={() => onOpen()}><span className="lb-join-title">{t.join}</span><span className="lb-join-sub">{t.joinHint}</span></button>
       : <div className="lb-panel">
         <div className="lb-rank-col">
@@ -111,7 +112,7 @@ export function LeaderboardCard({ db: supabase, language, kidMode, refreshKey, o
 }
 
 // The full leaderboard screen.
-export function LeaderboardScreen({ db: supabase, user, language, kidMode, initial, onBack }: { db: any; user: any; language: Lang; kidMode: boolean; initial?: Partial<BoardFilter>; onBack: () => void }) {
+export function LeaderboardScreen({ db: supabase, user, language, initial, onBack }: { db: any; user: any; language: Lang; initial?: Partial<BoardFilter>; onBack: () => void }) {
   const t = TEXT[language];
   const [filter, setFilter] = useState<BoardFilter>({ category: initial?.category ?? "consistency", period: initial?.period ?? "month", level: initial?.level ?? "all" });
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -127,7 +128,7 @@ export function LeaderboardScreen({ db: supabase, user, language, kidMode, initi
       if (cancelled) return;
       if (err || !data) { setError(t.loadError); return; }
       const row: any = Array.isArray(data) ? data[0] : data;
-      if (row) setSummary({ opted_in: !!row.opted_in, eligible: !!row.eligible, pos: row.pos == null ? null : Number(row.pos), total: Number(row.total ?? 0), prev_pos: row.prev_pos == null ? null : Number(row.prev_pos), level: row.level ?? "beginner" });
+      if (row) setSummary({ opted_in: !!row.opted_in, eligible: !!row.eligible, pos: row.pos == null ? null : Number(row.pos), total: Number(row.total ?? 0), prev_pos: row.prev_pos == null ? null : Number(row.prev_pos), level: row.level ?? "beginner", board: row.board === "under_10" || row.board === "10_17" || row.board === "18_plus" ? row.board : null });
     });
     return () => { cancelled = true; };
   }, [version]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -160,15 +161,16 @@ export function LeaderboardScreen({ db: supabase, user, language, kidMode, initi
   return <section className="page lb-page">
     <button className="page-back" onClick={onBack}>‹ {t.back}</button>
     <header className="simple-head"><p className="eyebrow">{t.eyebrow}</p><h1>{t.title}</h1></header>
-    {kidMode ? <p className="lb-note">{t.kidNote}</p>
-      : !summary ? <p className="hint">{error || t.loading}</p>
+    {!summary ? <p className="hint">{error || t.loading}</p>
+      : !summary.board ? <p className="lb-note">{t.needAge}</p>
       : !optedIn ? <div className="lb-gate">
         <h2>{t.gateTitle}</h2>
-        <ul><li>{t.gate1}</li><li>{t.gate2}</li><li>{t.gate3}</li></ul>
+        <ul><li>{t.gate1}</li><li>{t.gate2}</li><li>{t.gate3}</li><li>{t.gates[summary.board]}</li></ul>
         {error && <p className="lb-note">{error}</p>}
         <button className="save" disabled={busy} onClick={() => setOptIn(true)}>{t.joinBtn}</button>
       </div>
       : <>
+        <p className="lb-board">{t.boards[summary.board]}</p>
         {!summary.eligible && <p className="lb-note">{t.hiddenNote}</p>}
         <div className="lb-seg">{(["consistency", "skill", "points"] as const).map((c) => <button key={c} type="button" className={filter.category === c ? "on" : ""} onClick={() => setFilter({ ...filter, category: c })}>{t.cats[c]}</button>)}</div>
         <div className="lb-seg lb-seg-small">{(["month", "year"] as const).map((p) => <button key={p} type="button" className={filter.period === p ? "on" : ""} onClick={() => setFilter({ ...filter, period: p })}>{t.periods[p]}</button>)}</div>

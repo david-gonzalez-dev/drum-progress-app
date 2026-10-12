@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "import-history": "node scripts/import-history.mjs",
-    "ios:build": "node scripts/build-ios.mjs --sync"
+    "ios:build": "node scripts/build-ios.mjs --sync",
+    "android:build": "node scripts/build-ios.mjs --sync-android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.3",
     "@capacitor/core": "^8.5.2",
     "@capacitor/ios": "^8.5.2",
     "@supabase/supabase-js": "^2.111.0",
