@@ -21,6 +21,8 @@ export default function TermsPage() {
     <h2>3. Groups and the administrator</h2>
     <p>The person who runs the app (the administrator, who is also a drum teacher) can see all users&apos; practice information, including notes, and can give you challenges or points. The person who creates a group manages it, and members of a group can see each other&apos;s practice. Your notes stay private from other group members. Only join groups you know.</p>
 
+    <p>The worldwide leaderboard is optional and you can leave it at any time. Scores are worked out by the app from your practice, and the administrator can hide anyone who appears to be cheating. Please use a name that is suitable for children.</p>
+
     <h2>4. Your content</h2>
     <p>The notes and other things you enter remain yours. You allow us to store and show them inside the app as described in the Privacy Policy. We may remove content that breaks these terms.</p>
 

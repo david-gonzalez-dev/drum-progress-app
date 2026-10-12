@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { LeaderboardCard, LeaderboardScreen, type BoardFilter } from "./leaderboard";
 
 type Tab = "today" | "practice" | "group" | "progress" | "settings" | "admin";
 type Log = { minutes: number; seconds: number; items: string[]; customItems: string[]; notes: string; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null };
@@ -580,7 +581,7 @@ const translations = {
       notesPrefix: "Notes:",
       usersLabel: (n: number) => n === 1 ? "USER" : "USERS",
       totalMinutesLabel: "total", totalLogsLabel: "logs", totalPracticeLabel: "Total practice", focusLabel: "FOCUS", mostPracticedLabel: "MOST PRACTICED",
-      pointsLabel: "POINTS", awardHint: "Award or remove points", reasonPlaceholder: "Reason", awardBtn: "Award", modeLabel: "MODE", modeStandard: "Full Library", modeBeginner: "Essentials", pointGameLabel: "POINT GAME", pointGameOn: "On", pointGameOff: "Off", pointsHistory: "POINTS HISTORY", noPoints: "No points awarded yet.",
+      pointsLabel: "POINTS", awardHint: "Award or remove points", reasonPlaceholder: "Reason", awardBtn: "Award", modeLabel: "MODE", modeStandard: "Full Library", modeBeginner: "Essentials", pointGameLabel: "POINT GAME", pointGameOn: "On", pointGameOff: "Off", leaderboardLabel: "LEADERBOARD", leaderboardShown: "Shown", leaderboardHiddenOpt: "Hidden", pointsHistory: "POINTS HISTORY", noPoints: "No points awarded yet.",
       metronomeBadge: "Metronome", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Quick entry",
       mostMinutesTitle: "MOST PRACTICE TIME", allUsersTitle: "ALL USERS", excludeSelfLabel: "Exclude my account from stats",
       statsRangeLabel: "Time range", statsRangeAll: "All", statsRangeMonth: "This Month", statsRangeLastMonth: "Last Month", statsRangeYear: "Year",
@@ -759,7 +760,7 @@ const translations = {
       notesPrefix: "Notas:",
       usersLabel: (n: number) => n === 1 ? "USUARIO" : "USUARIOS",
       totalMinutesLabel: "total", totalLogsLabel: "registros", totalPracticeLabel: "Práctica total", focusLabel: "ENFOQUE", mostPracticedLabel: "MÁS PRACTICADO",
-      pointsLabel: "PUNTOS", awardHint: "Otorgar o quitar puntos", reasonPlaceholder: "Motivo", awardBtn: "Dar", modeLabel: "MODO", modeStandard: "Biblioteca Completa", modeBeginner: "Esenciales", pointGameLabel: "JUEGO DE PUNTOS", pointGameOn: "Activado", pointGameOff: "Desactivado", pointsHistory: "HISTORIAL DE PUNTOS", noPoints: "Aún no se han otorgado puntos.",
+      pointsLabel: "PUNTOS", awardHint: "Otorgar o quitar puntos", reasonPlaceholder: "Motivo", awardBtn: "Dar", modeLabel: "MODO", modeStandard: "Biblioteca Completa", modeBeginner: "Esenciales", pointGameLabel: "JUEGO DE PUNTOS", pointGameOn: "Activado", pointGameOff: "Desactivado", leaderboardLabel: "TABLA MUNDIAL", leaderboardShown: "Visible", leaderboardHiddenOpt: "Oculto", pointsHistory: "HISTORIAL DE PUNTOS", noPoints: "Aún no se han otorgado puntos.",
       metronomeBadge: "Metrónomo", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Entrada rápida",
       mostMinutesTitle: "MÁS TIEMPO DE PRÁCTICA", allUsersTitle: "TODOS LOS USUARIOS", excludeSelfLabel: "Excluir mi cuenta de las estadísticas",
       statsRangeLabel: "Rango de tiempo", statsRangeAll: "Todo", statsRangeMonth: "Este Mes", statsRangeLastMonth: "Mes Pasado", statsRangeYear: "Año",
@@ -938,7 +939,7 @@ const translations = {
       notesPrefix: "Notities:",
       usersLabel: (n: number) => n === 1 ? "GEBRUIKER" : "GEBRUIKERS",
       totalMinutesLabel: "totaal", totalLogsLabel: "logs", totalPracticeLabel: "Totaal geoefend", focusLabel: "FOCUS", mostPracticedLabel: "MEEST GEOEFEND",
-      pointsLabel: "PUNTEN", awardHint: "Punten geven of afnemen", reasonPlaceholder: "Reden", awardBtn: "Geven", modeLabel: "MODUS", modeStandard: "Volledige bibliotheek", modeBeginner: "Basis", pointGameLabel: "PUNTENSPEL", pointGameOn: "Aan", pointGameOff: "Uit", pointsHistory: "PUNTENGESCHIEDENIS", noPoints: "Nog geen punten gegeven.",
+      pointsLabel: "PUNTEN", awardHint: "Punten geven of afnemen", reasonPlaceholder: "Reden", awardBtn: "Geven", modeLabel: "MODUS", modeStandard: "Volledige bibliotheek", modeBeginner: "Basis", pointGameLabel: "PUNTENSPEL", pointGameOn: "Aan", pointGameOff: "Uit", leaderboardLabel: "RANGLIJST", leaderboardShown: "Zichtbaar", leaderboardHiddenOpt: "Verborgen", pointsHistory: "PUNTENGESCHIEDENIS", noPoints: "Nog geen punten gegeven.",
       metronomeBadge: "Metronoom", skillTrainerBadge: "Skill Trainer", quickEntryBadge: "Snelle invoer",
       mostMinutesTitle: "MEESTE OEFENTIJD", allUsersTitle: "ALLE GEBRUIKERS", excludeSelfLabel: "Mijn account uitsluiten van statistieken",
       statsRangeLabel: "Periode", statsRangeAll: "Alles", statsRangeMonth: "Deze maand", statsRangeLastMonth: "Vorige maand", statsRangeYear: "Jaar",
@@ -1641,7 +1642,7 @@ export default function Home() {
     {tab === "today" && <Today onGoToProgress={() => { setTab("progress"); window.scrollTo(0, 0); }} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("home"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setSkillTab("rudiments"); setPracticeStep("skill"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode onMetronomeToneChange={changeMetronomeTone} skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group onGroupCount={setGroupCount} user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
-    {tab === "progress" && <Progress onOpenExercise={openExerciseDetail} practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
+    {tab === "progress" && <Progress onOpenExercise={openExerciseDetail} practiceSessions={practiceSessions} logs={logs} user={user} language={language} kidMode={kidMode} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage key={adminResetKey} user={user} language={language} T={T} />}
     {incomingCheer && <button type="button" className="cheer-incoming" onClick={() => { setTab("group"); setIncomingCheer(null); }}>
@@ -3217,12 +3218,15 @@ function AchievementsSection({ stats, tempoCounts, wonChallenges, language, T }:
     </div></div>}
   </div>;
 }
-function Progress({ onOpenExercise, practiceSessions, logs, user, language, T }: { onOpenExercise?: (en: string) => void; practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
+function Progress({ onOpenExercise, practiceSessions, logs, user, language, kidMode, T }: { kidMode: boolean; onOpenExercise?: (en: string) => void; practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const VISIBLE_LIMIT = 5;
   const [showAllPractice, setShowAllPractice] = useState(false);
   const [showAllSkill, setShowAllSkill] = useState(false);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
+  // Universal leaderboard: null = closed, otherwise the screen is open (optionally pre-set to a category/period/level).
+  const [board, setBoard] = useState<Partial<BoardFilter> | null>(null);
+  const [boardKey, setBoardKey] = useState(0);
   const [wonChallenges, setWonChallenges] = useState<any[]>([]);
   useEffect(() => {
     let cancelled = false;
@@ -3310,7 +3314,9 @@ function Progress({ onOpenExercise, practiceSessions, logs, user, language, T }:
     const targets = ACHIEVEMENT_CATEGORIES.find((c) => c.key === "tempo")!.targets;
     return targets.map((t) => new Set(practiceSessions.filter((s) => rudiments.has(s.item_en) && s.bpm >= t && (RATING_RANK[s.rating] ?? 0) >= 3).map((s) => s.item_en)).size);
   }, [practiceSessions]);
+  if (board) return <LeaderboardScreen db={supabase} user={user} language={language} kidMode={kidMode} initial={board} onBack={() => { setBoard(null); setBoardKey((k) => k + 1); }} />;
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.progressPage.eyebrow}</p><h1>{T.progressPage.title}</h1></header>
+    <LeaderboardCard db={supabase} language={language} kidMode={kidMode} refreshKey={boardKey} onOpen={(f) => setBoard(f ?? {})} />
     <div className="progress-section">
       <span className="section-label">{T.progressPage.skillProgress}</span>
       {!skillExercises.length ? <p className="hint">{T.progressPage.noSkillData}</p> : (() => {
@@ -4910,6 +4916,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
   const [points, setPoints] = useState<{ id: string; amount: number; reason: string | null; created_at: string }[] | null>(null);
   const [kidMode, setKidMode] = useState(false);
   const [pointsEnabled, setPointsEnabled] = useState(false);
+  const [lbHidden, setLbHidden] = useState(false);
   // Daily Logs / Skill Trainer Sessions / Points History can each run long for an active
   // student -- same collapsed-by-default, "See more" pattern already used on the student's own
   // Progress page, rather than dumping the full history on screen at once.
@@ -4949,7 +4956,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
       supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,used_metronome,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }),
       supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,created_at,practice_exercises(name_en)").eq("user_id", u.id).order("practiced_on", { ascending: false }),
       supabase.from("pinned_exercises").select("exercise_en").eq("user_id", u.id).order("sort_order"),
-      supabase.from("settings").select("kid_mode, points_enabled").eq("user_id", u.id).maybeSingle(),
+      supabase.from("settings").select("kid_mode, points_enabled, leaderboard_hidden").eq("user_id", u.id).maybeSingle(),
       supabase.from("point_awards").select("id,amount,reason,created_at").eq("user_id", u.id).order("created_at", { ascending: false }),
       supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date,assigned_by").eq("user_id", u.id),
     ]);
@@ -4961,6 +4968,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     setPinned((pinnedRes.data ?? []).map((row: any) => row.exercise_en));
     setKidMode(!!settingsRes.data?.kid_mode);
     setPointsEnabled(!!settingsRes.data?.points_enabled);
+    setLbHidden(!!settingsRes.data?.leaderboard_hidden);
     setPoints(pointsRes.data ?? []);
     const challengesList = challengesRes.data ?? [];
     if (challengesList.length) {
@@ -5033,6 +5041,13 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     setPointsEnabled(enabled);
     const { error } = await supabase.rpc("admin_set_points_enabled", { target_user_id: selected.id, enabled });
     if (error) setPointsEnabled(!enabled);
+  }
+
+  async function setLbHiddenValue(hidden: boolean) {
+    if (!selected || hidden === lbHidden) return;
+    setLbHidden(hidden);
+    const { error } = await supabase.rpc("admin_set_leaderboard_hidden", { target_user_id: selected.id, hidden });
+    if (error) setLbHidden(!hidden);
   }
 
   const ADMIN_HISTORY_LIMIT = 5;
@@ -5212,6 +5227,13 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
             <div className="admin-mini-toggle">
               <button type="button" className={!pointsEnabled ? "selected" : ""} onClick={() => setPointsEnabledValue(false)}>{T.admin.pointGameOff}</button>
               <button type="button" className={pointsEnabled ? "selected" : ""} onClick={() => setPointsEnabledValue(true)}>{T.admin.pointGameOn}</button>
+            </div>
+          </div>
+          <div className="admin-settings-row">
+            <span>{T.admin.leaderboardLabel}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={!lbHidden ? "selected" : ""} onClick={() => setLbHiddenValue(false)}>{T.admin.leaderboardShown}</button>
+              <button type="button" className={lbHidden ? "selected" : ""} onClick={() => setLbHiddenValue(true)}>{T.admin.leaderboardHiddenOpt}</button>
             </div>
           </div>
           <div className="admin-settings-row">

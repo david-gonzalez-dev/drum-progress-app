@@ -1204,3 +1204,61 @@ button.unlock-row:active{background:#171a18}
 /* level name: a bit smaller, and it scales with the screen so the longest word (INTERMEDIATE) always fits */
 .sk-overall-name{font-size:clamp(24px,9.2vw,34px);margin:4px 0 6px;white-space:nowrap}
 .sk-overall{padding:14px 15px 12px}
+
+/* Universal leaderboard: card at the top of Progress + full screen */
+.lb-card{position:relative;overflow:hidden;margin:0 0 20px;padding:16px 16px 14px;border-radius:20px;background:linear-gradient(150deg,rgba(255,116,37,.22) 0%,#141716 62%);border:1px solid rgba(255,138,61,.4);box-shadow:0 0 30px rgba(255,107,26,.12)}
+.lb-card-head{position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;width:100%;padding:0;margin:0 0 12px;border:0;background:transparent;color:inherit;text-align:left;font-family:inherit}
+.lb-card-titles{display:flex;flex-direction:column;gap:3px;min-width:0}
+.lb-card-title{font:800 21px 'Barlow Condensed';letter-spacing:1.2px;color:#ff9b50}
+.lb-card-sub{font-size:13.5px;color:#c7cdc9}
+.lb-chev{width:18px;height:18px;flex-shrink:0;color:#ff9b50}
+.lb-card-head .lb-chev{margin-top:3px}
+.lb-trophy{position:absolute;right:10px;bottom:12px;width:70px;height:auto;z-index:1;filter:drop-shadow(0 6px 14px rgba(255,107,26,.35));pointer-events:none}
+.lb-panel{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.3fr);gap:10px;align-items:stretch;width:calc(100% - 80px);min-width:0;padding:12px;border-radius:14px;background:rgba(10,12,11,.72);border:1px solid #2a2f2c}
+.lb-panel-note,.lb-panel-join{display:flex;flex-direction:column;gap:3px;width:calc(100% - 84px);text-align:left;font-family:inherit;color:inherit}
+.lb-panel-note{font-size:13.5px;color:#9aa19d}
+.lb-panel-join{cursor:pointer}
+.lb-join-title{font:700 15px 'DM Sans';color:#ff9b50}
+.lb-join-sub{font-size:12.5px;color:#a5ada7}
+.lb-rank-col{display:flex;flex-direction:column;gap:3px;justify-content:center;min-width:0}
+.lb-rank-label{font-size:11px;color:#9aa19d}
+.lb-rank-num{font:800 36px/1 'Barlow Condensed';color:#fff}
+.lb-rank-none{font:700 16px 'DM Sans';color:#e7e9e6}
+.lb-rank-hint{font-size:11.5px;color:#7c837e;line-height:1.35}
+.lb-moved{font-size:12px;font-weight:700}
+.lb-moved.up{color:#68d391}.lb-moved.down{color:#e2877d}
+.lb-links{display:flex;flex-direction:column;min-width:0}
+.lb-links button{display:flex;align-items:center;justify-content:space-between;gap:6px;border:0;background:transparent;color:#e7e9e6;font:600 12.5px 'DM Sans';padding:7px 0;text-align:left;border-bottom:1px solid #232825}
+.lb-links button:last-child{border-bottom:0}
+.lb-links button span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-links .lb-chev{width:14px;height:14px}
+@media (max-width:360px){.lb-trophy{width:56px}.lb-panel{width:calc(100% - 64px)}.lb-panel-note,.lb-panel-join{width:calc(100% - 70px)}}
+.lb-page .page-back{margin-bottom:8px}
+.lb-seg{display:flex;gap:4px;padding:4px;margin:0 0 10px;background:#161918;border:1px solid #222724;border-radius:99px}
+.lb-seg button{flex:1;min-width:0;border:0;border-radius:99px;background:transparent;color:#9aa19d;font:700 12.5px 'DM Sans';padding:9px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-seg button.on{background:#ff6b1a;color:#250d02}
+.lb-seg-small button{font-size:12.5px;padding:7px 6px}
+.lb-levels{display:flex;gap:7px;overflow-x:auto;margin:0 -16px 14px;padding:0 16px 2px;scrollbar-width:none}
+.lb-levels::-webkit-scrollbar{display:none}
+.lb-levels button{flex:0 0 auto;border:1px solid #303632;background:#1c211f;color:#d2d6d3;font:600 13px 'DM Sans';padding:7px 12px;border-radius:99px;white-space:nowrap}
+.lb-levels button.on{border-color:#ff6b1a;background:#2a170a;color:#ff9b50}
+.lb-list{display:flex;flex-direction:column;gap:6px}
+.lb-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:#121413;border:1px solid #222724}
+.lb-row.top .lb-pos{color:#ff9b50}
+.lb-row.me{background:linear-gradient(150deg,rgba(255,116,37,.22),#151817 70%);border-color:rgba(255,138,61,.5)}
+.lb-pos{width:28px;flex-shrink:0;text-align:center;font:800 20px 'Barlow Condensed';color:#9aa19d}
+.lb-avatar{flex-shrink:0;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 15px 'DM Sans';color:#250d02}
+.lb-name{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.lb-name b{font:600 15px 'DM Sans';color:#f1f3f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-name b em{font-style:normal;font-size:11px;font-weight:700;color:#ff9b50;border:1px solid rgba(255,138,61,.5);border-radius:99px;padding:1px 7px;margin-left:7px}
+.lb-name small{font-size:12px;color:#7c837e}
+.lb-score{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;font:800 20px/1 'Barlow Condensed';color:#fff}
+.lb-score small{font:500 11px 'DM Sans';color:#7c837e;margin-top:3px}
+.lb-gap{text-align:center;color:#636965;letter-spacing:4px;line-height:1;padding:2px 0}
+.lb-how{font-size:12.5px;line-height:1.5;color:#7c837e;margin:16px 2px 4px}
+.lb-note{font-size:13.5px;line-height:1.5;color:#c7cdc9;background:#161918;border:1px solid #222724;border-radius:12px;padding:12px 14px;margin:0 0 12px}
+.lb-empty{margin:24px 0}
+.lb-leave{display:block;width:100%;background:transparent;border:0;color:#8a9187;font:600 14px 'DM Sans';padding:14px;margin-top:6px;text-align:center}
+.lb-gate{background:#121413;border:1px solid #222724;border-radius:20px;padding:20px 18px}
+.lb-gate h2{font:700 24px 'Barlow Condensed';margin:0 0 10px}
+.lb-gate ul{margin:0 0 6px;padding:0 0 0 18px;display:flex;flex-direction:column;gap:8px;font-size:14.5px;line-height:1.5;color:#c7cdc9}
