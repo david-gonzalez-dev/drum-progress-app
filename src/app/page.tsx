@@ -24,6 +24,8 @@ const NL_NAMES: Record<string, string> = {
   "Let's go, you can do it!": "Kom op, je kunt het!", "Keep it up, team!": "Hou vol, team!", "Great practice today!": "Goed geoefend vandaag!", "Don't break the streak!": "Verbreek je reeks niet!",
   "Proud of you all!": "Trots op jullie allemaal!", "Go practice!": "Ga oefenen!", "Good job!": "Goed gedaan!",
 };
+// Makes iOS play web audio even when the phone is on silent (needs Safari 16.4+; the iPhone app also sets this natively).
+function enablePlaybackAudio() { try { const nav = navigator as unknown as { audioSession?: { type: string } }; if (nav.audioSession) nav.audioSession.type = "playback"; } catch {} }
 function localeFor(lang: string) { return lang === "es" ? "es-ES" : lang === "nl" ? "nl-NL" : "en-US"; }
 function nlName(en: string) { return NL_NAMES[en] ?? en; }
 function withNl<T extends { en: string }>(list: T[]): (T & { nl: string })[] { return list.map((o) => ({ ...o, nl: nlName(o.en) })); }
@@ -91,7 +93,49 @@ function practicedItemLabel(en: string, lang: Lang) {
 // A "what was practiced" chip, marked with a small target icon + warmer style when it came from
 // a tracked Skill Trainer session rather than a manually-picked Quick Practice tag -- so the
 // two sources stay visually distinct wherever this merged chip list is shown.
-function PracticedChip({ item, skill, language }: { item: string; skill: boolean; language: Lang }) {
+// Every time a tempo was unlocked (reached "comfortable" or better for the required minutes), newest first, from your own sessions.
+type TempoUnlock = { key: string; exerciseEn: string; bpm: number; date: string };
+function tempoUnlocksFrom(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[]): TempoUnlock[] {
+  const byExercise: Record<string, typeof sessions> = {};
+  sessions.forEach((x) => { (byExercise[x.item_en] ??= []).push(x); });
+  const events: TempoUnlock[] = [];
+  Object.entries(byExercise).forEach(([exerciseEn, list]) => {
+    const levels = bpmLevelsFor(exerciseEn);
+    const qualifying: Record<number, number> = {};
+    const unlockedBefore = new Set<number>();
+    Array.from(new Set(list.map((x) => x.practiced_on))).sort().forEach((date) => {
+      list.filter((x) => x.practiced_on === date).forEach((x) => { if (x.rating === "comfortable" || x.rating === "mastered") qualifying[x.bpm] = (qualifying[x.bpm] ?? 0) + x.duration_minutes; });
+      levels.forEach((level) => {
+        if (!unlockedBefore.has(level) && (qualifying[level] ?? 0) >= UNLOCK_MINUTES) { unlockedBefore.add(level); events.push({ key: `${exerciseEn}::${level}`, exerciseEn, bpm: level, date }); }
+      });
+    });
+  });
+  return events.sort((a, b) => b.date.localeCompare(a.date) || b.bpm - a.bpm);
+}
+function UnlocksFeed({ sessions, limit, expandable, language, T, onOpenExercise, onSeeAll, titleClass, hideEmpty }: { hideEmpty?: boolean; sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[]; limit: number; expandable?: boolean; language: Lang; T: any; onOpenExercise?: (en: string) => void; onSeeAll?: () => void; titleClass: string }) {
+  const [all, setAll] = useState(false);
+  const events = useMemo(() => tempoUnlocksFrom(sessions), [sessions]);
+  const shown = all ? events : events.slice(0, limit);
+  if (hideEmpty && !events.length) return null;
+  return <div className="unlocks">
+    <div className="unlocks-head"><h2 className={titleClass}>{T.progressPage.unlocksTitle}</h2>{!expandable && events.length > limit && onSeeAll && <button type="button" className="unlocks-all" onClick={onSeeAll}>{T.today.seeAll}</button>}</div>
+    {!events.length ? <p className="hint unlocks-empty">{T.progressPage.unlocksEmpty}</p> : <div className="unlocks-list">
+      {shown.map((ev) => {
+        const label = PRACTICE_EXERCISES.find((e) => e.en === ev.exerciseEn)?.[language] ?? ev.exerciseEn;
+        const inner = <><span className="unlock-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span><span className="unlock-text"><b>{label}</b><small>{T.progressPage.unlockedBpm(ev.bpm)}</small></span><span className="unlock-date">{formatDMY(ev.date).slice(0, 5)}</span></>;
+        return onOpenExercise ? <button type="button" key={ev.key} className="unlock-row" onClick={() => onOpenExercise(ev.exerciseEn)}>{inner}</button> : <div key={ev.key} className="unlock-row">{inner}</div>;
+      })}
+    </div>}
+    {expandable && events.length > limit && <button type="button" className="see-more-btn" onClick={() => setAll(!all)}>{all ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+  </div>;
+}
+function PracticedChip({ item, skill, language, onOpen }: { item: string; skill: boolean; language: Lang; onOpen?: () => void }) {
+  // A Skill Trainer item can open its exercise page (on Home); other chips are just labels.
+  if (skill && onOpen) return <em className="skill-chip skill-chip-link" role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>
+    {practicedItemLabel(item, language)}
+    <svg className="skill-chip-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+  </em>;
   return <em className={skill ? "skill-chip" : undefined}>
     {skill && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>}
     {practicedItemLabel(item, language)}
@@ -455,6 +499,7 @@ const translations = {
       eyebrow: "PRACTICE SUMMARY", title: "PROGRESS", yourPractice: "YOUR PRACTICE",
       noData: "Log some practice to see your progress here.", pinned: "YOUR FOCUS", generalPractice: "General Practice", seeMore: "See more", seeLess: "See less",
       skillProgress: "SKILL PROGRESS", noSkillData: "Train an exercise's BPM levels to see your skill progress here.",
+      levelsLabel: (done: number, total: number) => `${done}/${total} levels`, overallLevel: "Overall level", infoTitle: "How is this calculated?", info1: "An exercise reaches a tier when you unlock one tempo in it.", info2: "Your level is the highest tier that at least 1 in 4 of your exercises has reached.", info3: "The bars show how many of your exercises reached each tier.", infoClose: "Got it", overallReached: (n: number, total: number, tier: string) => `${n} of ${total} exercises reached ${tier}`, noTierExercises: "No exercises at this level yet.", unlocksTitle: "RECENT UNLOCKS", unlocksEmpty: "Unlock a tempo in the Skill Trainer to see it here.", unlockedBpm: (bpm: number) => `${bpm} BPM unlocked`,
       achievements: "MILESTONES", achievementsIntro: "Complete a Personal Challenge on the Practice tab to win a trophy here. More milestones coming soon.",
     },
     cheers: {
@@ -633,6 +678,7 @@ const translations = {
       eyebrow: "RESUMEN DE PRÁCTICA", title: "PROGRESO", yourPractice: "TU PRÁCTICA",
       noData: "Registra algo de práctica para ver tu progreso aquí.", pinned: "TU ENFOQUE", generalPractice: "Práctica general", seeMore: "Ver más", seeLess: "Ver menos",
       skillProgress: "PROGRESO TÉCNICO", noSkillData: "Entrena los niveles de BPM de un ejercicio para ver tu progreso técnico aquí.",
+      levelsLabel: (done: number, total: number) => `${done}/${total} niveles`, overallLevel: "Nivel general", infoTitle: "¿Cómo se calcula?", info1: "Un ejercicio llega a un tier cuando desbloqueas un tempo en él.", info2: "Tu nivel es el tier más alto al que han llegado al menos 1 de cada 4 de tus ejercicios.", info3: "Las barras muestran cuántos de tus ejercicios han llegado a cada tier.", infoClose: "Entendido", overallReached: (n: number, total: number, tier: string) => `${n} de ${total} ejercicios llegaron a ${tier}`, noTierExercises: "Aún no hay ejercicios en este nivel.", unlocksTitle: "DESBLOQUEOS RECIENTES", unlocksEmpty: "Desbloquea un tempo en el Skill Trainer para verlo aquí.", unlockedBpm: (bpm: number) => `${bpm} BPM desbloqueado`,
       achievements: "HITOS", achievementsIntro: "Completa un Reto personal en la pestaña Práctica para ganar un trofeo aquí. Próximamente, más logros.",
     },
     cheers: {
@@ -811,6 +857,7 @@ const translations = {
       eyebrow: "OEFENOVERZICHT", title: "VOORTGANG", yourPractice: "JOUW OEFENING",
       noData: "Log wat oefening om hier je voortgang te zien.", pinned: "JOUW FOCUS", generalPractice: "Algemeen oefenen", seeMore: "Meer tonen", seeLess: "Minder tonen",
       skillProgress: "VAARDIGHEIDSVOORTGANG", noSkillData: "Train de BPM-niveaus van een oefening om hier je vaardigheidsvoortgang te zien.",
+      levelsLabel: (done: number, total: number) => `${done}/${total} niveaus`, overallLevel: "Algemeen niveau", infoTitle: "Hoe wordt dit berekend?", info1: "Een oefening bereikt een tier als je er een tempo in ontgrendelt.", info2: "Je niveau is de hoogste tier die minstens 1 op de 4 van je oefeningen heeft bereikt.", info3: "De balken tonen hoeveel van je oefeningen elke tier hebben bereikt.", infoClose: "Begrepen", overallReached: (n: number, total: number, tier: string) => `${n} van de ${total} oefeningen op ${tier}`, noTierExercises: "Nog geen oefeningen op dit niveau.", unlocksTitle: "RECENTE ONTGRENDELINGEN", unlocksEmpty: "Ontgrendel een tempo in de Skill Trainer om het hier te zien.", unlockedBpm: (bpm: number) => `${bpm} BPM ontgrendeld`,
       achievements: "MIJLPALEN", achievementsIntro: "Voltooi een persoonlijke uitdaging op het tabblad Oefenen om hier een trofee te winnen. Meer mijlpalen komen eraan.",
     },
     cheers: {
@@ -1585,10 +1632,10 @@ export default function Home() {
   const hasUnreadCheers = cheerUnreadCount(cheers, user.id, cheersSeenAt) > 0;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className={timerBanner ? "shell has-timer-banner" : "shell"}>
-    {tab === "today" && <Today streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("home"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setSkillTab("rudiments"); setPracticeStep("skill"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} displayName={displayName} language={language} T={T} />}
+    {tab === "today" && <Today onGoToProgress={() => { setTab("progress"); window.scrollTo(0, 0); }} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("home"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setSkillTab("rudiments"); setPracticeStep("skill"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode onMetronomeToneChange={changeMetronomeTone} skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} T={T} />}
     {tab === "group" && <Group onGroupCount={setGroupCount} user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
-    {tab === "progress" && <Progress practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
+    {tab === "progress" && <Progress onOpenExercise={openExerciseDetail} practiceSessions={practiceSessions} logs={logs} user={user} language={language} T={T} />}
     {tab === "settings" && <Settings signOut={signOut} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage key={adminResetKey} user={user} language={language} T={T} />}
     {incomingCheer && <button type="button" className="cheer-incoming" onClick={() => { setTab("group"); setIncomingCheer(null); }}>
@@ -1904,7 +1951,7 @@ const HOME_ICONS = {
 function HomeStat({ icon, label, value }: { icon: keyof typeof HOME_ICONS; label: string; value: string }) {
   return <div className="stat-cell"><svg viewBox="0 0 24 24" fill={icon === "bars" ? "none" : "currentColor"} stroke="currentColor" strokeWidth={icon === "bars" ? 3.2 : 1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{HOME_ICONS[icon]}</svg><span>{label}</span><strong>{value}</strong></div>;
 }
-function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onGoToRudiments, onOpenExercise, onManagePins, onViewPoints, onOpenSessionTimer, displayName, language, T }: any) {
+function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onGoToRudiments, onOpenExercise, onManagePins, onViewPoints, onOpenSessionTimer, displayName, language, T }: any) {
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
   const goalAchieved = dailyGoal != null && todayMinutes >= dailyGoal;
@@ -1953,11 +2000,12 @@ function Today({ streak, longestStreak, daysThisYear, showDaysThisYear, pinnedEx
       {(() => {
         const loggedItems = todayLog ? [...todayLog.items, ...todayLog.customItems] : [];
         const allItems: string[] = Array.from(new Set([...loggedItems, ...todaySkillExercises]));
-        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <PracticedChip key={item} item={item} skill={todaySkillExercises.includes(item)} language={language} />)}</div> : (todayMinutes === 0 ? <p className="hint">{T.today.noPracticeYet}</p> : null);
+        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <PracticedChip key={item} item={item} skill={todaySkillExercises.includes(item)} language={language} onOpen={todaySkillExercises.includes(item) && PRACTICE_EXERCISES.some((e) => e.en === item) ? () => onOpenExercise(item) : undefined} />)}</div> : (todayMinutes === 0 ? <p className="hint">{T.today.noPracticeYet}</p> : null);
       })()}
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>}
     <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} onSeeAll={onGoToPractice} onOpenExercise={onOpenExercise} />
+    <UnlocksFeed sessions={practiceSessions} limit={2} language={language} T={T} onOpenExercise={onOpenExercise} onSeeAll={onGoToProgress} titleClass="home-title" hideEmpty />
     <div className="home-pinned">
       <div className="home-pinned-head-row">
         <button type="button" className="home-title home-pinned-title" onClick={onManagePins}><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.progressPage.pinned}</button>
@@ -3163,11 +3211,12 @@ function AchievementsSection({ stats, tempoCounts, wonChallenges, language, T }:
     </div></div>}
   </div>;
 }
-function Progress({ practiceSessions, logs, user, language, T }: { practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
+function Progress({ onOpenExercise, practiceSessions, logs, user, language, T }: { onOpenExercise?: (en: string) => void; practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const VISIBLE_LIMIT = 5;
   const [showAllPractice, setShowAllPractice] = useState(false);
   const [showAllSkill, setShowAllSkill] = useState(false);
+  const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [wonChallenges, setWonChallenges] = useState<any[]>([]);
   useEffect(() => {
     let cancelled = false;
@@ -3192,7 +3241,15 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
         const tiers = tiersFor(e.en);
         let maxTier = -1, maxTierPct = 0;
         tiers.forEach((t, i) => { const pct = tierProgressFor(practiceSessions, e.en, t); if (pct > 0) { maxTier = i; maxTierPct = pct; } });
-        return { en: e.en, label: e[language as Lang], maxTier, maxTierPct, unlockedCount: bpmLevelsFor(e.en).filter((level) => qualifyingMinutesFor(practiceSessions, e.en, level) >= UNLOCK_MINUTES).length };
+        // The tier the exercise is "at" (its highest tier with progress; the first tier if nothing is unlocked yet),
+        // how many tempos of that tier are unlocked, and the fill of every tier's bar (0-100, from the real data).
+        const current = tiers[Math.max(0, maxTier)];
+        const tierLevels = bpmLevelsFor(e.en).filter((level) => level >= current.min && level <= current.max);
+        const tierDone = tierLevels.filter((level) => qualifyingMinutesFor(practiceSessions, e.en, level) >= UNLOCK_MINUTES).length;
+        const segs = tiers.map((t) => tierProgressFor(practiceSessions, e.en, t));
+        // Real counts per tier (unlocked tempos / tempos in the tier), used for the overall level meter.
+        const counts = tiers.map((t) => { const lv = bpmLevelsFor(e.en).filter((level) => level >= t.min && level <= t.max); return { key: t.key, done: lv.filter((level) => qualifyingMinutesFor(practiceSessions, e.en, level) >= UNLOCK_MINUTES).length, total: lv.length }; });
+        return { en: e.en, label: e[language as Lang], maxTier, maxTierPct, tierKey: current.key, tierDone, tierTotal: tierLevels.length, segs, counts, unlockedCount: bpmLevelsFor(e.en).filter((level) => qualifyingMinutesFor(practiceSessions, e.en, level) >= UNLOCK_MINUTES).length };
       })
       // Organised by the highest tier reached, then how far through that tier, then total levels unlocked.
       .sort((a, b) => b.maxTier - a.maxTier || b.maxTierPct - a.maxTierPct || b.unlockedCount - a.unlockedCount || a.label.localeCompare(b.label));
@@ -3250,20 +3307,49 @@ function Progress({ practiceSessions, logs, user, language, T }: { practiceSessi
   return <section className="page"><header className="simple-head"><p className="eyebrow">{T.progressPage.eyebrow}</p><h1>{T.progressPage.title}</h1></header>
     <div className="progress-section">
       <span className="section-label">{T.progressPage.skillProgress}</span>
-      {!skillExercises.length ? <p className="hint">{T.progressPage.noSkillData}</p> : <><div className="tier-strip tier-strip-header">
-        {PRACTICE_TIERS.map((tier) => <div key={tier.key} className="tier-seg"><span className="seg-label">{TIER_LABEL[tier.key]}</span></div>)}
-      </div>
-      <div className="pinned-list">
-        {(showAllSkill ? skillExercises : skillExercises.slice(0, VISIBLE_LIMIT)).map((ex) => <div key={ex.en} className="pinned-card">
-          <div className="pinned-head"><span className="pinned-name">{ex.label}</span></div>
-          <div className="tier-strip">
-            {tiersFor(ex.en).map((tier) => <div key={tier.key} className="tier-seg">{renderTierSegBar(tierProgressFor(practiceSessions, ex.en, tier), tierIsSkipped(practiceSessions, ex.en, tier))}</div>)}
+      {!skillExercises.length ? <p className="hint">{T.progressPage.noSkillData}</p> : (() => {
+        // Overall level: for each tier, how many of your exercises have unlocked at least one tempo in it. Your level is the highest
+        // tier that at least 1 in 4 of your exercises (and at least one exercise) has reached; the meter fills by that same share.
+        const n = skillExercises.length;
+        const overall = PRACTICE_TIERS.map((t) => { const reached = skillExercises.filter((e) => e.counts.some((c) => c.key === t.key && c.done > 0)).length; return { key: t.key, reached, pct: (reached / n) * 100 }; });
+        const needed = Math.max(1, Math.ceil(n / 4));
+        const levelTier = [...overall].reverse().find((o) => o.reached >= needed) ?? overall[0];
+        const levelKey = levelTier.key;
+        const levelWord = TIER_LABEL[levelKey].charAt(0) + TIER_LABEL[levelKey].slice(1).toLowerCase();
+        const shown = skillExercises.slice(0, VISIBLE_LIMIT);
+        const renderRow = (ex: (typeof skillExercises)[number], onOpen: () => void) => <button type="button" key={ex.en} className="sk-row" onClick={onOpen}>
+              <span className="sk-name">{ex.label}</span>
+              <span className="sk-bars" aria-hidden="true">{ex.segs.map((pct, i) => <i key={i} className="sk-seg"><b style={{ width: `${pct}%` }} /></i>)}</span>
+              <span className="sk-meta"><em className="sk-badge sk-cap">{TIER_LABEL[ex.tierKey]}</em><small>{T.progressPage.levelsLabel(ex.tierDone, ex.tierTotal)}</small></span>
+              <svg className="sk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+            </button>;
+        return <>
+          <div className="sk-overall">
+            <div className="sk-overall-top"><span className="sk-overall-title">{T.progressPage.overallLevel}<button type="button" className="sk-info-btn" onClick={() => setShowLevelInfo(true)} aria-label={T.progressPage.infoTitle}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 7.6v.1" /></svg></button></span><em className="sk-badge sk-cap">{TIER_LABEL[levelKey]}</em></div>
+            <span className="sk-bars sk-bars-wide" aria-hidden="true">{overall.map((o) => <i key={o.key} className="sk-seg"><b style={{ width: `${o.pct}%` }} /></i>)}</span>
+            <small className="sk-overall-sub">{T.progressPage.overallReached(levelTier.reached, n, levelWord)}</small>
           </div>
-        </div>)}
-      </div>
-      {skillExercises.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSkill(!showAllSkill)}>{showAllSkill ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
-      </>}
+          <div className="sk-list">
+            {shown.map((ex) => renderRow(ex, () => onOpenExercise?.(ex.en)))}
+          </div>
+          {skillExercises.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSkill(true)}>{T.progressPage.seeMore}</button>}
+          {showAllSkill && <div className="modal modal-center" onClick={() => setShowAllSkill(false)}>
+            <div className="sk-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="sk-modal-head"><h3>{T.progressPage.skillProgress}</h3><button type="button" className="sk-modal-close" onClick={() => setShowAllSkill(false)} aria-label="Close">×</button></div>
+              <div className="sk-modal-body sk-list">{skillExercises.map((ex) => renderRow(ex, () => { setShowAllSkill(false); onOpenExercise?.(ex.en); }))}</div>
+            </div>
+          </div>}
+        </>;
+      })()}
     </div>
+    {showLevelInfo && <div className="modal modal-center" onClick={() => setShowLevelInfo(false)}>
+      <div className="confirm-card sk-info-card" onClick={(e) => e.stopPropagation()}>
+        <h3>{T.progressPage.infoTitle}</h3>
+        <ol className="sk-info-list"><li>{T.progressPage.info1}</li><li>{T.progressPage.info2}</li><li>{T.progressPage.info3}</li></ol>
+        <button className="save" onClick={() => setShowLevelInfo(false)}>{T.progressPage.infoClose}</button>
+      </div>
+    </div>}
+    <div className="progress-section"><UnlocksFeed sessions={practiceSessions} limit={5} expandable language={language} T={T} titleClass="section-label" onOpenExercise={onOpenExercise} /></div>
     <AchievementsSection stats={achievementStats} tempoCounts={tempoCounts} wonChallenges={wonChallenges} language={language} T={T} />
     {!totals.length ? <p className="hint">{T.progressPage.noData}</p> : <div className="progress-section">
       <span className="section-label">{T.progressPage.yourPractice}</span>
@@ -3583,12 +3669,7 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
   function startSession(targetBpm: number) { setJustPracticedLevel(null); setBpm(targetBpm); setStep("session"); }
   async function handleSessionEnd(elapsedSeconds: number) {
     const sessionMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
-    if (exercise && bestQualifyingRating(exercise, bpm) === "mastered") {
-      await onLogSession(exercise, bpm, "mastered", sessionMinutes, elapsedSeconds);
-      setJustPracticedLevel(bpm);
-      setStep("detail");
-      return;
-    }
+    // Always ask how it went, even for a tempo that was rated before: how it feels can change.
     setPendingMinutes(sessionMinutes);
     setPendingSeconds(elapsedSeconds);
     setSelectedRating(null);
@@ -4152,6 +4233,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   useEffect(() => { setToneKey(tone ?? "click"); }, [tone]);
   const toneRef = useRef(TONE_PRESETS[tone ?? "click"] ?? TONE_PRESETS.click);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const masterRef = useRef<AudioNode | null>(null);
   const schedulerRef = useRef<number | null>(null);
   const nextNoteTimeRef = useRef(0);
   const beatRef = useRef(0);
@@ -4222,12 +4304,14 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     const gain = ctx.createGain();
     osc.type = preset.wave;
     osc.frequency.value = preset.freq[accentLevel];
-    const peak = accentLevel === "downbeat" ? 0.55 : accentLevel === "beat" ? 0.32 : 0.14;
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.exponentialRampToValueAtTime(peak, time + 0.001);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay);
+    // Lower peaks and a short soft attack (a near-instant jump makes a pop), and everything goes through a limiter so
+    // overlapping clicks can't clip and crackle.
+    const peak = accentLevel === "downbeat" ? 0.42 : accentLevel === "beat" ? 0.28 : 0.13;
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(peak, time + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay + 0.004);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(masterRef.current ?? ctx.destination);
     osc.start(time);
     osc.stop(time + preset.decay + 0.01);
   }
@@ -4272,9 +4356,19 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       setActiveBeat(0);
       setPlaying(true);
       const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      enablePlaybackAudio();
+      enablePlaybackAudio();
       const ctx = audioCtxRef.current ?? new AudioContextClass();
       audioCtxRef.current = ctx;
       if (ctx.state === "suspended") await ctx.resume();
+      if (!masterRef.current) {
+        const limiter = ctx.createDynamicsCompressor();
+        limiter.threshold.value = -14; limiter.knee.value = 10; limiter.ratio.value = 8; limiter.attack.value = 0.002; limiter.release.value = 0.08;
+        const out = ctx.createGain();
+        out.gain.value = 0.9;
+        limiter.connect(out); out.connect(ctx.destination);
+        masterRef.current = limiter;
+      }
       // iOS Safari needs a buffer actually played (not just resume()) within the gesture to fully unlock audio output.
       const unlockBuffer = ctx.createBuffer(1, 1, 22050);
       const unlockSource = ctx.createBufferSource();
@@ -4632,6 +4726,7 @@ function SessionTimer({ open, close, onOpen, onBannerChange, onRunChange, timerC
       setElapsed(0);
       setPlaying(true);
       const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      enablePlaybackAudio();
       const ctx = audioCtxRef.current ?? new AudioContextClass();
       audioCtxRef.current = ctx;
       if (ctx.state === "suspended") await ctx.resume();

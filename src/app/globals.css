@@ -997,7 +997,7 @@ html.is-tablet .home-hero .settings-avatar{width:55px;height:55px}
 @keyframes skel-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.skel{animation:none}}
 /* Skill Trainer exercise page: the title, current level and Beginner-to-Legend bar stay pinned while the tempos scroll */
-.detail-sticky{position:sticky;top:0;z-index:20;background:#080909;margin:-30px -20px 14px;padding:30px 20px 12px;box-shadow:0 10px 14px -8px rgba(0,0,0,.75)}
+.detail-sticky{position:sticky;top:0;z-index:3;background:#080909;margin:-30px -20px 14px;padding:30px 20px 12px;box-shadow:0 10px 14px -8px rgba(0,0,0,.75)}
 .native .detail-sticky{margin-top:calc(-30px - env(safe-area-inset-top));padding-top:calc(30px + env(safe-area-inset-top))}
 .detail-sticky .back-row{margin-bottom:12px}
 .detail-sticky .level-card{margin-bottom:14px}
@@ -1078,3 +1078,87 @@ select.sx-field{text-align:left;text-align-last:left}
 /* Group tab: a small up-arrow next to the label shows that tapping it again opens the group picker */
 .bottom-nav button .nav-switch-hint{width:11px !important;height:11px !important;margin-left:3px;vertical-align:-1px;display:inline-block;opacity:.9}
 .bottom-nav .nav-label{font-style:normal;display:inline-flex;align-items:center;white-space:nowrap}
+/* Home: Skill Trainer items practiced today open their exercise page */
+.skill-chip-link{cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.skill-chip-link:active{filter:brightness(1.25)}
+.skill-chip-chev{width:12px !important;height:12px !important;opacity:.75;margin-left:1px}
+/* Recent tempo unlocks (Home: newest 2, Progress: newest 5 with See more) */
+.unlocks{margin:22px 0 4px}
+.unlocks-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.unlocks-head h2{margin:0}
+.unlocks-all{background:transparent;border:0;color:#ff9b50;font:600 14px 'DM Sans',sans-serif;padding:4px 0;cursor:pointer}
+.unlocks-list{display:flex;flex-direction:column;gap:8px}
+.unlock-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#121413;border:1px solid #222724;border-radius:14px;padding:11px 14px;color:inherit;font:inherit;box-sizing:border-box}
+button.unlock-row{cursor:pointer}
+button.unlock-row:active{background:#171a18}
+.unlock-icon{flex:none;width:30px;height:30px;border-radius:50%;background:#10231a;color:#4fb57a;display:flex;align-items:center;justify-content:center}
+.unlock-icon svg{width:16px;height:16px}
+.unlock-text{display:flex;flex-direction:column;min-width:0;flex:1}
+.unlock-text b{font-weight:600;font-size:15px;color:#f1f3f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.unlock-text small{font-size:12.5px;color:#8d9690;margin-top:1px}
+.unlock-date{flex:none;font-size:12.5px;color:#7c837e}
+.progress-section .unlocks{margin:0}
+.unlocks-empty{margin:0}
+/* Skill Progress: tier tabs and compact exercise rows */
+.sk-cap{display:inline-block;text-transform:lowercase}
+.sk-cap::first-letter{text-transform:uppercase}
+.sk-tabs{display:grid;grid-template-columns:repeat(4,1fr);margin:6px 0 4px;border-bottom:1px solid #222724}
+.sk-tabs button{background:transparent;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:9px 2px 10px;color:#6f7772;font:600 13.5px 'DM Sans',sans-serif;cursor:pointer;text-align:center}
+.sk-tabs button.on{color:#ff8a3d;border-bottom-color:#ff8a3d}
+.sk-list{display:flex;flex-direction:column}
+.sk-row{display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:0;border-top:1px solid #1d211f;padding:13px 2px;color:inherit;font:inherit;text-align:left;cursor:pointer;box-sizing:border-box}
+.sk-list .sk-row:first-child{border-top:0}
+.sk-row:active{background:#151816}
+.sk-name{flex:1 1 0;min-width:0;font-size:15px;font-weight:500;color:#f1f3f0;line-height:1.25}
+.sk-bars{flex:none;display:flex;gap:4px;width:84px}
+.sk-seg{flex:1;height:5px;border-radius:99px;background:#2a2f2c;overflow:hidden;display:block}
+.sk-seg b{display:block;height:100%;border-radius:99px;background:#ff9b50}
+.sk-seg:nth-child(1) b{background:#ffbf8c}
+.sk-seg:nth-child(2) b{background:#ff9b50}
+.sk-seg:nth-child(3) b{background:#ff7425}
+.sk-seg:nth-child(4) b{background:#d9501a}
+.sk-meta{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:84px}
+.sk-badge{font-style:normal;font-size:11.5px;font-weight:600;color:#ff9b50;background:#2a170a;border:1px solid #472315;border-radius:99px;padding:2px 9px;line-height:1.4}
+.sk-meta small{font-size:11.5px;color:#7c837e}
+.sk-chev{flex:none;width:15px;height:15px;color:#4d544f}
+.sk-empty{margin:14px 0 4px}
+@media (max-width:360px){.sk-bars{width:64px}.sk-meta{min-width:72px}.sk-name{font-size:14px}}
+/* Phones: name on top with the four tier segments under it; badge + label stay on the right */
+@media (max-width:480px){
+  .sk-row{display:grid;grid-template-columns:minmax(0,1fr) auto 16px;grid-template-areas:"name meta chev" "bars meta chev";column-gap:12px;row-gap:9px;align-items:center}
+  .sk-name{grid-area:name;flex:none}
+  .sk-bars{grid-area:bars;width:96px}
+  .sk-meta{grid-area:meta;min-width:0}
+  .sk-chev{grid-area:chev}
+}
+/* Skill Progress: longer tier bars */
+.sk-bars{width:116px}
+@media (max-width:480px){.sk-bars{width:150px}}
+@media (max-width:360px){.sk-bars{width:124px}}
+/* Overall level meter (replaces the tier tabs) */
+.sk-overall{background:#161918;border:1px solid #222724;border-radius:14px;padding:13px 14px;margin:8px 0 6px;display:flex;flex-direction:column;gap:9px}
+.sk-overall-top{display:flex;align-items:center;justify-content:space-between}
+.sk-overall-title{font-size:14px;font-weight:600;color:#e7e9e6}
+.sk-bars-wide{width:100% !important;gap:5px}
+.sk-bars-wide .sk-seg{height:7px}
+.sk-overall-sub{font-size:12px;color:#7c837e}
+/* Info icon + explanation for the overall level */
+.sk-overall-title{display:inline-flex;align-items:center;gap:6px}
+.sk-info-btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border:0;background:transparent;color:#7c837e;cursor:pointer;border-radius:50%}
+.sk-info-btn svg{width:18px;height:18px}
+.sk-info-btn:active{color:#ff9b50}
+.sk-info-card{text-align:left}
+.sk-info-card h3{margin:0 0 12px;font-size:19px}
+.sk-info-list{margin:0 0 16px;padding-left:20px;display:flex;flex-direction:column;gap:10px;color:#d2d6d3;font-size:15px;line-height:1.45}
+.sk-info-list li::marker{color:#ff9b50;font-weight:700}
+/* Skill Progress: "See more" opens all exercises in a pop-up instead of stretching the page */
+.sk-modal{width:min(100%,520px);max-height:82vh;display:flex;flex-direction:column;background:#121413;border:1px solid #2a2f2c;border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.6);overflow:hidden}
+.sk-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px;border-bottom:1px solid #1d211f;flex:none}
+.sk-modal-head h3{margin:0;font:700 22px 'Barlow Condensed',sans-serif;letter-spacing:.3px}
+.sk-modal-close{width:32px;height:32px;border-radius:50%;border:1px solid #2c312e;background:#1a1e1c;color:#f6f7f5;font-size:20px;line-height:1;cursor:pointer;padding:0}
+.sk-modal-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px 14px}
+.sk-modal-body .sk-row:first-child{border-top:0}
+/* smaller pop-up: stays clear of the browser address bar and the bottom menu */
+.sk-modal{max-height:58vh;max-height:min(58dvh,480px);margin-bottom:60px}
+.sk-modal-head{padding:14px 16px 8px}
+.sk-modal-body{padding:2px 16px 12px}
