@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       <li><b>Group information:</b> groups you create or join, your calendar color, group challenges, and challenges the administrator gives you.</li>
       <li><b>Cheers:</b> short ready-made messages (for example &quot;Go practice!&quot;) and hearts that group members send each other. There is no free-text chat. Cheers are deleted automatically after 14 days.</li>
       <li><b>Points:</b> if the administrator turns on the points game for you, the points and short reasons you are given.</li>
-      <li><b>Worldwide leaderboard (optional):</b> only if you choose to join, the app ranks you by practice days, newly unlocked Skill Trainer tempos and teacher-awarded points, using your display name and your skill level. It is off by default and is not available for Kid Mode accounts.</li>
+      <li><b>Worldwide leaderboard (optional):</b> only if you choose to join, the app ranks you by practice days, newly unlocked Skill Trainer tempos and teacher-awarded points, using your first name, last initial and skill level. It is off by default and is not available for Kid Mode accounts.</li>
       <li><b>On your device:</b> the app keeps your login session, a few preferences and the state of a running Session Timer in your browser or app storage. We do not use advertising or tracking cookies.</li>
     </ul>
 
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
       <li><b>You</b> can see all of your own information.</li>
       <li><b>Members of the same group</b> can see your practice days, time practiced, what you practiced, and your Skill Trainer progress. Your notes are private: group members cannot see them. Only you and the app administrator can.</li>
       <li><b>The app administrator</b> (David Gonzalez Arnesto, who runs DrumSkills and teaches drums) can see the practice information of all users, including notes, so that he can follow students&apos; progress and help with support questions. He can also give points and assign challenges.</li>
-      <li><b>Other players on the worldwide leaderboard</b>, but only if you have joined it: they can see your display name (shortened to 30 characters), your skill level and your leaderboard score, nothing else. You can leave at any time under Progress, Universal Leaderboard, and you then disappear from the list. Your practice history is not deleted.</li>
+      <li><b>Other players on the worldwide leaderboard</b>, but only if you have joined it: they can see your first name and the first letter of your last name, your skill level and your leaderboard score, nothing else. You can leave at any time under Progress, Universal Leaderboard, and you then disappear from the list. Your practice history is not deleted.</li>
       <li><b>A group&apos;s creator</b> manages the group and its challenges, and sees the same group information as every other member.</li>
       <li><b>Service providers</b> that run the app for us: our database and login provider (Supabase) and our web hosting provider. They only handle data to provide the service. If you choose Google sign-in, Google handles that login. The app&apos;s fonts are served from our own site, so no font provider sees your visit.</li>
       <li><b>Anyone else</b> only if the law requires us to share it.</li>

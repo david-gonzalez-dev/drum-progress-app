@@ -19,7 +19,7 @@ const TEXT = {
     tiers: { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", legend: "Legend" } as Record<string, string>,
     unitDays: "days", unitTempos: "tempos", unitPoints: "points", you: "You", empty: "No one here yet. Be the first!", loadError: "The leaderboard isn't available right now.", loading: "Loading…",
     howConsistency: "Counts days with 5+ minutes of practice. Total minutes are never ranked.", howSkill: "Counts tempos you newly unlocked in the Skill Trainer.", howPoints: "Points awarded by teachers.", resets: "Resets automatically each month and year. Your history is never deleted.",
-    gateTitle: "Join the worldwide leaderboard", gate1: "Your display name and scores will be visible to other players who join.", gate2: "Nothing else is shared: no email, notes or practice details.", gate3: "You can leave at any time. Your practice history stays yours.",
+    gateTitle: "Join the worldwide leaderboard", gate1: "Your first name, last initial and scores will be visible to other players who join.", gate2: "Nothing else is shared: no email, notes or practice details.", gate3: "You can leave at any time. Your practice history stays yours.",
     joinBtn: "Join", leaveBtn: "Leave the leaderboard", leaveConfirm: "Tap again to leave", hiddenNote: "You're not shown on the leaderboard right now (hidden by an admin or Kid Mode).", kidNote: "The worldwide leaderboard isn't available for Kid Mode accounts.", error: "Something went wrong. Please try again.",
   },
   es: {
@@ -31,7 +31,7 @@ const TEXT = {
     tiers: { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", legend: "Legend" } as Record<string, string>,
     unitDays: "días", unitTempos: "tempos", unitPoints: "puntos", you: "Tú", empty: "Aún no hay nadie. ¡Sé el primero!", loadError: "La tabla no está disponible ahora mismo.", loading: "Cargando…",
     howConsistency: "Cuenta los días con 5+ minutos de práctica. Los minutos totales nunca se clasifican.", howSkill: "Cuenta los tempos que desbloqueaste de nuevo en el Skill Trainer.", howPoints: "Puntos concedidos por profesores.", resets: "Se reinicia sola cada mes y cada año. Tu historial nunca se borra.",
-    gateTitle: "Únete a la tabla mundial", gate1: "Tu nombre y tus puntuaciones serán visibles para otros jugadores que se unan.", gate2: "No se comparte nada más: ni email, ni notas, ni detalles de práctica.", gate3: "Puedes salir cuando quieras. Tu historial sigue siendo tuyo.",
+    gateTitle: "Únete a la tabla mundial", gate1: "Tu nombre, la inicial de tu apellido y tus puntuaciones serán visibles para otros jugadores que se unan.", gate2: "No se comparte nada más: ni email, ni notas, ni detalles de práctica.", gate3: "Puedes salir cuando quieras. Tu historial sigue siendo tuyo.",
     joinBtn: "Unirme", leaveBtn: "Salir de la tabla", leaveConfirm: "Toca otra vez para salir", hiddenNote: "Ahora mismo no apareces en la tabla (oculto por un administrador o Modo Niño).", kidNote: "La tabla mundial no está disponible para cuentas en Modo Niño.", error: "Algo salió mal. Inténtalo de nuevo.",
   },
   nl: {
@@ -43,7 +43,7 @@ const TEXT = {
     tiers: { beginner: "Beginner", intermediate: "Gemiddeld", advanced: "Gevorderd", legend: "Legende" } as Record<string, string>,
     unitDays: "dagen", unitTempos: "tempo's", unitPoints: "punten", you: "Jij", empty: "Nog niemand hier. Wees de eerste!", loadError: "De ranglijst is nu niet beschikbaar.", loading: "Laden…",
     howConsistency: "Telt dagen met 5+ minuten oefenen. Totale minuten tellen nooit mee.", howSkill: "Telt tempo's die je nieuw hebt ontgrendeld in de Skill Trainer.", howPoints: "Punten toegekend door leraren.", resets: "Begint automatisch opnieuw elke maand en elk jaar. Je geschiedenis wordt nooit verwijderd.",
-    gateTitle: "Doe mee aan de wereldwijde ranglijst", gate1: "Je weergavenaam en scores zijn zichtbaar voor andere spelers die meedoen.", gate2: "Er wordt niets anders gedeeld: geen e-mail, notities of oefendetails.", gate3: "Je kunt op elk moment stoppen. Je oefengeschiedenis blijft van jou.",
+    gateTitle: "Doe mee aan de wereldwijde ranglijst", gate1: "Je voornaam, de initiaal van je achternaam en je scores zijn zichtbaar voor andere spelers die meedoen.", gate2: "Er wordt niets anders gedeeld: geen e-mail, notities of oefendetails.", gate3: "Je kunt op elk moment stoppen. Je oefengeschiedenis blijft van jou.",
     joinBtn: "Meedoen", leaveBtn: "Stop met de ranglijst", leaveConfirm: "Tik nogmaals om te stoppen", hiddenNote: "Je wordt nu niet getoond op de ranglijst (verborgen door een beheerder of Kindmodus).", kidNote: "De wereldwijde ranglijst is niet beschikbaar voor accounts in Kindmodus.", error: "Er ging iets mis. Probeer het opnieuw.",
   },
 };
@@ -82,7 +82,8 @@ export function LeaderboardCard({ db: supabase, language, kidMode, refreshKey, o
     return () => { cancelled = true; };
   }, [refreshKey]);
   // If the database part isn't installed yet (or it fails), the card stays hidden rather than showing an error on Progress.
-  if (failed || !summary) return null;
+  if (failed) return null;
+  if (!summary) return <div className="lb-card lb-card-skel" aria-hidden="true" />;
   const moved = summary.pos != null && summary.prev_pos != null ? summary.prev_pos - summary.pos : 0;
   const levelWord = t.tiers[summary.level] ?? summary.level;
   return <div className="lb-card">
@@ -91,7 +92,7 @@ export function LeaderboardCard({ db: supabase, language, kidMode, refreshKey, o
       <Chevron />
     </button>
     <Trophy />
-    {kidMode || (!summary.eligible && summary.opted_in) ? <div className="lb-panel lb-panel-note"><span>{kidMode ? t.unavailable : t.unavailable}</span></div>
+    {kidMode || (!summary.eligible && summary.opted_in) ? <div className="lb-panel lb-panel-note"><span>{t.unavailable}</span></div>
       : !summary.opted_in ? <button type="button" className="lb-panel lb-panel-join" onClick={() => onOpen()}><span className="lb-join-title">{t.join}</span><span className="lb-join-sub">{t.joinHint}</span></button>
       : <div className="lb-panel">
         <div className="lb-rank-col">

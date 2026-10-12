@@ -1213,6 +1213,7 @@ button.unlock-row:active{background:#171a18}
 .lb-card-sub{font-size:13.5px;color:#c7cdc9}
 .lb-chev{width:18px;height:18px;flex-shrink:0;color:#ff9b50}
 .lb-card-head .lb-chev{margin-top:3px}
+.lb-card-skel{min-height:150px;box-shadow:none}
 .lb-trophy{position:absolute;right:10px;bottom:12px;width:70px;height:auto;z-index:1;filter:drop-shadow(0 6px 14px rgba(255,107,26,.35));pointer-events:none}
 .lb-panel{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.3fr);gap:10px;align-items:stretch;width:calc(100% - 80px);min-width:0;padding:12px;border-radius:14px;background:rgba(10,12,11,.72);border:1px solid #2a2f2c}
 .lb-panel-note,.lb-panel-join{display:flex;flex-direction:column;gap:3px;width:calc(100% - 84px);text-align:left;font-family:inherit;color:inherit}

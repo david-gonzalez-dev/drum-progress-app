@@ -102,7 +102,7 @@ $$;
 create or replace function public.lb_eligible()
 returns table (user_id uuid, display_name text)
 language sql stable security definer set search_path = public as $$
-  select s.user_id, left(trim(p.name), 30)
+  select s.user_id, left(regexp_replace(trim(p.name), '^(\S+)\s+.*?(\S)\S*$', '\1 \2.'), 30)
   from public.settings s join public.profiles p on p.id = s.user_id
   where s.leaderboard_opt_in and not s.leaderboard_hidden and not s.kid_mode and length(trim(coalesce(p.name, ''))) > 0
 $$;
@@ -148,6 +148,7 @@ language plpgsql stable security definer set search_path = public as $$
 declare v_limit integer := least(greatest(coalesce(p_limit, 20), 1), 50);
 begin
   if auth.uid() is null then raise exception 'Not signed in'; end if;
+  if not coalesce((select s.leaderboard_opt_in from public.settings s where s.user_id = auth.uid()), false) then raise exception 'Join the leaderboard first'; end if;
   if p_category not in ('consistency', 'skill', 'points') or p_period not in ('month', 'year')
      or p_level not in ('all', 'beginner', 'intermediate', 'advanced', 'legend') then
     raise exception 'Invalid request';
