@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Grid } from "./rudiment-grid";
 import { buildNotation, type NoteEvent, type NotationSide } from "./notation-model";
 
@@ -16,6 +16,9 @@ const COLOR = "#d8dcd8";
 const MUTED = "#4a504b";
 const ACTIVE = "#ff6b1a";
 const ACCENT = "#ff9b50";
+
+// useLayoutEffect on the phone / browser (no flicker), plain useEffect while rendering on the server.
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 type Chunk = { events: number[]; startSlot: number };
 
@@ -54,6 +57,24 @@ function chunksFor(side: NotationSide, maxWidth: number, minUnit: number, bpb: n
 
 function Head({ x, y, hollow, color, rx = RX, ry = RY }: { x: number; y: number; hollow: boolean; color: string; rx?: number; ry?: number }) {
   return <ellipse cx={x} cy={y} rx={rx} ry={ry} transform={`rotate(-18 ${x} ${y})`} fill={hollow ? "#0b0d0c" : color} stroke={color} strokeWidth={1.6} />;
+}
+
+// Everything drawn on the staff (notes, grace notes, stems, brackets, letters) is measured and moved sideways so the drawing sits exactly
+// in the middle between the two ends of the staff: the same empty space on the left and on the right, whatever the rudiment.
+function CenteredShapes({ width, sig, children }: { width: number; sig: string; children: React.ReactNode }) {
+  const ref = useRef<SVGGElement>(null);
+  const [dx, setDx] = useState(0);
+  useIsoLayoutEffect(() => {
+    const g = ref.current;
+    if (!g) return;
+    try {
+      const b = g.getBBox();
+      if (b.width <= 0) return;
+      const next = width / 2 - (b.x + b.width / 2);
+      setDx((cur) => (Math.abs(cur - next) > 0.2 ? next : cur));
+    } catch { /* getBBox is unavailable (not rendered yet): keep the layout as drawn */ }
+  }, [width, sig]);
+  return <g ref={ref} data-dx={dx} transform={`translate(${dx} 0)`}>{children}</g>;
 }
 
 function ChunkSvg({ side, chunk, unit, width, scale, beatsPerBar, activeStroke, activeGrace }: { side: NotationSide; chunk: Chunk; unit: number; width: number; scale: number; beatsPerBar: number; activeStroke: number; activeGrace: number }) {
@@ -169,7 +190,7 @@ function ChunkSvg({ side, chunk, unit, width, scale, beatsPerBar, activeStroke, 
     <line x1={PAD / 2} y1={STAFF_Y} x2={width - PAD / 2} y2={STAFF_Y} stroke={MUTED} strokeWidth={1.4} />
     <line x1={PAD / 2} y1={STAFF_Y - 13} x2={PAD / 2} y2={STAFF_Y + 13} stroke={MUTED} strokeWidth={1.6} />
     <line x1={width - PAD / 2} y1={STAFF_Y - 13} x2={width - PAD / 2} y2={STAFF_Y + 13} stroke={MUTED} strokeWidth={1.6} />
-    {shapes}
+    <CenteredShapes width={width} sig={`${idx.join(",")}|${unit}|${width}|${beatsPerBar}`}>{shapes}</CenteredShapes>
   </svg>;
 }
 
@@ -195,9 +216,11 @@ export function NotationStaff({ grid, activeStroke, activeGrace, width, beatsPer
   if (rows.reduce((n, r) => n + r.chunks.length, 0) > 1) { scale = rows.length > 1 ? 0.72 : 0.8; rows = layout(maxWidth / scale); }
   // A single line with triplet brackets (e.g. Paradiddle-Diddle) is the tallest single-line drawing: draw it a little smaller.
   else if (rows.length === 1 && rows[0].side.tuplets.length > 0) { scale = 0.85; rows = layout(maxWidth / scale); }
+  // Every row (and both sides) is drawn on a staff of the same width, with its notes centred, so rows of different length stay neat.
+  const commonWidth = Math.min(maxWidth / scale, Math.ceil(Math.max(...rows.flatMap((r) => r.chunks.map((c) => chunkWidth(r.side, c.events, c.startSlot, r.unit, bpb))))));
   return <div className="notation">
     {rows.map(({ side, chunks, unit }, si) => <div className="notation-side" key={si}>
-      {chunks.map((c, ci) => <ChunkSvg key={ci} side={side} chunk={c} unit={unit} scale={scale} beatsPerBar={bpb} width={Math.min(maxWidth / scale, Math.ceil(chunkWidth(side, c.events, c.startSlot, unit, bpb)))} activeStroke={activeStroke} activeGrace={activeGrace} />)}
+      {chunks.map((c, ci) => <ChunkSvg key={ci} side={side} chunk={c} unit={unit} scale={scale} beatsPerBar={bpb} width={commonWidth} activeStroke={activeStroke} activeGrace={activeGrace} />)}
     </div>)}
   </div>;
 }

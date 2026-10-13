@@ -1448,3 +1448,143 @@ html.native .shell.has-timer-banner .page{padding-top:30px}
 .pick-menu .pick-row:last-child{margin-bottom:0}
 .pick-menu .pick-check{flex-basis:20px;width:20px;height:20px}
 .metro:has(.add-time){max-height:calc(100dvh - 40px);overflow-y:auto}
+
+/* Gear button (click sound + subdivision click volume) sits top-left, mirroring the close button, so the window title is centred between them. */
+.metro-gear{position:absolute;top:14px;left:16px;z-index:7;width:38px;height:38px;border-radius:50%;background:#26150c;border:1px solid #4a2a14;color:#ffb877;display:flex;align-items:center;justify-content:center;padding:0}
+.metro-gear svg{width:22px;height:22px}
+.metro.metro-practice>.metro-gear{top:8px;left:10px}
+/* The title is centred in the whole window: the floated close button takes 28px on the right, so the left padding is 28px bigger. */
+.metro-practice .metro-exercise-head{padding:0 12px 0 40px;min-height:30px}
+.click-settings .metro-tone{margin:0 0 4px}
+.click-settings .range{margin:10px 0 2px}
+.click-settings-scale{display:flex;justify-content:space-between;color:#9aa19d;font-size:13px}
+.click-settings-hint{color:#9aa19d;font-size:13px;line-height:1.4;margin:12px 0 0;text-align:left}
+
+/* Shorter Skill Trainer metronome window: tighter spacing between the blocks (the click sound moved behind the gear button). */
+.metro-practice .sticking-panel{margin:8px 0 0}
+.metro-practice .metro-lead{margin-top:8px;padding-top:8px}
+.metro-practice .tempo-simple{margin:6px 0 0}
+.metro-practice .tempo-bpm-num{font-size:52px}
+.metro-practice .metronome-timer{margin:2px 0 6px}
+.metro-practice .metronome-timer strong{font-size:30px;margin-top:0}
+.metro-practice .metro-selects{margin-top:6px}
+.metro-practice .metro-selects .metro-section-label{margin:8px 0 5px}
+.metro-practice .subdivision-select{padding:9px 12px}
+.metro-practice .start,.metro-practice .metro-actions{margin-top:12px}
+.metro-practice .start{padding:13px}
+.metro-practice .metro-actions button{padding:13px 10px}
+
+/* Close (X) and metronome buttons: same round buttons, same height, mirrored left and right. */
+.metro>.close{width:38px;height:38px;border-radius:50%;background:#26150c;border:1px solid #4a2a14;color:#ffb877;font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;top:11px;right:16px}
+.metro>.metro-gear{top:11px;left:16px}
+.metro.metro-practice>.metro-gear{top:21px;left:37px}
+
+/* Home: a round metronome button next to the settings button, always one tap away and no extra row. */
+.hero-actions{display:flex;gap:10px;align-items:center;position:relative;z-index:3;flex-shrink:0}
+.practiced-gap{display:block;height:16px}
+
+/* "What are you working on?" sheet, shown right after the Session Timer starts. */
+.focus-sheet .edit-rating-title{margin:6px 0 14px;text-align:left}
+.focus-row{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 10px;padding:13px 14px;border:1px solid #303632;background:linear-gradient(165deg,#1c211f,#141716);color:#e7ebe8;border-radius:16px;text-align:left;font-family:inherit}
+.focus-row:active{border-color:#ff6b1a}
+.focus-row.open{border-color:#6f351a}
+.focus-icon{flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:rgba(255,107,26,.16);border:1px solid rgba(255,107,26,.45);color:#ff9b50;display:flex;align-items:center;justify-content:center}
+.focus-icon svg{width:22px;height:22px}
+.focus-text{display:flex;flex-direction:column;flex:1;min-width:0}
+.focus-text strong{font:700 17px 'DM Sans'}
+.focus-text small{font:500 13px 'DM Sans';color:#9aa19d;margin-top:2px}
+.focus-go,.focus-caret{color:#8a9187;font-size:22px;line-height:1}
+.focus-caret{color:#ff9b50;font-size:16px;transition:transform .15s}
+.focus-row.open .focus-caret{transform:rotate(180deg)}
+.focus-pins{margin:-2px 0 10px;border:1px solid #2a211c;background:#120f0d;border-radius:14px;padding:6px;max-height:min(220px,30vh);overflow-y:auto}
+.focus-pin{display:flex;justify-content:space-between;align-items:center;width:100%;padding:11px 12px;border:0;background:transparent;color:#e7ebe8;font:600 15px 'DM Sans';text-align:left;border-radius:10px}
+.focus-pin+.focus-pin{border-top:1px solid #1f1a17}
+.focus-pin:active{background:#2a170a}
+.focus-pin span{color:#8a9187;font-size:20px}
+
+/* Focus sheet, round 2: running timer on top, bigger buttons, one accent colour per choice. */
+.focus-timer{display:flex;align-items:baseline;justify-content:center;gap:10px;margin:2px 0 14px;padding:10px 14px;border-radius:16px;background:#161312;border:1px solid #3b2a20}
+.focus-timer strong{font:700 38px/1 'Barlow Condensed';color:#ff9b50;letter-spacing:.5px;font-variant-numeric:tabular-nums}
+.focus-timer small{font:600 13px 'DM Sans';color:#b7aea6}
+.focus-timer-dot{align-self:center;width:10px;height:10px;border-radius:50%;background:#ff6b1a;box-shadow:0 0 0 0 rgba(255,107,26,.6);animation:focus-pulse 1.4s ease-out infinite}
+@keyframes focus-pulse{0%{box-shadow:0 0 0 0 rgba(255,107,26,.55)}100%{box-shadow:0 0 0 10px rgba(255,107,26,0)}}
+.focus-sheet .edit-rating-title{margin:4px 0 16px}
+.focus-row{--c:255,107,26;gap:16px;margin:0 0 12px;padding:16px 16px;min-height:78px;border:1px solid rgba(var(--c),.32);background:linear-gradient(135deg,rgba(var(--c),.16) 0%,#151817 70%);border-radius:18px}
+.focus-row:active{border-color:rgba(var(--c),.9)}
+.focus-row.open{border-color:rgba(var(--c),.8)}
+.focus-icon{flex:0 0 52px;width:52px;height:52px;border-radius:15px;background:rgba(var(--c),.2);border:1px solid rgba(var(--c),.55);color:rgb(var(--c));box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.focus-icon svg{width:28px;height:28px}
+.focus-text strong{font:700 19px 'DM Sans'}
+.focus-text small{font:500 14px 'DM Sans';margin-top:3px}
+.focus-go{color:rgba(var(--c),.9);font-size:26px}
+.focus-pin{padding:13px 14px;font-size:16px}
+.focus-sheet{padding-top:20px}
+.focus-sheet .focus-timer{margin-top:34px}
+
+/* Drum Points: board, ask pop-up and the "points earned" pop-up. */
+.points-ask{text-align:left}
+.onboard-languages{display:flex;flex-direction:column;gap:2px;margin:6px 0 10px}
+.points-board-toggle{margin:8px 0 10px}
+.points-board{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.points-board-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:#171a19;border:1px solid #262b28}
+.points-board-row.me{border-color:#ff6b1a;background:#2a170a}
+.points-board-pos{flex:0 0 34px;font:700 15px 'DM Sans';color:#b7aea6}
+.points-board-name{flex:1;min-width:0;font:600 16px 'DM Sans';color:#e7ebe8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.points-board-pts{font:700 20px 'Barlow Condensed';color:#ff9b50}
+.points-gain{position:relative;text-align:center;overflow:hidden;padding:30px 22px 22px}
+.points-gain-star{width:54px;height:54px;color:#ffb877;filter:drop-shadow(0 0 14px rgba(255,150,60,.7));animation:gain-star .7s cubic-bezier(.2,1.4,.4,1) both}
+.points-gain-number{display:block;font:800 52px/1 'Barlow Condensed';color:#ff9b50;margin:8px 0 2px;letter-spacing:.5px}
+.points-gain-sub{margin:0 0 14px;color:#b7aea6;font-size:14px}
+.points-gain-track{height:10px;border-radius:99px;background:#1c1411;border:1px solid #3b2a20;overflow:hidden;margin:0 6px 16px}
+.points-gain-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#ff9b50,#ff6b1a);width:var(--from);animation:gain-fill 1s .25s ease-out forwards}
+.points-gain-rank{margin:2px 0 14px}
+.points-gain-rank strong{display:block;font:700 22px 'DM Sans';color:#f0d9c8}
+.points-gain-rank p{margin:8px 0 0;color:#d2d6d3;font-size:15px}
+.points-gain-push{font-weight:600}
+.points-gain-places{display:block;margin:4px 0 10px;font:700 26px 'Barlow Condensed';color:#ff9b50}
+.points-gain-swap{position:relative;display:flex;flex-direction:column;gap:6px}
+.points-gain-row{height:44px;display:flex;align-items:center;justify-content:center;border-radius:12px;font:700 16px 'DM Sans';background:#171a19;border:1px solid #262b28;color:#e7ebe8}
+.points-gain-row.me{border-color:#ff6b1a;background:#2a170a;color:#ffd9bf;animation:gain-up .9s 1s cubic-bezier(.5,0,.2,1) both}
+.points-gain-row.other{animation:gain-down .9s 1s cubic-bezier(.5,0,.2,1) both}
+.points-gain-burst{position:absolute;left:50%;top:60px;width:0;height:0;pointer-events:none}
+.points-gain-burst i{position:absolute;width:8px;height:8px;border-radius:50%;background:#ffb877;opacity:0;animation:gain-burst .9s .1s ease-out both;transform:rotate(calc(var(--i) * 60deg)) translateY(0)}
+@keyframes gain-star{from{transform:scale(.2) rotate(-40deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+@keyframes gain-fill{to{width:var(--to)}}
+@keyframes gain-up{to{transform:translateY(-50px)}}
+@keyframes gain-down{to{transform:translateY(50px)}}
+@keyframes gain-burst{0%{opacity:1;transform:rotate(calc(var(--i) * 60deg)) translateY(0)}100%{opacity:0;transform:rotate(calc(var(--i) * 60deg)) translateY(-70px)}}
+@media (prefers-reduced-motion: reduce){
+  .points-gain-star,.points-gain-burst i{animation:none}
+  .points-gain-fill{animation:none;width:var(--to)}
+  .points-gain-row.me{animation:none;transform:translateY(-50px)}
+  .points-gain-row.other{animation:none;transform:translateY(50px)}
+}
+.points-ask-text{font:400 19px/1.45 'DM Sans';color:#e7ebe8;margin:4px 0 18px;text-align:left}
+
+/* Leaderboard screen: tidier empty state, info card and leave button. */
+.lb-empty-card{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin:18px 0 6px;padding:28px 18px;border-radius:18px;background:linear-gradient(165deg,#171a19,#111312);border:1px solid #232825}
+.lb-empty-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,107,26,.14);border:1px solid rgba(255,107,26,.4);color:#ff9b50;margin-bottom:6px}
+.lb-empty-icon svg{width:26px;height:26px}
+.lb-empty-card strong{font:700 18px 'DM Sans';color:#e7ebe8}
+.lb-empty-card span:not(.lb-empty-icon){font:500 15px 'DM Sans';color:#9aa19d}
+.lb-info{display:flex;gap:12px;align-items:flex-start;margin:18px 0 4px;padding:14px;border-radius:14px;background:#141716;border:1px solid #232825}
+.lb-info-icon{flex:0 0 22px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #5d655f;color:#9aa19d;font:italic 700 13px Georgia,serif;margin-top:1px}
+.lb-info p{margin:0 0 4px;font:400 14px/1.45 'DM Sans';color:#c2c8c3}
+.lb-info small{display:block;font:500 12.5px/1.45 'DM Sans';color:#7c837e}
+.lb-leave{display:block;width:auto;margin:22px auto 6px;padding:10px 20px;border:1px solid #2c312e;border-radius:99px;font:600 13.5px 'DM Sans';color:#9aa19d}
+.lb-leave:active{border-color:#6f351a;color:#e2877d}
+
+/* Points pop-up, round 2: more air under "+N points", and the second step with the animated leaderboard. */
+.points-gain-number{margin:10px 0 12px}
+.points-gain-sub{margin:0 0 18px}
+.points-gain-step2{text-align:left;padding:22px 18px 18px}
+.points-gain-step2 .ladder-label{display:block;text-align:center;margin-bottom:14px}
+.pgb{position:relative;margin-bottom:14px}
+.pgb-row{position:absolute;left:0;right:0;top:0;height:52px;margin:0;transition:transform .9s cubic-bezier(.5,0,.2,1)}
+.pgb-row.me{z-index:2;box-shadow:0 0 0 0 rgba(255,107,26,.5)}
+.pgb-plus{position:absolute;right:14px;top:2px;font:700 15px 'DM Sans';color:#ffb877;animation:pgb-plus 1.5s ease-out both;pointer-events:none}
+.pgb-msg{min-height:84px;opacity:0;transition:opacity .5s ease .8s;text-align:center}
+.pgb-msg.on{opacity:1}
+@keyframes pgb-plus{0%{opacity:0;transform:translateY(8px)}20%{opacity:1}100%{opacity:0;transform:translateY(-22px)}}
+@media (prefers-reduced-motion: reduce){.pgb-row{transition:none}.pgb-plus{animation:none;opacity:0}}
+.points-gain-week{margin:10px 0 0 !important;font-size:13.5px !important;color:#b7aea6 !important}
