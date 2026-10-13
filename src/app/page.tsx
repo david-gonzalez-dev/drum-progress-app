@@ -416,6 +416,9 @@ let UNLOCK_MINUTES = 2;
 const IS_ANDROID = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 // How far ahead (seconds) the metronome schedules clicks on the audio clock. Longer on Android, where timers and audio can hiccup.
 const SCHEDULE_AHEAD_SECONDS = IS_ANDROID ? 0.25 : 0.1;
+// When the app is sent to the background the phone slows our timers to about once a second, so the clicks are scheduled this far ahead
+// on the audio clock instead (the audio keeps playing on its own); they are cancelled and re-planned when the app comes back.
+const BACKGROUND_AHEAD_SECONDS = 45;
 function setUnlockMinutesForAge(band: AgeBand | null) { UNLOCK_MINUTES = band ? AGE_CONFIG[band].unlockMinutes : 2; }
 const MAX_PINNED_EXERCISES = 5;
 const RATING_ICON: Record<string, string> = { not_ready: "🔴", tense: "🟠", almost: "🟡", comfortable: "🟢", mastered: "⭐" };
@@ -1192,6 +1195,23 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("today");
+  // Android Back button: close an open window, else go back one screen, else return to Today, else leave the app.
+  const backRef = useRef<() => void>(() => {});
+  backRef.current = () => {
+    const closeButton = document.querySelector<HTMLElement>(".modal .close");
+    if (closeButton) { closeButton.click(); return; }
+    const backButton = document.querySelector<HTMLElement>(".back-row button, .page-back");
+    if (backButton) { backButton.click(); return; }
+    if (tab !== "today") { setTab("today"); return; }
+    import("@capacitor/app").then(({ App }) => App.exitApp());
+  };
+  useEffect(() => {
+    if (!IS_NATIVE_BUILD || !IS_ANDROID) return;
+    let handle: { remove: () => void } | null = null;
+    let cancelled = false;
+    import("@capacitor/app").then(({ App }) => App.addListener("backButton", () => backRef.current())).then((h) => { if (cancelled) h.remove(); else handle = h; });
+    return () => { cancelled = true; handle?.remove(); };
+  }, []);
   const [minutes, setMinutes] = useState("0");
   const [seconds, setSeconds] = useState("0");
   // Quick Practice's own entry field -- how much to ADD right now, always starting back at 0,
@@ -4346,6 +4366,10 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   const strokeQueueRef = useRef<StrokeEvent[]>([]);
   const strokeCounterRef = useRef(0);
   const strokeRafRef = useRef<number | null>(null);
+  const aheadRef = useRef(SCHEDULE_AHEAD_SECONDS);
+  const playingRef = useRef(false);
+  // Every click that is already scheduled on the audio clock, so the ones still in the future can be cancelled and re-planned.
+  const futureClicksRef = useRef<{ time: number; tick: number; counter: number; slotSeconds: number; osc: OscillatorNode }[]>([]);
   // The guide's real available width (measured, so it can never overflow its box); a sensible guess until the first measurement.
   const guideRef2 = useRef<HTMLDivElement | null>(null);
   const [guideWidth, setGuideWidth] = useState(0);
@@ -4449,7 +4473,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
 
   function playClick(time: number, accentLevel: "downbeat" | "beat" | "sub") {
     const ctx = audioCtxRef.current;
-    if (!ctx) return;
+    if (!ctx) return null;
     const preset = toneRef.current;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -4465,6 +4489,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     gain.connect(masterRef.current ?? ctx.destination);
     osc.start(time);
     osc.stop(time + preset.decay + 0.01);
+    return osc;
   }
 
   function scheduler() {
@@ -4472,13 +4497,16 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     if (!ctx) return;
     const steps = subdivisionRef.current;
     const beatsPerMeasure = beatsPerMeasureRef.current;
-    while (nextNoteTimeRef.current < ctx.currentTime + SCHEDULE_AHEAD_SECONDS) {
+    futureClicksRef.current = futureClicksRef.current.filter((c) => c.time > ctx.currentTime - 0.5);
+    while (nextNoteTimeRef.current < ctx.currentTime + aheadRef.current) {
       const tick = beatRef.current;
       const isBeat = tick % steps === 0;
       const beatNumber = Math.floor(tick / steps);
       const isDownbeat = isBeat && beatNumber % beatsPerMeasure === 0;
       const accentLevel = isDownbeat ? "downbeat" : isBeat ? "beat" : "sub";
-      playClick(nextNoteTimeRef.current, accentLevel);
+      const counterBefore = strokeCounterRef.current;
+      const clickOsc = playClick(nextNoteTimeRef.current, accentLevel);
+      if (clickOsc) futureClicksRef.current.push({ time: nextNoteTimeRef.current, tick, counter: counterBefore, slotSeconds: 60 / bpmRef.current / (guideRef.current?.perBeat ?? steps), osc: clickOsc });
       if (guideRef.current && guideRef.current.perBeat % steps === 0) strokeCounterRef.current = enqueueTick(strokeQueueRef.current, strokeCounterRef.current, guideRef.current, steps, nextNoteTimeRef.current, bpmRef.current);
       if (isBeat) {
         const beatIndex = beatNumber % beatsPerMeasure;
@@ -4489,6 +4517,61 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       nextNoteTimeRef.current += (60 / bpmRef.current) / steps;
     }
   }
+  // Cancels every click that is still in the future and winds the scheduler back to the first of them, so it can plan them again.
+  function cancelFutureClicks() {
+    const ctx = audioCtxRef.current;
+    if (!ctx) return;
+    const future = futureClicksRef.current.filter((c) => c.time > ctx.currentTime + 0.05);
+    if (!future.length) return;
+    future.forEach((c) => { try { c.osc.stop(); } catch { /* already stopped */ } });
+    const first = future[0];
+    futureClicksRef.current = futureClicksRef.current.filter((c) => c.time <= ctx.currentTime + 0.05);
+    beatRef.current = first.tick;
+    nextNoteTimeRef.current = first.time;
+    strokeCounterRef.current = first.counter;
+    strokeQueueRef.current = strokeQueueRef.current.filter((e) => e.time <= first.time - 0.8 * first.slotSeconds);
+    clearBeatTimeouts();
+  }
+  function appHidden() {
+    if (!playingRef.current) return;
+    aheadRef.current = BACKGROUND_AHEAD_SECONDS;
+    scheduler();
+  }
+  function appVisible() {
+    const ctx = audioCtxRef.current;
+    aheadRef.current = SCHEDULE_AHEAD_SECONDS;
+    if (!playingRef.current || !ctx) return;
+    cancelFutureClicks();
+    if (ctx.state !== "running") ctx.resume().catch(() => {});
+    scheduler();
+  }
+  // The phone's lock-screen / Dynamic Island media control: a proper title, and its pause button stops the metronome.
+  const toggleRef = useRef<() => void>(() => {});
+  toggleRef.current = () => { if (playingRef.current) togglePlaying(); };
+  useEffect(() => {
+    if (!playing || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: exerciseLabel ?? T.metronome.bannerTitle, artist: `${bpm} BPM · DrumSkills` });
+      navigator.mediaSession.playbackState = "playing";
+      navigator.mediaSession.setActionHandler("pause", () => toggleRef.current());
+      navigator.mediaSession.setActionHandler("stop", () => toggleRef.current());
+    } catch { /* not supported here */ }
+    return () => { try { navigator.mediaSession.playbackState = "none"; navigator.mediaSession.setActionHandler("pause", null); navigator.mediaSession.setActionHandler("stop", null); } catch { /* ignore */ } };
+  }, [playing, bpm, exerciseLabel]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lifecycleRef = useRef({ hidden: appHidden, visible: appVisible });
+  lifecycleRef.current = { hidden: appHidden, visible: appVisible };
+  useEffect(() => { playingRef.current = playing; if (!playing) aheadRef.current = SCHEDULE_AHEAD_SECONDS; }, [playing]);
+  // Keeps the metronome going when the app is sent to the background, and tidies up when it comes back.
+  useEffect(() => {
+    const onVisibility = () => (document.hidden ? lifecycleRef.current.hidden() : lifecycleRef.current.visible());
+    document.addEventListener("visibilitychange", onVisibility);
+    let handle: { remove: () => void } | null = null;
+    let cancelled = false;
+    if (IS_NATIVE_BUILD) {
+      import("@capacitor/app").then(({ App }) => App.addListener("appStateChange", ({ isActive }) => (isActive ? lifecycleRef.current.visible() : lifecycleRef.current.hidden()))).then((h) => { if (cancelled) h.remove(); else handle = h; });
+    }
+    return () => { cancelled = true; handle?.remove(); document.removeEventListener("visibilitychange", onVisibility); };
+  }, []);
 
   function formatMMSS(totalSeconds: number) { return String(Math.floor(totalSeconds / 60)).padStart(2, "0") + ":" + String(totalSeconds % 60).padStart(2, "0"); }
   const sharedSeconds = sharedTimer ? Math.max(0, Math.floor((Date.now() - sharedTimer.startedAt) / 1000)) : 0;
