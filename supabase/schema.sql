@@ -2217,3 +2217,4 @@ grant execute on function public.register_push_token(text, text, text) to authen
 grant execute on function public.unregister_push_token(text) to authenticated;
 
 -- 2026-10-14: Drum Points (automatic points for players up to 16, yearly + all-time boards). Full SQL is in drum-points.sql.
+alter table public.settings alter column metronome_tone set default 'clave';

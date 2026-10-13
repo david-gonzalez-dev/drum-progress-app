@@ -593,7 +593,7 @@ const translations = {
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
       language: "LANGUAGE", pushLabel: "Cheer notifications", pushDesc: "Get a notification on this phone when someone in your group sends you a cheer.", pushBlocked: "Notifications are blocked. Turn them on for DrumSkills in your phone's settings.", pushError: "Could not turn on notifications. Please try again.", showDaysThisYear: "Days practiced this year", showDaysThisYearDesc: "Adds a count of practice days this year to your Home stats.", on: "ON", off: "OFF", save: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR", autoColor: "Auto",
-      metronomeTone: "METRONOME TONE", toneNames: { click: "Click", beep: "Beep", wood: "Wood", clave: "Clave" },
+      metronomeTone: "METRONOME TONE", toneNames: { click: "Click", beep: "Marimba", wood: "Wood", clave: "Stick" },
       profileSection: "PROFILE", practiceSection: "PRACTICE", preferencesSection: "PREFERENCES", accountSection: "ACCOUNT SETTINGS", pleaseWait: "Please wait...",
       confirmLogout: "Log out of DrumSkills?", libraryLabel: "CONTENT LIBRARY", libraryFull: "Full Library", libraryEssentials: "Essentials", libraryHint: "Essentials shows a shorter list for beginners.", dobLabel: "DATE OF BIRTH", dobSaved: "Saved. It stays private. If it is wrong, contact support to correct it.", dobHint: "Add it to get the right leaderboard group and starting settings. It stays private.", dobSave: "Save", difficultyLabel: "PRACTICE DIFFICULTY", difficultyBeginner: "Beginner", difficultyDeveloping: "Developing", difficultyStandard: "Standard", difficultyHint: "Beginner: quarter notes. Developing: eighth notes. Standard: the rudiment as written. The tempo (BPM) never changes.",
       changeEmail: "Change email", newEmailPlaceholder: "New email address", updateEmail: "Update email", emailChangeSent: "Check your new email to confirm the change.",
@@ -773,7 +773,7 @@ const translations = {
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
       language: "IDIOMA", pushLabel: "Notificaciones de ánimo", pushDesc: "Recibe una notificación en este teléfono cuando alguien de tu grupo te envíe un ánimo.", pushBlocked: "Las notificaciones están bloqueadas. Actívalas para DrumSkills en los ajustes del teléfono.", pushError: "No se pudieron activar las notificaciones. Inténtalo de nuevo.", showDaysThisYear: "Días practicados este año", showDaysThisYearDesc: "Añade un contador de días practicados este año a tus estadísticas de Inicio.", on: "SÍ", off: "NO", save: "Guardar ajustes", saved: "✓ Ajustes guardados", logout: "Cerrar sesión", calendarColor: "COLOR DEL CALENDARIO DE GRUPO", autoColor: "Auto",
-      metronomeTone: "SONIDO DEL METRÓNOMO", toneNames: { click: "Click", beep: "Bip", wood: "Madera", clave: "Clave" },
+      metronomeTone: "SONIDO DEL METRÓNOMO", toneNames: { click: "Click", beep: "Marimba", wood: "Madera", clave: "Baqueta" },
       profileSection: "PERFIL", practiceSection: "PRÁCTICA", preferencesSection: "PREFERENCIAS", accountSection: "AJUSTES DE CUENTA", pleaseWait: "Un momento...",
       confirmLogout: "¿Cerrar sesión en DrumSkills?", libraryLabel: "BIBLIOTECA DE CONTENIDO", libraryFull: "Biblioteca Completa", libraryEssentials: "Esenciales", libraryHint: "Esenciales muestra una lista más corta para principiantes.", dobLabel: "FECHA DE NACIMIENTO", dobSaved: "Guardada. Se mantiene privada. Si es incorrecta, contacta con soporte para corregirla.", dobHint: "Añádela para tener el grupo de la tabla y los ajustes iniciales correctos. Se mantiene privada.", dobSave: "Guardar", difficultyLabel: "DIFICULTAD DE PRÁCTICA", difficultyBeginner: "Principiante", difficultyDeveloping: "En desarrollo", difficultyStandard: "Estándar", difficultyHint: "Principiante: negras. En desarrollo: corcheas. Estándar: el rudimento tal como está escrito. El tempo (BPM) nunca cambia.",
       changeEmail: "Cambiar correo electrónico", newEmailPlaceholder: "Nuevo correo electrónico", updateEmail: "Actualizar correo", emailChangeSent: "Revisa tu nuevo correo para confirmar el cambio.",
@@ -953,7 +953,7 @@ const translations = {
     settings: {
       makeItYours: "MAAK HET JOUW EIGEN", title: "INSTELLINGEN", displayName: "WEERGAVENAAM", dailyGoal: "DAGELIJKS OEFENDOEL", minutes: "minuten",
       language: "TAAL", pushLabel: "Aanmoedigingsmeldingen", pushDesc: "Krijg een melding op deze telefoon als iemand in je groep je aanmoedigt.", pushBlocked: "Meldingen staan uit. Zet ze aan voor DrumSkills in de instellingen van je telefoon.", pushError: "Meldingen aanzetten is niet gelukt. Probeer het opnieuw.", showDaysThisYear: "Geoefende dagen dit jaar", showDaysThisYearDesc: "Voegt het aantal oefendagen dit jaar toe aan je Home-statistieken.", on: "AAN", off: "UIT", save: "Instellingen opslaan", saved: "✓ Instellingen opgeslagen", logout: "Uitloggen", calendarColor: "KALENDERKLEUR IN DE GROEP", autoColor: "Automatisch",
-      metronomeTone: "METRONOOMGELUID", toneNames: { click: "Klik", beep: "Piep", wood: "Hout", clave: "Clave" },
+      metronomeTone: "METRONOOMGELUID", toneNames: { click: "Klik", beep: "Marimba", wood: "Hout", clave: "Stok" },
       profileSection: "PROFIEL", practiceSection: "OEFENEN", preferencesSection: "VOORKEUREN", accountSection: "ACCOUNTINSTELLINGEN", pleaseWait: "Even geduld...",
       confirmLogout: "Uitloggen bij DrumSkills?", libraryLabel: "INHOUDSBIBLIOTHEEK", libraryFull: "Volledige bibliotheek", libraryEssentials: "Basis", libraryHint: "Basis toont een kortere lijst voor beginners.", dobLabel: "GEBOORTEDATUM", dobSaved: "Opgeslagen. Het blijft privé. Klopt het niet, neem dan contact op met support om het te corrigeren.", dobHint: "Voeg het toe voor de juiste ranglijstgroep en beginstanden. Het blijft privé.", dobSave: "Opslaan", difficultyLabel: "OEFENNIVEAU", difficultyBeginner: "Beginner", difficultyDeveloping: "Opbouw", difficultyStandard: "Standaard", difficultyHint: "Beginner: kwartnoten. Opbouw: achtste noten. Standaard: de rudiment zoals geschreven. Het tempo (BPM) verandert nooit.",
       changeEmail: "E-mailadres wijzigen", newEmailPlaceholder: "Nieuw e-mailadres", updateEmail: "E-mailadres bijwerken", emailChangeSent: "Controleer je nieuwe e-mail om de wijziging te bevestigen.",
@@ -1344,7 +1344,7 @@ export default function Home() {
   const displayName = profileName || user?.user_metadata?.display_name || String(user?.user_metadata?.full_name ?? "").trim().split(/\s+/)[0] || user?.email?.split("@")[0] || "Drummer";
   const [language, setLanguage] = useState<Lang>("en");
   const [dailyGoal, setDailyGoal] = useState<number | null>(null);
-  const [metronomeTone, setMetronomeTone] = useState("wood");
+  const [metronomeTone, setMetronomeTone] = useState("clave"); // "clave" is the stored name of the Stick tone, the default
   // Picked right inside the metronome; saved straight away.
   async function changeMetronomeTone(key: string) {
     setMetronomeTone(key);
@@ -4594,12 +4594,32 @@ function Settings({ signOut, user, setError, profileName, onProfileNameSaved, la
 function Setting({icon,label,value}:{icon:string;label:string;value:string}) { return <button className="setting"><span className="setting-icon">{icon}</span><span>{label}</span><em>{value} ›</em></button>; }
 
 const BEATS_PER_BAR_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-type ToneDef = { wave: OscillatorType; freq: { downbeat: number; beat: number; sub: number }; decay: number };
+// harmonics: strength of the 1st, 2nd, 3rd... overtone of a smooth custom wave (instead of a plain sine/square/saw); drop: starts a little higher and falls into the
+// pitch in 10 ms (the "knock" of a struck instrument); gain: loudness correction so the tones sit at a similar volume.
+type ToneDef = { wave: OscillatorType; freq: { downbeat: number; beat: number; sub: number }; decay: number; harmonics?: number[]; drop?: number; dropTime?: number; gain?: number; noise?: { freq: number; q: number; gain: number; decay: number } };
+// A short burst of random noise (the "click" of wood on wood) shared by every noise-based tone.
+const noiseBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();
+function noiseBufferFor(ctx: BaseAudioContext): AudioBuffer {
+  let buf = noiseBuffers.get(ctx);
+  if (!buf) { buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.1), ctx.sampleRate); const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; noiseBuffers.set(ctx, buf); }
+  return buf;
+}
+const periodicWaves = new WeakMap<BaseAudioContext, Map<string, PeriodicWave>>();
+function waveFor(ctx: BaseAudioContext, harmonics: number[]): PeriodicWave {
+  let byKey = periodicWaves.get(ctx);
+  if (!byKey) { byKey = new Map(); periodicWaves.set(ctx, byKey); }
+  const key = harmonics.join(",");
+  let wave = byKey.get(key);
+  if (!wave) { wave = ctx.createPeriodicWave(new Float32Array(harmonics.length + 1), Float32Array.from([0, ...harmonics])); byKey.set(key, wave); }
+  return wave;
+}
 const TONE_PRESETS: Record<string, ToneDef> = {
   click: { wave: "sine", freq: { downbeat: 1200, beat: 900, sub: 650 }, decay: 0.045 },
-  beep: { wave: "square", freq: { downbeat: 1400, beat: 1000, sub: 700 }, decay: 0.05 },
+  // "beep" is the old stored name of the Marimba tone (the database only accepts click / beep / wood / clave).
+  beep: { wave: "sine", harmonics: [1, 0, 0, 0.22], freq: { downbeat: 880, beat: 659, sub: 494 }, decay: 0.12, gain: 0.85 },
   wood: { wave: "triangle", freq: { downbeat: 500, beat: 380, sub: 260 }, decay: 0.07 },
-  clave: { wave: "sawtooth", freq: { downbeat: 1800, beat: 1300, sub: 900 }, decay: 0.035 },
+  // "clave" is the old stored name of the Stick tone: a drumstick tap (a short band of noise on top of a quick falling "tok").
+  clave: { wave: "triangle", drop: 1.385, dropTime: 0.02, freq: { downbeat: 812, beat: 650, sub: 488 }, decay: 0.04, gain: 0.9, noise: { freq: 3000, q: 0.8, gain: 1.2, decay: 0.025 } },
 };
 // Small settings sheet opened by the gear button in the metronome windows: click sound and the volume of the in-between clicks.
 // It changes the app-wide settings, not just the rudiment that is open.
@@ -4618,7 +4638,7 @@ function ClickSettingsPanel({ T, toneKey, onTone, subVolume, onSubVolume, onClos
     </div>
   </div>;
 }
-const TONE_KEYS = ["click", "beep", "wood", "clave"];
+const TONE_KEYS = ["clave", "wood", "click", "beep"]; // Stick first (the default), then Wood, Click, Marimba
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer, onSessionEnd, initialBpm, tone, onToneChange, exerciseLabel, exerciseEn, lockTempo, difficulty, onOpen, onBannerChange, stacked, sessions, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; sharedTimer?: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null; onUsedDuringTimer?: () => void; onSessionEnd?: (seconds: number) => void; initialBpm?: number; tone?: string; onToneChange?: (key: string) => void; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; difficulty?: Difficulty; onOpen?: () => void; onBannerChange?: (active: boolean) => void; stacked?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; language?: Lang; T: any }) {
@@ -4697,10 +4717,10 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   const bpmRef = useRef(bpm);
   const beatsPerMeasureRef = useRef(beatsPerBar);
   const subdivisionRef = useRef(subdivision);
-  const [toneKey, setToneKey] = useState(tone ?? "wood");
+  const [toneKey, setToneKey] = useState(tone ?? "clave");
   // Volume of the in-between clicks (16ths, triplets...) relative to the beat click: 0 = silent, 1 = as loud as the beat. One setting for every rudiment.
-  const [subVolume, setSubVolumeRaw] = useState(1 / 3);
-  const subVolumeRef = useRef(1 / 3);
+  const [subVolume, setSubVolumeRaw] = useState(1 / 6);
+  const subVolumeRef = useRef(1 / 6);
   const [clickSettingsOpen, setClickSettingsOpen] = useState(false);
   useEffect(() => {
     try { const v = parseFloat(localStorage.getItem("sub_click_volume") ?? ""); if (Number.isFinite(v)) { const c = Math.min(1, Math.max(0, v)); setSubVolumeRaw(c); subVolumeRef.current = c; } } catch { /* storage unavailable: keep the default */ }
@@ -4710,8 +4730,8 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     setSubVolumeRaw(c); subVolumeRef.current = c;
     try { localStorage.setItem("sub_click_volume", String(c)); } catch { /* ignore */ }
   }
-  useEffect(() => { setToneKey(tone ?? "wood"); }, [tone]);
-  const toneRef = useRef(TONE_PRESETS[tone ?? "wood"] ?? TONE_PRESETS.wood);
+  useEffect(() => { setToneKey(tone ?? "clave"); }, [tone]);
+  const toneRef = useRef(TONE_PRESETS[tone ?? "clave"] ?? TONE_PRESETS.clave);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<AudioNode | null>(null);
   const schedulerRef = useRef<number | null>(null);
@@ -4837,19 +4857,34 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     const preset = toneRef.current;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = preset.wave;
-    osc.frequency.value = preset.freq[accentLevel];
+    if (preset.harmonics) osc.setPeriodicWave(waveFor(ctx, preset.harmonics)); else osc.type = preset.wave;
+    const pitch = preset.freq[accentLevel];
+    if (preset.drop) { osc.frequency.setValueAtTime(pitch * preset.drop, time); osc.frequency.exponentialRampToValueAtTime(pitch, time + (preset.dropTime ?? 0.01)); } else osc.frequency.value = pitch;
     // Lower peaks and a short soft attack (a near-instant jump makes a pop), and everything goes through a limiter so
     // overlapping clicks can't clip and crackle.
     // The in-between clicks follow the "Subdivision clicks" slider. They are never skipped (the scheduler needs them), only made silent.
     const peak = accentLevel === "downbeat" ? 0.42 : accentLevel === "beat" ? 0.28 : Math.max(0.0002, 0.28 * subVolumeRef.current);
+    const loudness = preset.gain ?? 1;
     gain.gain.setValueAtTime(0, time);
-    gain.gain.linearRampToValueAtTime(peak, time + 0.004);
+    gain.gain.linearRampToValueAtTime(peak * loudness, time + 0.004);
     gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay + 0.004);
     osc.connect(gain);
     gain.connect(masterRef.current ?? ctx.destination);
     osc.start(time);
     osc.stop(time + preset.decay + 0.01);
+    if (preset.noise) {
+      const hit = ctx.createBufferSource();
+      hit.buffer = noiseBufferFor(ctx);
+      const band = ctx.createBiquadFilter();
+      band.type = "bandpass"; band.frequency.value = preset.noise.freq; band.Q.value = preset.noise.q;
+      const hitGain = ctx.createGain();
+      hitGain.gain.setValueAtTime(0.0001, time);
+      hitGain.gain.linearRampToValueAtTime(Math.max(0.0002, peak * preset.noise.gain), time + 0.001);
+      hitGain.gain.exponentialRampToValueAtTime(0.0001, time + preset.noise.decay);
+      hit.connect(band); band.connect(hitGain); hitGain.connect(masterRef.current ?? ctx.destination);
+      hit.start(time); hit.stop(time + preset.noise.decay + 0.02);
+      (osc as OscillatorNode & { extras?: AudioScheduledSourceNode[] }).extras = [hit]; // stopped together with the click if it is cancelled
+    }
     return osc;
   }
 
@@ -4884,7 +4919,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     if (!ctx) return;
     const future = futureClicksRef.current.filter((c) => c.time > ctx.currentTime + 0.05);
     if (!future.length) return;
-    future.forEach((c) => { try { c.osc.stop(); } catch { /* already stopped */ } });
+    future.forEach((c) => { try { c.osc.stop(); } catch { /* already stopped */ } try { (c.osc as OscillatorNode & { extras?: AudioScheduledSourceNode[] }).extras?.forEach((x) => x.stop()); } catch { /* already stopped */ } });
     const first = future[0];
     futureClicksRef.current = futureClicksRef.current.filter((c) => c.time <= ctx.currentTime + 0.05);
     beatRef.current = first.tick;
@@ -5076,7 +5111,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       <button className="close" onClick={close}>×</button>
       <button type="button" className="metro-gear" aria-label={T.metronome.clickSettings} onClick={() => setClickSettingsOpen(true)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6l3.5 17.5a1 1 0 01-1 1.2h-11a1 1 0 01-1-1.2z" /><path d="M12 17.5L15.5 6.5" /><circle cx="14.2" cy="10.4" r="1.3" fill="currentColor" /></svg></button>
       <div className="metro-exercise-head">
-        <h2 className="metro-exercise-name">{exerciseLabel}</h2>
+        <h2 className="metro-exercise-name">{exerciseLabel?.replace(" - ", "\u00A0- ")}</h2>
       </div>
       {guide && <div className="sticking-panel" onTouchStart={(e) => { swipeStartRef.current = e.touches[0].clientX; }} onTouchEnd={(e) => { const start = swipeStartRef.current; swipeStartRef.current = null; if (start === null) return; const dx = e.changedTouches[0].clientX - start; if (dx < -50) setView("notation"); else if (dx > 50) setView("strokes"); }}>
         <div className="view-switch" role="tablist" aria-label={T.metronome.stickingLabel}>

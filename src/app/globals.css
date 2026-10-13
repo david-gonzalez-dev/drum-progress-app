@@ -1588,3 +1588,7 @@ html.native .shell.has-timer-banner .page{padding-top:30px}
 @keyframes pgb-plus{0%{opacity:0;transform:translateY(8px)}20%{opacity:1}100%{opacity:0;transform:translateY(-22px)}}
 @media (prefers-reduced-motion: reduce){.pgb-row{transition:none}.pgb-plus{animation:none;opacity:0}}
 .points-gain-week{margin:10px 0 0 !important;font-size:13.5px !important;color:#b7aea6 !important}
+
+/* Rudiment title in the Skill Trainer metronome window: stays clear of both round buttons (metronome left, X right), wraps to two lines when long. */
+.metro-practice .metro-exercise-head{padding:0 38px 0 66px;min-height:38px;margin-top:2px}
+.metro-practice .metro-exercise-name{font-size:22px;line-height:1.12;text-wrap:balance;text-align:center}
