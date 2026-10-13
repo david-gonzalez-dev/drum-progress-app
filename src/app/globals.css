@@ -1309,3 +1309,5 @@ button.unlock-row:active{background:#171a18}
 .session-timer-banner.metro-banner.stacked{top:calc(40px + env(safe-area-inset-top));padding-top:9px;border-top:1px solid #6f351a}
 .shell.has-two-banners{padding-top:calc(84px + env(safe-area-inset-top))}
 html.native .shell.has-two-banners{padding-top:calc(84px + env(safe-area-inset-top))}
+/* iPhone app: when a top bar (session timer or metronome) is showing it already covers the notch area, so the page must not add that space again. */
+html.native .shell.has-timer-banner .page{padding-top:30px}

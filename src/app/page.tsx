@@ -4558,6 +4558,19 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     } catch { /* not supported here */ }
     return () => { try { navigator.mediaSession.playbackState = "none"; navigator.mediaSession.setActionHandler("pause", null); navigator.mediaSession.setActionHandler("stop", null); } catch { /* ignore */ } };
   }, [playing, bpm, exerciseLabel]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Android only: while playing, a "metronome playing" notification (foreground service) stops Android from freezing the app in the background.
+  useEffect(() => {
+    if (!playing || !IS_NATIVE_BUILD || !IS_ANDROID) return;
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    import("@capacitor/core").then(({ registerPlugin }) => {
+      const keepAlive = registerPlugin<{ start: (o: { title: string }) => Promise<void>; stop: () => Promise<void> }>("MetronomeKeepAlive");
+      if (cancelled) return;
+      keepAlive.start({ title: exerciseLabel ?? T.metronome.bannerTitle }).catch(() => {});
+      stop = () => { keepAlive.stop().catch(() => {}); };
+    });
+    return () => { cancelled = true; stop?.(); };
+  }, [playing]); // eslint-disable-line react-hooks/exhaustive-deps
   const lifecycleRef = useRef({ hidden: appHidden, visible: appVisible });
   lifecycleRef.current = { hidden: appHidden, visible: appVisible };
   useEffect(() => { playingRef.current = playing; if (!playing) aheadRef.current = SCHEDULE_AHEAD_SECONDS; }, [playing]);
