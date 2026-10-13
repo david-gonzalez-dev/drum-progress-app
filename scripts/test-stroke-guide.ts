@@ -83,6 +83,7 @@ ok(asAgeBand("14_17") === "14_17" && asAgeBand("14_plus") === null && asAgeBand(
   ok(Object.keys(RUDIMENT_RHYTHMS).every((n) => ["beginner", "developing"].every((d) => { const e = effectiveRhythm(n, d); return e.perBeat <= RUDIMENT_RHYTHMS[n].perBeat && allowedClicks(e.perBeat).includes(e.perBeat); })), "Easier difficulties never raise the subdivision, and the click choices always match the arrangement");
   console.log("Simplified on Beginner:", Object.keys(RUDIMENT_RHYTHMS).filter((n) => effectiveRhythm(n, "beginner").simplified).length, "| on Developing:", Object.keys(RUDIMENT_RHYTHMS).filter((n) => effectiveRhythm(n, "developing").simplified).length, "| deliberately not simplified:", Object.keys(RUDIMENT_RHYTHMS).filter((n) => !effectiveRhythm(n, "beginner").simplified && RUDIMENT_RHYTHMS[n].perBeat > 1).join(", "));
 }
+ok(["Ratamacue", "Single Ratamacue"].every((n) => gridFor(n).perBeat === 3 && hands(gridFor(n)) === "RLRL--"), "Ratamacue and Single Ratamacue: half time, eighth-note triplets then a held quarter");
 // Clicks per beat: defaults and compatible choices
 ok(allowedClicks(4).join() === "4,2,1", "16th grid offers 4, 2, 1 clicks per beat (never 3)");
 ok(allowedClicks(3).join() === "3,1", "Triplet grid offers 3, 1 (never 2 or 4)");
@@ -92,13 +93,13 @@ const dflt = (n) => RUDIMENT_RHYTHMS[n].perBeat;
 ok(dflt("Flam") === 1 && dflt("Drag") === 1, "Quarter-note rudiments default to 1 click per beat");
 ok(dflt("Triple Paradiddle") === 2 && dflt("Flam Tap") === 2, "Eighth-note rudiments default to 2");
 ok(dflt("Double Paradiddle") === 3 && dflt("Paradiddle-Diddle") === 3, "Triplet rudiments default to 3");
-ok(["Single Strokes Four", "Single Strokes Seven", "Swiss Army Triplet", "Triple Stroke Roll"].every((n) => dflt(n) === 6 && RUDIMENT_RHYTHMS[n].clicks === undefined), "Sixteenth-triplet rudiments default to 6 clicks per beat");
+ok(["Single Strokes Seven", "Swiss Army Triplet", "Triple Stroke Roll"].every((n) => dflt(n) === 6 && RUDIMENT_RHYTHMS[n].clicks === undefined), "Sixteenth-triplet rudiments default to 6 clicks per beat");
 ok(RUDIMENT_RHYTHMS["Lesson 25"].perBeat === 2 && RUDIMENT_RHYTHMS["Lesson 25"].clicks === undefined, "Lesson 25 is an eighth-note grid: 2 clicks per beat by default");
 ok(dflt("Single Strokes") === 4 && dflt("Single Paradiddle") === 4, "Sixteenth-note rudiments default to 4");
 ok(Object.keys(RUDIMENT_RHYTHMS).every((n) => gridFor(n) !== null), "Every rudiment now has a guide");
 {
   const strokes = (n) => gridFor(n).slots.filter(Boolean).length, show = (n) => hands(gridFor(n));
-  ok(show("Single Strokes Four") === "RLRL--" && gridFor("Single Strokes Four").perBeat === 6, "Single Stroke Four: three sixteenth-triplets R L R, then L as an eighth (3 slots at 6 per beat = 1 beat)");
+  ok(show("Single Strokes Four") === "RLRL--" && gridFor("Single Strokes Four").perBeat === 3, "Single Stroke Four (half time): triplet R L R, then L as a quarter (6 slots at 3 per beat = 2 beats)");
   ok(show("Single Strokes Seven") === "RLRLRLR-----" && gridFor("Single Strokes Seven").perBeat === 6, "Single Stroke Seven: six sixteenth-triplets then R as a quarter (12 slots = 2 beats)");
   ok(show("6 Stroke Roll") === "R-LLRRL-" && gridFor("6 Stroke Roll").perBeat === 4, "6 Stroke Roll: eighth, four sixteenths, eighth");
   ok(show("Lesson 25") === "RLR-" && gridFor("Lesson 25").slots[0].graces.join() === "L,L" && gridFor("Lesson 25").perBeat === 2, "Lesson 25: drag, R L R, then an eighth rest (4 slots = 2 beats)");

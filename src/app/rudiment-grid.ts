@@ -57,8 +57,8 @@ export const RUDIMENT_RHYTHMS: Record<string, RudimentRhythm> = {
   "Flam Accent": { perBeat: 3, pattern: "l >R L R — r >L R L", status: "stated", note: "PAS: eighths in groups of 3 (triplet feel), 6 strokes" },
   "Flam Tap": { perBeat: 2, pattern: "l >R R r >L L", status: "stated", reversible: true, note: "Chart shows 16ths; kept as eighths as you stated" },
   "Drag": { perBeat: 1, pattern: "l l R", status: "stated", reversible: true },
-  "Ratamacue": { perBeat: 6, pattern: "l l R L R >L - -", status: "chart", reversible: true, note: "PAS Single Ratamacue: three sixteenth-triplet strokes then an eighth; same as Single Stroke Four with a drag" },
-  "Single Strokes Four": { perBeat: 6, pattern: "R L R L - -", status: "stated", reversible: true, note: "Three sixteenth-note triplets then an eighth note (one beat)" },
+  "Ratamacue": { perBeat: 3, pattern: "l l R L R >L - -", status: "chart", reversible: true, note: "Half time: triplet of eighth notes then a held quarter (PAS Single Ratamacue)" },
+  "Single Strokes Four": { perBeat: 3, pattern: "R L R L - -", status: "stated", reversible: true, note: "Half time: a triplet (eighth-note triplets) then a quarter note, two beats" },
   "Single Strokes Seven": { perBeat: 6, pattern: "R L R L R L R - - - - -", status: "stated", reversible: true, note: "Six sixteenth-note triplets then a quarter note (matches the PAS chart)" },
   "5 Stroke Roll": { perBeat: 4, pattern: "R R L L >R - - -", status: "stated", reversible: true, note: "Four sixteenths then a quarter" },
   "6 Stroke Roll": { perBeat: 4, pattern: ">R - L L R R >L -", status: "stated", reversible: true, note: "Eighth, four sixteenths, eighth" },
@@ -82,7 +82,7 @@ export const RUDIMENT_RHYTHMS: Record<string, RudimentRhythm> = {
   "Patafla-fla": { perBeat: 4, pattern: "l >R L R r >L", status: "chart", reversible: true },
   "Double Drag Tap": { perBeat: 3, pattern: "l l R l l R >L — r r L r r L >R", status: "stated", note: "Triplets: three strokes per side, one beat each, both leads" },
   "Flam Paradiddle-diddle": { perBeat: 3, pattern: "l >R L R R L L — r >L R L L R R", status: "stated", note: "Triplets (like Paradiddle-Diddle): six strokes per side, 2 beats each, both leads" },
-  "Single Ratamacue": { perBeat: 6, pattern: "l l R L R >L - -", status: "chart", reversible: true, note: "Same rhythm as Ratamacue (the same PAS rudiment)" },
+  "Single Ratamacue": { perBeat: 3, pattern: "l l R L R >L - -", status: "chart", reversible: true, note: "Half time: triplet of eighth notes then a held quarter (PAS Single Ratamacue)" },
   "Double Ratamacue": { perBeat: 6, pattern: "l l R - - l l R L R >L - - — r r L - - r r L R L >R - -", status: "chart", beatsPerBar: 3, note: "PAS: eighth, triplet of sixteenths, eighth; both leads" },
   "Triple Ratamacue": { perBeat: 3, pattern: "l l R - - l l R - - l l R L R >L - - — r r L - - r r L - - r r L R L >R - -", status: "chart", note: "Half the PAS speed: eighth-note triplets instead of sixteenth-note triplets; both leads" },
   "Inverted Flam Tap": { perBeat: 2, pattern: "l >R L r >L R", status: "chart", reversible: true, note: "Half the PAS speed: eighth notes instead of sixteenths, flam on the 1st and 3rd stroke" },
@@ -158,20 +158,29 @@ export function layoutRows(grid: Grid, maxWidth: number, box = 32, grace = 17, w
   return out;
 }
 
-// Box size (px) for the guide: the normal size, or smaller (never below `smallest`) when a two-sided rudiment's side would not fit on one
-// line. If it still does not fit at the smallest size, the sides are allowed to wrap onto two lines at beat boundaries instead.
-export function fitBox(grid: Grid, maxWidth: number, normal = 32, smallest = 24, gap = 5, beatGap = 6): { box: number; grace: number; wrapSides: boolean } {
+// Box size (px) for the guide. It is as big as fits (up to maxBox) without needing any extra row, so short patterns get big, easy-to-follow boxes.
+// A two-sided rudiment keeps each side on one line, shrinking (never below `smallest`) when needed; if a side still does not fit at the
+// smallest size the sides are allowed to wrap onto two lines at beat boundaries instead.
+export function fitBox(grid: Grid, maxWidth: number, normal = 32, smallest = 24, maxBox = 52, gap = 5, beatGap = 6): { box: number; grace: number; wrapSides: boolean } {
   const graceFor = (box: number) => Math.max(15, Math.round(box * 0.55));
-  if (grid.rowStarts.length < 2) return { box: normal, grace: graceFor(normal), wrapSides: false };
-  for (let box = normal; box >= smallest; box--) {
+  const widest = (rows: GuideRow[], box: number, grace: number) => Math.max(...rows.map((r) => {
+    let w = 0;
+    for (let i = r.start; i < r.end; i++) { w += box + (grid.slots[i]?.graces.length ?? 0) * (grace + 2); if (i > r.start) w += sideIndex(grid, i) % grid.perBeat === 0 ? beatGap : gap; }
+    return w;
+  }));
+  if (grid.rowStarts.length < 2) {
+    const baseRows = layoutRows(grid, maxWidth, normal, graceFor(normal), false, gap, beatGap).length;
+    for (let box = maxBox; box > normal; box--) {
+      const grace = graceFor(box);
+      const rows = layoutRows(grid, maxWidth, box, grace, false, gap, beatGap);
+      if (rows.length === baseRows && widest(rows, box, grace) <= maxWidth) return { box, grace, wrapSides: false };
+    }
+    return { box: normal, grace: graceFor(normal), wrapSides: false };
+  }
+  for (let box = maxBox; box >= smallest; box--) {
     const grace = graceFor(box);
-    const fits = grid.rowStarts.every((a, r) => {
-      const b = grid.rowStarts[r + 1] ?? grid.slots.length;
-      let w = 0;
-      for (let i = a; i < b; i++) { w += box + (grid.slots[i]?.graces.length ?? 0) * (grace + 2); if (i > a) w += sideIndex(grid, i) % grid.perBeat === 0 ? beatGap : gap; }
-      return w <= maxWidth;
-    });
-    if (fits) return { box, grace, wrapSides: false };
+    const rows = layoutRows(grid, maxWidth, box, grace, false, gap, beatGap);
+    if (widest(rows, box, grace) <= maxWidth) return { box, grace, wrapSides: false };
   }
   return { box: smallest, grace: graceFor(smallest), wrapSides: true };
 }
