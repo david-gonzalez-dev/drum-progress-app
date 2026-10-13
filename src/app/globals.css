@@ -1357,3 +1357,94 @@ html.native .shell.has-timer-banner .page{padding-top:30px}
 .won-popup-text{font:600 17px/1.4 'DM Sans';margin:0 0 6px;color:#f1f3f0}
 .won-popup-meta{margin:0 0 14px;font-size:13.5px;color:#9aa19d}
 .won-popup-saved{margin:0 0 6px;padding:11px 14px;border-radius:12px;background:#2a170a;border:1px solid #472315;color:#ffb877;font:600 14px/1.4 'DM Sans'}
+
+/* Strokes / Notation switch and the staff */
+.view-switch{display:flex;gap:4px;padding:3px;margin:8px auto 10px;width:max-content;background:#161918;border:1px solid #222724;border-radius:99px}
+.view-switch button{border:0;border-radius:99px;background:transparent;color:#9aa19d;font:700 13px 'DM Sans';padding:7px 16px}
+.view-switch button.on{background:#ff6b1a;color:#250d02}
+.notation{display:flex;flex-direction:column;align-items:flex-start;max-width:100%}
+.notation-side{display:flex;flex-direction:column;max-width:100%}
+.notation-side+.notation-side{margin-top:4px;border-top:1px solid #232825;padding-top:4px}
+.notation-row{display:block;max-width:100%;height:auto}
+
+/* The Skill Trainer metronome window scrolls when its content is tall (e.g. a two-sided rudiment in Notation), and the close button stays in view. */
+.metro-practice{max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.metro.metro-practice>.close{position:sticky;top:0;float:right;z-index:8;width:38px;height:38px;margin:-12px -10px 0 0;border-radius:50%;background:#26150c;border:1px solid #4a2a14;color:#ffb877;font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+
+/* Strokes and Notation sit in the same space (the taller one sets the height), so switching never resizes the window. */
+.guide-stack{display:grid;width:100%}
+.guide-layer{grid-area:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0}
+.guide-layer.off{visibility:hidden;pointer-events:none}
+
+/* Centered windows keep a margin from every screen edge, including the notch / Dynamic Island and the home bar. */
+.modal.modal-center{padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.metro-practice{max-height:calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding:20px 20px 22px}
+/* Tighter spacing inside the Skill Trainer metronome so tall rudiments still fit. */
+.metro-practice .tempo-simple{margin:8px 0 0}
+.metro-practice .beat-dots{margin:8px 0 0}
+.metro-practice .metronome-timer{margin:6px 0 10px}
+.metro-practice .view-switch{margin:6px auto 8px}
+.metro-practice .metro-selects{margin-top:10px}
+
+/* On shorter screens the Skill Trainer metronome gives up a little size so tall rudiments still fit. */
+@media (max-height: 880px){
+  .metro-practice .tempo-bpm-num{font-size:54px}
+  .metro-practice .tempo-bpm-unit{font-size:16px}
+  .metro-practice .metronome-timer{margin:4px 0 8px}
+  .metro-practice .metronome-timer strong{font-size:32px;margin-top:1px}
+  .metro-practice .metro-tone{margin-top:8px}
+}
+.stroke-arrow{position:absolute;right:2px;bottom:0;font:800 calc(var(--sb,32px) * .36) 'DM Sans';font-style:normal;color:#ff9b50;line-height:1}.stroke-box.active .stroke-arrow{color:#250d02}
+.stroke-box.plain{border-bottom-width:3px}
+
+/* "Add time to today's practice?" prompt (free Metronome + Session Timer): tidier layout.
+   No repeated title above the question, the time adjuster is one pill, and the "what you practised" chips sit in an even two-column grid. */
+.add-time h3{margin:34px 0 8px;font-size:34px;line-height:1}
+.add-time-adjust{background:#161312;border:1px solid #3b2a20;border-radius:99px;padding:6px;gap:0;justify-content:space-between;margin:22px 0 4px}
+.add-time-adjust button{min-width:66px;border-radius:99px;padding:11px 0;text-align:center}
+.add-time-adjust .add-time-value{font-size:34px;line-height:1}
+.add-time .metro-section-label{margin:26px 0 12px}
+.add-time .chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;justify-content:stretch}
+.add-time .chip{width:100%;text-align:center;padding:12px 8px;display:flex;align-items:center;justify-content:center;gap:4px}
+.add-time .chip b{margin-right:0}
+.add-time-buttons{margin-top:26px}
+
+/* Add-time prompt, round 2: a plain receipt, the amount being added, and a "what did you practise" list with one menu for everything else. */
+.add-receipt{margin:14px 0 4px;border:1px solid #3b2a20;background:#161312;border-radius:14px;padding:4px 14px}
+.add-receipt div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;color:#b7aea6;font-size:15px}
+.add-receipt div+div{border-top:1px solid #2a211c}
+.add-receipt b{font:700 20px "Barlow Condensed";color:#e7ddd4;letter-spacing:.3px}
+.add-receipt .total{color:#f0d9c8;font-weight:700}
+.add-receipt .total b{color:#ff9b50;font-size:26px}
+.add-time .add-time-change{display:block;margin:10px auto 0;background:transparent;border:0;color:#c9a68a;font:600 14px "DM Sans";text-decoration:underline;padding:4px 0}
+.add-time .add-time-minutes{margin-top:8px}
+.add-time-hint{margin:12px 0 0 !important;color:#c9a68a !important;font-size:13px !important;text-align:center}
+.practiced-picker .metro-section-label{margin:22px 0 10px}
+.pick-row{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 8px;padding:12px 14px;border:1px solid #303632;background:#1c211f;color:#d2d6d3;border-radius:12px;font:600 16px "DM Sans";text-align:left}
+.pick-row.on{border-color:#ff6b1a;background:#2a170a;color:#ffd9bf}
+.pick-check{flex:0 0 22px;width:22px;height:22px;border-radius:50%;border:1.5px solid #4a504b;display:flex;align-items:center;justify-content:center;font-size:13px;color:#250d02}
+.pick-row.on .pick-check{background:#ff6b1a;border-color:#ff6b1a}
+.pick-name{flex:1;min-width:0}
+.pick-badge{font-size:12px;font-weight:600;color:#c9a68a;white-space:nowrap}
+.pick-go{color:#8a9187;font-size:20px;line-height:1}
+.pick-more{display:flex;align-items:center;justify-content:space-between;width:100%;padding:13px 14px;border:1px dashed #6f351a;background:transparent;color:#f0d9c8;border-radius:12px;font:600 16px "DM Sans"}
+.pick-more.open{border-style:solid;background:#1c1411}
+.pick-caret{color:#ff9b50;transition:transform .15s}
+.pick-more.open .pick-caret{transform:rotate(180deg)}
+.pick-menu{margin-top:8px}
+.pick-menu .pick-row:last-child{margin-bottom:0}
+/* the older ".add-time span" rule styles every span as a small orange label; these spans are normal text */
+.add-time .add-receipt span{color:inherit;font-size:15px;font-weight:500;letter-spacing:0}
+.add-time .pick-row span,.add-time .pick-more span{letter-spacing:0;font-size:inherit;font-weight:inherit;color:inherit}
+.add-time .pick-check{font-size:13px;color:#250d02}
+.add-time .pick-badge{font-size:12px;color:#c9a68a}
+.add-time .pick-caret{color:#ff9b50}
+.add-time .pick-go{color:#8a9187;font-size:20px}
+.add-time-buttons .add{flex:1.6;font-size:16px;line-height:1.15}
+.add-time-buttons .discard{flex:1}
+/* The "anything else" menu scrolls inside a short box, so opening it never makes the popup taller than the screen. */
+.pick-menu{max-height:min(228px,32vh);overflow-y:auto;overscroll-behavior:contain;border:1px solid #2a211c;background:#120f0d;border-radius:12px;padding:8px}
+.pick-menu .pick-row{margin:0 0 6px;padding:10px 12px;font-size:15px}
+.pick-menu .pick-row:last-child{margin-bottom:0}
+.pick-menu .pick-check{flex-basis:20px;width:20px;height:20px}
+.metro:has(.add-time){max-height:calc(100dvh - 40px);overflow-y:auto}

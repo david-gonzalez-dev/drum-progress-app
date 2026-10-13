@@ -2,11 +2,13 @@
 // A grid is a list of slots at a fixed resolution (perBeat slots per quarter-note beat: 1 = quarter, 2 = eighth, 3 = triplet,
 // 4 = sixteenth, 6 and up work too). Each slot is a rest or one stroke (hand, optional accent, optional grace notes that lead
 // into it and take no slot of their own). A trailing digit means that many strokes of the hand in consecutive slots.
-// Pattern shorthand: "R" stroke, "l" grace note before the next stroke, "-" rest slot, ">R" accented stroke, "R2" two strokes,
+// Pattern shorthand: "-" holds the previous stroke longer, "." is a written rest. "R" stroke, "l" grace note before the next stroke, "-" rest slot, ">R" accented stroke, "R2" two strokes,
 // "—" starts a second row (second side of a two-sided rudiment).
 export type Hand = "R" | "L";
-export type GridSlot = { hand: Hand; graces: Hand[]; accent: boolean } | null;
-export type Grid = { perBeat: number; slots: GridSlot[]; rowStarts: number[] };
+// arrow = a down or up stroke marker (Push Pull); plain = a stroke with no sticking given (the Three-Note Patterns): drawn without an R or L.
+export type GridSlot = { hand: Hand; graces: Hand[]; accent: boolean; arrow?: "down" | "up"; plain?: boolean } | null;
+// rests[i] is true where slot i is a written REST (drawn as a rest symbol); a slot that is null but not a rest is the previous stroke being held.
+export type Grid = { perBeat: number; slots: GridSlot[]; rowStarts: number[]; rests?: boolean[] };
 // status: "stated" = given or confirmed by the teacher; "chart" = read from the official PAS International Drum Rudiments chart;
 // "derived" = PAS chart notation (buzz rolls) converted to sixteenth-note strokes, needs the teacher's confirmation;
 // "blocked" = pattern unknown or unreadable, so no stroke guide is shown (the metronome still follows the note value).
@@ -15,21 +17,27 @@ export type RudimentRhythm = { perBeat: number; pattern: string; status: "stated
 
 export function parseGrid(perBeat: number, pattern: string): Grid {
   const slots: GridSlot[] = [];
+  const rests: boolean[] = [];
   const rowStarts = [0];
   let graces: Hand[] = [];
   for (const raw of pattern.trim().split(/\s+/)) {
     if (raw === "—") { rowStarts.push(slots.length); continue; }
-    if (raw === "-") { slots.push(null); continue; }
+    if (raw === "-") { slots.push(null); rests.push(false); continue; }
+    if (raw === ".") { slots.push(null); rests.push(true); continue; } // a written rest, not a held note
     const accent = raw[0] === ">";
     const body = accent ? raw.slice(1) : raw;
-    const letter = body[0];
-    const hand = letter.toUpperCase() as Hand;
-    if (letter !== letter.toUpperCase()) { graces.push(hand); continue; }
-    const count = body.length > 1 ? Number(body.slice(1)) : 1;
-    for (let i = 0; i < count; i++) slots.push({ hand, graces: i === 0 ? graces : [], accent });
+    // letter (R L, lowercase = grace note, * = a stroke with no sticking), optional repeat count, optional d / u = down / up stroke arrow
+    const m = /^([RLrl*])(\d*)([du])?$/.exec(body);
+    if (!m) throw new Error(`Bad grid token: ${raw}`);
+    const letter = m[1], plain = letter === "*";
+    const hand = (plain ? "R" : letter.toUpperCase()) as Hand;
+    if (!plain && letter !== letter.toUpperCase()) { graces.push(hand); continue; }
+    const count = m[2] ? Number(m[2]) : 1;
+    const arrow = m[3] === "d" ? "down" : m[3] === "u" ? "up" : undefined;
+    for (let i = 0; i < count; i++) { slots.push({ hand, graces: i === 0 ? graces : [], accent, ...(arrow ? { arrow } : {}), ...(plain ? { plain: true } : {}) }); rests.push(false); }
     graces = [];
   }
-  return { perBeat, slots, rowStarts };
+  return { perBeat, slots, rowStarts, rests };
 }
 
 const flip = (h: Hand): Hand => (h === "R" ? "L" : "R");
@@ -64,8 +72,8 @@ export const RUDIMENT_RHYTHMS: Record<string, RudimentRhythm> = {
   "6 Stroke Roll": { perBeat: 4, pattern: ">R - L L R R >L -", status: "stated", reversible: true, note: "Eighth, four sixteenths, eighth" },
   "7 Stroke Roll": { perBeat: 4, pattern: "R R L L R R >L -", status: "derived", reversible: true, note: "PAS chart: dotted-eighth roll then a short final note, scaled like your 5 and 6 stroke rolls. Please confirm" },
   "9 Stroke Roll": { perBeat: 4, pattern: "R R L L R R L L >R - - - - - - -", status: "derived", reversible: true, note: "PAS chart: roll then a final note of equal length, scaled like your 5 stroke roll. Please confirm" },
-  "10 Stroke Roll": { perBeat: 4, pattern: "R R L L R R L L >R - >L - - - - -", status: "derived", reversible: true, note: "PAS chart: roll, two short accented notes, eighth rest, scaled like your 5 stroke roll. Please confirm" },
-  "11 Stroke Roll": { perBeat: 4, pattern: "R R L L R R L L R R >L - - - - -", status: "derived", reversible: true, note: "PAS chart: roll tied into a double-stroke 16th, then L, then an eighth rest (10 roll strokes + L), scaled like the other rolls. Please confirm" },
+  "10 Stroke Roll": { perBeat: 4, pattern: "R R L L R R L L >R - >L - . . . .", status: "derived", reversible: true, note: "PAS chart: roll, two accented eighth notes, then a quarter rest, scaled like your 5 stroke roll. Please confirm" },
+  "11 Stroke Roll": { perBeat: 4, pattern: "R R L L R R L L R R >L - . . . .", status: "derived", reversible: true, note: "PAS chart: roll tied into a double-stroke 16th, then L, then an eighth rest (10 roll strokes + L), scaled like the other rolls. Please confirm" },
   "13 Stroke Roll": { perBeat: 4, pattern: "R R L L R R L L R R L L >R - - -", status: "derived", reversible: true, note: "PAS chart: roll tied through an eighth (12 strokes) then a final eighth R, scaled like the other rolls. Please confirm" },
   "15 Stroke Roll": { perBeat: 4, pattern: "R R L L R R L L R R L L R R >L -", status: "derived", reversible: true, note: "PAS chart: roll tied through a dotted eighth (14 strokes) then a final 16th L, scaled like the other rolls. Please confirm" },
   "17 Stroke Roll": { perBeat: 4, pattern: "R R L L R R L L R R L L R R L L >R - - - - - - -", status: "derived", beatsPerBar: 6, reversible: true, note: "Half-note roll then a final quarter, scaled like the other rolls (24 slots = 6 beats = one bar of 6). Please confirm" },
@@ -75,18 +83,24 @@ export const RUDIMENT_RHYTHMS: Record<string, RudimentRhythm> = {
   "Drag Paradiddle #1": { perBeat: 4, pattern: ">R - - - l l R L R R — >L - - - r r L R L L", status: "stated", note: "Quarter note, then drag + three sixteenths, per side (2 beats each)" },
   "Drag Paradiddle #2": { perBeat: 4, pattern: ">R - l l R - l l R L R R — >L - r r L - r r L R L L", status: "chart", note: "PAS: two eighths then four sixteenths, drags" },
   "Flammed Mill": { perBeat: 4, pattern: "l >R R L R — r >L L R L", status: "chart", note: "PAS: sixteenths, both leads in one cycle" },
-  "Swiss Army Triplet": { perBeat: 6, pattern: "l >R R L", status: "chart", reversible: true, note: "PAS: sixteenth-note triplets (6 per beat); each group is half a beat" },
+  "Swiss Army Triplet": { perBeat: 3, pattern: "l >R R L", status: "chart", reversible: true, note: "Half time: eighth-note triplets, one group per beat (PAS shows sixteenth-note triplets)" },
   "Flamacue": { perBeat: 4, pattern: "l R >L R L l >R - - -", status: "chart", reversible: true, note: "PAS: four sixteenths then a flammed quarter; the old data ended on the wrong hand" },
-  "Triple Stroke Roll": { perBeat: 6, pattern: "R R R L L L", status: "chart", reversible: true, note: "PAS: sixteenth-note triplets (6 per beat)" },
+  "Triple Stroke Roll": { perBeat: 3, pattern: "R R R L L L", status: "chart", reversible: true, note: "Half time: eighth-note triplets (PAS shows sixteenth-note triplets)" },
   "Flam Paradiddle": { perBeat: 4, pattern: "l >R L R R — r >L R L L", status: "chart", note: "PAS: 8 sixteenths, both leads in one cycle" },
-  "Patafla-fla": { perBeat: 4, pattern: "l >R L R r >L", status: "chart", reversible: true },
-  "Double Drag Tap": { perBeat: 3, pattern: "l l R l l R >L — r r L r r L >R", status: "stated", note: "Triplets: three strokes per side, one beat each, both leads" },
+  "Patafla-fla": { perBeat: 2, pattern: "l >R L R r >L", status: "chart", reversible: true, note: "Half time: eighth notes (PAS shows sixteenth notes)" },
+  "Double Drag Tap": { perBeat: 3, pattern: "l l R - l l R - >L - — r r L - r r L - >R -", status: "stated", note: "Half time: quarter-note triplets (each stroke lasts two thirds of a beat), both leads" },
   "Flam Paradiddle-diddle": { perBeat: 3, pattern: "l >R L R R L L — r >L R L L R R", status: "stated", note: "Triplets (like Paradiddle-Diddle): six strokes per side, 2 beats each, both leads" },
   "Single Ratamacue": { perBeat: 3, pattern: "l l R L R >L - -", status: "chart", reversible: true, note: "Half time: triplet of eighth notes then a held quarter (PAS Single Ratamacue)" },
-  "Double Ratamacue": { perBeat: 6, pattern: "l l R - - l l R L R >L - - — r r L - - r r L R L >R - -", status: "chart", beatsPerBar: 3, note: "PAS: eighth, triplet of sixteenths, eighth; both leads" },
+  "Double Ratamacue": { perBeat: 3, pattern: "l l R - - l l R L R >L - - — r r L - - r r L R L >R - -", status: "chart", beatsPerBar: 3, note: "Half time: quarter, three eighth triplets, quarter; both leads" },
   "Triple Ratamacue": { perBeat: 3, pattern: "l l R - - l l R - - l l R L R >L - - — r r L - - r r L - - r r L R L >R - -", status: "chart", note: "Half the PAS speed: eighth-note triplets instead of sixteenth-note triplets; both leads" },
   "Inverted Flam Tap": { perBeat: 2, pattern: "l >R L r >L R", status: "chart", reversible: true, note: "Half the PAS speed: eighth notes instead of sixteenths, flam on the 1st and 3rd stroke" },
-  "Flam Drag": { perBeat: 4, pattern: "l >R - L L R - — r >L - R R L -", status: "chart", beatsPerBar: 3, note: "PAS: eighth, two 16ths, eighth; both leads" },
+  "Flam Drag": { perBeat: 6, pattern: "l >R - L L R - — r >L - R R L -", status: "chart", clicks: 3, note: "Triplet: eighth-triplet R, two sixteenths in the middle (L L), eighth-triplet R; one beat per side, both leads" },
+  // Skill Trainer exercises that are written out the same way as the rudiments.
+  "Push Pull - Right Hand": { perBeat: 2, pattern: "Rd Ru Rd Ru Rd Ru Rd Ru", status: "stated", note: "One bar of eight eighth notes; down stroke, up stroke, alternating" },
+  "Push Pull - Left Hand": { perBeat: 2, pattern: "Ld Lu Ld Lu Ld Lu Ld Lu", status: "stated", note: "One bar of eight eighth notes; down stroke, up stroke, alternating" },
+  "Three-Note Pattern #1": { perBeat: 4, pattern: "R - R R", status: "stated", reversible: true, note: "One eighth note and two sixteenth notes, one hand (starts with R or L)" },
+  "Three-Note Pattern #2": { perBeat: 4, pattern: "R R R -", status: "stated", reversible: true, note: "Two sixteenth notes and one eighth note, one hand (starts with R or L)" },
+  "Three-Note Pattern #3": { perBeat: 4, pattern: "R R - R", status: "stated", reversible: true, note: "One sixteenth, one eighth and one sixteenth note, one hand (starts with R or L)" },
 };
 
 export function rhythmFor(name: string): RudimentRhythm | null { return RUDIMENT_RHYTHMS[name] ?? null; }
@@ -105,6 +119,8 @@ export const NOT_SIMPLIFIED: Record<string, string> = {
   "9 Stroke Roll": "A roll is defined by close, even double strokes", "10 Stroke Roll": "A roll is defined by close, even double strokes", "11 Stroke Roll": "A roll is defined by close, even double strokes",
   "13 Stroke Roll": "A roll is defined by close, even double strokes", "15 Stroke Roll": "A roll is defined by close, even double strokes", "17 Stroke Roll": "A roll is defined by close, even double strokes",
   "Single Dragadiddle": "Contains 32nd-note double strokes; needs a teacher-written arrangement",
+  "Push Pull - Right Hand": "The exercise is the eight-note down/up pattern", "Push Pull - Left Hand": "The exercise is the eight-note down/up pattern",
+  "Three-Note Pattern #1": "The exercise is this rhythm", "Three-Note Pattern #2": "The exercise is this rhythm", "Three-Note Pattern #3": "The exercise is this rhythm",
 };
 
 export type EffectiveRhythm = RudimentRhythm & { simplified: boolean };
@@ -161,8 +177,8 @@ export function layoutRows(grid: Grid, maxWidth: number, box = 32, grace = 17, w
 // Box size (px) for the guide. It is as big as fits (up to maxBox) without needing any extra row, so short patterns get big, easy-to-follow boxes.
 // A two-sided rudiment keeps each side on one line, shrinking (never below `smallest`) when needed; if a side still does not fit at the
 // smallest size the sides are allowed to wrap onto two lines at beat boundaries instead.
-export function fitBox(grid: Grid, maxWidth: number, normal = 32, smallest = 24, maxBox = 52, gap = 5, beatGap = 6): { box: number; grace: number; wrapSides: boolean } {
-  const graceFor = (box: number) => Math.max(15, Math.round(box * 0.55));
+export function fitBox(grid: Grid, maxWidth: number, normal = 32, smallest = 20, maxBox = 52, gap = 5, beatGap = 6): { box: number; grace: number; wrapSides: boolean } {
+  const graceFor = (box: number) => Math.max(13, Math.round(box * 0.55));
   const widest = (rows: GuideRow[], box: number, grace: number) => Math.max(...rows.map((r) => {
     let w = 0;
     for (let i = r.start; i < r.end; i++) { w += box + (grid.slots[i]?.graces.length ?? 0) * (grace + 2); if (i > r.start) w += sideIndex(grid, i) % grid.perBeat === 0 ? beatGap : gap; }
@@ -170,14 +186,19 @@ export function fitBox(grid: Grid, maxWidth: number, normal = 32, smallest = 24,
   }));
   if (grid.rowStarts.length < 2) {
     const baseRows = layoutRows(grid, maxWidth, normal, graceFor(normal), false, gap, beatGap).length;
-    for (let box = maxBox; box > normal; box--) {
+    // A pattern that already needs several rows stays at the normal size: bigger boxes would only make the window taller.
+    if (baseRows >= 2) return { box: normal, grace: graceFor(normal), wrapSides: false };
+    // 5 to 6 strokes on one line (e.g. Paradiddle-Diddle) would otherwise grow to ~48 px and make the window tall: cap them.
+    const growTo = grid.slots.length >= 5 && grid.slots.length <= 6 ? Math.min(maxBox, 38) : maxBox;
+    for (let box = growTo; box > normal; box--) {
       const grace = graceFor(box);
       const rows = layoutRows(grid, maxWidth, box, grace, false, gap, beatGap);
       if (rows.length === baseRows && widest(rows, box, grace) <= maxWidth) return { box, grace, wrapSides: false };
     }
     return { box: normal, grace: graceFor(normal), wrapSides: false };
   }
-  for (let box = maxBox; box >= smallest; box--) {
+  // Two-sided rudiments stack two lines, so their boxes are capped to keep the window short.
+  for (let box = Math.min(maxBox, 38); box >= smallest; box--) {
     const grace = graceFor(box);
     const rows = layoutRows(grid, maxWidth, box, grace, false, gap, beatGap);
     if (widest(rows, box, grace) <= maxWidth) return { box, grace, wrapSides: false };

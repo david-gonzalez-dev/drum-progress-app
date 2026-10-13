@@ -514,3 +514,12 @@ end;
 $$;
 revoke all on function public.admin_leaderboard_summary(uuid) from public, anon;
 grant execute on function public.admin_leaderboard_summary(uuid) to authenticated;
+
+-- 2026-10-14: Flam Paradiddle-diddle joins the 180 BPM ladder
+create or replace function public.lb_exercise_profile(exercise_name text) returns text language sql immutable as $$
+  select case
+    when exercise_name = 'Bass Drum - Heel Down' then 'footwork'
+    when exercise_name in ('Single Strokes Seven', 'Single Drag Tap', 'Flamacue', 'Flam Paradiddle-diddle') then 'cap180'
+    when exercise_name in ('Double Paradiddle', 'Triple Paradiddle', 'Paradiddle-Diddle', 'Flam', 'Single Strokes Four') then 'extended'
+    else 'default' end
+$$;

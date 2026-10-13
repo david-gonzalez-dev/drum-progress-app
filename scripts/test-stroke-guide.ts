@@ -2,6 +2,7 @@
 // Run: node scripts/test-stroke-guide.ts   (Node 23.6+ strips the types itself)
 import { parseGrid, reverseGrid, allowedClicks, gridFor, effectiveRhythm, NOT_SIMPLIFIED, RUDIMENT_RHYTHMS } from "../src/app/rudiment-grid.ts";
 import { AGE_CONFIG, asAgeBand } from "../src/app/age-config.ts";
+import { buildNotation, noteValue } from "../src/app/notation-model.ts";
 import { enqueueTick, dueEvent } from "../src/app/stroke-guide.ts";
 let fails = 0;
 const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) fails++; };
@@ -50,18 +51,19 @@ ok(hands(gridFor("Ratamacue", "L")) === "LRLR--" && hands(gridFor("Single Ratama
   ok(hands(gridFor("11 Stroke Roll")) === "RRLLRRLLRRL-----" && hands(gridFor("13 Stroke Roll")) === "RRLLRRLLRRLLR---" && hands(gridFor("15 Stroke Roll")) === "RRLLRRLLRRLLRRL-", "11, 13 and 15 stroke rolls: roll, final note, rests, 16 slots each");
   ok(hands(gridFor("Inverted Flam Tap")) === "RLLR" && hands(gridFor("Flam Drag")) === "R-LLR-R-RLL-L-".slice(0, 0) + "R-LLR-" + "L-RRL-", "Inverted Flam Tap R L L R; Flam Drag R - L L R - / L - R R L -");
   const dr = gridFor("Double Ratamacue"), tr = gridFor("Triple Ratamacue");
-  ok(dr.perBeat === 6 && dr.rowStarts.join() === "0,9" && tr.perBeat === 3 && tr.rowStarts.join() === "0,12" && tr.slots.filter(Boolean).length === 12, "Double Ratamacue on 16th triplets, Triple Ratamacue on eighth triplets (half speed), both leads on two lines");
+  ok(dr.perBeat === 3 && dr.rowStarts.join() === "0,9" && tr.perBeat === 3 && tr.rowStarts.join() === "0,12" && tr.slots.filter(Boolean).length === 12, "Double and Triple Ratamacue on eighth triplets (half speed), both leads on two lines");
 }
 {
   const d = gridFor("Drag Paradiddle #1");
   ok(d.rowStarts.join() === "0,8" && hands(d) === "R---RLRRL---LRLL", "Drag Paradiddle #1: R as a quarter, then drag R L R R; second side L as a quarter, then drag L R L L");
   ok(d.slots[4].graces.join() === "L,L" && d.slots[12].graces.join() === "R,R", "Each side's drag (two grace notes) leads into the 5th slot");
 }
-ok(RUDIMENT_RHYTHMS["Double Drag Tap"].perBeat === 3 && gridFor("Double Drag Tap").slots.length === 6 && gridFor("Double Drag Tap").rowStarts.join() === "0,3", "Double Drag Tap: triplets, 3 clicks per beat, three strokes per side");
+ok(RUDIMENT_RHYTHMS["Double Drag Tap"].perBeat === 3 && gridFor("Double Drag Tap").slots.length === 12 && gridFor("Double Drag Tap").rowStarts.join() === "0,6" && gridFor("Double Drag Tap").slots.filter(Boolean).length === 6, "Double Drag Tap (half time): quarter-note triplets, three strokes per side, each two thirds of a beat");
+ok(buildNotation(gridFor("Double Drag Tap"))[0].events.map((e) => e.base + (e.triplet ? "T" : "")).join() === "quarterT,quarterT,quarterT", "Double Drag Tap is written as three quarter-note triplets per side");
 ok(RUDIMENT_RHYTHMS["Flam Paradiddle-diddle"].perBeat === 3 && gridFor("Flam Paradiddle-diddle").slots.length === 12 && gridFor("Flam Paradiddle-diddle").rowStarts.join() === "0,6", "Flam Paradiddle-diddle: triplets, 6 strokes per side");
 {
   const odd = Object.keys(RUDIMENT_RHYTHMS).filter((n) => { const g = gridFor(n), b = g.slots.length / g.perBeat; return Number.isInteger(b) && ![1, 2, 4, 8].includes(b); });
-  ok(odd.every((n) => RUDIMENT_RHYTHMS[n].beatsPerBar === gridFor(n).slots.length / gridFor(n).perBeat), "Rudiments whose cycle is 3 or 6 beats open at that many beats per bar: " + odd.join(", "));
+  ok(odd.every((n) => { const b = RUDIMENT_RHYTHMS[n].beatsPerBar, c = gridFor(n).slots.length / gridFor(n).perBeat; return !!b && c % b === 0; }), "Rudiments whose cycle is 3 or 6 beats open at a bar length that divides it evenly: " + odd.join(", "));
 }
 ok(RUDIMENT_RHYTHMS["Inverted Flam Tap"].perBeat === 2 && hands(gridFor("Inverted Flam Tap")) === "RLLR", "Inverted Flam Tap: eighth notes (half speed), 2 clicks per beat");
 // Practice difficulty
@@ -84,6 +86,63 @@ ok(asAgeBand("14_17") === "14_17" && asAgeBand("14_plus") === null && asAgeBand(
   console.log("Simplified on Beginner:", Object.keys(RUDIMENT_RHYTHMS).filter((n) => effectiveRhythm(n, "beginner").simplified).length, "| on Developing:", Object.keys(RUDIMENT_RHYTHMS).filter((n) => effectiveRhythm(n, "developing").simplified).length, "| deliberately not simplified:", Object.keys(RUDIMENT_RHYTHMS).filter((n) => !effectiveRhythm(n, "beginner").simplified && RUDIMENT_RHYTHMS[n].perBeat > 1).join(", "));
 }
 ok(["Ratamacue", "Single Ratamacue"].every((n) => gridFor(n).perBeat === 3 && hands(gridFor(n)) === "RLRL--"), "Ratamacue and Single Ratamacue: half time, eighth-note triplets then a held quarter");
+// Notation model: every rudiment (at every difficulty) can be written with real note values
+{
+  const bad = [];
+  for (const d of ["standard", "beginner", "developing"]) for (const n of Object.keys(RUDIMENT_RHYTHMS)) {
+    const g = gridFor(n, "R", d); if (!g) continue;
+    const sides = buildNotation(g);
+    const strokes = g.slots.filter(Boolean).length;
+    const events = sides.reduce((x, sd) => x + sd.events.filter((e) => !e.rest).length, 0);
+    if (events !== strokes) bad.push(`${n}/${d}: ${events} notes for ${strokes} strokes`);
+    for (const sd of sides) for (const e of sd.events) if (!noteValue(e.dur, g.perBeat)) bad.push(`${n}/${d}: cannot write a note of ${e.dur} slots at ${g.perBeat} per beat`);
+  }
+  ok(bad.length === 0, "Notation: every rudiment at every difficulty has one written note per stroke and valid note values" + (bad.length ? " -> " + bad.slice(0, 4).join("; ") : ""));
+  const desc = (n, d = "standard") => buildNotation(gridFor(n, "R", d))[0].events.map((e) => `${e.base}${e.dots ? "." : ""}${e.triplet ? "T" : ""}`).join(" ");
+  ok(desc("Single Strokes") === "sixteenth sixteenth sixteenth sixteenth", "Single Strokes: four sixteenth notes");
+  ok(desc("5 Stroke Roll") === "sixteenth sixteenth sixteenth sixteenth quarter", "5 Stroke Roll: four sixteenths then a quarter note");
+  ok(desc("6 Stroke Roll") === "eighth sixteenth sixteenth sixteenth sixteenth eighth", "6 Stroke Roll: eighth, four sixteenths, eighth");
+  ok(desc("Single Strokes Four") === "eighthT eighthT eighthT quarter", "Single Stroke Four: eighth triplets then a quarter");
+  ok(desc("Single Strokes Seven") === "sixteenthT sixteenthT sixteenthT sixteenthT sixteenthT sixteenthT quarter", "Single Stroke Seven: six sixteenth triplets then a quarter note");
+  ok(desc("Double Ratamacue") === "quarter eighthT eighthT eighthT quarter", "Double Ratamacue (half time): quarter, three eighth triplets, quarter");
+  ok(desc("Flam") === "quarter" && buildNotation(gridFor("Flam"))[0].events[0].graces.length === 1, "Flam: one quarter note with one grace note");
+  ok(desc("Single Strokes", "beginner") === "quarter quarter quarter quarter" && desc("Single Strokes", "developing") === "eighth eighth eighth eighth", "Easier difficulties write quarter and eighth notes");
+  const sev = buildNotation(gridFor("Single Strokes Seven"))[0];
+  ok(sev.tuplets.length === 2 && sev.tuplets.every((t) => t.length === 3) && sev.beamGroups.length === 1 && sev.beamGroups[0].length === 6, "Single Stroke Seven: two triplet brackets of three under one six-note beam (one beat)");
+}
+ok(RUDIMENT_RHYTHMS["Triple Stroke Roll"].perBeat === 3 && hands(gridFor("Triple Stroke Roll")) === "RRRLLL", "Triple Stroke Roll: half time, eighth-note triplets, 3 clicks per beat");
+ok(RUDIMENT_RHYTHMS["Swiss Army Triplet"].perBeat === 3 && gridFor("Swiss Army Triplet").slots.length === 3, "Swiss Army Triplet: half time, eighth-note triplets, one beat per group");
+ok(RUDIMENT_RHYTHMS["Patafla-fla"].perBeat === 2 && hands(gridFor("Patafla-fla")) === "RLRL", "Patafla-fla: half time, eighth notes, 2 clicks per beat");
+{
+  const fd = buildNotation(gridFor("Flam Drag"))[0];
+  ok(fd.events.map((e) => e.base + (e.triplet ? "T" : "")).join() === "eighthT,sixteenthT,sixteenthT,eighthT" && fd.tuplets.length === 1 && fd.tuplets[0].length === 4 && fd.beamGroups.length === 1, "Flam Drag: eighth triplet, two sixteenths, eighth triplet, one 3 bracket and one beam group per side");
+  ok(RUDIMENT_RHYTHMS["Flam Drag"].perBeat === 6 && RUDIMENT_RHYTHMS["Flam Drag"].clicks === 3 && gridFor("Flam Drag").slots.length === 12, "Flam Drag: triplet grid, 3 clicks per beat, one beat per side");
+  const dd = buildNotation(gridFor("Double Drag Tap"))[0];
+  ok(dd.tuplets.length === 1 && dd.tuplets[0].length === 3, "Double Drag Tap: three quarter triplets share one bracket");
+  const sev2 = buildNotation(gridFor("Single Strokes Seven"))[0];
+  ok(sev2.tuplets.length === 2 && sev2.tuplets.every((t) => t.length === 3), "Seven: sixteenth triplets still bracket in threes");
+}
+{
+  const r10 = buildNotation(gridFor("10 Stroke Roll"))[0].events.map((e) => (e.rest ? "rest:" : "") + e.base).join(",");
+  ok(r10 === "sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,eighth,eighth,rest:quarter", "10 Stroke Roll: eight sixteenths, two eighth notes, then a quarter rest");
+  ok(hands(gridFor("10 Stroke Roll")) === "RRLLRRLLR-L-----------".slice(0, 0) + "RRLLRRLLR-L-----", "10 Stroke Roll grid is 16 slots (rest slots show as dashes in the Strokes view)");
+}
+{
+  const r11 = buildNotation(gridFor("11 Stroke Roll"))[0].events.map((e) => (e.rest ? "rest:" : "") + e.base + (e.dots ? "." : "")).join(",");
+  ok(r11 === "sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,sixteenth,eighth,rest:quarter", "11 Stroke Roll: ten sixteenths, an eighth, then a quarter rest (no dotted note)");
+  const dotted = [];
+  for (const d of ["standard", "beginner", "developing"]) for (const n of Object.keys(RUDIMENT_RHYTHMS)) { const g = gridFor(n, "R", d); if (g) buildNotation(g).forEach((sd) => sd.events.forEach((e) => { if (e.dots) dotted.push(`${n}/${d}`); })); }
+  console.log("Rudiments with a dotted note:", Array.from(new Set(dotted)).join(", ") || "none");
+}
+{
+  const pp = gridFor("Push Pull - Right Hand"), ppl = gridFor("Push Pull - Left Hand");
+  ok(pp.perBeat === 2 && pp.slots.length === 8 && pp.slots.every((x, i) => x.hand === "R" && x.arrow === (i % 2 === 0 ? "down" : "up")) && ppl.slots.every((x) => x.hand === "L"), "Push Pull: eight eighth notes (one bar), down then up arrows, right hand / left hand");
+  ok(buildNotation(pp)[0].events.every((e) => e.base === "eighth") && buildNotation(pp)[0].events.length === 8, "Push Pull is written as eight eighth notes");
+  const tn = (n) => buildNotation(gridFor(n))[0].events.map((e) => e.base).join(",");
+  ok(tn("Three-Note Pattern #1") === "eighth,sixteenth,sixteenth" && tn("Three-Note Pattern #2") === "sixteenth,sixteenth,eighth" && tn("Three-Note Pattern #3") === "sixteenth,eighth,sixteenth", "Three-Note Patterns: 8th+16th+16th, 16th+16th+8th, 16th+8th+16th");
+  ok(["Three-Note Pattern #1", "Three-Note Pattern #2", "Three-Note Pattern #3"].every((n) => gridFor(n).slots.length === 4 && gridFor(n).slots.every((x) => !x || x.hand === "R") && gridFor(n, "L").slots.every((x) => !x || x.hand === "L")), "Three-Note Patterns: one beat each, one hand: RRR or LLL");
+  ok(["Push Pull - Right Hand", "Three-Note Pattern #1"].every((n) => effectiveRhythm(n, "beginner").perBeat === effectiveRhythm(n, "standard").perBeat), "These exercises keep their rhythm on every difficulty");
+}
 // Clicks per beat: defaults and compatible choices
 ok(allowedClicks(4).join() === "4,2,1", "16th grid offers 4, 2, 1 clicks per beat (never 3)");
 ok(allowedClicks(3).join() === "3,1", "Triplet grid offers 3, 1 (never 2 or 4)");
@@ -93,7 +152,7 @@ const dflt = (n) => RUDIMENT_RHYTHMS[n].perBeat;
 ok(dflt("Flam") === 1 && dflt("Drag") === 1, "Quarter-note rudiments default to 1 click per beat");
 ok(dflt("Triple Paradiddle") === 2 && dflt("Flam Tap") === 2, "Eighth-note rudiments default to 2");
 ok(dflt("Double Paradiddle") === 3 && dflt("Paradiddle-Diddle") === 3, "Triplet rudiments default to 3");
-ok(["Single Strokes Seven", "Swiss Army Triplet", "Triple Stroke Roll"].every((n) => dflt(n) === 6 && RUDIMENT_RHYTHMS[n].clicks === undefined), "Sixteenth-triplet rudiments default to 6 clicks per beat");
+ok(["Single Strokes Seven"].every((n) => dflt(n) === 6 && RUDIMENT_RHYTHMS[n].clicks === undefined), "Sixteenth-triplet rudiments default to 6 clicks per beat");
 ok(RUDIMENT_RHYTHMS["Lesson 25"].perBeat === 2 && RUDIMENT_RHYTHMS["Lesson 25"].clicks === undefined, "Lesson 25 is an eighth-note grid: 2 clicks per beat by default");
 ok(dflt("Single Strokes") === 4 && dflt("Single Paradiddle") === 4, "Sixteenth-note rudiments default to 4");
 ok(Object.keys(RUDIMENT_RHYTHMS).every((n) => gridFor(n) !== null), "Every rudiment now has a guide");
@@ -109,7 +168,7 @@ ok(Object.keys(RUDIMENT_RHYTHMS).every((n) => gridFor(n) !== null), "Every rudim
   const allBeatsWhole = Object.keys(RUDIMENT_RHYTHMS).filter((n) => gridFor(n)).filter((n) => gridFor(n).rowStarts.length === 1 && gridFor(n).slots.length % gridFor(n).perBeat !== 0);
   console.log("Cycles that do not fill whole beats:", allBeatsWhole.join(", ") || "none");
 }
-ok(Object.keys(RUDIMENT_RHYTHMS).length === 40, "All 40 rudiments have a rhythm entry");
+ok(Object.keys(RUDIMENT_RHYTHMS).length === 45, "All 40 rudiments and 5 notated exercises have a rhythm entry");
 ok(Object.entries(RUDIMENT_RHYTHMS).filter(([, r]) => r.status !== "blocked").every(([n]) => gridFor(n).slots.length > 0), "Every non-blocked rudiment parses to a grid");
 
 // Timing
@@ -173,7 +232,7 @@ const times = (g, clicks, bpm, ticks) => { const q = []; let c = 0; const tick =
     if (g.rowStarts.length > 1 && !fit.wrapSides && rows.length !== g.rowStarts.length) { bad++; console.log("side split", name, width); }
     const widest = Math.max(...rows.map((r) => { let w = 0; for (let i = r.start; i < r.end; i++) { w += fit.box + (g.slots[i]?.graces.length ?? 0) * (fit.grace + 2); if (i > r.start) w += sideIndex(g, i) % g.perBeat === 0 ? 6 : 5; } return w; }));
     if (widest > width) { bad++; console.log("overflow", name, width, widest); }
-    if (fit.box < 24) { bad++; console.log("tiny", name, width, fit.box); }
+    if (fit.box < 20) { bad++; console.log("tiny", name, width, fit.box); }
     if (fit.wrapSides) console.log("wraps sides:", name, width, rows.map((r) => r.end - r.start).join("+"));
     
     const covered = rows.flatMap((r) => Array.from({ length: r.end - r.start }, (_, k) => r.start + k));

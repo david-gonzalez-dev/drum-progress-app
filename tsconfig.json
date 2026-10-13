@@ -37,6 +37,7 @@
   "exclude": [
     "node_modules",
     ".ios-build",
-    "ios-www"
+    "ios-www",
+    "supabase/functions"
   ]
 }
