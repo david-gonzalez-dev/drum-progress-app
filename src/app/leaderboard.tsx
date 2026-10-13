@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-// Universal (worldwide) leaderboard: the entry card shown at the top of the Progress tab, and the full screen it opens.
+// Leaderboard (worldwide): the entry card shown at the top of the Progress tab, and the full screen it opens.
 // All scores are computed on the server (see supabase/leaderboard.sql); this file only displays them and flips the opt-in switch.
 
 type Lang = "en" | "es" | "nl";
@@ -11,7 +11,7 @@ type Row = { pos: number; display_name: string; score: number; detail: number; l
 
 const TEXT = {
   en: {
-    eyebrow: "PRACTICE SUMMARY", title: "UNIVERSAL LEADERBOARD", subtitle: "Compete with drummers worldwide", back: "Progress",
+    eyebrow: "PRACTICE SUMMARY", title: "LEADERBOARD", subtitle: "Compete with drummers worldwide", back: "Progress",
     rankMonth: "Your rank (this month)", notRanked: "Not ranked yet", notRankedHint: "Practice 5+ minutes today to enter.", join: "Join the leaderboard", joinHint: "Opt in to see where you stand.",
     unavailable: "Not available for this account", positionsUp: (n: number) => `${n} position${n === 1 ? "" : "s"}`, positionsDown: (n: number) => `${n} position${n === 1 ? "" : "s"}`,
     monthly: "Monthly ranking", points: "Practice points", levelRow: (l: string) => `${l} level`,
@@ -20,10 +20,10 @@ const TEXT = {
     unitDays: "days", unitTempos: "tempos", unitPoints: "points", you: "You", empty: "No one here yet. Be the first!", loadError: "The leaderboard isn't available right now.", loading: "Loading…",
     howConsistency: "Counts days with 5+ minutes of practice. Total minutes are never ranked.", howSkill: "Counts tempos you newly unlocked in the Skill Trainer.", howPoints: "Points awarded by teachers.", resets: "Resets automatically each month and year. Your history is never deleted.",
     gateTitle: "Join the worldwide leaderboard", gate1: "Your first name, last initial and scores will be visible to other players who join.", gate2: "Nothing else is shared: no email, notes or practice details.", gate3: "You can leave at any time. Your practice history stays yours.",
-    joinBtn: "Join", leaveBtn: "Leave the leaderboard", leaveConfirm: "Tap again to leave", hiddenNote: "You're not shown on the leaderboard right now (hidden by an administrator).", needAgeTitle: "Add your date of birth to join", needAge: "Add your date of birth in Settings to join the leaderboard. It stays private.", boards: { under_10: "Under 10 leaderboard", "10_17": "10–17 leaderboard", "18_plus": "18+ leaderboard" }, gates: { under_10: "You are on the Under 10 board: you only see and are seen by other players under 10, with first names only.", "10_17": "You are on the 10–17 board: you only see and are seen by other players aged 10 to 17, with first names only.", "18_plus": "You are on the 18+ board: you only see and are seen by other players aged 18 and older." }, error: "Something went wrong. Please try again.",
+    joinBtn: "Join", leaveBtn: "Leave the leaderboard", leaveConfirm: "Tap again to leave", hiddenNote: "You're not shown on the leaderboard right now (hidden by an administrator).", needAgeTitle: "Add your date of birth to join", needAge: "Add your date of birth in Settings to join the leaderboard. It stays private.", boards: { under_10: "Under 10", "10_17": "10–17", "18_plus": "18+" }, gates: { under_10: "You are on the Under 10 board: you only see and are seen by other players under 10, with first names only.", "10_17": "You are on the 10–17 board: you only see and are seen by other players aged 10 to 17, with first names only.", "18_plus": "You are on the 18+ board: you only see and are seen by other players aged 18 and older." }, error: "Something went wrong. Please try again.",
   },
   es: {
-    eyebrow: "RESUMEN DE PRÁCTICA", title: "TABLA UNIVERSAL", subtitle: "Compite con bateristas de todo el mundo", back: "Progreso",
+    eyebrow: "RESUMEN DE PRÁCTICA", title: "CLASIFICACIÓN", subtitle: "Compite con bateristas de todo el mundo", back: "Progreso",
     rankMonth: "Tu posición (este mes)", notRanked: "Aún sin posición", notRankedHint: "Practica 5+ minutos hoy para entrar.", join: "Unirme a la tabla", joinHint: "Actívala para ver dónde estás.",
     unavailable: "No disponible para esta cuenta", positionsUp: (n: number) => `${n} posición${n === 1 ? "" : "es"}`, positionsDown: (n: number) => `${n} posición${n === 1 ? "" : "es"}`,
     monthly: "Ranking mensual", points: "Puntos de práctica", levelRow: (l: string) => `Nivel ${l}`,
@@ -32,10 +32,10 @@ const TEXT = {
     unitDays: "días", unitTempos: "tempos", unitPoints: "puntos", you: "Tú", empty: "Aún no hay nadie. ¡Sé el primero!", loadError: "La tabla no está disponible ahora mismo.", loading: "Cargando…",
     howConsistency: "Cuenta los días con 5+ minutos de práctica. Los minutos totales nunca se clasifican.", howSkill: "Cuenta los tempos que desbloqueaste de nuevo en el Skill Trainer.", howPoints: "Puntos concedidos por profesores.", resets: "Se reinicia sola cada mes y cada año. Tu historial nunca se borra.",
     gateTitle: "Únete a la tabla mundial", gate1: "Tu nombre, la inicial de tu apellido y tus puntuaciones serán visibles para otros jugadores que se unan.", gate2: "No se comparte nada más: ni email, ni notas, ni detalles de práctica.", gate3: "Puedes salir cuando quieras. Tu historial sigue siendo tuyo.",
-    joinBtn: "Unirme", leaveBtn: "Salir de la tabla", leaveConfirm: "Toca otra vez para salir", hiddenNote: "Ahora mismo no apareces en la tabla (oculto por un administrador).", needAgeTitle: "Añade tu fecha de nacimiento para unirte", needAge: "Añade tu fecha de nacimiento en Ajustes para unirte a la tabla. Se mantiene privada.", boards: { under_10: "Tabla de menores de 10", "10_17": "Tabla de 10–17", "18_plus": "Tabla de 18+" }, gates: { under_10: "Estás en la tabla de menores de 10: solo ves y te ven otros menores de 10, solo con el nombre.", "10_17": "Estás en la tabla de 10–17: solo ves y te ven jugadores de 10 a 17 años, solo con el nombre.", "18_plus": "Estás en la tabla de 18+: solo ves y te ven jugadores de 18 años o más." }, error: "Algo salió mal. Inténtalo de nuevo.",
+    joinBtn: "Unirme", leaveBtn: "Salir de la tabla", leaveConfirm: "Toca otra vez para salir", hiddenNote: "Ahora mismo no apareces en la tabla (oculto por un administrador).", needAgeTitle: "Añade tu fecha de nacimiento para unirte", needAge: "Añade tu fecha de nacimiento en Ajustes para unirte a la tabla. Se mantiene privada.", boards: { under_10: "Menos de 10", "10_17": "10–17", "18_plus": "18+" }, gates: { under_10: "Estás en la tabla de menores de 10: solo ves y te ven otros menores de 10, solo con el nombre.", "10_17": "Estás en la tabla de 10–17: solo ves y te ven jugadores de 10 a 17 años, solo con el nombre.", "18_plus": "Estás en la tabla de 18+: solo ves y te ven jugadores de 18 años o más." }, error: "Algo salió mal. Inténtalo de nuevo.",
   },
   nl: {
-    eyebrow: "OEFENOVERZICHT", title: "UNIVERSELE RANGLIJST", subtitle: "Meet je met drummers wereldwijd", back: "Voortgang",
+    eyebrow: "OEFENOVERZICHT", title: "RANGLIJST", subtitle: "Meet je met drummers wereldwijd", back: "Voortgang",
     rankMonth: "Jouw positie (deze maand)", notRanked: "Nog geen positie", notRankedHint: "Oefen vandaag 5+ minuten om mee te doen.", join: "Doe mee aan de ranglijst", joinHint: "Zet hem aan om te zien waar je staat.",
     unavailable: "Niet beschikbaar voor dit account", positionsUp: (n: number) => `${n} ${n === 1 ? "plaats" : "plaatsen"}`, positionsDown: (n: number) => `${n} ${n === 1 ? "plaats" : "plaatsen"}`,
     monthly: "Maandranglijst", points: "Oefenpunten", levelRow: (l: string) => `Niveau ${l}`,
@@ -44,7 +44,7 @@ const TEXT = {
     unitDays: "dagen", unitTempos: "tempo's", unitPoints: "punten", you: "Jij", empty: "Nog niemand hier. Wees de eerste!", loadError: "De ranglijst is nu niet beschikbaar.", loading: "Laden…",
     howConsistency: "Telt dagen met 5+ minuten oefenen. Totale minuten tellen nooit mee.", howSkill: "Telt tempo's die je nieuw hebt ontgrendeld in de Skill Trainer.", howPoints: "Punten toegekend door leraren.", resets: "Begint automatisch opnieuw elke maand en elk jaar. Je geschiedenis wordt nooit verwijderd.",
     gateTitle: "Doe mee aan de wereldwijde ranglijst", gate1: "Je voornaam, de initiaal van je achternaam en je scores zijn zichtbaar voor andere spelers die meedoen.", gate2: "Er wordt niets anders gedeeld: geen e-mail, notities of oefendetails.", gate3: "Je kunt op elk moment stoppen. Je oefengeschiedenis blijft van jou.",
-    joinBtn: "Meedoen", leaveBtn: "Stop met de ranglijst", leaveConfirm: "Tik nogmaals om te stoppen", hiddenNote: "Je wordt nu niet getoond op de ranglijst (verborgen door een beheerder).", needAgeTitle: "Voeg je geboortedatum toe om mee te doen", needAge: "Voeg je geboortedatum toe in Instellingen om mee te doen aan de ranglijst. Het blijft privé.", boards: { under_10: "Ranglijst onder 10", "10_17": "Ranglijst 10–17", "18_plus": "Ranglijst 18+" }, gates: { under_10: "Je staat op de ranglijst onder 10: je ziet en wordt gezien door andere spelers onder 10, alleen met voornaam.", "10_17": "Je staat op de ranglijst 10–17: je ziet en wordt gezien door spelers van 10 tot 17, alleen met voornaam.", "18_plus": "Je staat op de ranglijst 18+: je ziet en wordt gezien door spelers van 18 en ouder." }, error: "Er ging iets mis. Probeer het opnieuw.",
+    joinBtn: "Meedoen", leaveBtn: "Stop met de ranglijst", leaveConfirm: "Tik nogmaals om te stoppen", hiddenNote: "Je wordt nu niet getoond op de ranglijst (verborgen door een beheerder).", needAgeTitle: "Voeg je geboortedatum toe om mee te doen", needAge: "Voeg je geboortedatum toe in Instellingen om mee te doen aan de ranglijst. Het blijft privé.", boards: { under_10: "Onder 10", "10_17": "10–17", "18_plus": "18+" }, gates: { under_10: "Je staat op de ranglijst onder 10: je ziet en wordt gezien door andere spelers onder 10, alleen met voornaam.", "10_17": "Je staat op de ranglijst 10–17: je ziet en wordt gezien door spelers van 10 tot 17, alleen met voornaam.", "18_plus": "Je staat op de ranglijst 18+: je ziet en wordt gezien door spelers van 18 en ouder." }, error: "Er ging iets mis. Probeer het opnieuw.",
   },
 };
 
@@ -160,7 +160,7 @@ export function LeaderboardScreen({ db: supabase, user, language, initial, onBac
 
   return <section className="page lb-page">
     <button className="page-back" onClick={onBack}>‹ {t.back}</button>
-    <header className="simple-head"><p className="eyebrow">{t.eyebrow}</p><h1>{t.title}</h1></header>
+    <header className="simple-head lb-head"><h1>{t.title}</h1>{summary?.board && <span className="lb-board">{t.boards[summary.board]}</span>}</header>
     {!summary ? <p className="hint">{error || t.loading}</p>
       : !summary.board ? <p className="lb-note">{t.needAge}</p>
       : !optedIn ? <div className="lb-gate">
@@ -170,11 +170,12 @@ export function LeaderboardScreen({ db: supabase, user, language, initial, onBac
         <button className="save" disabled={busy} onClick={() => setOptIn(true)}>{t.joinBtn}</button>
       </div>
       : <>
-        <p className="lb-board">{t.boards[summary.board]}</p>
         {!summary.eligible && <p className="lb-note">{t.hiddenNote}</p>}
         <div className="lb-seg">{(["consistency", "skill", "points"] as const).map((c) => <button key={c} type="button" className={filter.category === c ? "on" : ""} onClick={() => setFilter({ ...filter, category: c })}>{t.cats[c]}</button>)}</div>
-        <div className="lb-seg lb-seg-small">{(["month", "year"] as const).map((p) => <button key={p} type="button" className={filter.period === p ? "on" : ""} onClick={() => setFilter({ ...filter, period: p })}>{t.periods[p]}</button>)}</div>
-        <div className="lb-levels">{["all", "beginner", "intermediate", "advanced", "legend"].map((l) => <button key={l} type="button" className={filter.level === l ? "on" : ""} onClick={() => setFilter({ ...filter, level: l })}>{l === "all" ? t.allLevels : t.tiers[l]}</button>)}</div>
+        <div className="lb-filters">
+          <select className="lb-select" aria-label={t.periods.month + " / " + t.periods.year} value={filter.period} onChange={(e) => setFilter({ ...filter, period: e.target.value as BoardFilter["period"] })}>{(["month", "year"] as const).map((p) => <option key={p} value={p}>{t.periods[p]}</option>)}</select>
+          <select className="lb-select" aria-label={t.allLevels} value={filter.level} onChange={(e) => setFilter({ ...filter, level: e.target.value })}>{["all", "beginner", "intermediate", "advanced", "legend"].map((l) => <option key={l} value={l}>{l === "all" ? t.allLevels : t.tiers[l]}</option>)}</select>
+        </div>
         {rows === null ? <div className="skeleton-stack" role="status"><i className="skel skel-card" /><i className="skel skel-card" /></div>
           : error ? <p className="lb-note">{error}</p>
           : !rows.length ? <p className="hint lb-empty">{t.empty}</p>

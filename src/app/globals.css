@@ -1311,3 +1311,10 @@ button.unlock-row:active{background:#171a18}
 html.native .shell.has-two-banners{padding-top:calc(84px + env(safe-area-inset-top))}
 /* iPhone app: when a top bar (session timer or metronome) is showing it already covers the notch area, so the page must not add that space again. */
 html.native .shell.has-timer-banner .page{padding-top:30px}
+.lb-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:18px}
+.lb-head h1{margin:0}
+.lb-head .lb-board{margin:0}
+.lb-filters{display:flex;gap:8px;margin:0 0 14px}
+.lb-select{flex:1;min-width:0;appearance:none;-webkit-appearance:none;border:1px solid #303632;border-radius:99px;background:#1c211f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ff9b50' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;color:#e7e9e6;font:700 14px 'DM Sans';padding:10px 36px 10px 16px}
+.lb-select:focus-visible{outline:2px solid #ff6b1a;outline-offset:2px}
+.lb-head{flex-wrap:nowrap}.lb-head h1{font-size:clamp(34px,11vw,52px);line-height:1}.lb-head .lb-board{flex-shrink:0;align-self:flex-end;margin-bottom:6px}
