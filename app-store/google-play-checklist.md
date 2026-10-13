@@ -25,7 +25,7 @@ No em dashes anywhere, on purpose. Items marked CHECK must be verified in the Pl
 - **Graphics Google asks for:** app icon 512x512 (use the 1024 icon scaled down), feature graphic 1024x500 (still to make), at least 2 phone screenshots (take them from the Android emulator or a phone).
 
 ## Data safety form (draft answers, CHECK each one)
-- Collects: name (first name or nickname), email address, date of birth, user IDs, app activity (practice logs, sessions, points), notes the user writes.
+- Collects: name (first name or nickname), email address, **date of birth** (Personal info, "Other info"), user IDs, **device or other IDs** (the push notification token, only if notifications are on), app activity (practice logs, sessions, **Drum Points** and rankings), notes the user writes. Purpose for all: App functionality.
 - Shared with third parties: no, apart from the service providers that run the app (database and hosting). No advertising, no analytics SDKs.
 - Encrypted in transit: yes. Deletion: users can delete their account and data inside the app (Settings, Delete account); also provide the same delete request URL.
 - Optional vs required: date of birth is asked in onboarding but can be skipped.

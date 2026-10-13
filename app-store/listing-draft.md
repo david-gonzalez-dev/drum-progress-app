@@ -72,6 +72,9 @@ Data collected, all **linked to the user**, all used only for **App Functionalit
 - Contact info: name (the display name)
 - User content: practice notes and what you practised
 - Identifiers: user ID
+- Identifiers: **Device ID** (the push notification token; only if the user turns notifications on, used to deliver cheer notifications, deleted at log out / account deletion)
+- Other data types: **date of birth** (stored privately, only the age group is used; for App Functionality)
+- Usage data: **Product interaction** (practice sessions, tempos, points and rankings; for App Functionality, linked to the user, not used for tracking)
 - Usage data / diagnostics: **none** (no analytics or crash SDK is installed; confirm before submitting)
 - Tracking: **No.** No ad SDKs, so no App Tracking Transparency prompt is needed.
 

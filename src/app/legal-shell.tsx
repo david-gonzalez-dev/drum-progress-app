@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 const IS_DRAFT = false;
 
 export const SUPPORT_EMAIL = "practice-masters@gmail.com";
-export const LEGAL_UPDATED = "10/10/2026";
+export const LEGAL_UPDATED = "14/10/2026";
 
 export function LegalShell({ title, children }: { title: string; children: ReactNode }) {
   return <main className="shell"><section className="page legal">

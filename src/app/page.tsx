@@ -2234,41 +2234,20 @@ function YourPointsCard({ pointsEnabled, rows, onViewPoints, T }: any) {
   const status = total === 0 ? T.today.pointsCardKickoff : rank === 1 ? T.today.pointsCardRankOne : rank > 0 && rank <= 3 ? T.today.pointsCardTop3 : T.today.pointsCardKeepGoing;
   const ringPct = Math.max(0, Math.min(1, (total % 100) / 100));
   const ringOffset = 88 - 88 * ringPct;
-  return <button type="button" className="form-card points-card" onClick={onViewPoints}>
-    <div className="points-card-top">
-      <div className="points-card-main">
-        <span className="input-label points-card-label">{T.today.pointsCardTitle} · {T.drumPoints.cardYear}</span>
-        <strong className="points-card-value">{total}</strong>
-      </div>
-      <div className="points-card-ring">
-        <svg viewBox="0 0 36 36">
-          <circle cx="18" cy="18" r="14" className="points-ring-track" />
-          <circle cx="18" cy="18" r="14" className="points-ring-progress" strokeDasharray="88" strokeDashoffset={ringOffset} />
-        </svg>
-        <svg className="points-card-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7L12 2z" /></svg>
-      </div>
+  return <button type="button" className="form-card points-card points-card-compact" onClick={onViewPoints}>
+    <div className="points-card-ring">
+      <svg viewBox="0 0 36 36">
+        <circle cx="18" cy="18" r="14" className="points-ring-track" />
+        <circle cx="18" cy="18" r="14" className="points-ring-progress" strokeDasharray="88" strokeDashoffset={ringOffset} />
+      </svg>
+      <svg className="points-card-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7L12 2z" /></svg>
     </div>
-    <p className="points-card-status">{status}</p>
-    <span className="points-card-cta">{T.today.pointsCardCta}<span>→</span></span>
+    <div className="points-card-main">
+      <span className="input-label points-card-label">{T.today.pointsCardTitle} · {T.drumPoints.cardYear}</span>
+      <div className="points-card-line"><strong className="points-card-value">{total}</strong><span className="points-card-status">{status}</span></div>
+    </div>
+    <span className="points-card-go" aria-hidden="true">→</span>
   </button>;
-}
-function PointsLeaderboard({ pointsEnabled, rows, T }: any) {
-  // Hidden entirely for students the admin hasn't opted into the point game, and stays
-  // hidden until at least one point has actually been awarded anywhere -- an all-zero
-  // leaderboard on a brand new feature would read as broken, not motivating.
-  if (!pointsEnabled || !rows || !rows.some((r: any) => Number(r.points) !== 0)) return null;
-  const topRows = rows.slice(0, 6);
-  const maxPoints = Math.max(1, ...topRows.map((r: any) => Number(r.points)));
-  return <div className="form-card">
-    <span className="section-label">{T.today.pointsTitle}</span>
-    <div className="leaderboard">
-      {topRows.map((r: any) => <div key={`${r.pos}-${r.display_name}-${r.is_me}`} className="leaderboard-row">
-        <span className="leaderboard-name">{(Number(r.pos) === 1 ? "🥇 " : Number(r.pos) === 2 ? "🥈 " : Number(r.pos) === 3 ? "🥉 " : "")}{r.is_me ? T.group.you : r.display_name}</span>
-        <div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${Math.max(0, Math.min(100, (Number(r.points) / maxPoints) * 100))}%` }} /></div>
-        <span className="leaderboard-value">{r.points}</span>
-      </div>)}
-    </div>
-  </div>;
 }
 function HomeChallenges({ user, practiceSessions, language, T, onSeeAll, onOpenExercise }: any) {
   const [challenges, setChallenges] = useState<any[]>([]);
@@ -2336,9 +2315,8 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
       <span className="start-cta-text"><strong>{T.today.startPracticeTitle}</strong><small>{T.today.startPracticeSub}</small></span>
       <svg className="start-cta-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
     </button>
-    <YourPointsCard user={user} pointsEnabled={pointsEnabled} rows={pointsRows} onViewPoints={onViewPoints} T={T} />
     <div className="form-card stats-tile stats-icons"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><HomeStat icon="flame" label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><HomeStat icon="crown" label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <HomeStat icon="bars" label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
-    <PointsLeaderboard user={user} pointsEnabled={pointsEnabled} rows={pointsRows} T={T} />
+    <YourPointsCard user={user} pointsEnabled={pointsEnabled} rows={pointsRows} onViewPoints={onViewPoints} T={T} />
     {todayMinutes === 0 && dailyGoal != null && !todayLog?.notes && todaySkillExercises.length === 0 ? <div className="form-card today-goal-card today-empty">
       <div className="today-empty-text">
         <label className="input-label">{T.today.todaySummary}</label>

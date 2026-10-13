@@ -1592,3 +1592,12 @@ html.native .shell.has-timer-banner .page{padding-top:30px}
 /* Rudiment title in the Skill Trainer metronome window: stays clear of both round buttons (metronome left, X right), wraps to two lines when long. */
 .metro-practice .metro-exercise-head{padding:0 38px 0 66px;min-height:38px;margin-top:2px}
 .metro-practice .metro-exercise-name{font-size:22px;line-height:1.12;text-wrap:balance;text-align:center}
+
+/* Points card, compact: one short row (ring, points and place, arrow) instead of a tall card. */
+.points-card.points-card-compact{display:flex;align-items:center;gap:14px;padding:12px 16px}
+.points-card-compact .points-card-main{flex:1;min-width:0}
+.points-card-compact .points-card-label{margin:0 0 2px;font-size:11.5px}
+.points-card-compact .points-card-line{display:flex;align-items:baseline;gap:12px}
+.points-card-compact .points-card-value{font-size:34px}
+.points-card-compact .points-card-status{margin:0;font-size:14px}
+.points-card-compact .points-card-go{color:#ff9b50;font-size:20px;flex-shrink:0}
