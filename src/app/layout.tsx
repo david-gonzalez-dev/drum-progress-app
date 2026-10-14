@@ -1,3 +1,5 @@
+import { CelDefs } from "./celebrations/defs";
+import { AppLaunch } from "./celebrations/launch";
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
@@ -20,5 +22,5 @@ export const viewport: Viewport = IS_NATIVE ? { viewportFit: "cover", themeColor
 // (a statically cached page would keep serving the first request's nonce).
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   await headers();
-  return <html lang="en" className={IS_NATIVE ? "native" : undefined}><body><TabletScale />{children}</body></html>;
+  return <html lang="en" className={IS_NATIVE ? "native" : undefined}><body><TabletScale /><CelDefs /><AppLaunch native={IS_NATIVE} />{children}</body></html>;
 }

@@ -1732,3 +1732,98 @@ html.is-tablet .metro-practice .metro-lead button{width:46px;height:40px;font-si
 html.is-tablet .metro-practice .subdivision-select{font-size:20px;padding:13px 16px}
 html.is-tablet .metro-practice .start,html.is-tablet .metro-practice .metro-actions button{font-size:22px;padding:18px 14px}
 html.is-tablet .metro-practice .metro-section-label{font-size:15px}
+
+/* ---- Celebrations (full-screen reward moments; see src/app/celebrations) ---- */
+.cel-overlay{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:#111111;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation;opacity:0}
+.cel-overlay.adult{background:#0d0e0e}
+.cel-overlay.ready{opacity:1}
+.cel-frame{position:relative;height:min(100vh,200vw);height:min(100dvh,200vw);aspect-ratio:1/2}
+.cel-svg{width:100%;height:100%;display:block;overflow:visible}
+.cel-cont-wrap{position:absolute;left:8%;right:8%;bottom:6%;height:12%;max-height:54px;display:flex}
+.cel-continue{flex:1;border:none;border-radius:16px;background:#ff6b1a;color:#111111;font:800 21px/1 'Barlow Condensed','DM Sans',system-ui,sans-serif;letter-spacing:.08em;box-shadow:0 5px 0 #b9470a;opacity:0;transform:translateY(40px) scale(.9);pointer-events:none;cursor:pointer}
+.cel-overlay.adult .cel-continue{font:700 15px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.04em;border-radius:14px;background:linear-gradient(180deg,#ff9b50,#ff6b1a);color:#120a05;box-shadow:0 10px 30px rgba(255,107,26,.28),inset 0 1px 0 rgba(255,255,255,.35)}
+.cel-continue.show{animation:celPop .5s cubic-bezier(.34,1.56,.64,1) forwards;pointer-events:auto}
+.cel-continue:active{transform:translateY(4px)!important}
+@keyframes celPop{from{opacity:0;transform:translateY(40px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes celFade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){
+  .cel-overlay.ready{animation:celFade .15s ease-out}
+  .cel-continue.show{animation:none;opacity:1;transform:none}
+}
+
+/* Rating sheets after a Skill Trainer session (src/app/feel-sheets.tsx): a centred window like the metronome. */
+.rate-window{padding:22px 18px 16px}
+.feel-title{font:700 28px/1 'Barlow Condensed',sans-serif;margin:0;color:#f5f5f5;text-align:left}
+.feel-sub{font-size:13px;color:#8a8a8a;margin:6px 0 8px}
+.feel-rows{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.feel-row{display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-radius:14px;background:#1f1f1f;border:1px solid #2a2a2a;color:#f2f2f2;font:700 15px 'DM Sans',sans-serif;text-align:left;width:100%}
+.feel-row.on{border-width:1.5px;padding:0 15.5px}
+.feel-dot{width:12px;height:12px;border-radius:50%;flex:none}
+.feel-star{flex:none;margin-left:-1px}
+.feel-check{margin-left:auto;flex:none}
+.feel-foot{position:sticky;bottom:-16px;margin:0 -18px -16px;padding:14px 18px 14px;background:linear-gradient(rgba(21,19,17,0),#151311 22%)}
+.feel-save{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border:0;border-radius:14px;background:#ff6a2b;color:#1a0e08;font:700 16px 'DM Sans',sans-serif}
+.feel-save:disabled{opacity:.4}
+.feel-skip{display:block;width:100%;border:0;background:transparent;color:#7d7d7d;font:500 13px 'DM Sans',sans-serif;margin-top:10px;padding:4px}
+.feel-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px;margin-top:10px}
+.feel-pill i{width:8px;height:8px;border-radius:50%}
+.feel-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+.feel-grid-row{display:contents}
+.feel-tile{height:46px;border-radius:12px;background:#1f1f1f;border:1px solid #2a2a2a;color:#e6e6e6;font:700 14px 'DM Sans',sans-serif;padding:0 6px}
+.feel-tile.on,.feel-chip.on{border:1.5px solid #ff6a2b;background:#2a1c15;color:#ffd9c7}
+.feel-tile.on{padding:0 5.5px}
+.feel-subq{grid-column:1/-1;padding:4px 2px 6px}
+.feel-q{display:block;font-size:12px;color:#8a8a8a;font-weight:700;margin-bottom:8px}
+.feel-chips{display:flex;flex-wrap:wrap;gap:6px}
+.feel-chip{font:700 13px 'DM Sans',sans-serif;padding:7px 12px;border-radius:999px;background:#1f1f1f;border:1px solid #2a2a2a;color:#e6e6e6}
+.feel-chip.on{padding:6.5px 11.5px}
+.feel-warn{display:flex;gap:6px;align-items:flex-start;font-size:12px;color:#e99a9a;margin:10px 0 0;line-height:1.4}
+.feel-warn svg{flex:none;margin-top:1px}
+.feel-more{margin-top:18px}
+.feel-more-label{display:block;font-size:11px;font-weight:700;color:#7d7d7d;letter-spacing:.8px;margin-bottom:8px}
+.feel-links{display:flex;justify-content:space-between;margin-top:14px}
+.feel-links button{border:0;background:transparent;color:#9a9a9a;font:700 13px 'DM Sans',sans-serif;padding:4px 0}
+.feel-links button:last-child{margin-left:auto}
+.feel-note{width:100%;margin-top:10px;min-height:72px;background:#161918;border:1px solid #2c312e;border-radius:14px;padding:12px 14px;font-size:16px;resize:none;color:#f2f2f2}
+.feel-back{display:inline-flex;align-items:center;gap:2px;border:0;background:transparent;color:#9a9a9a;font:700 13px 'DM Sans',sans-serif;padding:0 6px 0 0;margin:-4px 0 10px -4px;height:28px}
+.cel-launch-cover{position:fixed;inset:0;z-index:99998;background:#000}
+
+/* ---- Celebrations: small moments and polish that live inside the app's own screens ---- */
+/* Practice saved: the Save button folds into a circle with a drawn check */
+.cel-save{position:relative}
+.cel-save-label{display:flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap}
+.cel-save-check{position:absolute;left:50%;top:50%;width:0;height:0;transform:translate(-50%,-50%);pointer-events:none;overflow:visible}
+.cel-save.cel-morph{overflow:visible;background:linear-gradient(180deg,#ff9b50,#ff6b1a);animation:none}
+.cel-save.cel-morph .cel-save-check{width:62%;height:62%}
+.cel-save.cel-morph{aspect-ratio:auto}
+.cel-save-rip{position:absolute;left:50%;top:50%;width:0;height:0;border:4px solid #ff9b50;border-radius:50%;transform:translate(-50%,-50%);opacity:0;pointer-events:none;box-sizing:border-box}
+/* Cheer received */
+.cel-cheer{flex-direction:row;align-items:center;gap:12px;animation:none;overflow:visible}
+.cel-cheer-avatar{flex:none;width:40px;height:40px;border-radius:50%;background:#2a2e2c;color:#f6e6d6;display:flex;align-items:center;justify-content:center;font:800 18px 'DM Sans'}
+.cel-cheer-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.cel-cheer-text span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cel-cheer-icon{flex:none;position:relative;width:40px;height:40px;display:block}
+.cel-cheer-icon svg{width:100%;height:100%;display:block;overflow:visible}
+.cel-cheer-rip{position:absolute;left:50%;top:50%;width:100%;height:100%;border:2px solid #ff9b50;border-radius:50%;opacity:0;pointer-events:none}
+/* Welcome shimmer: once a day, one light sweep over Start practice and one soft breath */
+.start-cta{position:relative;overflow:hidden}
+.start-cta.cel-welcome{animation:celBreath .8s ease-in-out .7s both}
+.start-cta.cel-welcome::after{content:"";position:absolute;top:-20%;bottom:-20%;left:0;width:16%;background:#fff;opacity:0;transform:translateX(-120%) skewX(-20deg);animation:celShine .7s cubic-bezier(.65,0,.35,1) .75s both;pointer-events:none}
+@keyframes celBreath{0%,100%{transform:scale(1);box-shadow:0 10px 30px rgba(255,107,26,.28)}50%{transform:scale(1.025);box-shadow:0 10px 38px rgba(255,107,26,.55)}}
+@keyframes celShine{0%{opacity:.28;transform:translateX(-120%) skewX(-20deg)}99%{opacity:.28}100%{opacity:0;transform:translateX(720%) skewX(-20deg)}}
+@media (prefers-reduced-motion: reduce){.start-cta.cel-welcome,.start-cta.cel-welcome::after{animation:none}}
+/* Empty-state drum and loading metronome */
+.cel-empty-logo{display:block;width:250px;max-width:70%;height:auto;margin:6px auto 10px;overflow:visible}
+.cel-loading{display:flex;justify-content:center;align-items:center;min-height:200px}
+.cel-loading-svg{display:block;width:104px;height:auto;overflow:visible}
+.cel-empty{text-align:center}
+.cel-empty .hint{text-align:center}
+
+/* Your points window: taller, with compact history rows and a big amount on the right */
+.modal-center .day-summary.points-detail{min-height:min(620px,80vh);max-width:420px}
+.points-detail .admin-log-list{display:flex;flex-direction:column;gap:8px}
+.points-hist-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#121413;border:1px solid #222724;border-radius:14px;padding:10px 14px}
+.points-hist-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.points-hist-text strong{font:700 15px 'DM Sans'}
+.points-hist-text span{font:500 14px 'DM Sans';color:#9aa19d}
+.points-hist-amount{font:800 30px/1 'Barlow Condensed';flex:none}

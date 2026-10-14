@@ -3,6 +3,7 @@
 // These are STARTING defaults only: nothing here limits what a student can practise, and the student can change difficulty and library later.
 import type { Difficulty } from "./rudiment-grid";
 
+// Band names are kept for the database: "under_10" now means up to 10 years old, "10_13" means 11 to 14, "14_17" means 15 to 17 (see supabase/age-bands-11-14.sql).
 export type AgeBand = "under_10" | "10_13" | "14_17" | "18_plus";
 
 export const AGE_CONFIG: Record<AgeBand, { difficulty: Difficulty; essentials: boolean; unlockMinutes: number }> = {

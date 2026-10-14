@@ -8,6 +8,9 @@ type Lang = "en" | "es" | "nl";
 export type BoardFilter = { category: "consistency" | "skill" | "points"; period: "month" | "year"; level: string };
 type Summary = { opted_in: boolean; eligible: boolean; pos: number | null; total: number; prev_pos: number | null; level: string; board: "under_10" | "10_17" | "18_plus" | null };
 type Row = { pos: number; display_name: string; score: number; detail: number; level: string; is_me: boolean };
+// What the "Overtake" celebration needs when your monthly rank improved: ranks, your score before and after, and the rows around you.
+// `rows` is the picture BEFORE the move, top to bottom: up to 3 players just above you, the last `passed` (at most 3) being the ones you passed.
+export type RankUp = { oldRank: number; newRank: number; passed: number; rows: { rank: number; name: string; score: number }[]; scoreBefore: number; scoreAfter: number; passedNames: string[] };
 
 const TEXT = {
   en: {
@@ -20,7 +23,7 @@ const TEXT = {
     unitDays: "days", unitTempos: "tempos", unitPoints: "points", you: "You", empty: "No one here yet. Be the first!", loadError: "The leaderboard isn't available right now.", loading: "Loading…",
     howConsistency: "Counts days with 5+ minutes of practice. Total minutes are never ranked.", howSkill: "Counts tempos you newly unlocked in the Skill Trainer.", howPoints: "Drum Points: 1 point per minute of Skill Trainer practice, plus points from your teacher.", resets: "Resets automatically each month and year. Your history is never deleted.",
     gateTitle: "Join the worldwide leaderboard", gate1: "Your first name, last initial and scores will be visible to other players who join.", gate2: "Nothing else is shared: no email, notes or practice details.", gate3: "You can leave at any time. Your practice history stays yours.",
-    joinBtn: "Join", leaveBtn: "Leave the leaderboard", leaveConfirm: "Tap again to leave", hiddenNote: "You're not shown on the leaderboard right now (hidden by an administrator).", goSettings: "Go to Settings", needAgeTitle: "Add your date of birth to join", needAge: "Add your date of birth in Settings to join the leaderboard. It stays private.", boards: { under_10: "Under 10", "10_17": "10–17", "18_plus": "18+" }, gates: { under_10: "You are on the Under 10 board: you only see and are seen by other players under 10, with first names only.", "10_17": "You are on the 10–17 board: you only see and are seen by other players aged 10 to 17, with first names only.", "18_plus": "You are on the 18+ board: you only see and are seen by other players aged 18 and older." }, error: "Something went wrong. Please try again.",
+    joinBtn: "Join", leaveBtn: "Leave the leaderboard", leaveConfirm: "Tap again to leave", hiddenNote: "You're not shown on the leaderboard right now (hidden by an administrator).", goSettings: "Go to Settings", needAgeTitle: "Add your date of birth to join", needAge: "Add your date of birth in Settings to join the leaderboard. It stays private.", boards: { under_10: "Up to 10", "10_17": "11–17", "18_plus": "18+" }, gates: { under_10: "You are on the Up to 10 board: you only see and are seen by other players aged 10 and under, with first names only.", "10_17": "You are on the 11–17 board: you only see and are seen by other players aged 11 to 17, with first names only.", "18_plus": "You are on the 18+ board: you only see and are seen by other players aged 18 and older." }, error: "Something went wrong. Please try again.",
   },
   es: {
     eyebrow: "RESUMEN DE PRÁCTICA", title: "CLASIFICACIÓN", subtitle: "Compite con bateristas de todo el mundo", back: "Progreso",
@@ -32,7 +35,7 @@ const TEXT = {
     unitDays: "días", unitTempos: "tempos", unitPoints: "puntos", you: "Tú", empty: "Aún no hay nadie. ¡Sé el primero!", loadError: "La tabla no está disponible ahora mismo.", loading: "Cargando…",
     howConsistency: "Cuenta los días con 5+ minutos de práctica. Los minutos totales nunca se clasifican.", howSkill: "Cuenta los tempos que desbloqueaste de nuevo en el Skill Trainer.", howPoints: "Drum Points: 1 punto por minuto de práctica en el Skill Trainer, más puntos de tu profesor.", resets: "Se reinicia sola cada mes y cada año. Tu historial nunca se borra.",
     gateTitle: "Únete a la tabla mundial", gate1: "Tu nombre, la inicial de tu apellido y tus puntuaciones serán visibles para otros jugadores que se unan.", gate2: "No se comparte nada más: ni email, ni notas, ni detalles de práctica.", gate3: "Puedes salir cuando quieras. Tu historial sigue siendo tuyo.",
-    joinBtn: "Unirme", leaveBtn: "Salir de la tabla", leaveConfirm: "Toca otra vez para salir", hiddenNote: "Ahora mismo no apareces en la tabla (oculto por un administrador).", goSettings: "Ir a Ajustes", needAgeTitle: "Añade tu fecha de nacimiento para unirte", needAge: "Añade tu fecha de nacimiento en Ajustes para unirte a la tabla. Se mantiene privada.", boards: { under_10: "Menos de 10", "10_17": "10–17", "18_plus": "18+" }, gates: { under_10: "Estás en la tabla de menores de 10: solo ves y te ven otros menores de 10, solo con el nombre.", "10_17": "Estás en la tabla de 10–17: solo ves y te ven jugadores de 10 a 17 años, solo con el nombre.", "18_plus": "Estás en la tabla de 18+: solo ves y te ven jugadores de 18 años o más." }, error: "Algo salió mal. Inténtalo de nuevo.",
+    joinBtn: "Unirme", leaveBtn: "Salir de la tabla", leaveConfirm: "Toca otra vez para salir", hiddenNote: "Ahora mismo no apareces en la tabla (oculto por un administrador).", goSettings: "Ir a Ajustes", needAgeTitle: "Añade tu fecha de nacimiento para unirte", needAge: "Añade tu fecha de nacimiento en Ajustes para unirte a la tabla. Se mantiene privada.", boards: { under_10: "Hasta 10", "10_17": "11–17", "18_plus": "18+" }, gates: { under_10: "Estás en la tabla de hasta 10 años: solo ves y te ven otros jugadores de hasta 10 años, solo con el nombre.", "10_17": "Estás en la tabla de 11–17: solo ves y te ven jugadores de 11 a 17 años, solo con el nombre.", "18_plus": "Estás en la tabla de 18+: solo ves y te ven jugadores de 18 años o más." }, error: "Algo salió mal. Inténtalo de nuevo.",
   },
   nl: {
     eyebrow: "OEFENOVERZICHT", title: "RANGLIJST", subtitle: "Meet je met drummers wereldwijd", back: "Voortgang",
@@ -44,7 +47,7 @@ const TEXT = {
     unitDays: "dagen", unitTempos: "tempo's", unitPoints: "punten", you: "Jij", empty: "Nog niemand hier. Wees de eerste!", loadError: "De ranglijst is nu niet beschikbaar.", loading: "Laden…",
     howConsistency: "Telt dagen met 5+ minuten oefenen. Totale minuten tellen nooit mee.", howSkill: "Telt tempo's die je nieuw hebt ontgrendeld in de Skill Trainer.", howPoints: "Drum Points: 1 punt per minuut oefenen in de Skill Trainer, plus punten van je leraar.", resets: "Begint automatisch opnieuw elke maand en elk jaar. Je geschiedenis wordt nooit verwijderd.",
     gateTitle: "Doe mee aan de wereldwijde ranglijst", gate1: "Je voornaam, de initiaal van je achternaam en je scores zijn zichtbaar voor andere spelers die meedoen.", gate2: "Er wordt niets anders gedeeld: geen e-mail, notities of oefendetails.", gate3: "Je kunt op elk moment stoppen. Je oefengeschiedenis blijft van jou.",
-    joinBtn: "Meedoen", leaveBtn: "Stop met de ranglijst", leaveConfirm: "Tik nogmaals om te stoppen", hiddenNote: "Je wordt nu niet getoond op de ranglijst (verborgen door een beheerder).", goSettings: "Naar Instellingen", needAgeTitle: "Voeg je geboortedatum toe om mee te doen", needAge: "Voeg je geboortedatum toe in Instellingen om mee te doen aan de ranglijst. Het blijft privé.", boards: { under_10: "Onder 10", "10_17": "10–17", "18_plus": "18+" }, gates: { under_10: "Je staat op de ranglijst onder 10: je ziet en wordt gezien door andere spelers onder 10, alleen met voornaam.", "10_17": "Je staat op de ranglijst 10–17: je ziet en wordt gezien door spelers van 10 tot 17, alleen met voornaam.", "18_plus": "Je staat op de ranglijst 18+: je ziet en wordt gezien door spelers van 18 en ouder." }, error: "Er ging iets mis. Probeer het opnieuw.",
+    joinBtn: "Meedoen", leaveBtn: "Stop met de ranglijst", leaveConfirm: "Tik nogmaals om te stoppen", hiddenNote: "Je wordt nu niet getoond op de ranglijst (verborgen door een beheerder).", goSettings: "Naar Instellingen", needAgeTitle: "Voeg je geboortedatum toe om mee te doen", needAge: "Voeg je geboortedatum toe in Instellingen om mee te doen aan de ranglijst. Het blijft privé.", boards: { under_10: "Tot 10", "10_17": "11–17", "18_plus": "18+" }, gates: { under_10: "Je staat op de ranglijst tot 10 jaar: je ziet en wordt gezien door andere spelers tot 10 jaar, alleen met voornaam.", "10_17": "Je staat op de ranglijst 11–17: je ziet en wordt gezien door spelers van 11 tot 17, alleen met voornaam.", "18_plus": "Je staat op de ranglijst 18+: je ziet en wordt gezien door spelers van 18 en ouder." }, error: "Er ging iets mis. Probeer het opnieuw.",
   },
 };
 
@@ -67,10 +70,39 @@ function Trophy() {
 }
 
 // The card at the top of the Progress tab.
-export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen }: { db: any; language: Lang; refreshKey: number; onOpen: (f?: Partial<BoardFilter>) => void }) {
+export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen, userId, onRankUp }: { db: any; language: Lang; refreshKey: number; onOpen: (f?: Partial<BoardFilter>) => void; userId?: string; onRankUp?: (info: RankUp) => void }) {
   const t = TEXT[language];
   const [summary, setSummary] = useState<Summary | null>(null);
   const [failed, setFailed] = useState(false);
+  // Adults only: when the monthly rank is better than the last time it was seen, the "Overtake" celebration plays once (with the final rank, however many players were passed).
+  useEffect(() => {
+    if (!onRankUp || !userId || !summary || summary.board !== "18_plus" || !summary.opted_in || summary.pos == null) return;
+    let cancelled = false;
+    const d = new Date();
+    const key = `ds_lb_rank_${userId}_${d.getFullYear()}-${d.getMonth() + 1}`;
+    let stored: { pos: number; score: number } | null = null;
+    try { const raw = localStorage.getItem(key); stored = raw ? JSON.parse(raw) : null; } catch { stored = null; }
+    supabase.rpc("leaderboard", { p_category: "consistency", p_period: "month", p_level: "all", p_limit: 50 }).then(({ data, error }: any) => {
+      if (cancelled || error || !Array.isArray(data)) return;
+      const rows: Row[] = data.map((r: any) => ({ pos: Number(r.pos), display_name: r.display_name, score: Number(r.score), detail: Number(r.detail ?? 0), level: r.level, is_me: !!r.is_me }));
+      const idx = rows.findIndex((r) => r.is_me);
+      if (idx < 0) return;
+      const me = rows[idx];
+      try { localStorage.setItem(key, JSON.stringify({ pos: me.pos, score: me.score })); } catch { /* the celebration may play again next time */ }
+      if (!stored || me.pos >= stored.pos) return;
+      const n = stored.pos - me.pos;
+      const passedRows = rows.slice(idx + 1, idx + 1 + Math.min(3, n));
+      if (!passedRows.length) return;
+      const keepAbove = 3 - passedRows.length;
+      const above = rows.slice(Math.max(0, idx - keepAbove), idx);
+      onRankUp({
+        oldRank: stored.pos, newRank: me.pos, passed: n,
+        rows: [...above.map((r) => ({ rank: r.pos, name: r.display_name, score: r.score })), ...passedRows.map((r) => ({ rank: r.pos - 1, name: r.display_name, score: r.score }))],
+        scoreBefore: stored.score, scoreAfter: me.score, passedNames: passedRows.map((r) => r.display_name),
+      });
+    });
+    return () => { cancelled = true; };
+  }, [summary, userId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     let cancelled = false;
     supabase.rpc("leaderboard_summary").then(({ data, error }: any) => {

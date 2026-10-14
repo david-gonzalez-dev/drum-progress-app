@@ -5,9 +5,14 @@ import { createClient } from "@supabase/supabase-js";
 import { enqueueTick, dueEvent, type StrokeEvent } from "./stroke-guide";
 import { gridFor, effectiveRhythm, allowedClicks, layoutRows, fitBox, sideIndex, type Hand, type Difficulty } from "./rudiment-grid";
 import { AGE_CONFIG, asAgeBand, type AgeBand } from "./age-config";
-import { LeaderboardCard, LeaderboardScreen, StudentLeaderboardCard, type BoardFilter } from "./leaderboard";
+import { LeaderboardCard, LeaderboardScreen, StudentLeaderboardCard, type BoardFilter, type RankUp } from "./leaderboard";
 import { NotationStaff } from "./notation";
 import { pushSupported, pushWanted, enablePush, disablePush, removeToken, refreshPush, listenForPushTaps } from "./push";
+import { RatingSheet, HoldBackSheet, FEEL_EXTRA_TAGS } from "./feel-sheets";
+import { useCelebrations } from "./celebrations/overlay";
+import { SaveButton, CheerToast, EmptyLogo, LoadingMetronome } from "./celebrations/inline";
+import { CEL_TEXT, STREAK_MILESTONES } from "./celebrations/text";
+import type { Celebration } from "./celebrations/engine";
 
 type Tab = "today" | "practice" | "group" | "progress" | "settings" | "admin";
 type Log = { minutes: number; seconds: number; items: string[]; customItems: string[]; notes: string; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null };
@@ -81,6 +86,20 @@ async function audioAlive(ctx: AudioContext): Promise<boolean> {
   await sleepMs(160);
   return ctx.currentTime - t0 > 0.08;
 }
+// Celebrations play sound on the same shared context. Called inside the tap that is likely to lead to one (rating Save, Add to today), because
+// iOS only lets a sleeping context wake up from a tap. Only then, so the phone's other audio is not interrupted by a context nobody needs.
+function primeCelebrationAudio() { try { const ctx = getSharedAudio(); if (ctx.state !== "running") void wakeAudio(ctx); } catch { /* no sound available */ } }
+// A celebration that was already shown for this key (e.g. today's goal) is never shown again.
+function celebratedBefore(key: string) { try { return localStorage.getItem(key) === "1"; } catch { return false; } }
+function markCelebrated(key: string) { try { localStorage.setItem(key, "1"); } catch { /* not saved: at worst it plays twice */ } }
+// Kids: the milestone behind "The Big Hit" -- the very first point (1), or crossing every 10th point of the all-time total (10, 20, ...). null = a normal hit.
+function bigPointMilestone(before: number, after: number): number | null {
+  if (before <= 0 && after > 0) return 1;
+  const k = Math.floor(after / 10) * 10;
+  return k >= 10 && k > before ? k : null;
+}
+// The small celebration sounds only use the shared audio if it is already awake (they never wake it up themselves).
+function peekSharedAudio(): AudioContext | null { return sharedAudio && sharedAudio.state === "running" ? sharedAudio : null; }
 function dropSharedAudio() { try { void sharedAudio?.close(); } catch { /* already closed */ } sharedAudio = null; }
 async function wakeAudio(ctx: AudioContext) {
   if (ctx.state === "running") return;
@@ -116,7 +135,7 @@ const SESSION_ISSUE_GROUPS_BASE: { title: { en: string; es: string }; tags: { en
   ] },
 ];
 const SESSION_ISSUE_GROUPS = SESSION_ISSUE_GROUPS_BASE.map((g) => ({ title: { ...g.title, nl: nlName(g.title.en) }, tags: withNl(g.tags) }));
-const SESSION_ISSUE_TAGS = SESSION_ISSUE_GROUPS.flatMap((g) => g.tags);
+const SESSION_ISSUE_TAGS = [...SESSION_ISSUE_GROUPS.flatMap((g) => g.tags), ...FEEL_EXTRA_TAGS.filter((x) => !SESSION_ISSUE_GROUPS.some((g) => g.tags.some((t) => t.en === x.en)))];
 // Items named after rudiments or books also stay in English everywhere.
 const ENGLISH_ONLY_ITEMS = new Set(["Rudiments", "Single Strokes", "Double Strokes", "Paradiddles", "Stick Control", "Fills"]);
 const PRACTICE_ITEMS = withNl([
@@ -155,7 +174,7 @@ function practicedItemLabel(en: string, lang: Lang) {
 // two sources stay visually distinct wherever this merged chip list is shown.
 // Every time a tempo was unlocked (reached "comfortable" or better for the required minutes), newest first, from your own sessions.
 type TempoUnlock = { key: string; exerciseEn: string; bpm: number; date: string };
-function tempoUnlocksFrom(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string }[]): TempoUnlock[] {
+function tempoUnlocksFrom(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; duration_seconds?: number | null; practiced_on: string }[]): TempoUnlock[] {
   const byExercise: Record<string, typeof sessions> = {};
   sessions.forEach((x) => { (byExercise[x.item_en] ??= []).push(x); });
   const events: TempoUnlock[] = [];
@@ -164,7 +183,7 @@ function tempoUnlocksFrom(sessions: { item_en: string; bpm: number; rating: stri
     const qualifying: Record<number, number> = {};
     const unlockedBefore = new Set<number>();
     Array.from(new Set(list.map((x) => x.practiced_on))).sort().forEach((date) => {
-      list.filter((x) => x.practiced_on === date).forEach((x) => { if (x.rating === "comfortable" || x.rating === "mastered") qualifying[x.bpm] = (qualifying[x.bpm] ?? 0) + x.duration_minutes; });
+      list.filter((x) => x.practiced_on === date).forEach((x) => { if (x.rating === "comfortable" || x.rating === "mastered") qualifying[x.bpm] = (qualifying[x.bpm] ?? 0) + sessionMinutesExact(x); });
       levels.forEach((level) => {
         if (!unlockedBefore.has(level) && (qualifying[level] ?? 0) >= UNLOCK_MINUTES) { unlockedBefore.add(level); events.push({ key: `${exerciseEn}::${level}`, exerciseEn, bpm: level, date }); }
       });
@@ -209,6 +228,8 @@ function PracticedChip({ item, skill, language, onOpen }: { item: string; skill:
 }
 // Time practised in the Skill Trainer is locked: it is part of the day's total, but nobody can lower the total below it
 // (not in the calendar editor, not by resetting the day). Newer sessions store exact seconds, older ones only whole minutes.
+// Minutes a session really lasted (from the exact seconds when they were saved). `duration_minutes` is rounded UP to at least 1, so a 3-second test would otherwise count as a full minute toward unlocking a tempo.
+function sessionMinutesExact(s: { duration_seconds?: number | null; duration_minutes: number }): number { return s.duration_seconds != null ? s.duration_seconds / 60 : s.duration_minutes; }
 function sessionSeconds(s: { duration_seconds?: number | null; duration_minutes: number }): number { return s.duration_seconds != null ? s.duration_seconds : s.duration_minutes * 60; }
 function lockedSecondsFor(sessions: { practiced_on: string; duration_seconds?: number | null; duration_minutes: number }[], log: { minutes: number; seconds?: number } | undefined, date: string): number {
   const skill = sessions.filter((x) => x.practiced_on === date).reduce((sum, x) => sum + sessionSeconds(x), 0);
@@ -486,8 +507,8 @@ const BACKGROUND_AHEAD_SECONDS = 45;
 function setUnlockMinutesForAge(band: AgeBand | null) { UNLOCK_MINUTES = band ? AGE_CONFIG[band].unlockMinutes : 2; }
 const MAX_PINNED_EXERCISES = 5;
 const RATING_ICON: Record<string, string> = { not_ready: "🔴", tense: "🟠", almost: "🟡", comfortable: "🟢", mastered: "⭐" };
-function qualifyingMinutesFor(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[], itemEn: string, targetBpm: number) {
-  return sessions.filter((s) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum, s) => sum + s.duration_minutes, 0);
+function qualifyingMinutesFor(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; duration_seconds?: number | null }[], itemEn: string, targetBpm: number) {
+  return sessions.filter((s) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum, s) => sum + sessionMinutesExact(s), 0);
 }
 function tierProgressFor(sessions: { item_en: string; bpm: number; rating: string; duration_minutes: number }[], itemEn: string, tier: { min: number; max: number }) {
   const levels = bpmLevelsFor(itemEn).filter((l) => l >= tier.min && l <= tier.max);
@@ -634,7 +655,7 @@ const translations = {
       subdivisionQuarter: "Quarter Notes", subdivisionEighth: "8th Notes", subdivisionTriplet: "Triplets", subdivisionSixteenth: "16th Notes", subdivisionSixteenthTriplet: "16th Note Triplets",
       ratingNotReady: "Not ready", ratingTense: "Tense", ratingAlmost: "Almost there", ratingComfortable: "Comfortable", ratingMastered: "Mastered",
       rateTitle: "HOW DID THAT FEEL?", rateSubtitle: (bpm: number) => `Rate your session at ${bpm} BPM to save it.`, skipRating: "Skip, don't log this",
-      issueLabel: "WHAT HAPPENED? (OPTIONAL)", sessionNotePlaceholder: "Add a note (optional)", saveRating: "Save",
+      issueLabel: "WHAT HAPPENED? (OPTIONAL)", issueTitle: "What happened?", issueHint: "Optional. Tap anything that applies.", sessionNotePlaceholder: "Add a note (optional)", saveRating: "Save",
       backToBook: "Back to Practice Mode", couldNotSaveSession: "Could not save this session.",
       categoryRudiments: "Rudiments", categoryExercises: "Exercises", categoryRhythms: "Rhythms",
       pin: "Pin", pinned: "Pinned",
@@ -814,7 +835,7 @@ const translations = {
       subdivisionQuarter: "Negras", subdivisionEighth: "Corcheas", subdivisionTriplet: "Tresillos", subdivisionSixteenth: "Semicorcheas", subdivisionSixteenthTriplet: "Tresillos de semicorcheas",
       ratingNotReady: "No listo", ratingTense: "Con tensión", ratingAlmost: "Casi listo", ratingComfortable: "Cómodo", ratingMastered: "Dominado",
       rateTitle: "¿CÓMO TE SENTISTE?", rateSubtitle: (bpm: number) => `Califica tu sesión a ${bpm} BPM para guardarla.`, skipRating: "Omitir, no guardar esto",
-      issueLabel: "¿QUÉ PASÓ? (OPCIONAL)", sessionNotePlaceholder: "Añade una nota (opcional)", saveRating: "Guardar",
+      issueLabel: "¿QUÉ PASÓ? (OPCIONAL)", issueTitle: "¿Qué pasó?", issueHint: "Opcional. Toca lo que aplique.", sessionNotePlaceholder: "Añade una nota (opcional)", saveRating: "Guardar",
       backToBook: "Volver a Modo práctica", couldNotSaveSession: "No se pudo guardar esta sesión.",
       categoryRudiments: "Rudiments", categoryExercises: "Ejercicios", categoryRhythms: "Ritmos",
       pin: "Fijar", pinned: "Fijado",
@@ -994,7 +1015,7 @@ const translations = {
       subdivisionQuarter: "Kwartnoten", subdivisionEighth: "Achtste noten", subdivisionTriplet: "Triolen", subdivisionSixteenth: "Zestiende noten", subdivisionSixteenthTriplet: "Zestiende triolen",
       ratingNotReady: "Nog niet klaar", ratingTense: "Gespannen", ratingAlmost: "Bijna", ratingComfortable: "Comfortabel", ratingMastered: "Beheerst",
       rateTitle: "HOE VOELDE DAT?", rateSubtitle: (bpm: number) => `Beoordeel je sessie op ${bpm} BPM om hem op te slaan.`, skipRating: "Overslaan, niet loggen",
-      issueLabel: "WAT GEBEURDE ER? (OPTIONEEL)", sessionNotePlaceholder: "Voeg een notitie toe (optioneel)", saveRating: "Opslaan",
+      issueLabel: "WAT GEBEURDE ER? (OPTIONEEL)", issueTitle: "Wat gebeurde er?", issueHint: "Optioneel. Tik aan wat past.", sessionNotePlaceholder: "Voeg een notitie toe (optioneel)", saveRating: "Opslaan",
       backToBook: "Terug naar oefenmodus", couldNotSaveSession: "Deze sessie kon niet worden opgeslagen.",
       categoryRudiments: "Rudiments", categoryExercises: "Oefeningen", categoryRhythms: "Ritmes",
       pin: "Vastzetten", pinned: "Vastgezet",
@@ -1382,7 +1403,6 @@ export default function Home() {
   }
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState("");
-  const [progressToast, setProgressToast] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const { current: streak, longest: longestStreak } = useMemo(() => calculateStreaks(logs, dateKey), [logs]);
   // Rudiments this student actually logs most often float to the top of the picker instead of
@@ -1432,6 +1452,21 @@ export default function Home() {
   const [drumState, setDrumState] = useState<{ eligible: boolean; enabled: boolean; prompted: boolean } | null>(null);
   const [showPointsAsk, setShowPointsAsk] = useState(false);
   const [pointsGain, setPointsGain] = useState<PointsGain | null>(null);
+  // Reward animations (src/app/celebrations): kids get "The Big Hit" for points; everyone else gets tempo unlocked, daily goal, streak and leaderboard moments.
+  const { celebrate, overlay: celebrationOverlay, busy: celebrating, whenIdle: whenCelebrationsIdle } = useCelebrations({ getAudio: getSharedAudio, language });
+  // Streak milestone (3, 7, 14, 30, 100 days): "Ignite". Only when the streak GROWS to one of those days while the app is open (not when the data first loads), once per day.
+  const lastStreak = useRef<number | null>(null);
+  useEffect(() => {
+    if (!userDataReady || !user) { lastStreak.current = null; return; }
+    const prev = lastStreak.current;
+    lastStreak.current = streak;
+    if (prev == null || streak <= prev || pointsEnabled || !STREAK_MILESTONES.includes(streak)) return;
+    const key = `ds_streak_${user.id}_${streak}_${dateKey}`;
+    if (celebratedBefore(key)) return;
+    markCelebrated(key);
+    const C = CEL_TEXT[language];
+    celebrate({ kind: "streak", cfg: { n: streak, label: C.streakLabel, sub: C.streakSub(streak) } });
+  }, [streak, userDataReady]); // eslint-disable-line react-hooks/exhaustive-deps
   const T = translations[language];
   setUnlockMinutesForAge(ageGroup);
   const [skillTab, setSkillTab] = useState<"rudiments" | "exercises">("rudiments");
@@ -1503,7 +1538,12 @@ export default function Home() {
       const fresh = completed.filter((c: any) => !seen!.includes(c.id));
       if (!fresh.length || cancelled) return;
       try { localStorage.setItem(key, JSON.stringify([...seen, ...fresh.map((c: any) => c.id)])); } catch { /* ignore */ }
-      setWonPopup((current) => [...current, ...fresh.filter((f: any) => !current.some((x) => x.id === f.id))]);
+      if (pointsEnabled) setWonPopup((current) => [...current, ...fresh.filter((f: any) => !current.some((x) => x.id === f.id))]); // kids keep the pop-up
+      else {
+        // Adults: "The medal" replaces the pop-up.
+        const C = CEL_TEXT[language];
+        fresh.forEach((c: any) => celebrate({ kind: "challenge", cfg: { title: C.challengeTitle, sub: C.challengeSub(c.length_days, challengeExerciseLabel(c.exercise_en, language)) } }));
+      }
     })();
     return () => { cancelled = true; };
   }, [user?.id, userDataReady, practiceSessions, logs]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1671,6 +1711,12 @@ export default function Home() {
     if (error || !r) return null;
     return { points: Number(r.points), pos: Number(r.pos), total: Number(r.total), above_name: r.above_name ?? null, above_gap: r.above_gap != null ? Number(r.above_gap) : null };
   }
+  // All-time Drum Points (the kids' "Big Hit" milestone looks at this, not at this year's total).
+  async function fetchTotalPoints(): Promise<number | null> {
+    const { data, error } = await supabase.rpc("drum_points_summary", { p_period: "all" });
+    const r: any = Array.isArray(data) ? data[0] : data;
+    return error || !r ? null : Number(r.points);
+  }
   async function skipOnboarding() {
     if (!user) return;
     setShowOnboarding(false);
@@ -1678,6 +1724,8 @@ export default function Home() {
   }
   async function finishOnboarding(selectedExercises: string[], goalMinutes: number | null, kidModeChoice: boolean, band: AgeBand | null) {
     if (!user) return;
+    primeCelebrationAudio();
+    { const C = CEL_TEXT[language]; celebrate({ kind: "onboard", cfg: { title: C.onboardTitle, sub: C.onboardSub, cont: C.onboardCont } }); } // "You're ready"
     setShowOnboarding(false);
     if (selectedExercises.length) {
       const pinResults = await Promise.all(selectedExercises.map((en, i) => supabase.from("pinned_exercises").insert({ user_id: user.id, exercise_en: en, sort_order: i })));
@@ -1720,6 +1768,12 @@ export default function Home() {
     // The Skill Trainer part of the day can never be lowered: if a total below it arrives (from any screen), it is raised back up to it.
     const lockedSec = lockedSecondsFor(practiceSessions, logs[targetDate], targetDate);
     if (targetMinutes * 60 + (targetSeconds ?? 0) < lockedSec) { targetMinutes = Math.floor(lockedSec / 60); targetSeconds = lockedSec % 60; }
+    // Does this save close today's daily goal for the first time? (Adults only.) If so the audio is woken up now, inside the tap.
+    const beforeLog = logs[targetDate], beforeSec = beforeLog ? beforeLog.minutes * 60 + (beforeLog.seconds ?? 0) : 0;
+    const goalKey = `ds_goal_${user.id}_${dateKey}`;
+    const reachesGoal = targetDate === dateKey && !!dailyGoal && !pointsEnabled && beforeSec < dailyGoal * 60 && targetMinutes * 60 + (targetSeconds ?? 0) >= dailyGoal * 60 && !celebratedBefore(goalKey);
+    const startsMilestoneStreak = targetDate === dateKey && !pointsEnabled && !(beforeLog?.minutes > 0) && targetMinutes > 0 && STREAK_MILESTONES.includes(streak + 1);
+    if (reachesGoal || startsMilestoneStreak) primeCelebrationAudio();
     // used_metronome is only ever included (and only ever true) when a metronome session
     // actually contributed to this save -- omitted otherwise so a later plain edit can't
     // clobber an earlier metronome session's flag back to false.
@@ -1734,6 +1788,12 @@ export default function Home() {
     if (failed(await supabase.from("practice_log_items").delete().eq("log_id", log.id))) return false;
     if (itemRows?.length && failed(await supabase.from("practice_log_items").insert(itemRows.map((item) => ({ log_id: log.id, item_id: item.id }))))) return false;
     setLogs((current) => ({ ...current, [targetDate]: { minutes: targetMinutes, seconds: targetSeconds ?? 0, items: catalogTags, customItems: customToSave, notes: targetNotes, equipment: targetEquipment, drumsetMinutes: targetDrumsetMinutes ?? null, padMinutes: targetPadMinutes ?? null } }));
+    // Daily goal reached for the first time today: "The ring closes" (once per day).
+    if (reachesGoal && dailyGoal) {
+      markCelebrated(goalKey);
+      const C = CEL_TEXT[language];
+      celebrate({ kind: "goal", cfg: { from: Math.floor(beforeSec / 60), goal: dailyGoal, unit: C.goalUnit, title: C.goalTitle } });
+    }
     return true;
   }
   async function deleteLogFor(targetDate: string) {
@@ -1748,27 +1808,57 @@ export default function Home() {
   }
   async function logPracticeSession(itemEn: string, bpm: number, rating: string, durationMinutes: number, elapsedSeconds: number = durationMinutes * 60, issues: string[] = [], note = "") {
     if (!user) return false;
+    // Will this save lead to a celebration? Then the audio is woken up now, inside the tap (iOS only allows that from a tap).
+    const priorQualifying = qualifyingMinutesFor(practiceSessions, itemEn, bpm);
+    const unlocksTempo = !pointsEnabled && (rating === "comfortable" || rating === "mastered") && priorQualifying < UNLOCK_MINUTES && priorQualifying + elapsedSeconds / 60 >= UNLOCK_MINUTES && bpmLevelsFor(itemEn).includes(bpm);
+    const todaySec = (Number(minutes) || 0) * 60 + (Number(seconds) || 0);
+    const reachesGoal = !pointsEnabled && !!dailyGoal && todaySec < dailyGoal * 60 && todaySec + elapsedSeconds >= dailyGoal * 60;
+    const startsMilestoneStreak = !pointsEnabled && !(logs[dateKey]?.minutes > 0) && STREAK_MILESTONES.includes(streak + 1);
+    const priorAtLevel = practiceSessions.filter((s) => s.item_en === itemEn && s.bpm === bpm);
+    const priorBestRank = priorAtLevel.reduce((best, s) => Math.max(best, RATING_RANK[s.rating] ?? 0), 0);
+    const ratingImproves = priorAtLevel.length > 0 && (RATING_RANK[rating] ?? 0) > priorBestRank;
+    if (pointsEnabled || unlocksTempo || reachesGoal || startsMilestoneStreak || ratingImproves) primeCelebrationAudio();
     const { data: exerciseRow } = await supabase.from("practice_exercises").select("id").eq("name_en", itemEn).maybeSingle();
-    const pointsBefore = pointsEnabled ? await fetchPointsSummary() : null;
+    const [pointsBefore, totalBefore] = pointsEnabled ? await Promise.all([fetchPointsSummary(), fetchTotalPoints()]) : [null, null];
     const sessionRow: any = { user_id: user.id, practice_exercise_id: exerciseRow?.id ?? null, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey, issues, notes: note || null, duration_seconds: Math.max(0, Math.round(elapsedSeconds)) };
     let { error } = await supabase.from("practice_sessions").insert(sessionRow);
     // A database that does not have the seconds column yet: save the session the old way, so practice is never lost.
     if (error && /duration_seconds/.test(error.message)) { delete sessionRow.duration_seconds; ({ error } = await supabase.from("practice_sessions").insert(sessionRow)); }
     if (error) { setAuthError(error.message); return false; }
-    if (pointsBefore) fetchPointsSummary().then((after) => { if (after && after.points > pointsBefore.points) setPointsGain({ prev: pointsBefore, next: after, earned: after.points - pointsBefore.points }); });
-    // Celebrate a genuine new personal-best rating at this exact exercise + BPM (not just "better
-    // than last time", which could just mean re-reaching a level already hit before).
-    const priorSessions = practiceSessions.filter((s) => s.item_en === itemEn && s.bpm === bpm);
-    if (priorSessions.length > 0) {
-      const newRank = RATING_RANK[rating] ?? 0;
-      const priorBest = priorSessions.reduce((best, s) => (RATING_RANK[s.rating] ?? 0) > (RATING_RANK[best.rating] ?? 0) ? s : best, priorSessions[0]);
-      if (newRank > (RATING_RANK[priorBest.rating] ?? 0)) {
-        const ratingLabel: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
-        const earliestDate = priorSessions.reduce((min, s) => (s.practiced_on < min ? s.practiced_on : min), priorSessions[0].practiced_on);
-        const days = Math.max(1, Math.round((new Date(dateKey + "T12:00:00").getTime() - new Date(earliestDate + "T12:00:00").getTime()) / 86400000));
-        const exerciseLabel = PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.[language] ?? itemEn;
-        setProgressToast(T.practiceMode.improvedToast(ratingLabel[priorBest.rating] ?? priorBest.rating, ratingLabel[rating] ?? rating, exerciseLabel, bpm, days));
+    if (pointsBefore) {
+      const [after, totalAfter] = await Promise.all([fetchPointsSummary(), fetchTotalPoints()]);
+      if (after && after.points > pointsBefore.points) {
+      const earned = after.points - pointsBefore.points;
+      // "The Big Hit": the points just earned. It replaces the star pop-up; the ranking opens once the celebration is closed.
+      const C = CEL_TEXT[language];
+      const milestone = totalBefore != null && totalAfter != null ? bigPointMilestone(totalBefore, totalAfter) : null;
+      // Moved up the Drum Points ranking (this year)? Then "Overtake" plays right after the points celebration, with the real rows around you.
+      if (after.pos < pointsBefore.pos) {
+        const { data: board } = await supabase.rpc("drum_points_board", { p_period: "year", p_limit: 30 });
+        const rows: { pos: number; display_name: string; points: number; is_me: boolean }[] = Array.isArray(board) ? board : [];
+        const idx = rows.findIndex((r) => r.is_me);
+        const n = pointsBefore.pos - after.pos;
+        const passedRows = idx >= 0 ? rows.slice(idx + 1, idx + 1 + Math.min(3, n)) : [];
+        if (passedRows.length) {
+          const above = rows.slice(Math.max(0, idx - (3 - passedRows.length)), idx);
+          celebrateRankUp({
+            oldRank: pointsBefore.pos, newRank: after.pos, passed: n,
+            rows: [...above.map((r) => ({ rank: Number(r.pos), name: r.display_name, score: Number(r.points) })), ...passedRows.map((r) => ({ rank: Number(r.pos) - 1, name: r.display_name, score: Number(r.points) }))],
+            scoreBefore: pointsBefore.points, scoreAfter: after.points, passedNames: passedRows.map((r) => r.display_name),
+          }, { unit: C.rankUnitPoints, sub: C.rankSubYear(after.pos) });
+        }
       }
+      celebrate({ kind: "kids", cfg: { n: earned, m: milestone != null, label: milestone != null ? (milestone === 1 ? C.firstPoint : C.nthPoint(milestone)) : earned > 1 ? C.points : C.point } });
+      }
+    }
+    // "Rating improved": a genuinely better rating than the best one so far at this exact exercise + BPM (not just "better than last time"),
+    // when no new tempo unlocks (that plays "Tempo unlocked" instead). Replaces the old party-emoji pop-up.
+    if (ratingImproves && !unlocksTempo) {
+      const priorBest = priorAtLevel.reduce((best, s) => (RATING_RANK[s.rating] ?? 0) > (RATING_RANK[best.rating] ?? 0) ? s : best, priorAtLevel[0]);
+      const days = Math.max(0, Math.round((new Date(dateKey + "T12:00:00").getTime() - new Date(priorBest.practiced_on + "T12:00:00").getTime()) / 86400000));
+      const P = T.practiceMode, C = CEL_TEXT[language];
+      const exerciseLabel = PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.[language] ?? itemEn;
+      celebrate({ kind: "rated", cfg: { kids: pointsEnabled, from: RATING_ORDER.indexOf(priorBest.rating), to: RATING_ORDER.indexOf(rating), days, exercise: exerciseLabel, bpm, labels: [P.ratingNotReady, P.ratingTense, P.ratingAlmost, P.ratingComfortable, P.ratingMastered], title: pointsEnabled ? C.ratedTitleKids : C.ratedTitle, words: C.ratedWords } });
     }
     // Merge the exact elapsed time into today's practice_logs total using the same floor/modulo
     // carry as the standalone Metronome's "add time" flow, instead of adding the rounded
@@ -1786,7 +1876,47 @@ export default function Home() {
     const isSplit = equipment === "both";
     await saveLogFor(dateKey, newMinutes, selected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, newSeconds, customItems);
     setPracticeSessions((current) => [...current, { item_en: itemEn, bpm, rating, duration_minutes: durationMinutes, duration_seconds: Math.max(0, Math.round(elapsedSeconds)), practiced_on: dateKey, issues, notes: note || null, created_at: new Date().toISOString() }]);
+    // Tempo unlocked, for the first time: "The dial" (adults; kids get their points celebration instead).
+    // Finishing the last tempo of a level (Beginner, Intermediate ...) plays "Level up" instead of "Tempo unlocked".
+    if (unlocksTempo) celebrate(levelUpCelebration(itemEn, bpm) ?? tempoCelebration(itemEn, bpm));
     return true;
+  }
+  // The level (tier) of this exercise that the new tempo completes, if any, and the next level it opens. The top two levels have no scene yet (the designer made 1 to 3 chevrons).
+  function levelUpCelebration(itemEn: string, to: number): Celebration | null {
+    const tiers = tiersFor(itemEn), levels = bpmLevelsFor(itemEn);
+    const unlocked = (l: number) => l === to || qualifyingMinutesFor(practiceSessions, itemEn, l) >= UNLOCK_MINUTES;
+    const idx = tiers.findIndex((t) => to >= t.min && to <= t.max && levels.filter((l) => l >= t.min && l <= t.max).every(unlocked));
+    if (idx < 0 || idx >= tiers.length - 2) return null;
+    const rungs = levels.filter((l) => l >= tiers[idx].min && l <= tiers[idx].max);
+    if (rungs.length < 2) return null;
+    const C = CEL_TEXT[language], P = T.practiceMode;
+    const lvl: Record<string, string> = { beginner: P.tierBeginner, intermediate: P.tierIntermediate, advanced: P.tierAdvanced, legend: P.tierLegend };
+    const cap = (x: string) => x.charAt(0) + x.slice(1).toLowerCase();
+    const done = lvl[tiers[idx].key] ?? tiers[idx].key.toUpperCase(), next = lvl[tiers[idx + 1].key] ?? tiers[idx + 1].key.toUpperCase();
+    const name = PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.[language] ?? itemEn;
+    return { kind: "mastered", cfg: { name: name.toUpperCase(), rungs, levelName: cap(done), nextName: next.toUpperCase(), chevrons: idx + 2, title: C.masteredTitle(cap(done)), sub: C.masteredSub(name, cap(next)) } };
+  }
+  // Leaderboard "Overtake": played once with the final rank. The title names who was passed (one name) or how many.
+  function celebrateRankUp(info: RankUp, opts?: { unit?: string; sub?: string }) {
+    const C = CEL_TEXT[language];
+    const short = (name: string) => (name.length > 14 ? name.slice(0, 13) + "…" : name);
+    celebrate({ kind: "rank", cfg: {
+      oldRank: info.oldRank, newRank: info.newRank, passed: info.passed, rows: info.rows, meName: C.you, scoreBefore: info.scoreBefore, scoreAfter: info.scoreAfter, unit: opts?.unit ?? C.rankUnit,
+      label: C.rankLabel, title: info.passed === 1 ? C.rankPassedOne(short(info.passedNames[0])) : C.rankPassedMany(info.passed), sub: opts?.sub ?? C.rankSub(info.newRank),
+    } });
+  }
+  // The dial runs over this exercise's own ladder (its lowest to highest BPM); it starts from the highest tempo unlocked below the new one.
+  function tempoCelebration(itemEn: string, to: number): Celebration {
+    const C = CEL_TEXT[language];
+    const levels = bpmLevelsFor(itemEn);
+    const unlocked = (l: number) => l === to || qualifyingMinutesFor(practiceSessions, itemEn, l) >= UNLOCK_MINUTES;
+    const below = levels.filter((l) => l < to && unlocked(l));
+    const from = below.length ? below[below.length - 1] : levels[0];
+    const next = levels.find((l) => l > to && !unlocked(l));
+    const min = levels[0], max = levels[levels.length - 1];
+    const tickValues = levels.filter((l) => l % 10 === 0 || l === min || l === max || l === to || l === from);
+    const name = (PRACTICE_EXERCISES.find((e) => e.en === itemEn)?.[language] ?? itemEn).toUpperCase();
+    return { kind: "tempo", cfg: { name, from, to, min, max, step: 10, tickValues, title: C.tempoTitle, sub: next != null ? C.tempoNext(next) : C.tempoTop, bpm: C.bpm } };
   }
   async function resetPracticeLevel(itemEn: string, bpm: number) {
     if (!user) return false;
@@ -1848,29 +1978,19 @@ export default function Home() {
   }
   async function signOut() { try { await removeToken(supabase); } catch { /* keep going */ } await supabase.auth.signOut(); }
   if (passwordRecovery) return <ResetPassword onDone={() => setPasswordRecovery(false)} />;
-  if (loading) return <main className="shell"><div className="auth-shell"><p className="eyebrow">DRUMSKILLS</p><h1>LOADING<span>.</span></h1></div></main>;
+  if (loading) return <main className="shell"><div className="auth-shell"><LoadingMetronome /></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
   const hasUnreadCheers = cheerUnreadCount(cheers, user.id, cheersSeenAt) > 0;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className={timerBanner && metroBanner ? "shell has-timer-banner has-two-banners" : timerBanner || metroBanner ? "shell has-timer-banner" : "shell"}>
     {tab === "today" && <Today onGoToProgress={() => { setTab("progress"); window.scrollTo(0, 0); }} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("home"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setSkillTab("rudiments"); setPracticeStep("skill"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} onOpenMetronome={() => setMetronome(true)} onRemoveOther={resetPractice} picker={{ sortedRudiments, sortedExercises, userItems, userBooks, onAddUserItem: addUserPracticeItem, onRemoveUserItem: removeUserPracticeItem }} displayName={displayName} language={language} T={T} />}
-    {tab === "practice" && <PracticeMode onMetronomeToneChange={changeMetronomeTone} skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} practiceDifficulty={practiceDifficulty} T={T} />}
+    {tab === "practice" && <PracticeMode whenCelebrationsDone={whenCelebrationsIdle} onMetronomeToneChange={changeMetronomeTone} skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} practiceDifficulty={practiceDifficulty} T={T} />}
     {tab === "group" && <Group onGroupCount={setGroupCount} user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
-    {tab === "progress" && <Progress onOpenExercise={openExerciseDetail} onOpenSettings={() => { setTab("settings"); window.scrollTo(0, 0); }} practiceSessions={practiceSessions} logs={logs} user={user} language={language} kidMode={kidMode} T={T} />}
+    {tab === "progress" && <Progress onRankUp={celebrateRankUp} onOpenExercise={openExerciseDetail} onOpenSettings={() => { setTab("settings"); window.scrollTo(0, 0); }} practiceSessions={practiceSessions} logs={logs} user={user} language={language} kidMode={kidMode} T={T} />}
     {tab === "settings" && <Settings signOut={async () => { if (await askConfirm(T.settings.confirmLogout)) signOut(); }} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} drumState={drumState} onDrumPoints={answerDrumPoints} ageBand={ageGroup} practiceDifficulty={practiceDifficulty} onAgeBandSaved={setAgeGroup} onDifficultySaved={setPracticeDifficulty} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage key={adminResetKey} user={user} language={language} T={T} />}
-    {incomingCheer && <button type="button" className="cheer-incoming" onClick={() => { setTab("group"); setIncomingCheer(null); }}>
-      <strong>{incomingCheer.kind === "heart" ? T.cheers.heartedYours(incomingCheer.name) : T.cheers.incoming(incomingCheer.name)}</strong>
-      <span>{cheerText(incomingCheer.cheerKey, language)}</span>
-    </button>}
+    {incomingCheer && <CheerToast key={`${incomingCheer.kind}-${incomingCheer.name}-${incomingCheer.cheerKey}`} name={incomingCheer.name} title={incomingCheer.kind === "heart" ? T.cheers.heartedYours(incomingCheer.name) : T.cheers.incoming(incomingCheer.name)} text={cheerText(incomingCheer.cheerKey, language)} onOpen={() => { setTab("group"); setIncomingCheer(null); }} peekAudio={peekSharedAudio} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
-    {progressToast && <div className="modal modal-center" onClick={() => setProgressToast("")}>
-      <div className="confirm-card progress-card" onClick={(e) => e.stopPropagation()}>
-        <div className="progress-emoji">🎉</div>
-        <p className="progress-message">{progressToast}</p>
-        <button className="save" onClick={() => setProgressToast("")}>{T.practiceMode.niceBtn}</button>
-      </div>
-    </div>}
     <nav className="bottom-nav">{visibleTabs.map((id) => <button key={id} className={tab === id ? "active" : ""} onClick={() => { if (id === "admin" && tab === "admin") setAdminResetKey((k) => k + 1); if (id === "group" && tab === "group") setGroupPickerKey((k) => k + 1); setTab(id); if (id === "practice") setPracticeStep("home"); }}><span>{NAV_ICONS[id]}{id === "group" && hasUnreadCheers && tab !== "group" && <i className="nav-dot" />}</span><em className="nav-label">{T.nav[id]}{id === "group" && tab === "group" && groupCount > 1 && <svg className="nav-switch-hint" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>}</em></button>)}</nav>
     <Metronome open={metronome} close={() => setMetronome(false)} onOpen={() => setMetronome(true)} onBannerChange={setMetroBanner} stacked={timerBanner} onAddPractice={addMetronomePractice} sharedTimer={timerRun} onUsedDuringTimer={() => addTimerCredit(0, true)} tone={metronomeTone} onToneChange={changeMetronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     <SessionTimer pinnedExercises={pinnedExercises} onFocusChoice={handleFocusChoice} open={sessionTimer} close={() => setSessionTimer(false)} onOpen={() => setSessionTimer(true)} onBannerChange={setTimerBanner} onRunChange={setTimerRun} timerCredit={timerCredit} onCreditReset={() => saveTimerCredit(null)} onAddPractice={(seconds, items, customItems, usedMetronome) => addMetronomePractice(seconds, items, customItems, usedMetronome)} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
@@ -1893,7 +2013,7 @@ export default function Home() {
     })()}
     {showOnboarding && <OnboardingModal currentGoal={dailyGoal} onSkip={skipOnboarding} onFinish={finishOnboarding} onBand={setAgeGroup} onLanguage={chooseLanguage} onPointsAnswer={answerDrumPoints} language={language} T={T} />}
     {showPointsAsk && !showOnboarding && <PointsAskModal onAnswer={answerDrumPoints} T={T} />}
-    {pointsGain && <PointsGainModal gain={pointsGain} onClose={() => setPointsGain(null)} T={T} />}
+    {celebrationOverlay}
   </main>;
 }
 function PinManagerModal({ pinnedExercises, onMove, onUnpin, onTogglePin, onClose, language, T }: { pinnedExercises: string[]; onMove: (itemEn: string, direction: -1 | 1) => void; onUnpin: (itemEn: string) => void; onTogglePin: (itemEn: string) => void; onClose: () => void; language: Lang; T: any }) {
@@ -1949,7 +2069,8 @@ function PointsAskModal({ onAnswer, T }: { onAnswer: (on: boolean) => Promise<bo
 // to the player's own row and the row sliding up past the drummers they overtook (or what is needed to pass the next one).
 function PointsGainModal({ gain, onClose, T }: { gain: PointsGain; onClose: () => void; T: any }) {
   const PITCH = 58;
-  const [step, setStep] = useState<1 | 2>(1);
+  const skipIntro = !!gain.celebrated; // "The Big Hit" already showed the points: go straight to the ranking
+  const [step, setStep] = useState<1 | 2>(skipIntro ? 2 : 1);
   const [shown, setShown] = useState(0);
   const [board, setBoard] = useState<{ pos: number; display_name: string; points: number; is_me: boolean }[] | null>(null);
   const [settled, setSettled] = useState(false);
@@ -1960,7 +2081,7 @@ function PointsGainModal({ gain, onClose, T }: { gain: PointsGain; onClose: () =
     let raf = 0;
     const tick = (now: number) => { const t = Math.min(1, (now - start) / 900); setShown(Math.round(gain.earned * t)); if (t < 1) raf = requestAnimationFrame(tick); };
     raf = requestAnimationFrame(tick);
-    playPointsChime();
+    if (!skipIntro) playPointsChime();
     // This week's standing (older databases do not know "week" yet: then nothing about the week is shown).
     supabase.rpc("drum_points_summary", { p_period: "week" }).then(({ data, error }: any) => { const r = Array.isArray(data) ? data[0] : data; if (!error && r) setWeek({ points: Number(r.points), pos: Number(r.pos) }); });
     supabase.rpc("drum_points_board", { p_period: "year", p_limit: 12 }).then(({ data }: any) => setBoard(Array.isArray(data) ? data : []));
@@ -1968,12 +2089,14 @@ function PointsGainModal({ gain, onClose, T }: { gain: PointsGain; onClose: () =
   }, [gain]);
   // Step 2 (the ranking) opens when "Nice!" is tapped, even when the player is alone on the board. Only if the ranking could not be loaded does it just close.
   const hasBoard = board !== null && board.some((r) => r.is_me);
+  // With the celebration already played, the ranking opens by itself: if it cannot be shown at all, the pop-up just goes away.
+  useEffect(() => { if (skipIntro && board !== null && !hasBoard) onClose(); }, [skipIntro, board, hasBoard]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (step !== 2) return;
+    if (step !== 2 || !hasBoard) return;
     const slide = window.setTimeout(() => setSettled(true), 700);
     const close = window.setTimeout(onClose, 20000);
     return () => { window.clearTimeout(slide); window.clearTimeout(close); };
-  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [step, hasBoard]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!settled) return;
     const start = performance.now();
@@ -2002,6 +2125,7 @@ function PointsGainModal({ gain, onClose, T }: { gain: PointsGain; onClose: () =
   const medal = (rank: number) => (rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`);
   const fromPct = gain.prev.points % 100, toPct = gain.next.points % 100 < fromPct ? 100 : gain.next.points % 100;
 
+  if (skipIntro && !hasBoard) return null;
   if (step === 1 || !hasBoard) return <div className="modal modal-center" onClick={() => { if (hasBoard) setStep(2); else onClose(); }}><div className="day-summary points-gain" onClick={(e) => e.stopPropagation()}>
     <div className="points-gain-burst" aria-hidden="true">{[0, 1, 2, 3, 4, 5].map((i) => <i key={i} style={{ "--i": i } as React.CSSProperties} />)}</div>
     <svg className="points-gain-star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7L12 2z" /></svg>
@@ -2049,13 +2173,15 @@ function PointsDetailModal({ user, onClose, T }: { user: any; onClose: () => voi
     supabase.from("point_awards").select("id,amount,reason,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => setPoints(data ?? []));
   }, [user.id]);
   const total = (points ?? []).reduce((sum, p) => sum + p.amount, 0);
-  return <div className="modal modal-center" onClick={onClose}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
+  return <div className="modal modal-center" onClick={onClose}><div className="day-summary points-detail" onClick={(e) => e.stopPropagation()}>
     <div className="ds-head">
       <span className="eyebrow">{T.today.pointsCardTitle}</span>
       <button className="close" onClick={onClose}>×</button>
     </div>
     <div className="day-summary-body">
       <strong className="points-card-value points-detail-total">{total}</strong>
+      {/* The ranking only appears once there is someone to compare with: alone, a row saying "You" under "Your points" says nothing. */}
+      {(board === null || board.filter((r) => r.points > 0 || !r.is_me).length > 1) && <>
       <span className="ladder-label admin-section-gap">{T.drumPoints.boardTitle}</span>
       <div className="equipment-toggle points-board-toggle">
         <button type="button" className={period === "year" ? "equipment-option selected" : "equipment-option"} onClick={() => setPeriod("year")}>{T.drumPoints.boardYear}</button>
@@ -2068,12 +2194,13 @@ function PointsDetailModal({ user, onClose, T }: { user: any; onClose: () => voi
           <strong className="points-board-pts">{r.points}</strong>
         </div>)}
       </div>}
+      </>}
       <span className="ladder-label admin-section-gap">{T.admin.pointsHistory}</span>
       {points === null ? <p className="hint">…</p> : points.length === 0 ? <p className="hint">{T.admin.noPoints}</p> : (<>
         <div className="admin-log-list">
-          {(showAll ? points : points.slice(0, POINTS_DETAIL_HISTORY_LIMIT)).map((p) => <div key={p.id} className="admin-log-row">
-            <div className="admin-log-head"><span>{formatDMY(localDateFromTimestamp(p.created_at))}</span><span className={p.amount > 0 ? "admin-points-positive" : "admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span></div>
-            {p.reason && <p className="today-notes">{p.reason}</p>}
+          {(showAll ? points : points.slice(0, POINTS_DETAIL_HISTORY_LIMIT)).map((p) => <div key={p.id} className="points-hist-row">
+            <div className="points-hist-text"><strong>{formatDMY(localDateFromTimestamp(p.created_at))}</strong>{p.reason && <span>{p.reason}</span>}</div>
+            <span className={p.amount > 0 ? "points-hist-amount admin-points-positive" : "points-hist-amount admin-points-negative"}>{p.amount > 0 ? `+${p.amount}` : p.amount}</span>
           </div>)}
         </div>
         {points.length > POINTS_DETAIL_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAll(!showAll)}>{showAll ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
@@ -2107,9 +2234,9 @@ function playPointsChime() {
   } catch { /* no sound available */ }
 }
 type PointsSummary = { points: number; pos: number; total: number; above_name: string | null; above_gap: number | null };
-type PointsGain = { prev: PointsSummary; next: PointsSummary; earned: number };
+type PointsGain = { prev: PointsSummary; next: PointsSummary; earned: number; celebrated?: boolean }; // celebrated: "The Big Hit" already played, so the ranking opens straight away
 function OnboardingModal({ currentGoal, onSkip, onFinish, onBand, onLanguage, onPointsAnswer, language, T }: { onLanguage: (language: Lang, save: boolean) => void; onPointsAnswer: (on: boolean) => Promise<boolean>; currentGoal: number | null; onSkip: () => void; onFinish: (selected: string[], goalMinutes: number | null, kidMode: boolean, band: AgeBand | null) => void; onBand: (band: AgeBand | null) => void; language: Lang; T: any }) {
-  const [step, setStep] = useState<"language" | "dob" | "points" | "exercises" | "goal" | "mode">("language");
+  const [step, setStep] = useState<"language" | "dob" | "points" | "exercises" | "goal" | "mode" | "board">("language");
   const [afterPoints, setAfterPoints] = useState<"exercises" | "goal">("exercises");
   // The language starts as the phone's language (Dutch, Spanish or English) and follows what is picked.
   useEffect(() => { try { const n = navigator.language?.toLowerCase() ?? ""; const guess: Lang = n.startsWith("nl") ? "nl" : n.startsWith("es") ? "es" : "en"; if (guess !== language) onLanguage(guess, false); } catch { /* keep English */ } }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -2137,9 +2264,21 @@ function OnboardingModal({ currentGoal, onSkip, onFinish, onBand, onLanguage, on
   }
   const [selected, setSelected] = useState<string[]>([]);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
-  // 30 here is just a suggested starting point shown in the input -- it's only ever
+  // 10 here is just a suggested starting point shown in the input -- it's only ever
   // saved if the user explicitly hits Finish. Skip leaves the goal genuinely unset.
-  const [goalInput, setGoalInput] = useState(String(currentGoal ?? 30));
+  const [goalInput, setGoalInput] = useState(String(currentGoal ?? 10));
+  // The last question before finishing: join the worldwide leaderboard? (only when a date of birth was given, which decides the board)
+  const [finishAction, setFinishAction] = useState<(() => void) | null>(null);
+  const [boardBusy, setBoardBusy] = useState(false);
+  const BOARD_TEXT = { en: { title: "Join the worldwide leaderboard?", body: "See how you rank against drummers around the world. Only your first name, last initial and scores are shown. You can leave any time.", yes: "Yes, join", no: "Not now" }, es: { title: "¿Unirte a la tabla mundial?", body: "Mira cómo te comparas con bateristas de todo el mundo. Solo se muestran tu nombre, la inicial de tu apellido y tus puntuaciones. Puedes salir cuando quieras.", yes: "Sí, unirme", no: "Ahora no" }, nl: { title: "Meedoen aan de wereldwijde ranglijst?", body: "Zie hoe je scoort tegenover drummers over de hele wereld. Alleen je voornaam, de initiaal van je achternaam en je scores zijn zichtbaar. Je kunt altijd stoppen.", yes: "Ja, doe mee", no: "Nu niet" } }[language as Lang];
+  // Finishing goes through the leaderboard question when there is a board to join.
+  function finishWith(action: () => void) { if (band) { setFinishAction(() => action); setStep("board"); } else action(); }
+  async function answerBoard(join: boolean) {
+    setBoardBusy(true);
+    if (join) { const { data } = await supabase.auth.getUser(); if (data.user) await supabase.from("settings").upsert({ user_id: data.user.id, leaderboard_opt_in: true }, { onConflict: "user_id" }); }
+    setBoardBusy(false);
+    finishAction?.();
+  }
   const [finalGoal, setFinalGoal] = useState<number | null>(currentGoal);
   const [kidModeChoice, setKidModeChoice] = useState(false);
   function toggleExercise(en: string) {
@@ -2200,16 +2339,21 @@ function OnboardingModal({ currentGoal, onSkip, onFinish, onBand, onLanguage, on
         <div className="minutes-value"><input inputMode="numeric" size={3} value={goalInput} onChange={(e: any) => setGoalInput(e.target.value.replace(/\D/g, ""))} /><span>{T.settings.minutes}</span></div>
         <button className="minutes-step" onClick={() => setGoalInput(String((Number(goalInput) || 0) + 5))}>+5</button>
       </div>
-      <button className="save" onClick={() => { const g = Number(goalInput) || currentGoal || 30; setFinalGoal(g); if (young) onFinish([], g, true, band); else setStep("mode"); }}>{young ? T.onboarding.finishBtn : T.onboarding.continueBtn}</button>
-      <button className="auth-switch" onClick={() => { setFinalGoal(currentGoal); if (young) onFinish([], currentGoal, true, band); else setStep("mode"); }}>{T.onboarding.skipBtn}</button>
-    </> : <>
+      <button className="save" onClick={() => { const g = Number(goalInput) || currentGoal || 10; setFinalGoal(g); if (young) finishWith(() => onFinish([], g, true, band)); else setStep("mode"); }}>{young ? T.onboarding.finishBtn : T.onboarding.continueBtn}</button>
+      <button className="auth-switch" onClick={() => { setFinalGoal(currentGoal); if (young) finishWith(() => onFinish([], currentGoal, true, band)); else setStep("mode"); }}>{T.onboarding.skipBtn}</button>
+    </> : step === "mode" ? <>
       <h2 className="edit-rating-title">{T.onboarding.modeTitle}</h2>
       <p className="settings-neutral-hint">{T.settings.libraryHint}</p>
       <div className="equipment-toggle onboard-mode-toggle">
         <button type="button" className={!kidModeChoice ? "equipment-option selected" : "equipment-option"} onClick={() => setKidModeChoice(false)}>{T.settings.libraryFull}</button>
         <button type="button" className={kidModeChoice ? "equipment-option selected" : "equipment-option"} onClick={() => setKidModeChoice(true)}>{T.settings.libraryEssentials}</button>
       </div>
-      <button className="save" onClick={() => onFinish(selected, finalGoal, kidModeChoice, band)}>{T.onboarding.finishBtn}</button>
+      <button className="save" onClick={() => finishWith(() => onFinish(selected, finalGoal, kidModeChoice, band))}>{T.onboarding.finishBtn}</button>
+    </> : <>
+      <h2 className="edit-rating-title">{BOARD_TEXT.title}</h2>
+      <p className="settings-neutral-hint">{BOARD_TEXT.body}</p>
+      <button className="save" disabled={boardBusy} onClick={() => answerBoard(true)}>{BOARD_TEXT.yes}</button>
+      <button className="auth-switch" disabled={boardBusy} onClick={() => answerBoard(false)}>{BOARD_TEXT.no}</button>
     </>}
   </div></div>;
 }
@@ -2427,9 +2571,20 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
   const todaySkillSeconds = lockedSecondsFor(practiceSessions, todayLog, dateKey);
   const todayOtherSeconds = Math.max(0, todayMinutes * 60 + (todayLog?.seconds ?? 0) - todaySkillSeconds);
   const todayOtherItems: string[] = todayLog ? Array.from(new Set([...todayLog.items, ...todayLog.customItems])).filter((item) => !todaySkillExercises.includes(item)) : [];
+  // Welcome shimmer: the first time the app opens each day, one light sweep over Start practice and one soft breath (silent).
+  const [welcome, setWelcome] = useState(false);
+  useEffect(() => {
+    if (!user?.id) return;
+    const key = `ds_welcome_${user.id}_${dateKey}`;
+    if (celebratedBefore(key)) return;
+    markCelebrated(key);
+    setWelcome(true);
+    const h = window.setTimeout(() => setWelcome(false), 2600);
+    return () => window.clearTimeout(h);
+  }, [user?.id]);
   return <section className="page today">
     <header className="hero home-hero"><div className="hero-text"><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><div className="hero-actions"><button type="button" className="avatar settings-avatar metro-avatar" onClick={onOpenMetronome} aria-label={T.today.metronome}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6l3.5 17.5a1 1 0 01-1 1.2h-11a1 1 0 01-1-1.2z" /><path d="M12 17.5L15.5 6.5" /><circle cx="14.2" cy="10.4" r="1.3" fill="currentColor" /></svg></button><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></div></header>
-    <button type="button" className="start-cta" onClick={onOpenSessionTimer}>
+    <button type="button" className={welcome ? "start-cta cel-welcome" : "start-cta"} onClick={onOpenSessionTimer}>
       <span className="start-cta-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg></span>
       <span className="start-cta-text"><strong>{T.today.startPracticeTitle}</strong><small>{T.today.startPracticeSub}</small></span>
       <svg className="start-cta-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
@@ -2798,7 +2953,7 @@ function DayEditor({ date, log, lockedSeconds = 0, picker, skillExercises = [], 
     {itemsOpen && (picker ? <PracticePicker data={picker} language={language} T={T} quick={selected} setQuick={setSelected} custom={custom} setCustom={setCustom} /> : <div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language]}</button>)}</div>)}
     {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={T.calendar.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
     {needItem && <p className="auth-error-inline" role="alert">{T.calendar.pickOneItem}</p>}
-    <button className={saved ? "save saved" : "save"} onClick={handleSave} disabled={busy}>{saved ? T.today.practiceSaved : busy ? T.calendar.saving : T.today.savePractice}<span>→</span></button>
+    <SaveButton saved={saved} onClick={handleSave} disabled={busy} label={<>{busy ? T.calendar.saving : T.today.savePractice}<span>→</span></>} savedLabel={<>{T.today.practiceSaved}<span>→</span></>} peekAudio={peekSharedAudio} />
     {hasEntry && <button className="delete-entry" onClick={handleDelete} disabled={busy}>{lockedSeconds > 0 ? T.today.removeOther : T.calendar.deleteEntry}</button>}
   </div>
   </>;
@@ -3506,7 +3661,7 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
           </>}
           <button className="primary cf-create" disabled={challengeBusy || !challengeName || challengeEnd < challengeStart || goalNum < 1} onClick={createChallenge}>{challengeBusy ? T.group.pleaseWait : T.group.createChallengeBtn}</button>
         </div>}
-        {!challenges.length && !showNewChallenge && <p className="hint">{T.group.noChallengesShort}</p>}
+        {!challenges.length && !showNewChallenge && <div className="cel-empty"><EmptyLogo /><p className="hint">{T.group.noChallengesShort}</p></div>}
         {challenges.map((c) => {
           const desc = c.goal_type === "daily" ? T.group.dailyGoalDesc(c.goal_value) : c.goal_type === "minutes" ? T.group.minutesGoalDesc(c.goal_value) : T.group.sessionsGoalDesc(c.goal_value);
           const progressLabel = c.goal_type === "minutes" ? T.group.minutesProgress(c.progress, c.target) : T.group.daysProgress(c.progress, c.target);
@@ -3567,7 +3722,7 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
       </div></div>}
       {showCheerInbox && <div className="modal modal-center" onClick={() => setShowCheerInbox(false)}><div className="day-summary cheer-sheet" onClick={(e) => e.stopPropagation()}>
         <span className="section-label">{T.cheers.bellTitle}</span>
-        {groupCheers.length === 0 ? <p className="hint">{T.cheers.inboxEmpty}</p> : <div className="cheer-list">
+        {groupCheers.length === 0 ? <div className="cel-empty"><EmptyLogo /><p className="hint">{T.cheers.inboxEmpty}</p></div> : <div className="cheer-list">
           {groupCheers.slice(0, 40).map((c) => {
             const mine = c.from_user === user.id;
             const toName = c.to_user === null ? T.cheers.everyone : c.to_user === user.id ? T.cheers.you : (members.find((m) => m.id === c.to_user)?.name ?? "Drummer");
@@ -3771,7 +3926,7 @@ function AchievementsSection({ stats, tempoCounts, wonChallenges, language, T }:
     </div></div>}
   </div>;
 }
-function Progress({ onOpenExercise, onOpenSettings, practiceSessions, logs, user, language, kidMode, embedded, T }: { kidMode: boolean; embedded?: boolean; onOpenSettings?: () => void; onOpenExercise?: (en: string) => void; practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
+function Progress({ onOpenExercise, onOpenSettings, onRankUp, practiceSessions, logs, user, language, kidMode, embedded, T }: { kidMode: boolean; embedded?: boolean; onRankUp?: (info: RankUp) => void; onOpenSettings?: () => void; onOpenExercise?: (en: string) => void; practiceSessions: { item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; created_at: string }[]; logs: Record<string, Log>; user: any; language: Lang; T: any }) {
   const TIER_LABEL: Record<string, string> = { beginner: T.practiceMode.tierBeginner, intermediate: T.practiceMode.tierIntermediate, advanced: T.practiceMode.tierAdvanced, legend: T.practiceMode.tierLegend };
   const VISIBLE_LIMIT = 5;
   const [showAllPractice, setShowAllPractice] = useState(false);
@@ -3870,10 +4025,10 @@ function Progress({ onOpenExercise, onOpenSettings, practiceSessions, logs, user
   if (board && !embedded) return <LeaderboardScreen db={supabase} user={user} language={language} onOpenSettings={onOpenSettings} initial={board} onBack={() => { setBoard(null); setBoardKey((k) => k + 1); }} />;
   const Wrapper = (embedded ? "div" : "section") as "div";
   return <Wrapper className={embedded ? "progress-embedded" : "page"}>{!embedded && <header className="simple-head"><p className="eyebrow">{T.progressPage.eyebrow}</p><h1>{T.progressPage.title}</h1></header>}
-    {embedded ? <StudentLeaderboardCard db={supabase} language={language} studentId={user.id} /> : <LeaderboardCard db={supabase} language={language} refreshKey={boardKey} onOpen={(f) => setBoard(f ?? {})} />}
+    {embedded ? <StudentLeaderboardCard db={supabase} language={language} studentId={user.id} /> : <LeaderboardCard db={supabase} language={language} refreshKey={boardKey} onOpen={(f) => setBoard(f ?? {})} userId={user.id} onRankUp={onRankUp} />}
     <div className="progress-section">
       <span className="section-label">{T.progressPage.skillProgress}</span>
-      {!skillExercises.length ? <p className="hint">{T.progressPage.noSkillData}</p> : (() => {
+      {!skillExercises.length ? <div className="cel-empty"><EmptyLogo /><p className="hint">{T.progressPage.noSkillData}</p></div> : (() => {
         // Overall level: for each tier, how many of your exercises have unlocked at least one tempo in it. Your level is the highest
         // tier that at least 1 in 4 of your exercises (and at least one exercise) has reached; the meter fills by that same share.
         const n = skillExercises.length;
@@ -3998,7 +4153,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
       <input className="group-input" inputMode="numeric" value={lengthDays} onChange={(e) => setLengthDays(e.target.value.replace(/\D/g, ""))} />
       <button className="primary" disabled={busy || !exerciseEn || !targetMinutes || !lengthDays} onClick={createChallenge}>{busy ? T.personalChallenges.pleaseWait : T.personalChallenges.startChallenge}</button>
     </div>}
-    {!challenges.length && !showNew && <p className="hint">{T.personalChallenges.noChallenges}</p>}
+    {!challenges.length && !showNew && <div className="cel-empty"><EmptyLogo /><p className="hint">{T.personalChallenges.noChallenges}</p></div>}
     {challenges.map((c) => {
       const { days, completedCount, status } = evaluateChallenge(c, practiceSessions, logsCache);
       return <div key={c.id} className="challenge-card">
@@ -4025,7 +4180,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     })}
   </>;
 }
-function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setStep, category, setCategory, rudimentTier, setRudimentTier, exerciseGroup, setExerciseGroup, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, openSessionTimer, metronomeTone, user, setError, language, practiceDifficulty, T }: any) {
+function PracticeMode({ whenCelebrationsDone, onMetronomeToneChange, skillTab, setSkillTab, step, setStep, category, setCategory, rudimentTier, setRudimentTier, exerciseGroup, setExerciseGroup, exercise, setExercise, bpm, setBpm, pendingMinutes, setPendingMinutes, sessions, onLogSession, onResetLevel, onEditRating, pinnedExercises, onTogglePin, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, kidMode, minutes, setMinutes, quickAddMinutes, setQuickAddMinutes, seconds, selected, toggle, customItems, setCustomItems, notes, setNotes, equipment, setEquipment, drumsetMinutes, setDrumsetMinutes, padMinutes, setPadMinutes, save, onReset, saved, dailyGoal, logs, confirm, openMetronome, openSessionTimer, metronomeTone, user, setError, language, practiceDifficulty, T }: any) {
   function handleEquipmentToggle(value: "drumset" | "pad") {
     const next = toggleEquipmentValue(equipment, value);
     setEquipment(next);
@@ -4054,6 +4209,7 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
     setShowWhatModal(false);
   }
   const [selectedRating, setSelectedRating] = useState<string | null>(null);
+  const [showIssues, setShowIssues] = useState(false); // the "what happened?" pop-up after Not ready / Tense / Almost there
   const [sessionIssues, setSessionIssues] = useState<string[]>([]);
   const [sessionNote, setSessionNote] = useState("");
   // Exact elapsed seconds from the just-finished session, kept alongside pendingMinutes (a
@@ -4130,7 +4286,7 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
   }
   const selectedMyItemsCount = customItems.filter((ci: string) => userItems.includes(ci)).length;
   function qualifyingMinutesAt(itemEn: string, targetBpm: number) {
-    return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum: number, s: any) => sum + s.duration_minutes, 0);
+    return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered")).reduce((sum: number, s: any) => sum + sessionMinutesExact(s), 0);
   }
   function isUnlocked(itemEn: string, targetBpm: number) {
     return qualifyingMinutesAt(itemEn, targetBpm) >= UNLOCK_MINUTES;
@@ -4148,7 +4304,7 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
     return relevant.reduce((best: string | null, s: any) => (!best || RATING_RANK[s.rating] > RATING_RANK[best] ? s.rating : best), null as string | null);
   }
   function totalMinutesAny(itemEn: string, targetBpm: number) {
-    return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm).reduce((sum: number, s: any) => sum + s.duration_minutes, 0);
+    return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm).reduce((sum: number, s: any) => sum + sessionMinutesExact(s), 0);
   }
   // A permanent history marker, not a current-state one -- stays true forever once a level has ever
   // been rated not_ready/tense/almost, even after it's later unlocked. The point is being able to
@@ -4254,13 +4410,16 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
     setPendingMinutes(sessionMinutes);
     setPendingSeconds(elapsedSeconds);
     setSelectedRating(null);
+    setShowIssues(false);
     setSessionIssues([]);
     setSessionNote("");
     setStep("rate");
   }
-  async function submitRating(rating: string) {
+  async function submitRating(rating: string, withoutDetails = false) {
     if (!exercise) return;
-    await onLogSession(exercise, bpm, rating, pendingMinutes, pendingSeconds, sessionIssues, sessionNote.trim());
+    await onLogSession(exercise, bpm, rating, pendingMinutes, pendingSeconds, withoutDetails ? [] : sessionIssues, withoutDetails ? "" : sessionNote.trim());
+    // Any celebration comes first (rating, then the animation, then the tempo list): the screen only moves on after Continue.
+    await whenCelebrationsDone?.();
     setJustPracticedLevel(bpm);
     // Comfortable or mastered: on to the tempo list (scrolled to the tempo just practised). Not ready, tense or almost: back to the same
     // metronome window at the same tempo, ready for another round.
@@ -4270,6 +4429,8 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
     // Tapping a rating only selects it; a Save button then confirms. The struggling ratings also
     // reveal the issue tags/note step first since that's when context is actually useful.
     setSelectedRating(r);
+    // Switching to a rating that has no "what held you back" step must not keep tags picked for another rating.
+    if (!RATINGS_NEEDING_NOTE.includes(r)) { setSessionIssues([]); setSessionNote(""); }
   }
   function skipRating() {
     setJustPracticedLevel(bpm);
@@ -4457,7 +4618,7 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
             <button className="minutes-step" onClick={() => setQuickAddMinutes(String((Number(quickAddMinutes) || 0) + 5))}>+5</button>
           </div>
         )}
-        <button className={saved ? "save saved" : "save"} onClick={handleSaveClick} disabled={equipment === "both" ? (Number(drumsetMinutes) || 0) + (Number(padMinutes) || 0) <= 0 : (Number(quickAddMinutes) || 0) <= 0}>{saved ? T.today.practiceSaved : T.today.savePractice}<span>→</span></button>
+        <SaveButton saved={saved} onClick={handleSaveClick} disabled={equipment === "both" ? (Number(drumsetMinutes) || 0) + (Number(padMinutes) || 0) <= 0 : (Number(quickAddMinutes) || 0) <= 0} label={<>{T.today.savePractice}<span>→</span></>} savedLabel={<>{T.today.practiceSaved}<span>→</span></>} peekAudio={peekSharedAudio} />
       </div>
 
       <div className="quick-recent">
@@ -4574,7 +4735,7 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
                 {struggled && <span className="rung-struggled-flag" title={T.practiceMode.struggledFlagTitle}><svg viewBox="0 0 20 20" fill="currentColor"><rect x="4" y="2" width="1.6" height="16" rx="0.8" /><path d="M6.2 3L16 6.5 6.2 10V3z" /></svg></span>}
                 <button className="rung-tap" onClick={() => startSession(level)}>
                   <span className="bpm">{level}</span>
-                  <span className="rung-progress-label">{unlocked ? (rating === "mastered" ? "⭐" : "✓") : `${Math.min(totalMinutes, UNLOCK_MINUTES)}/${UNLOCK_MINUTES} min`}</span>
+                  <span className="rung-progress-label">{unlocked ? (rating === "mastered" ? "⭐" : "✓") : `${Math.floor(Math.min(totalMinutes, UNLOCK_MINUTES))}/${UNLOCK_MINUTES} min`}</span>
                   <div className="rung-progress">
                     <div className="rung-progress-track"><div className="rung-progress-bar" style={{ width: `${pct}%`, background: barColor }} /></div>
                   </div>
@@ -4618,19 +4779,15 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
 
   if (step === "rate" && exercise) {
     const label = PRACTICE_EXERCISES.find((i) => i.en === exercise)?.[language as Lang] ?? exercise;
+    // Same look as the metronome window before it (the exercise on the page behind, a centred window on top). Two sheets in that window:
+    // "How did that feel?", then (Not ready, Tense, Almost there) "What held you back?".
     return <section className="page">
-      <header className="simple-head"><p className="eyebrow">{label} · {bpm} BPM</p><h1>{T.practiceMode.rateTitle}</h1></header>
-      <div className="rating-grid">
-        {RATING_ORDER.map((r) => <button key={r} className={selectedRating === r ? `rating-btn ${r} selected` : `rating-btn ${r}`} onClick={() => handleRatingTap(r)}><span className="rating-icon">{RATING_ICON[r]}</span>{RATING_LABEL[r]}</button>)}
-      </div>
-      {selectedRating && !RATINGS_NEEDING_NOTE.includes(selectedRating) && <button className="save" onClick={() => submitRating(selectedRating)}>{T.practiceMode.saveRating}<span>→</span></button>}
-      {selectedRating && RATINGS_NEEDING_NOTE.includes(selectedRating) && <div className="form-card">
-        <label className="input-label issue-label">{T.practiceMode.issueLabel}</label>
-        <div className="issue-groups">{SESSION_ISSUE_GROUPS.map((g) => <div key={g.title.en} className="issue-group"><span className="issue-group-title">{g.title[language as Lang]}</span><div className="chips">{g.tags.map((tag) => <button key={tag.en} onClick={() => toggleSessionIssue(tag.en)} className={sessionIssues.includes(tag.en) ? "chip selected" : "chip"}>{sessionIssues.includes(tag.en) && <b>✓</b>}{tag[language as Lang]}</button>)}</div></div>)}</div>
-        <textarea maxLength={2000} value={sessionNote} onChange={(e: any) => setSessionNote(e.target.value)} placeholder={T.practiceMode.sessionNotePlaceholder} />
-        <button className="save" onClick={() => submitRating(selectedRating)}>{T.practiceMode.saveRating}<span>→</span></button>
-      </div>}
-      <button className="reset-practice" onClick={skipRating}>{T.practiceMode.skipRating}</button>
+      <div className="back-row"><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
+      <div className="modal modal-center"><div className="day-summary rate-window">
+        {showIssues && selectedRating
+          ? <HoldBackSheet language={language as Lang} rating={selectedRating} ratingLabel={RATING_LABEL[selectedRating]} issues={sessionIssues} setIssues={setSessionIssues} note={sessionNote} setNote={setSessionNote} onSave={() => submitRating(selectedRating)} onSkip={() => submitRating(selectedRating, true)} onBack={() => setShowIssues(false)} />
+          : <RatingSheet language={language as Lang} subtitle={`${label} · ${bpm} BPM`} labels={RATING_LABEL} selected={selectedRating} goesOn={!!selectedRating && RATINGS_NEEDING_NOTE.includes(selectedRating)} onSelect={handleRatingTap} onSave={() => { if (!selectedRating) return; if (RATINGS_NEEDING_NOTE.includes(selectedRating)) setShowIssues(true); else submitRating(selectedRating); }} onSkip={skipRating} />}
+      </div></div>
     </section>;
   }
   return null;
