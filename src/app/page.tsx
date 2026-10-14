@@ -32,6 +32,43 @@ const NL_NAMES: Record<string, string> = {
 };
 // Makes iOS play web audio even when the phone is on silent (needs Safari 16.4+; the iPhone app also sets this natively).
 function enablePlaybackAudio() { try { const nav = navigator as unknown as { audioSession?: { type: string } }; if (nav.audioSession) nav.audioSession.type = "playback"; } catch {} }
+// ONE AudioContext for the whole app (metronome, session timer alert, points chime). On the iPhone, several contexts at once, or closing and
+// re-creating them, can leave the sound silent until the app is restarted. The context is created inside a tap, never closed while the app
+// runs, and only replaced when iOS has left it "interrupted" or closed.
+// iPhone only: a silent <audio> element that plays while the metronome runs. iOS handles "normal" media much better than Web Audio after another app has
+// taken over the sound (a Web Audio context can stay silent for good); playing a real media element, started from a tap, makes iOS switch the sound
+// system back on and keeps it on, and it also makes the Web Audio clicks play even when the phone's silent switch is on.
+const IS_IOS_DEVICE = typeof navigator !== "undefined" && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+let silentEl: HTMLAudioElement | null = null;
+function silentWavUrl(): string {
+  const sampleRate = 8000, seconds = 1, n = sampleRate * seconds;
+  const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const str = (o: number, t: string) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  str(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); str(8, "WAVE"); str(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, "data"); v.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+}
+function startSilentAudio() {
+  if (!IS_IOS_DEVICE) return;
+  try {
+    if (!silentEl) { silentEl = new Audio(silentWavUrl()); silentEl.loop = true; silentEl.setAttribute("playsinline", ""); silentEl.volume = 1; }
+    const p = silentEl.play(); if (p) p.catch(() => {});
+  } catch { /* not available: the Web Audio clicks still play */ }
+}
+function stopSilentAudio() { try { silentEl?.pause(); } catch { /* nothing to stop */ } }
+let sharedAudio: AudioContext | null = null;
+function getSharedAudio(): AudioContext {
+  enablePlaybackAudio();
+  const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  if (sharedAudio && (sharedAudio.state === "closed" || (sharedAudio.state as string) === "interrupted")) { try { void sharedAudio.close(); } catch { /* already closed */ } sharedAudio = null; }
+  if (!sharedAudio) sharedAudio = IS_ANDROID ? new Ctor({ latencyHint: "playback" }) : new Ctor();
+  return sharedAudio;
+}
+function dropSharedAudio() { try { void sharedAudio?.close(); } catch { /* already closed */ } sharedAudio = null; }
+async function wakeAudio(ctx: AudioContext) {
+  if (ctx.state === "running") return;
+  try { await Promise.race([ctx.resume(), new Promise((resolve) => window.setTimeout(resolve, 600))]); } catch { /* the caller checks the state */ }
+}
 function localeFor(lang: string) { return lang === "es" ? "es-ES" : lang === "nl" ? "nl-NL" : "en-US"; }
 function nlName(en: string) { return NL_NAMES[en] ?? en; }
 function withNl<T extends { en: string }>(list: T[]): (T & { nl: string })[] { return list.map((o) => ({ ...o, nl: nlName(o.en) })); }
@@ -485,7 +522,7 @@ const translations = {
       deleteEntry: "Delete entry", pickOneItem: "Pick at least one thing you practised.", confirmDeleteEntry: "Delete this day's practice? This can't be undone.", couldNotDeleteEntry: "Could not delete this entry.",
       goalMet: "🎯 Daily goal reached", goalMissed: (done: string, total: string) => `${done} / ${total} toward your goal`,
       onEquipment: (label: string) => `On ${label}`,
-      streakOnDay: (n: number) => `🔥 ${n}-day streak`, skillLocked: "Skill Trainer time (locked)", skillLockedHint: "Included in your total below. This time cannot be changed.", noPracticeShort: "No practice logged for this day.",
+      streakDays: "day streak", streakOnDay: (n: number) => `🔥 ${n}-day streak`, skillLocked: "Skill Trainer time (locked)", skillLockedHint: "Included in your total below. This time cannot be changed.", noPracticeShort: "No practice logged for this day.",
       editDay: "Edit this day", nothingToEdit: "+ Log practice for this day", todayBtn: "Today",
     },
     group: {
@@ -665,7 +702,7 @@ const translations = {
       deleteEntry: "Eliminar entrada", pickOneItem: "Elige al menos una cosa que practicaste.", confirmDeleteEntry: "¿Eliminar la práctica de este día? Esta acción no se puede deshacer.", couldNotDeleteEntry: "No se pudo eliminar esta entrada.",
       goalMet: "🎯 Meta diaria alcanzada", goalMissed: (done: string, total: string) => `${done} / ${total} hacia tu meta`,
       onEquipment: (label: string) => `Con ${label}`,
-      streakOnDay: (n: number) => `🔥 Racha de ${n} días`, skillLocked: "Tiempo del Skill Trainer (bloqueado)", skillLockedHint: "Incluido en tu total. Este tiempo no se puede cambiar.", noPracticeShort: "No hay práctica registrada para este día.",
+      streakDays: "días seguidos", streakOnDay: (n: number) => `🔥 Racha de ${n} días`, skillLocked: "Tiempo del Skill Trainer (bloqueado)", skillLockedHint: "Incluido en tu total. Este tiempo no se puede cambiar.", noPracticeShort: "No hay práctica registrada para este día.",
       editDay: "Editar este día", nothingToEdit: "+ Registrar práctica de este día", todayBtn: "Hoy",
     },
     group: {
@@ -845,7 +882,7 @@ const translations = {
       deleteEntry: "Invoer verwijderen", pickOneItem: "Kies minstens één ding dat je hebt geoefend.", confirmDeleteEntry: "De oefening van deze dag verwijderen? Dit kan niet ongedaan worden gemaakt.", couldNotDeleteEntry: "Deze invoer kon niet worden verwijderd.",
       goalMet: "🎯 Dagelijks doel bereikt", goalMissed: (done: string, total: string) => `${done} / ${total} richting je doel`,
       onEquipment: (label: string) => `Op ${label}`,
-      streakOnDay: (n: number) => `🔥 Reeks van ${n} dagen`, skillLocked: "Skill Trainer-tijd (vergrendeld)", skillLockedHint: "Zit in je totaal. Deze tijd kan niet worden aangepast.", noPracticeShort: "Geen oefening gelogd voor deze dag.",
+      streakDays: "dagen op rij", streakOnDay: (n: number) => `🔥 Reeks van ${n} dagen`, skillLocked: "Skill Trainer-tijd (vergrendeld)", skillLockedHint: "Zit in je totaal. Deze tijd kan niet worden aangepast.", noPracticeShort: "Geen oefening gelogd voor deze dag.",
       editDay: "Deze dag bewerken", nothingToEdit: "+ Oefening loggen voor deze dag", todayBtn: "Vandaag",
     },
     group: {
@@ -2029,13 +2066,9 @@ function PointsDetailModal({ user, onClose, T }: { user: any; onClose: () => voi
 }
 
 // A short two-note bell ("tu-dum") when points are earned. Sound is a nicety: any problem is ignored, never blocks the pop-up.
-let chimeCtx: AudioContext | null = null;
 function playPointsChime() {
   try {
-    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return;
-    chimeCtx = chimeCtx ?? new AC();
-    const ctx = chimeCtx;
+    const ctx = getSharedAudio();
     const go = () => {
       const t0 = ctx.currentTime + 0.05;
       const notes: [number, number, number][] = [[659.25, 0, 0.3], [987.77, 0.14, 1.0]]; // E5 then B5: frequency, start offset, length (seconds)
@@ -2601,7 +2634,10 @@ function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale,
         hasPractice && log ? <>
           <DayBreakdown sessions={(practiceSessions ?? []).filter((x) => x.practiced_on === date)} log={log} skillSeconds={daySkillSeconds} otherSeconds={dayOtherSeconds} otherItems={dayOtherItems} dailyGoal={dailyGoal} language={language} T={T} onClose={onClose} onOpenExercise={onOpenExercise}
             onEdit={() => setEditing(true)} onRemoveOther={async () => { if (await confirm(T.today.removeOtherConfirm)) await onDelete(date); }} />
-          {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
+          {streakHere > 1 && <div className="today-detail-section day-streak">
+            <span className="day-streak-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 2.5c.6 3.2 2.7 4.4 4.4 6.5 1.3 1.6 2.1 3.4 2.1 5.4a7 7 0 01-14 0c0-2.3 1-4.2 2.5-5.7.3 1.5 1.1 2.4 2 2.9-.3-3.4.2-6.5 2.9-9.1z" /></svg></span>
+            <span className="day-streak-text"><strong>{streakHere}</strong><small>{T.calendar.streakDays}</small></span>
+          </div>}
         </> : <p className="hint">{T.calendar.noPracticeShort}</p>
       )}
       {!hasPractice && <button className="secondary" onClick={() => setEditing(true)}>{T.calendar.nothingToEdit}</button>}
@@ -4957,7 +4993,10 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       if (schedulerRef.current !== null) window.clearInterval(schedulerRef.current);
       clearBeatTimeouts();
       if (strokeRafRef.current !== null) cancelAnimationFrame(strokeRafRef.current);
-      audioCtxRef.current?.close();
+      // The audio context is shared by the whole app and stays open: only this window's own planned clicks and output are removed.
+      futureClicksRef.current.forEach((c) => { try { c.osc.stop(); (c.osc as OscillatorNode & { extras?: AudioScheduledSourceNode[] }).extras?.forEach((x) => x.stop()); } catch { /* already stopped */ } });
+      try { masterRef.current?.disconnect(); } catch { /* not connected */ }
+      stopSilentAudio();
       wakeLockRef.current?.release();
     };
   }, []);
@@ -5049,7 +5088,12 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     aheadRef.current = SCHEDULE_AHEAD_SECONDS;
     if (!playingRef.current || pausedRef.current || !ctx) return;
     cancelFutureClicks();
-    if (ctx.state !== "running") ctx.resume().catch(() => {});
+    if (ctx.state !== "running") {
+      ctx.resume().catch(() => {});
+      // Coming back from another app, iOS often keeps the sound system "interrupted" until the next tap, and nothing can be heard. If it has not woken
+      // up by itself, the metronome pauses so it is obvious: one tap on Resume restarts it on a fresh sound system.
+      window.setTimeout(() => { const c = audioCtxRef.current; if (playingRef.current && !pausedRef.current && c && c.state !== "running") pausePlaying(); }, 500);
+    }
     scheduler();
   }
   function pausePlaying() {
@@ -5061,11 +5105,36 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     setActiveBeat(0);
     pausedRef.current = true;
     setPaused(true);
+    stopSilentAudio();
+  }
+  // Gets a running audio context for this metronome (called from a tap: Start or Resume). The app-wide context is woken up; if iOS left it "interrupted"
+  // or stuck (after another app's sound, a call, a lock, or coming back from the background) it is replaced by a fresh one. The limiter every click goes
+  // through belongs to one context, so a new context gets a new limiter.
+  async function ensureAudio(): Promise<AudioContext> {
+    startSilentAudio(); // from the tap: switches the iPhone sound system back on
+    let ctx = getSharedAudio();
+    if (audioCtxRef.current !== ctx) { audioCtxRef.current = ctx; masterRef.current = null; }
+    await wakeAudio(ctx);
+    if (ctx.state !== "running") {
+      dropSharedAudio();
+      ctx = getSharedAudio();
+      audioCtxRef.current = ctx; masterRef.current = null;
+      await wakeAudio(ctx);
+    }
+    if (!masterRef.current) {
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -14; limiter.knee.value = 10; limiter.ratio.value = 8; limiter.attack.value = 0.002; limiter.release.value = 0.08;
+      const out = ctx.createGain();
+      out.gain.value = 0.9;
+      limiter.connect(out); out.connect(ctx.destination);
+      masterRef.current = limiter;
+    }
+    return ctx;
   }
   async function resumePlaying() {
-    const ctx = audioCtxRef.current;
-    if (!playingRef.current || !pausedRef.current || !ctx) return;
-    if (ctx.state !== "running") await ctx.resume().catch(() => {});
+    if (!playingRef.current || !pausedRef.current) return;
+    cancelFutureClicks();
+    const ctx = await ensureAudio();
     // Start again from the first beat so the clicks and the stroke guide begin together.
     beatRef.current = 0;
     strokeCounterRef.current = 0;
@@ -5135,34 +5204,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       setElapsed(0);
       setActiveBeat(0);
       setPlaying(true);
-      const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      enablePlaybackAudio();
-      enablePlaybackAudio();
-      // Android's WebView needs bigger audio buffers (latencyHint "playback") and a longer look-ahead, or the clicks stutter and drift.
-      const makeContext = () => (IS_ANDROID ? new AudioContextClass({ latencyHint: "playback" }) : new AudioContextClass());
-      const tryResume = async (c: AudioContext) => { try { await Promise.race([c.resume(), new Promise((resolve) => window.setTimeout(resolve, 600))]); } catch { /* handled below */ } };
-      let ctx = audioCtxRef.current;
-      // An "interrupted" (iOS) or closed context never wakes up by itself: replace it right here, while the tap that started the metronome still counts.
-      if (ctx && (ctx.state === "closed" || (ctx.state as string) === "interrupted")) { try { void ctx.close(); } catch { /* already closed */ } ctx = null; }
-      if (!ctx) { ctx = makeContext(); audioCtxRef.current = ctx; masterRef.current = null; }
-      // iOS can leave a context "interrupted" or stuck after a call, a lock, another app's sound or a long time in the background: that is silent forever
-      // (until the app is restarted). Wake it up, and if it still is not running, throw it away and start with a fresh one.
-      if (ctx.state !== "running") await tryResume(ctx);
-      if (ctx.state !== "running") {
-        try { await ctx.close(); } catch { /* already closed */ }
-        ctx = makeContext(); audioCtxRef.current = ctx; masterRef.current = null;
-        await tryResume(ctx);
-      }
-      // If the sound system stops later (an interruption while playing), wake it up again as soon as the app is back.
-      ctx.onstatechange = () => { const c = audioCtxRef.current; if (c && c === ctx && playingRef.current && !pausedRef.current && c.state !== "running" && !document.hidden) c.resume().catch(() => {}); };
-      if (!masterRef.current) {
-        const limiter = ctx.createDynamicsCompressor();
-        limiter.threshold.value = -14; limiter.knee.value = 10; limiter.ratio.value = 8; limiter.attack.value = 0.002; limiter.release.value = 0.08;
-        const out = ctx.createGain();
-        out.gain.value = 0.9;
-        limiter.connect(out); out.connect(ctx.destination);
-        masterRef.current = limiter;
-      }
+      const ctx = await ensureAudio();
       // iOS Safari needs a buffer actually played (not just resume()) within the gesture to fully unlock audio output.
       const unlockBuffer = ctx.createBuffer(1, 1, 22050);
       const unlockSource = ctx.createBufferSource();
@@ -5178,6 +5220,8 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     setPlaying(false);
     pausedRef.current = false;
     setPaused(false);
+    cancelFutureClicks(); // clicks that were already planned (up to 45 s ahead when the app is in the background) stop with it
+    stopSilentAudio();
     if (schedulerRef.current !== null) { window.clearInterval(schedulerRef.current); schedulerRef.current = null; }
     clearBeatTimeouts();
     stopStrokeLoop();
@@ -5445,7 +5489,7 @@ function SessionTimer({ pinnedExercises, onFocusChoice, open, close, onOpen, onB
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [playing]);
   useEffect(() => {
-    return () => { audioCtxRef.current?.close(); wakeLockRef.current?.release(); };
+    return () => { wakeLockRef.current?.release(); };
   }, []);
 
   // Elapsed time is derived from a start timestamp, not by counting interval ticks: the timer now
@@ -5516,16 +5560,9 @@ function SessionTimer({ pinnedExercises, onFocusChoice, open, close, onOpen, onB
   // has no unlocked context yet, so one is created here as a best effort -- iOS may keep it muted
   // until the user taps something, in which case the tone is skipped but the log prompt still shows.
   function playAlertTone() {
-    let existing = audioCtxRef.current;
-    if (!existing) {
-      try {
-        const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        existing = new AudioContextClass();
-        audioCtxRef.current = existing;
-      } catch { return; }
-    }
-    const ctx = existing;
-    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    let ctx: AudioContext;
+    try { ctx = getSharedAudio(); audioCtxRef.current = ctx; } catch { return; }
+    if (ctx.state !== "running") ctx.resume().catch(() => {});
     [0, 0.26, 0.52].forEach((offset) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -5573,11 +5610,9 @@ function SessionTimer({ pinnedExercises, onFocusChoice, open, close, onOpen, onB
       setPlaying(true);
       setPinsOpen(false);
       setShowFocus(true);
-      const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      enablePlaybackAudio();
-      const ctx = audioCtxRef.current ?? new AudioContextClass();
+      const ctx = getSharedAudio();
       audioCtxRef.current = ctx;
-      if (ctx.state === "suspended") await ctx.resume();
+      await wakeAudio(ctx);
       const unlockBuffer = ctx.createBuffer(1, 1, 22050);
       const unlockSource = ctx.createBufferSource();
       unlockSource.buffer = unlockBuffer;

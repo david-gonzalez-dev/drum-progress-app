@@ -1699,3 +1699,12 @@ html.native .shell.has-timer-banner .page{padding-top:30px}
 .add-receipt .saved-pill{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:99px;font:700 11px/1.5 'DM Sans';font-style:normal;color:#8be0a8;background:rgba(104,211,145,.12);border:1px solid rgba(104,211,145,.4);vertical-align:middle;letter-spacing:.2px}
 .add-receipt .rcpt-right{display:flex;align-items:center;gap:10px;flex:0 0 auto}
 .add-receipt .saved-pill{margin-left:0}
+
+/* Streak in the day pop-up: a card in the same family as the others, with a flame tile, the number, and a quiet label. */
+.today-detail .day-streak{display:flex;align-items:center;gap:12px;margin:8px 0 0;padding:10px 14px}
+.day-streak-icon{flex:0 0 36px;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,rgba(255,150,60,.28),rgba(255,107,26,.12));border:1px solid rgba(255,138,61,.4);color:#ff9b50}
+.day-streak-icon svg{width:19px;height:19px}
+.day-streak-text{display:flex;align-items:baseline;gap:8px}
+.day-streak-text strong{font:600 26px/1 'Barlow Condensed',sans-serif;color:#f1f3f0}
+.day-streak-text small{font:400 13.5px 'DM Sans',sans-serif;color:#9aa19d}
+.today-detail .day-streak{justify-content:center}

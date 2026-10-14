@@ -15,7 +15,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } catch {
             print("Audio session setup failed: \(error)")
         }
+        // After another app has taken over the sound (a video, a call), switch our audio session back on as soon as the interruption ends.
+        NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] note in
+            guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  AVAudioSession.InterruptionType(rawValue: raw) == .ended else { return }
+            self?.reactivateAudioSession()
+        }
         return true
+    }
+
+    // Puts the audio session back to "play, even on silent, mixing with other apps" and switches it on (used after interruptions and when coming back to the app).
+    func reactivateAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Audio session reactivation failed: \(error)")
+        }
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -33,7 +49,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        // Coming back from another app (which may have taken over the sound): switch the audio session back on.
+        reactivateAudioSession()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
