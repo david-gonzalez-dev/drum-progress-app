@@ -1601,3 +1601,85 @@ html.native .shell.has-timer-banner .page{padding-top:30px}
 .points-card-compact .points-card-value{font-size:34px}
 .points-card-compact .points-card-status{margin:0;font-size:14px}
 .points-card-compact .points-card-go{color:#ff9b50;font-size:20px;flex-shrink:0}
+
+/* "You" tag next to your name on the leaderboards: a clean, evenly padded pill that is centred on the name's line. */
+.lb-name b{display:flex;align-items:center;gap:8px;line-height:1.3}
+.lb-name b em{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;margin-left:0;padding:0 9px;height:20px;line-height:1;font-size:11.5px;letter-spacing:.2px;border-width:1.2px}
+
+/* Skill Trainer minutes are locked in the day editor: shown as a fixed row above the editable minutes. */
+.locked-row{display:flex;gap:12px;align-items:flex-start;margin:6px 0 12px;padding:12px 14px;border-radius:14px;background:#161312;border:1px solid #3b2a20;color:#ffb877}
+.locked-row svg{flex:0 0 20px;width:20px;height:20px;margin-top:1px}
+.locked-row span{display:flex;flex-direction:column;gap:2px}
+.locked-row strong{font:700 15px 'DM Sans';color:#f0d9c8}
+.locked-row small{font:500 12.5px/1.4 'DM Sans';color:#9aa19d}
+
+/* Home, today's summary: Skill Trainer time and other practice shown as two blocks. */
+.today-breakdown{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.today-breakdown-block{padding:12px 14px;border-radius:14px;background:#141716;border:1px solid #232825}
+.today-breakdown-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.today-breakdown-head span{font:700 12px 'DM Sans';letter-spacing:1.1px;text-transform:uppercase;color:#c9a68a}
+.today-breakdown-head strong{font:700 15px 'DM Sans';color:#f1f3f0;text-align:right}
+.today-breakdown-block .detail-chips{margin:0}
+
+/* Home today card is tappable; the pop-up lists every exercise with every tempo. */
+.today-goal-card-open{cursor:pointer}
+.today-goal-card-open:active{border-color:#3a2616}
+.today-goal-card .input-label{display:flex;justify-content:space-between;align-items:center}
+.today-detail-hint{color:#ff9b50;font-size:20px;line-height:1;letter-spacing:0}
+.today-detail-total{display:block;font:700 34px 'Barlow Condensed';color:#f1f3f0;margin:2px 0 12px}
+.today-detail-section{margin-bottom:16px;padding:12px 14px;border-radius:14px;background:#141716;border:1px solid #232825}
+.today-detail-exercise{padding:10px 0;border-top:1px solid #1f2321}
+.today-detail-name{display:flex;justify-content:space-between;align-items:baseline;width:100%;padding:0 0 6px;border:0;background:transparent;color:#ffb877;font:700 16px 'DM Sans';text-align:left}
+.today-detail-name small{font:600 13px 'DM Sans';color:#9aa19d}
+.today-detail-tempo{display:grid;grid-template-columns:78px 1fr auto;gap:8px;padding:4px 0;font:500 14px 'DM Sans';color:#d2d6d3}
+.today-detail-tempo .td-bpm{font-weight:700;color:#f1f3f0}
+.today-detail-tempo .td-time{color:#9aa19d;font-variant-numeric:tabular-nums}
+
+/* Today's practice pop-up: lighter type, bold only where it matters (the total and the exercise names). */
+.today-detail .today-breakdown-head span{font-weight:600;letter-spacing:1px}
+.today-detail .today-breakdown-head strong{font-weight:600}
+.today-detail .today-detail-name{font-weight:600}
+.today-detail .today-detail-name small{font-weight:400}
+.today-detail .today-detail-tempo{font-weight:400}
+.today-detail .today-detail-tempo .td-bpm{font-weight:500;color:#e7ebe8}
+.today-detail .today-detail-total{font-weight:600}
+.today-detail-actions{display:flex;gap:10px;margin-top:12px}
+.today-detail-section .today-notes{margin:10px 0 0}
+.today-detail-edit,.today-detail-remove{flex:1;padding:12px 10px;border-radius:12px;background:transparent;font:600 14px 'DM Sans'}
+.today-detail-edit{border:1px solid #6f351a;color:#ffb877}
+.today-detail-edit:active{background:#2a1710}
+.today-detail-remove{border:1px solid #3a2a28;color:#e2877d}
+.today-detail-remove:active{background:#2a1713}
+
+/* Lighter lists: the names in the Rudiments / Exercises / Books / My Items pickers and the choose-what-you-practised menu are regular weight, not bold. */
+.picker-window-card .onboard-row .onboard-row-name,.onboard-exercise-list .onboard-row .onboard-row-name{font-weight:400}
+.pick-row{font-weight:500}
+.pick-badge{font-weight:400}
+
+/* Rudiments / Exercises / Books / My Items picker window: shorter, so it is never taller than the editor window it opens from. */
+.picker-window-card{padding-top:18px;padding-bottom:16px}
+.picker-window-card .rudiment-list{max-height:min(40vh,330px)}
+.picker-window-card .edit-rating-title{margin-bottom:10px}
+
+/* Today's practice pop-up, compact: tighter spacing everywhere so it stays short even with many exercises. */
+.today-detail{padding:16px 16px 14px}
+.today-detail .ds-head{margin-bottom:2px}
+.today-detail .today-detail-total{font-size:26px;margin:0 0 8px}
+.today-detail .today-detail-section{margin-bottom:8px;padding:8px 12px}
+.today-detail .today-breakdown-head{margin-bottom:4px}
+.today-detail .today-breakdown-head span{font-size:11px}
+.today-detail .today-breakdown-head strong{font-size:14px}
+.today-detail .today-detail-exercise{padding:6px 0 4px}
+.today-detail .today-detail-name{padding:0 0 2px;font-size:15px}
+.today-detail .today-detail-name small{font-size:12px}
+.today-detail .today-detail-tempo{padding:1px 0;font-size:13px;grid-template-columns:70px 1fr auto}
+.today-detail .detail-chips{gap:6px}
+.today-detail .detail-chips em{padding:4px 9px;font-size:12.5px}
+.today-detail .today-detail-actions{margin-top:8px;gap:8px}
+.today-detail .today-detail-edit,.today-detail .today-detail-remove{padding:8px 8px;font-size:13px;border-radius:10px}
+.today-detail .today-notes{margin:6px 0 0;font-size:13px}
+.today-detail .today-detail-edit{flex:0 0 32%}
+.today-detail .today-detail-remove{flex:1;white-space:nowrap}
+/* Edit and Remove are the same size; the equipment line under "Other practice" is small, never bigger than the card title. */
+.today-detail .today-detail-edit,.today-detail .today-detail-remove{flex:1 1 0;white-space:nowrap}
+.today-detail .roster-equipment{display:block;margin:0 0 6px;font-size:11px;line-height:1.3;color:#9aa19d}

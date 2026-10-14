@@ -153,6 +153,14 @@ function PracticedChip({ item, skill, language, onOpen }: { item: string; skill:
     {practicedItemLabel(item, language)}
   </em>;
 }
+// Time practised in the Skill Trainer is locked: it is part of the day's total, but nobody can lower the total below it
+// (not in the calendar editor, not by resetting the day). Newer sessions store exact seconds, older ones only whole minutes.
+function sessionSeconds(s: { duration_seconds?: number | null; duration_minutes: number }): number { return s.duration_seconds != null ? s.duration_seconds : s.duration_minutes * 60; }
+function lockedSecondsFor(sessions: { practiced_on: string; duration_seconds?: number | null; duration_minutes: number }[], log: { minutes: number; seconds?: number } | undefined, date: string): number {
+  const skill = sessions.filter((x) => x.practiced_on === date).reduce((sum, x) => sum + sessionSeconds(x), 0);
+  const total = log ? log.minutes * 60 + (log.seconds ?? 0) : 0;
+  return Math.min(skill, total);
+}
 function formatMinutes(totalMinutes: number) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -463,8 +471,8 @@ const translations = {
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", practiceTimeHeading: "PRACTICE TIME", whatPractised: "ADD WHAT YOU PRACTISED",
       notes: "NOTES", notesPrefix: "Notes:", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} on ${equipmentName}`,
-      todaySummary: "TODAY", noPracticeYet: "No practice yet.", secondsCarried: "extra (not counted in minutes yet)", todaySoFar: (total: string) => `${total} already logged today, this adds on top`,
-      resetPractice: "Reset", confirmResetPractice: "Clear today's practice and start over? This can't be undone.",
+      detailTitle: "TODAY'S PRACTICE", removeBtn: "Remove", removeOther: "Remove other practice", removeOtherConfirm: "Remove the other practice? This can't be undone.", addBtn: "Add other practice", editBtn: "Edit", skillBreakdown: "Skill Trainer", otherBreakdown: "Other practice", exerciseCount: (n: number) => `${n} ${n === 1 ? "exercise" : "exercises"}`, todaySummary: "TODAY", noPracticeYet: "No practice yet.", secondsCarried: "extra (not counted in minutes yet)", todaySoFar: (total: string) => `${total} already logged today, this adds on top`,
+      resetPractice: "Reset", confirmResetPractice: "Clear today's other practice and start over? Your Skill Trainer time stays. This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
       whatDidYouPractiseTitle: "WHAT DID YOU PRACTISE?", whatDidYouPractiseSubtitle: "Pick at least one.", addOwnPlaceholder: "Add your own...", addOwnBtn: "Add",
       rudiments: "Rudiments", searchRudiments: "Search rudiments...", searchExercises: "Search exercises...", books: "Books", myItems: "My Items", addOwnBookPlaceholder: "Add your own book...", pickerDone: "Done",
@@ -477,7 +485,7 @@ const translations = {
       deleteEntry: "Delete entry", pickOneItem: "Pick at least one thing you practised.", confirmDeleteEntry: "Delete this day's practice? This can't be undone.", couldNotDeleteEntry: "Could not delete this entry.",
       goalMet: "🎯 Daily goal reached", goalMissed: (done: string, total: string) => `${done} / ${total} toward your goal`,
       onEquipment: (label: string) => `On ${label}`,
-      streakOnDay: (n: number) => `🔥 ${n}-day streak`, noPracticeShort: "No practice logged for this day.",
+      streakOnDay: (n: number) => `🔥 ${n}-day streak`, skillLocked: "Skill Trainer time (locked)", skillLockedHint: "Included in your total below. This time cannot be changed.", noPracticeShort: "No practice logged for this day.",
       editDay: "Edit this day", nothingToEdit: "+ Log practice for this day", todayBtn: "Today",
     },
     group: {
@@ -643,8 +651,8 @@ const translations = {
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", practiceTimeHeading: "TIEMPO DE PRÁCTICA", whatPractised: "AÑADE LO QUE PRACTICASTE",
       notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} en ${equipmentName}`,
-      todaySummary: "HOY", noPracticeYet: "Aún no hay práctica.", secondsCarried: "extra (aún no contado en minutos)", todaySoFar: (total: string) => `${total} ya registrados hoy, esto se suma`,
-      resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la práctica de hoy y empezar de nuevo? Esta acción no se puede deshacer.",
+      detailTitle: "PRÁCTICA DE HOY", removeBtn: "Quitar", removeOther: "Quitar otra práctica", removeOtherConfirm: "¿Quitar la otra práctica? Esta acción no se puede deshacer.", addBtn: "Añadir otra práctica", editBtn: "Editar", skillBreakdown: "Skill Trainer", otherBreakdown: "Otra práctica", exerciseCount: (n: number) => `${n} ${n === 1 ? "ejercicio" : "ejercicios"}`, todaySummary: "HOY", noPracticeYet: "Aún no hay práctica.", secondsCarried: "extra (aún no contado en minutos)", todaySoFar: (total: string) => `${total} ya registrados hoy, esto se suma`,
+      resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la otra práctica de hoy y empezar de nuevo? El tiempo del Skill Trainer se queda. No se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
       whatDidYouPractiseTitle: "¿QUÉ PRACTICASTE?", whatDidYouPractiseSubtitle: "Elige al menos uno.", addOwnPlaceholder: "Añade lo tuyo...", addOwnBtn: "Añadir",
       rudiments: "Rudiments", searchRudiments: "Buscar rudiments...", searchExercises: "Buscar ejercicios...", books: "Libros", myItems: "Mis elementos", addOwnBookPlaceholder: "Añade tu propio libro...", pickerDone: "Listo",
@@ -657,7 +665,7 @@ const translations = {
       deleteEntry: "Eliminar entrada", pickOneItem: "Elige al menos una cosa que practicaste.", confirmDeleteEntry: "¿Eliminar la práctica de este día? Esta acción no se puede deshacer.", couldNotDeleteEntry: "No se pudo eliminar esta entrada.",
       goalMet: "🎯 Meta diaria alcanzada", goalMissed: (done: string, total: string) => `${done} / ${total} hacia tu meta`,
       onEquipment: (label: string) => `Con ${label}`,
-      streakOnDay: (n: number) => `🔥 Racha de ${n} días`, noPracticeShort: "No hay práctica registrada para este día.",
+      streakOnDay: (n: number) => `🔥 Racha de ${n} días`, skillLocked: "Tiempo del Skill Trainer (bloqueado)", skillLockedHint: "Incluido en tu total. Este tiempo no se puede cambiar.", noPracticeShort: "No hay práctica registrada para este día.",
       editDay: "Editar este día", nothingToEdit: "+ Registrar práctica de este día", todayBtn: "Hoy",
     },
     group: {
@@ -823,8 +831,8 @@ const translations = {
       todaysPractice: "Oefening van vandaag", metronome: "Metronoom", howLong: "HOE LANG HEB JE GEOEFEND?", practiceTimeHeading: "OEFENTIJD", whatPractised: "VOEG TOE WAT JE GEOEFEND HEBT",
       notes: "NOTITIES", notesPrefix: "Notities:", optional: "OPTIONEEL", notesPlaceholder: "Wat heb je vandaag geoefend?", savePractice: "Oefening opslaan", practiceSaved: "✓ Oefening opgeslagen",
       todayGoal: "DOEL VAN VANDAAG", equipment: "GEOEFEND OP", drumset: "Drumstel", pad: "Oefenpad", equipmentBoth: "Drumstel en oefenpad", addNotes: "+ Notitie toevoegen", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} op ${equipmentName}`,
-      todaySummary: "VANDAAG", noPracticeYet: "Nog niet geoefend.", secondsCarried: "extra (nog niet meegeteld in minuten)", todaySoFar: (total: string) => `${total} vandaag al opgeslagen, dit komt erbij`,
-      resetPractice: "Wissen", confirmResetPractice: "De oefening van vandaag wissen en opnieuw beginnen? Dit kan niet ongedaan worden gemaakt.",
+      detailTitle: "OEFENING VANDAAG", removeBtn: "Verwijderen", removeOther: "Overige oefening verwijderen", removeOtherConfirm: "De overige oefening verwijderen? Dit kan niet ongedaan worden gemaakt.", addBtn: "Overige oefening toevoegen", editBtn: "Bewerken", skillBreakdown: "Skill Trainer", otherBreakdown: "Overige oefening", exerciseCount: (n: number) => `${n} ${n === 1 ? "oefening" : "oefeningen"}`, todaySummary: "VANDAAG", noPracticeYet: "Nog niet geoefend.", secondsCarried: "extra (nog niet meegeteld in minuten)", todaySoFar: (total: string) => `${total} vandaag al opgeslagen, dit komt erbij`,
+      resetPractice: "Wissen", confirmResetPractice: "De overige oefening van vandaag wissen en opnieuw beginnen? Je Skill Trainer-tijd blijft staan. Dit kan niet ongedaan worden gemaakt.",
       noGoalTitle: "Stel je dagelijkse doel in", noGoalSubtitle: "Een paar minuten per dag worden echte vooruitgang. Kies een doel en begin vandaag je reeks.", noGoalBtn: "Mijn doel instellen",
       whatDidYouPractiseTitle: "WAT HEB JE GEOEFEND?", whatDidYouPractiseSubtitle: "Kies er minstens één.", addOwnPlaceholder: "Voeg je eigen toe...", addOwnBtn: "Toevoegen",
       rudiments: "Rudiments", searchRudiments: "Zoek rudiments...", searchExercises: "Zoek oefeningen...", books: "Boeken", myItems: "Mijn items", addOwnBookPlaceholder: "Voeg je eigen boek toe...", pickerDone: "Klaar",
@@ -837,7 +845,7 @@ const translations = {
       deleteEntry: "Invoer verwijderen", pickOneItem: "Kies minstens één ding dat je hebt geoefend.", confirmDeleteEntry: "De oefening van deze dag verwijderen? Dit kan niet ongedaan worden gemaakt.", couldNotDeleteEntry: "Deze invoer kon niet worden verwijderd.",
       goalMet: "🎯 Dagelijks doel bereikt", goalMissed: (done: string, total: string) => `${done} / ${total} richting je doel`,
       onEquipment: (label: string) => `Op ${label}`,
-      streakOnDay: (n: number) => `🔥 Reeks van ${n} dagen`, noPracticeShort: "Geen oefening gelogd voor deze dag.",
+      streakOnDay: (n: number) => `🔥 Reeks van ${n} dagen`, skillLocked: "Skill Trainer-tijd (vergrendeld)", skillLockedHint: "Zit in je totaal. Deze tijd kan niet worden aangepast.", noPracticeShort: "Geen oefening gelogd voor deze dag.",
       editDay: "Deze dag bewerken", nothingToEdit: "+ Oefening loggen voor deze dag", todayBtn: "Vandaag",
     },
     group: {
@@ -1396,7 +1404,7 @@ export default function Home() {
   }
   const [practiceBpm, setPracticeBpm] = useState(100);
   const [pendingSessionMinutes, setPendingSessionMinutes] = useState(0);
-  const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string; duration_minutes: number; practiced_on: string; issues: string[]; notes: string | null; created_at: string }[]>([]);
+  const [practiceSessions, setPracticeSessions] = useState<{ item_en: string; bpm: number; rating: string; duration_minutes: number; duration_seconds?: number | null; practiced_on: string; issues: string[]; notes: string | null; created_at: string }[]>([]);
   const [pinnedExercises, setPinnedExercises] = useState<string[]>([]);
   // After "Start" on the Session Timer: where the player wants to go. The timer keeps running (its bar stays at the top of every screen).
   function handleFocusChoice(choice: "rudiments" | "exercises" | "metronome" | "free" | { exercise: string }) {
@@ -1471,7 +1479,7 @@ export default function Home() {
       supabase.from("profiles").select("name").eq("id", currentUser.id).maybeSingle(),
       supabase.from("settings").select("language, daily_goal_minutes, metronome_tone, show_days_this_year, onboarded, kid_mode, points_enabled").eq("user_id", currentUser.id).maybeSingle(),
       supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,equipment,drumset_minutes,pad_minutes,custom_items,practice_log_items(practice_items(name_en))").eq("user_id", currentUser.id),
-      supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,issues,notes,created_at,practice_exercises(name_en)").eq("user_id", currentUser.id).order("created_at"),
+      supabase.from("practice_sessions").select("bpm,rating,duration_minutes,duration_seconds,practiced_on,issues,notes,created_at,practice_exercises(name_en)").eq("user_id", currentUser.id).order("created_at"),
       supabase.from("pinned_exercises").select("exercise_en").eq("user_id", currentUser.id).order("sort_order"),
       supabase.from("user_practice_items").select("kind,name").eq("user_id", currentUser.id).order("created_at"),
     ]);
@@ -1527,7 +1535,7 @@ export default function Home() {
     // a background refetch (e.g. after the tab regains focus) shouldn't clobber unsaved edits.
     const todayLog = nextLogs[dateKey];
     if (hydrateToday && todayLog) { setMinutes(String(todayLog.minutes)); setSeconds(String(todayLog.seconds)); setNotes(todayLog.notes); setEquipment(todayLog.equipment); setDrumsetMinutes(todayLog.drumsetMinutes != null ? String(todayLog.drumsetMinutes) : ""); setPadMinutes(todayLog.padMinutes != null ? String(todayLog.padMinutes) : ""); setCustomItems(todayLog.customItems); if (todayLog.items.length) setSelected(todayLog.items); }
-    setPracticeSessions((sessionsRes.data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en, bpm: row.bpm, rating: row.rating, duration_minutes: row.duration_minutes ?? 0, practiced_on: row.practiced_on, issues: row.issues ?? [], notes: row.notes ?? null, created_at: row.created_at })).filter((s: any) => s.item_en));
+    setPracticeSessions((sessionsRes.data ?? []).map((row: any) => ({ item_en: row.practice_exercises?.name_en, bpm: row.bpm, rating: row.rating, duration_minutes: row.duration_minutes ?? 0, duration_seconds: row.duration_seconds ?? null, practiced_on: row.practiced_on, issues: row.issues ?? [], notes: row.notes ?? null, created_at: row.created_at })).filter((s: any) => s.item_en));
     setPinnedExercises((pinnedRes.data ?? []).map((row: any) => row.exercise_en));
     setUserItems((itemsRes.data ?? []).filter((row: any) => row.kind === "item").map((row: any) => row.name));
     setUserBooks((itemsRes.data ?? []).filter((row: any) => row.kind === "book").map((row: any) => row.name));
@@ -1655,6 +1663,9 @@ export default function Home() {
   function failed(res: { error?: { message: string } | null } | null | undefined) { if (res?.error) { setAuthError(res.error.message); return true; } return false; }
   async function saveLogFor(targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[], targetUsedMetronome?: boolean) {
     if (!user) return false;
+    // The Skill Trainer part of the day can never be lowered: if a total below it arrives (from any screen), it is raised back up to it.
+    const lockedSec = lockedSecondsFor(practiceSessions, logs[targetDate], targetDate);
+    if (targetMinutes * 60 + (targetSeconds ?? 0) < lockedSec) { targetMinutes = Math.floor(lockedSec / 60); targetSeconds = lockedSec % 60; }
     // used_metronome is only ever included (and only ever true) when a metronome session
     // actually contributed to this save -- omitted otherwise so a later plain edit can't
     // clobber an earlier metronome session's flag back to false.
@@ -1673,6 +1684,9 @@ export default function Home() {
   }
   async function deleteLogFor(targetDate: string) {
     if (!user) return false;
+    // A day with Skill Trainer time cannot be deleted: only the other practice is cleared, the locked Skill Trainer time stays.
+    const lockedSec = lockedSecondsFor(practiceSessions, logs[targetDate], targetDate);
+    if (lockedSec > 0) return await saveLogFor(targetDate, Math.floor(lockedSec / 60), [], "", null, null, null, lockedSec % 60, []);
     const { error, count } = await supabase.from("practice_logs").delete({ count: "exact" }).eq("user_id", user.id).eq("practiced_on", targetDate);
     if (error || !count) { setAuthError(error?.message ?? T.calendar.couldNotDeleteEntry); return false; }
     setLogs((current) => { const next = { ...current }; delete next[targetDate]; return next; });
@@ -1717,7 +1731,7 @@ export default function Home() {
     // the two are meant to be separate logs of what was actually intentionally tagged.
     const isSplit = equipment === "both";
     await saveLogFor(dateKey, newMinutes, selected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, newSeconds, customItems);
-    setPracticeSessions((current) => [...current, { item_en: itemEn, bpm, rating, duration_minutes: durationMinutes, practiced_on: dateKey, issues, notes: note || null, created_at: new Date().toISOString() }]);
+    setPracticeSessions((current) => [...current, { item_en: itemEn, bpm, rating, duration_minutes: durationMinutes, duration_seconds: Math.max(0, Math.round(elapsedSeconds)), practiced_on: dateKey, issues, notes: note || null, created_at: new Date().toISOString() }]);
     return true;
   }
   async function resetPracticeLevel(itemEn: string, bpm: number) {
@@ -1742,10 +1756,11 @@ export default function Home() {
     return true;
   }
   async function resetPractice() {
+    const keptSec = lockedSecondsFor(practiceSessions, logs[dateKey], dateKey);
     if (logs[dateKey]) await deleteLogFor(dateKey);
-    setMinutes("0");
+    setMinutes(String(Math.floor(keptSec / 60)));
     setQuickAddMinutes("0");
-    setSeconds("0");
+    setSeconds(String(keptSec % 60));
     setSelected([]);
     setCustomItems([]);
     setNotes("");
@@ -1784,7 +1799,7 @@ export default function Home() {
   const hasUnreadCheers = cheerUnreadCount(cheers, user.id, cheersSeenAt) > 0;
   const visibleTabs = isAdmin ? [...NAV_TABS, "admin" as Tab] : NAV_TABS;
   return <main className={timerBanner && metroBanner ? "shell has-timer-banner has-two-banners" : timerBanner || metroBanner ? "shell has-timer-banner" : "shell"}>
-    {tab === "today" && <Today onGoToProgress={() => { setTab("progress"); window.scrollTo(0, 0); }} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("home"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setSkillTab("rudiments"); setPracticeStep("skill"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} onOpenMetronome={() => setMetronome(true)} displayName={displayName} language={language} T={T} />}
+    {tab === "today" && <Today onGoToProgress={() => { setTab("progress"); window.scrollTo(0, 0); }} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("home"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setSkillTab("rudiments"); setPracticeStep("skill"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} onOpenMetronome={() => setMetronome(true)} onRemoveOther={resetPractice} picker={{ sortedRudiments, sortedExercises, userItems, userBooks, onAddUserItem: addUserPracticeItem, onRemoveUserItem: removeUserPracticeItem }} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode onMetronomeToneChange={changeMetronomeTone} skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} practiceDifficulty={practiceDifficulty} T={T} />}
     {tab === "group" && <Group onGroupCount={setGroupCount} user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
     {tab === "progress" && <Progress onOpenExercise={openExerciseDetail} onOpenSettings={() => { setTab("settings"); window.scrollTo(0, 0); }} practiceSessions={practiceSessions} logs={logs} user={user} language={language} kidMode={kidMode} T={T} />}
@@ -2291,7 +2306,50 @@ const HOME_ICONS = {
 function HomeStat({ icon, label, value }: { icon: keyof typeof HOME_ICONS; label: string; value: string }) {
   return <div className="stat-cell"><svg viewBox="0 0 24 24" fill={icon === "bars" ? "none" : "currentColor"} stroke="currentColor" strokeWidth={icon === "bars" ? 3.2 : 1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{HOME_ICONS[icon]}</svg><span>{label}</span><strong>{value}</strong></div>;
 }
-function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onGoToRudiments, onOpenExercise, onManagePins, onViewPoints, onOpenSessionTimer, onOpenMetronome, displayName, language, T }: any) {
+// Opened from the Today card on Home: everything practised today, every exercise with every tempo, and the other practice.
+function TodayDetailModal({ sessions, log, skillSeconds, otherSeconds, otherItems, dailyGoal, language, T, onClose, onOpenExercise, onRemoveOther, onEdit }: { onEdit: () => void; onRemoveOther: () => void; sessions: any[]; log?: Log; skillSeconds: number; otherSeconds: number; otherItems: string[]; dailyGoal: number | null; language: Lang; T: any; onClose: () => void; onOpenExercise: (en: string) => void }) {
+  const ratingLabel: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
+  const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+  // Per exercise (in the order first practised), per tempo: the time added up and the latest rating.
+  const groups: { en: string; seconds: number; tempos: { bpm: number; seconds: number; rating: string }[] }[] = [];
+  [...sessions].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))).forEach((x) => {
+    let g = groups.find((y) => y.en === x.item_en);
+    if (!g) { g = { en: x.item_en, seconds: 0, tempos: [] }; groups.push(g); }
+    const secs = sessionSeconds(x);
+    g.seconds += secs;
+    const t = g.tempos.find((y) => y.bpm === x.bpm);
+    if (t) { t.seconds += secs; t.rating = x.rating; } else g.tempos.push({ bpm: x.bpm, seconds: secs, rating: x.rating });
+  });
+  groups.forEach((g) => g.tempos.sort((a, b) => a.bpm - b.bpm));
+  const totalSeconds = (log?.minutes ?? 0) * 60 + (log?.seconds ?? 0);
+  const hasOther = otherSeconds > 0 || otherItems.length > 0;
+  return <div className="modal modal-center" onClick={onClose}><div className="day-summary today-detail" onClick={(e) => e.stopPropagation()}>
+    <div className="ds-head"><span className="eyebrow">{T.today.detailTitle}</span><button className="close" onClick={onClose}>×</button></div>
+    <div className="day-summary-body">
+      <strong className="today-detail-total">{formatMinutes(Math.round(totalSeconds / 60))}{dailyGoal != null ? ` / ${formatMinutes(dailyGoal)}` : ""}</strong>
+      {groups.length > 0 && <div className="today-detail-section">
+        <div className="today-breakdown-head"><span>{T.today.skillBreakdown}</span><strong>{formatMinutes(Math.max(1, Math.round(skillSeconds / 60)))}</strong></div>
+        {groups.map((g) => <div key={g.en} className="today-detail-exercise">
+          <button type="button" className="today-detail-name" onClick={() => { if (PRACTICE_EXERCISES.some((e) => e.en === g.en)) { onClose(); onOpenExercise(g.en); } }}>
+            <span>{PRACTICE_EXERCISES.find((e) => e.en === g.en)?.[language] ?? g.en}</span><small>{clock(g.seconds)}</small>
+          </button>
+          {g.tempos.map((t) => <div key={t.bpm} className="today-detail-tempo"><span className="td-bpm">{t.bpm} BPM</span><span className="td-rating">{RATING_ICON[t.rating] ?? ""} {ratingLabel[t.rating] ?? t.rating}</span><span className="td-time">{clock(t.seconds)}</span></div>)}
+        </div>)}
+      </div>}
+      <div className="today-detail-section">
+        <div className="today-breakdown-head"><span>{T.today.otherBreakdown}</span>{otherSeconds > 0 && <strong>{formatMinutes(Math.max(1, Math.round(otherSeconds / 60)))}</strong>}</div>
+        {log?.equipment && <span className="roster-equipment">{equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}</span>}
+        {otherItems.length > 0 && <div className="detail-chips">{otherItems.map((item) => <PracticedChip key={item} item={item} skill={false} language={language} />)}</div>}
+        {log?.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
+        <div className="today-detail-actions">
+          <button type="button" className="today-detail-edit" onClick={onEdit}>{hasOther ? T.today.editBtn : T.today.addBtn}</button>
+          {hasOther && <button type="button" className="today-detail-remove" onClick={onRemoveOther}>{T.today.removeBtn}</button>}
+        </div>
+      </div>
+    </div>
+  </div></div>;
+}
+function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onGoToRudiments, onOpenExercise, onManagePins, onViewPoints, onOpenSessionTimer, onOpenMetronome, onRemoveOther, picker, displayName, language, T }: any) {
   const todayLog: Log | undefined = logs[dateKey];
   const todayMinutes = todayLog?.minutes ?? 0;
   const goalAchieved = dailyGoal != null && todayMinutes >= dailyGoal;
@@ -2308,6 +2366,12 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
   // tags (see logPracticeSession) -- a day with only Skill Trainer minutes would otherwise show
   // "No practice yet." here despite the goal bar above it being full, which reads as broken.
   const todaySkillExercises: string[] = Array.from(new Set(practiceSessions.filter((s: any) => s.practiced_on === dateKey).map((s: any) => s.item_en as string)));
+  // The day's total is split in two: time locked in from the Skill Trainer, and everything else (added on the timer, the metronome or by hand).
+  const [showDetail, setShowDetail] = useState(false);
+  const [showEditToday, setShowEditToday] = useState(false);
+  const todaySkillSeconds = lockedSecondsFor(practiceSessions, todayLog, dateKey);
+  const todayOtherSeconds = Math.max(0, todayMinutes * 60 + (todayLog?.seconds ?? 0) - todaySkillSeconds);
+  const todayOtherItems: string[] = todayLog ? Array.from(new Set([...todayLog.items, ...todayLog.customItems])).filter((item) => !todaySkillExercises.includes(item)) : [];
   return <section className="page today">
     <header className="hero home-hero"><div className="hero-text"><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><div className="hero-actions"><button type="button" className="avatar settings-avatar metro-avatar" onClick={onOpenMetronome} aria-label={T.today.metronome}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6l3.5 17.5a1 1 0 01-1 1.2h-11a1 1 0 01-1-1.2z" /><path d="M12 17.5L15.5 6.5" /><circle cx="14.2" cy="10.4" r="1.3" fill="currentColor" /></svg></button><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></div></header>
     <button type="button" className="start-cta" onClick={onOpenSessionTimer}>
@@ -2324,8 +2388,8 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
       </div>
       <span className="goal-chip goal-chip-corner">{T.today.goalShort} {formatMinutes(dailyGoal)}</span>
       <button type="button" className="start-session-btn today-empty-cta" onClick={onGoToRudiments}>{T.today.practiceRudiment}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
-    </div> : <div className={todayMinutes === 0 ? "form-card today-goal-card today-goal-card-empty" : "form-card today-goal-card"} onClick={todayMinutes === 0 ? onGoToPractice : undefined}>
-      <label className="input-label">{T.today.todaySummary}</label>
+    </div> : <div className={todayMinutes === 0 && todaySkillExercises.length === 0 ? "form-card today-goal-card today-goal-card-empty" : "form-card today-goal-card today-goal-card-open"} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") (todayMinutes === 0 && todaySkillExercises.length === 0 ? onGoToPractice() : setShowDetail(true)); }} onClick={(e) => { if ((e.target as HTMLElement).closest("button")) return; if (todayMinutes === 0 && todaySkillExercises.length === 0) onGoToPractice(); else setShowDetail(true); }}>
+      <label className="input-label">{T.today.todaySummary}{(todayMinutes > 0 || todaySkillExercises.length > 0) && <span className="today-detail-hint" aria-hidden="true">›</span>}</label>
       {dailyGoal != null ? (
         <div className="goal-progress"><div className="goal-progress-label"><strong className={goalAchieved ? "achieved" : ""}>{formatMinutes(todayMinutes)} / {formatMinutes(dailyGoal)}</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
       ) : (
@@ -2336,7 +2400,16 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
         </div>
       )}
       {todayLog && todayLog.equipment && <span className="roster-equipment">{equipmentSplitLabel(todayLog.drumsetMinutes, todayLog.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(todayLog.equipment, T))}</span>}
-      {(() => {
+      {todaySkillSeconds > 0 ? <div className="today-breakdown">
+        <div className="today-breakdown-block">
+          <div className="today-breakdown-head"><span>{T.today.skillBreakdown}</span><strong>{formatMinutes(Math.max(1, Math.round(todaySkillSeconds / 60)))} · {T.today.exerciseCount(todaySkillExercises.length)}</strong></div>
+          <div className="detail-chips">{todaySkillExercises.map((item) => <PracticedChip key={item} item={item} skill language={language} onOpen={PRACTICE_EXERCISES.some((e) => e.en === item) ? () => onOpenExercise(item) : undefined} />)}</div>
+        </div>
+        {(todayOtherSeconds > 0 || todayOtherItems.length > 0) && <div className="today-breakdown-block">
+          <div className="today-breakdown-head"><span>{T.today.otherBreakdown}</span>{todayOtherSeconds > 0 && <strong>{formatMinutes(Math.max(1, Math.round(todayOtherSeconds / 60)))}</strong>}</div>
+          {todayOtherItems.length > 0 && <div className="detail-chips">{todayOtherItems.map((item) => <PracticedChip key={item} item={item} skill={false} language={language} />)}</div>}
+        </div>}
+      </div> : (() => {
         const loggedItems = todayLog ? [...todayLog.items, ...todayLog.customItems] : [];
         const allItems: string[] = Array.from(new Set([...loggedItems, ...todaySkillExercises]));
         return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <PracticedChip key={item} item={item} skill={todaySkillExercises.includes(item)} language={language} onOpen={todaySkillExercises.includes(item) && PRACTICE_EXERCISES.some((e) => e.en === item) ? () => onOpenExercise(item) : undefined} />)}</div> : (todayMinutes === 0 ? <p className="hint">{T.today.noPracticeYet}</p> : null);
@@ -2372,13 +2445,15 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
       </> : <button type="button" className="home-pinned-empty" onClick={onManagePins}>{T.practiceMode.pinManagerEmpty}</button>}
     </div>
     <div className="section-title"><h2 className="home-title">{T.calendar.title}</h2></div>
-    <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} practiceSessions={practiceSessions} language={language} T={T} />
+    <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} practiceSessions={practiceSessions} language={language} T={T} picker={picker} />
+    {showDetail && <TodayDetailModal sessions={practiceSessions.filter((x: any) => x.practiced_on === dateKey)} log={todayLog} skillSeconds={todaySkillSeconds} otherSeconds={todayOtherSeconds} otherItems={todayOtherItems} dailyGoal={dailyGoal} language={language} T={T} onClose={() => setShowDetail(false)} onOpenExercise={onOpenExercise} onEdit={() => { setShowDetail(false); setShowEditToday(true); }} onRemoveOther={async () => { if (await confirm(T.today.removeOtherConfirm)) { await onRemoveOther(); setShowDetail(false); } }} />}
+    {showEditToday && <DaySummaryModal startEditing onBack={() => { setShowEditToday(false); setShowDetail(true); }} date={dateKey} log={todayLog} dailyGoal={dailyGoal} logs={logs} practiceSessions={practiceSessions} locale={localeFor(language)} language={language} T={T} onClose={() => setShowEditToday(false)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} picker={picker} />}
   </section>;
 }
 
 type SaveLogFor = (targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[]) => Promise<boolean>;
 
-function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practiceSessions, language, T }: { logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; practiceSessions: any[]; language: Lang; T: any }) {
+function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practiceSessions, language, T, picker }: { picker?: PickerData; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; practiceSessions: any[]; language: Lang; T: any }) {
   const today = new Date(); const [selectedDate, setSelectedDate] = useState(dateKey); const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1)); const year = viewDate.getFullYear(); const month = viewDate.getMonth(); const days = new Date(year, month + 1, 0).getDate(); const starts = (new Date(year, month, 1).getDay() + 6) % 7; const selectedLog = logs[selectedDate];
   const locale = localeFor(language);
   const [summaryDate, setSummaryDate] = useState<string | null>(null);
@@ -2404,7 +2479,7 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practice
       })() : <p>{T.calendar.noPractice}</p>)}
     </div>}
     {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} practiceSessions={practiceSessions} locale={locale} language={language} T={T}
-      onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm}
+      onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} picker={picker}
       onNavigateDay={(delta) => setSummaryDate((current) => current ? shiftDateKey(current, delta) : current)} />}
   </>;
 }
@@ -2482,27 +2557,28 @@ function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, se
     </div>}
   </>;
 }
-function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale, language, T, onClose, onSave, onDelete, confirm, roster, onNavigateDay }: {
+function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale, language, T, onClose, onSave, onDelete, confirm, roster, onNavigateDay, startEditing, onBack, picker }: {
+  startEditing?: boolean; onBack?: () => void; picker?: PickerData;
   date: string; log?: Log; dailyGoal: number | null; logs: Record<string, Log>; practiceSessions?: any[]; locale: string; language: Lang; T: any;
   onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>;
   roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string; skillItems?: string[] }>; currentUserId: string };
   onNavigateDay?: (delta: number) => void;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(!!startEditing);
   const streakHere = calculateStreaks(logs, date).current;
   const hasPractice = !!log && log.minutes > 0;
   const daySkillExercises = (practiceSessions ?? []).filter((s) => s.practiced_on === date).map((s) => s.item_en);
   const rosterRows = roster ? roster.members.filter((m) => (roster.dayLogs[m.id]?.minutes ?? 0) > 0).map((m) => ({ ...m, ...roster.dayLogs[m.id] })).sort((a, b) => b.minutes - a.minutes) : null;
   return <div className="modal modal-center" onClick={onClose}><div className="day-summary day-editor-modal" onClick={(e) => e.stopPropagation()}>
     <div className="ds-head">
-      {editing && <button className="ds-back" onClick={() => setEditing(false)}>‹</button>}
+      {editing && <button className="ds-back" onClick={() => (onBack ? onBack() : setEditing(false))}>‹</button>}
       {!editing && onNavigateDay && <button type="button" className="ds-day-nav" onClick={() => onNavigateDay(-1)}>‹</button>}
       <span className="eyebrow">{new Date(date + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
       {!editing && onNavigateDay && <button type="button" className="ds-day-nav" onClick={() => onNavigateDay(1)} disabled={date >= dateKey}>›</button>}
       <button className="close" onClick={onClose}>×</button>
     </div>
     <div className="day-summary-body">
-    {editing ? <DayEditor key={date} date={date} log={log} onSave={onSave} onDelete={onDelete} confirm={confirm} language={language} T={T} /> : <>
+    {editing ? <DayEditor key={date} date={date} log={log} lockedSeconds={lockedSecondsFor(practiceSessions ?? [], log, date)} picker={picker} skillExercises={daySkillExercises} onSave={onSave} onDelete={onDelete} confirm={confirm} language={language} T={T} /> : <>
       {roster ? (
         rosterRows && rosterRows.length ? <div className="challenge-ranking">{rosterRows.map((m) => <div key={m.id} className="roster-detail-row">
           <i style={{ width: 8, height: 8, borderRadius: "50%", background: m.color, flexShrink: 0, marginTop: 4 }} />
@@ -2528,9 +2604,55 @@ function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale,
   </div></div>;
 }
 
-function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date: string; log?: Log; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
-  const [minutes, setMinutes] = useState(String(log?.minutes ?? ""));
+type PickerData = { sortedRudiments: { en: string; es: string; nl: string }[]; sortedExercises: { en: string; es: string; nl: string }[]; userItems: string[]; userBooks: string[]; onAddUserItem: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem: (kind: "item" | "book", name: string) => Promise<void> };
+// The same "what did you practise" choices as everywhere else: Rudiments and Exercises as lists of the real exercises (with search), the quick topics,
+// Books and My Items. Rudiments such as Single Strokes, Double Strokes and Paradiddles live inside the Rudiments list, not as separate chips.
+function PracticePicker({ data, language, T, quick, setQuick, custom, setCustom }: { data: PickerData; language: Lang; T: any; quick: string[]; setQuick: React.Dispatch<React.SetStateAction<string[]>>; custom: string[]; setCustom: React.Dispatch<React.SetStateAction<string[]>> }) {
+  const [open, setOpen] = useState<"rudiments" | "exercises" | "books" | "items" | null>(null);
+  const [rSearch, setRSearch] = useState("");
+  const [eSearch, setESearch] = useState("");
+  const [bookText, setBookText] = useState("");
+  const [itemText, setItemText] = useState("");
+  const rudiments = data.sortedRudiments ?? [];
+  const exercises = data.sortedExercises ?? [];
+  const userItems = data.userItems ?? [];
+  const allBooks = useMemo(() => [...PRACTICE_BOOKS, ...(data.userBooks ?? []).filter((b) => !PRACTICE_BOOKS.includes(b))], [data.userBooks]);
+  const filtered = (list: { en: string; es: string; nl: string }[], q: string) => { const t = q.trim().toLowerCase(); return t ? list.filter((r) => r[language].toLowerCase().includes(t)) : list; };
+  const toggleCustom = (name: string) => setCustom((current) => current.includes(name) ? current.filter((v) => v !== name) : [...current, name]);
+  const count = (names: string[]) => custom.filter((c) => names.includes(c)).length;
+  const flip = (name: "rudiments" | "exercises" | "books" | "items") => setOpen(open === name ? null : name);
+  async function addBook() { const t = bookText.trim(); if (!t) return; if (!allBooks.includes(t)) await data.onAddUserItem("book", t); setCustom((c) => c.includes(t) ? c : [...c, t]); setBookText(""); }
+  async function addItem() { const t = itemText.trim(); if (!t) return; if (!userItems.includes(t)) await data.onAddUserItem("item", t); setCustom((c) => c.includes(t) ? c : [...c, t]); setItemText(""); }
+  return <div className="chips">
+    <ChipDropdown label={T.today.rudiments} selectedCount={count(rudiments.map((r) => r.en))} open={open === "rudiments"} onToggleOpen={() => flip("rudiments")}
+      searchable searchValue={rSearch} onSearchChange={setRSearch} searchPlaceholder={T.today.searchRudiments}
+      rows={filtered(rudiments, rSearch).map((r) => ({ key: r.en, label: r[language], selected: custom.includes(r.en), onToggle: () => toggleCustom(r.en) }))} doneLabel={T.today.pickerDone} />
+    <ChipDropdown label={T.practiceMode.categoryExercises} selectedCount={count(exercises.map((r) => r.en))} open={open === "exercises"} onToggleOpen={() => flip("exercises")}
+      searchable searchValue={eSearch} onSearchChange={setESearch} searchPlaceholder={T.today.searchExercises}
+      rows={filtered(exercises, eSearch).map((r) => ({ key: r.en, label: r[language], selected: custom.includes(r.en), onToggle: () => toggleCustom(r.en) }))} doneLabel={T.today.pickerDone} />
+    {QUICK_PRACTICE_ITEMS.map((item) => <button type="button" key={item.en} onClick={() => setQuick((c) => c.includes(item.en) ? c.filter((v) => v !== item.en) : [...c, item.en])} className={quick.includes(item.en) ? "chip selected" : "chip"}>{quick.includes(item.en) && <b>✓</b>}{item[language]}</button>)}
+    <ChipDropdown label={T.today.books} selectedCount={count(allBooks)} open={open === "books"} onToggleOpen={() => flip("books")}
+      rows={allBooks.map((name) => ({ key: name, label: name, selected: custom.includes(name), onToggle: () => toggleCustom(name), onDelete: PRACTICE_BOOKS.includes(name) ? undefined : () => data.onRemoveUserItem("book", name) }))}
+      addValue={bookText} onAddChange={setBookText} onAdd={addBook} addPlaceholder={T.today.addOwnBookPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
+    <ChipDropdown label={T.today.myItems} selectedCount={count(userItems)} open={open === "items"} onToggleOpen={() => flip("items")}
+      rows={userItems.map((name) => ({ key: name, label: name, selected: custom.includes(name), onToggle: () => toggleCustom(name), onDelete: () => data.onRemoveUserItem("item", name) }))}
+      addValue={itemText} onAddChange={setItemText} onAdd={addItem} addPlaceholder={T.today.addOwnPlaceholder} addBtnLabel={T.today.addOwnBtn} doneLabel={T.today.pickerDone} />
+  </div>;
+}
+function DayEditor({ date, log, lockedSeconds = 0, picker, skillExercises = [], onSave, onDelete, confirm, language, T }: { skillExercises?: string[]; picker?: PickerData; date: string; log?: Log; lockedSeconds?: number; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
+  // A day can hold locked time (practised in the Skill Trainer). Then this editor only edits the OTHER practice: the minutes shown are the
+  // other minutes, and the locked time is added back when saving, so it can never be lowered. (A day split between drum set and pad keeps
+  // the older "total minutes" view with a silent floor.)
+  const otherView = lockedSeconds > 0 && log?.equipment !== "both";
+  const totalSecNow = (log?.minutes ?? 0) * 60 + (log?.seconds ?? 0);
+  const otherSecNow = Math.max(0, totalSecNow - lockedSeconds);
+  const keptSeconds = otherView ? otherSecNow % 60 : (log?.seconds ?? 0);
+  const [minutes, setMinutes] = useState(otherView ? String(Math.floor(otherSecNow / 60)) : String(log?.minutes ?? ""));
+  const floorMin = otherView ? 0 : Math.max(0, Math.ceil((lockedSeconds - (log?.seconds ?? 0)) / 60));
+  const clampMin = (n: number) => String(Math.max(floorMin, n));
   const [selected, setSelected] = useState<string[]>(log?.items ?? []);
+  // Exercises practised in the Skill Trainer have their own locked record: they are never shown (or kept) as "other practice" items.
+  const [custom, setCustom] = useState<string[]>((log?.customItems ?? []).filter((name) => !skillExercises.includes(name)));
   const [notes, setNotes] = useState(log?.notes ?? "");
   const [equipment, setEquipment] = useState<string | null>(log?.equipment ?? null);
   const [drumsetMinutes, setDrumsetMinutes] = useState(log?.drumsetMinutes != null ? String(log.drumsetMinutes) : "");
@@ -2539,7 +2661,8 @@ function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date
   const showNotes = notesOpen || !!notes;
   // Collapsed by default so the popup fits on screen -- open automatically if this entry
   // already has items picked, so editing an existing day doesn't hide its own selections.
-  const [itemsOpen, setItemsOpen] = useState((log?.items ?? []).length > 0);
+  const [itemsOpen, setItemsOpen] = useState((log?.items ?? []).length > 0 || (log?.customItems ?? []).some((name) => !skillExercises.includes(name)));
+  useEffect(() => { setNeedItem(false); }, [selected, custom]);
   const [hasEntry, setHasEntry] = useState(!!log);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -2551,23 +2674,25 @@ function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date
     if (next === "both") { setDrumsetMinutes(String(Number(minutes) || 0)); setPadMinutes("0"); }
     else { setDrumsetMinutes(""); setPadMinutes(""); }
   }
-  function updateDrumsetMinutes(value: string) { setDrumsetMinutes(value); setMinutes(String((Number(value) || 0) + (Number(padMinutes) || 0))); }
-  function updatePadMinutes(value: string) { setPadMinutes(value); setMinutes(String((Number(drumsetMinutes) || 0) + (Number(value) || 0))); }
+  function updateDrumsetMinutes(value: string) { const d = Math.max(Number(value) || 0, floorMin - (Number(padMinutes) || 0)); setDrumsetMinutes(String(d)); setMinutes(String(d + (Number(padMinutes) || 0))); }
+  function updatePadMinutes(value: string) { const p = Math.max(Number(value) || 0, floorMin - (Number(drumsetMinutes) || 0)); setPadMinutes(String(p)); setMinutes(String((Number(drumsetMinutes) || 0) + p)); }
   async function handleSave() {
     // Like Quick Practice, a day with minutes needs at least one practice element, so every log says what was practised.
-    if ((Number(minutes) || 0) > 0 && selected.length === 0 && (log?.customItems ?? []).length === 0) { setNeedItem(true); setItemsOpen(true); return; }
+    const hasOther = otherView ? (Number(minutes) || 0) > 0 : (Number(minutes) || 0) * 60 + (log?.seconds ?? 0) > lockedSeconds;
+    if (hasOther && selected.length === 0 && custom.length === 0) { setNeedItem(true); setItemsOpen(true); return; }
     setBusy(true);
     const isSplit = equipment === "both";
-    const ok = await onSave(date, Number(minutes) || 0, selected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, log?.seconds ?? 0, log?.customItems ?? []);
+    const totalSec = otherView ? lockedSeconds + (Number(minutes) || 0) * 60 + ((Number(minutes) || 0) === Math.floor(otherSecNow / 60) ? keptSeconds : 0) : Math.max(floorMin, Number(minutes) || 0) * 60 + (log?.seconds ?? 0);
+    const ok = await onSave(date, Math.floor(totalSec / 60), selected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, totalSec % 60, custom);
     setBusy(false);
     if (ok) { setSaved(true); setHasEntry(true); setTimeout(() => setSaved(false), 1800); }
   }
   async function handleDelete() {
-    if (!(await confirm(T.calendar.confirmDeleteEntry))) return;
+    if (!(await confirm(lockedSeconds > 0 ? T.today.removeOtherConfirm : T.calendar.confirmDeleteEntry))) return;
     setBusy(true);
     const ok = await onDelete(date);
     setBusy(false);
-    if (ok) { setMinutes(""); setSelected([]); setNotes(""); setEquipment(null); setDrumsetMinutes(""); setPadMinutes(""); setHasEntry(false); }
+    if (ok) { setMinutes(otherView ? "0" : floorMin > 0 ? String(floorMin) : ""); setSelected([]); setCustom([]); setNotes(""); setEquipment(null); setDrumsetMinutes(""); setPadMinutes(""); setHasEntry(lockedSeconds > 0); }
   }
   return <>
   <div className="form-card">
@@ -2593,29 +2718,29 @@ function DayEditor({ date, log, onSave, onDelete, confirm, language, T }: { date
       </div>
     ) : (
       <div className="minutes-island compact">
-        <button className="minutes-step" onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 5)))}>-5</button>
-        <button className="minutes-step" onClick={() => setMinutes(String(Math.max(0, (Number(minutes) || 0) - 1)))}>-1</button>
-        <div className="minutes-value"><input inputMode="numeric" size={3} value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} /><span>min</span></div>
+        <button className="minutes-step" onClick={() => setMinutes(clampMin((Number(minutes) || 0) - 5))}>-5</button>
+        <button className="minutes-step" onClick={() => setMinutes(clampMin((Number(minutes) || 0) - 1))}>-1</button>
+        <div className="minutes-value"><input inputMode="numeric" size={3} value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} onBlur={() => { if (floorMin > 0 && (Number(minutes) || 0) < floorMin) setMinutes(String(floorMin)); }} /><span>min</span></div>
         <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1</button>
         <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5</button>
       </div>
     )}
-    </div>
-    <div className="form-card">
-    <button type="button" className="collapsible-header" onClick={() => setItemsOpen(!itemsOpen)}>
-      <span className="input-label checklist-label">{T.today.whatPractised}{selected.length > 0 ? ` (${selected.length})` : ""}</span>
-      <span className={itemsOpen ? "collapse-chevron open" : "collapse-chevron"}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7.5l5 5 5-5" /></svg></span>
-    </button>
-    {itemsOpen && <div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language]}</button>)}</div>}
     <label className="input-label equipment-label">{T.today.equipment}</label>
     <div className="equipment-toggle">
       <button className={equipment === "drumset" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("drumset")}>{T.today.drumset}</button>
       <button className={equipment === "pad" || equipment === "both" ? "equipment-option selected" : "equipment-option"} onClick={() => handleEquipmentToggle("pad")}>{T.today.pad}</button>
     </div>
+    </div>
+    <div className="form-card">
+    <button type="button" className="collapsible-header" onClick={() => setItemsOpen(!itemsOpen)}>
+      <span className="input-label checklist-label">{T.today.whatPractised}{selected.length + custom.length > 0 ? ` (${selected.length + custom.length})` : ""}</span>
+      <span className={itemsOpen ? "collapse-chevron open" : "collapse-chevron"}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7.5l5 5 5-5" /></svg></span>
+    </button>
+    {itemsOpen && (picker ? <PracticePicker data={picker} language={language} T={T} quick={selected} setQuick={setSelected} custom={custom} setCustom={setCustom} /> : <div className="chips">{PRACTICE_ITEMS.map((item) => <button key={item.en} onClick={() => toggle(item.en)} className={selected.includes(item.en) ? "chip selected" : "chip"}>{selected.includes(item.en) && <b>✓</b>}{item[language]}</button>)}</div>)}
     {showNotes ? <><label className="input-label notes-label">{T.today.notes} <em>{T.today.optional}</em></label><textarea maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={T.calendar.notesPlaceholder} autoFocus={notesOpen} /></> : <button className="notes-toggle" onClick={() => setNotesOpen(true)}>{T.today.addNotes}</button>}
     {needItem && <p className="auth-error-inline" role="alert">{T.calendar.pickOneItem}</p>}
     <button className={saved ? "save saved" : "save"} onClick={handleSave} disabled={busy}>{saved ? T.today.practiceSaved : busy ? T.calendar.saving : T.today.savePractice}<span>→</span></button>
-    {hasEntry && <button className="delete-entry" onClick={handleDelete} disabled={busy}>{T.calendar.deleteEntry}</button>}
+    {hasEntry && <button className="delete-entry" onClick={handleDelete} disabled={busy}>{lockedSeconds > 0 ? T.today.removeOther : T.calendar.deleteEntry}</button>}
   </div>
   </>;
 }
@@ -4077,7 +4202,9 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
     if (!exercise) return;
     await onLogSession(exercise, bpm, rating, pendingMinutes, pendingSeconds, sessionIssues, sessionNote.trim());
     setJustPracticedLevel(bpm);
-    setStep("detail"); // back to the tempo list, scrolled to the tempo just practised
+    // Comfortable or mastered: on to the tempo list (scrolled to the tempo just practised). Not ready, tense or almost: back to the same
+    // metronome window at the same tempo, ready for another round.
+    setStep(rating === "comfortable" || rating === "mastered" ? "detail" : "session");
   }
   function handleRatingTap(r: string) {
     // Tapping a rating only selects it; a Save button then confirms. The struggling ratings also
@@ -4393,7 +4520,6 @@ function PracticeMode({ onMetronomeToneChange, skillTab, setSkillTab, step, setS
                   </div>
                 </button>
                 {hasHistory && <button className="rung-edit" onClick={() => openEditRating(level)}>✎</button>}
-                {hasHistory && <button className="rung-reset" onClick={() => handleReset(level)}>↺</button>}
               </div>;
             })}
           </div>
@@ -5448,16 +5574,13 @@ function SessionTimer({ pinnedExercises, onFocusChoice, open, close, onOpen, onB
   const netSeconds = Math.max(0, addPromptSeconds - creditApplied);
   const metronomeUsed = !!ownCredit?.metronome;
   const creditSeconds = ownCredit?.seconds ?? 0;
-  const creditItems = ownCredit?.items ?? [];
-  const creditItemsKey = creditItems.join("|");
   // The amount being added is what the person adjusts (not the whole session), so the number they see is the number that is saved.
   function setNetSeconds(next: number) { setAddPromptSeconds(Math.min(MAX_SESSION_SECONDS, creditSeconds + Math.max(0, next))); }
-  // Skill Trainer items from this session start ticked, so most people only press the button.
+  // Skill Trainer exercises already have their own record (and locked time), so they are not offered here: the extra time needs its own "what did you practise".
   useEffect(() => {
     if (!showAddPrompt) return;
     setShowAdjust(false);
-    if (creditItemsKey) setAddCustomItems((current) => Array.from(new Set([...current, ...creditItemsKey.split("|")])));
-  }, [showAddPrompt, creditItemsKey]);
+  }, [showAddPrompt]);
   function addTime() { if (addPromptSeconds <= 0) return; onAddPractice?.(netSeconds, addItems, addCustomItems, metronomeUsed); onCreditReset?.(); persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); close(); }
   function discardTime() { onCreditReset?.(); persistSessionTimer(null); setShowAddPrompt(false); setElapsed(0); }
   function nudgeAddPromptSeconds(delta: number) { setAddPromptSeconds((current) => Math.min(MAX_SESSION_SECONDS, Math.max(0, current + delta))); }
@@ -5476,8 +5599,8 @@ function SessionTimer({ pinnedExercises, onFocusChoice, open, close, onOpen, onB
     </button>;
   }
   const lang = (language ?? "en") as Lang;
-  const skillRows = creditItems.map((en) => ({ key: en, label: PRACTICE_EXERCISES.find((e) => e.en === en)?.[lang] ?? en, selected: addCustomItems.includes(en), onToggle: () => toggleCustomItem(en) }));
-  const extraPickedCount = addItems.length + addCustomItems.filter((c) => !creditItems.includes(c)).length;
+  const skillRows: { key: string; label: string; selected: boolean; onToggle: () => void }[] = [];
+  const extraPickedCount = addItems.length + addCustomItems.length;
   const hasPicked = addItems.length > 0 || addCustomItems.length > 0;
 
   return <div className="modal modal-center"><div className="metro"><button className="close" onClick={close}>×</button>{!showAddPrompt && <p className="eyebrow">{T.sessionTimer.title}</p>}
