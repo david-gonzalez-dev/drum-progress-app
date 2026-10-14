@@ -1715,3 +1715,20 @@ html.native .shell.has-timer-banner .page{padding-top:30px}
 .sound-check-result{margin:0 0 6px;padding:10px 12px;border-radius:10px;background:#0f1110;border:1px solid #232825;color:#c2c8c3;font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;text-align:left}
 .audio-dead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#2a1713;border:1px solid #6f3a2c;color:#f0c8bd;font:500 13px/1.35 'DM Sans',sans-serif;text-align:left}
 .audio-dead button{flex:0 0 auto;padding:8px 12px;border-radius:99px;border:0;background:#e2877d;color:#32100d;font:700 13px 'DM Sans',sans-serif}
+/* No labels above the metronome timer or beside the lead-hand buttons: the timer sits alone, and the R / L buttons are centred. */
+.metronome-timer strong{margin-top:0}
+.metro-lead{justify-content:center}
+
+/* iPad: the Skill Trainer metronome window is bigger (wider, larger type, bigger buttons). */
+html.is-tablet .metro.metro-practice{max-width:600px;padding:26px 30px 28px}
+html.is-tablet .metro.metro-practice>.metro-gear{top:27px;left:47px}
+html.is-tablet .metro-practice .metro-exercise-head{padding:0 48px 0 76px;min-height:42px}
+html.is-tablet .metro-practice .metro-exercise-name{font-size:30px}
+html.is-tablet .metro-practice .view-switch button{font-size:16px;padding:10px 24px}
+html.is-tablet .metro-practice .tempo-bpm-num{font-size:92px}
+html.is-tablet .metro-practice .tempo-bpm-unit{font-size:22px}
+html.is-tablet .metro-practice .metronome-timer strong{font-size:44px}
+html.is-tablet .metro-practice .metro-lead button{width:46px;height:40px;font-size:17px}
+html.is-tablet .metro-practice .subdivision-select{font-size:20px;padding:13px 16px}
+html.is-tablet .metro-practice .start,html.is-tablet .metro-practice .metro-actions button{font-size:22px;padding:18px 14px}
+html.is-tablet .metro-practice .metro-section-label{font-size:15px}

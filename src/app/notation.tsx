@@ -194,9 +194,10 @@ function ChunkSvg({ side, chunk, unit, width, scale, beatsPerBar, activeStroke, 
   </svg>;
 }
 
-export function NotationStaff({ grid, activeStroke, activeGrace, width, beatsPerBar = 4 }: { grid: Grid; activeStroke: number; activeGrace: number; width: number; beatsPerBar?: number }) {
+export function NotationStaff({ grid, activeStroke, activeGrace, width, beatsPerBar = 4, zoom = 1 }: { grid: Grid; activeStroke: number; activeGrace: number; width: number; beatsPerBar?: number; zoom?: number }) {
   const sides = useMemo(() => buildNotation(grid), [grid]);
-  const maxWidth = Math.max(220, width);
+  // zoom > 1 (iPad): the drawing is laid out for a narrower width and then shown bigger.
+  const maxWidth = Math.max(220, width / zoom);
   const bpb = Math.max(1, beatsPerBar);
   const layout = (availWidth: number) => sides.map((side) => {
     const chunks = chunksFor(side, availWidth, 18, bpb);
@@ -220,7 +221,7 @@ export function NotationStaff({ grid, activeStroke, activeGrace, width, beatsPer
   const commonWidth = Math.min(maxWidth / scale, Math.ceil(Math.max(...rows.flatMap((r) => r.chunks.map((c) => chunkWidth(r.side, c.events, c.startSlot, r.unit, bpb))))));
   return <div className="notation">
     {rows.map(({ side, chunks, unit }, si) => <div className="notation-side" key={si}>
-      {chunks.map((c, ci) => <ChunkSvg key={ci} side={side} chunk={c} unit={unit} scale={scale} beatsPerBar={bpb} width={commonWidth} activeStroke={activeStroke} activeGrace={activeGrace} />)}
+      {chunks.map((c, ci) => <ChunkSvg key={ci} side={side} chunk={c} unit={unit} scale={scale * zoom} beatsPerBar={bpb} width={commonWidth} activeStroke={activeStroke} activeGrace={activeGrace} />)}
     </div>)}
   </div>;
 }

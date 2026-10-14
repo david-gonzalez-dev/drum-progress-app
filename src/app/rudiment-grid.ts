@@ -177,7 +177,7 @@ export function layoutRows(grid: Grid, maxWidth: number, box = 32, grace = 17, w
 // Box size (px) for the guide. It is as big as fits (up to maxBox) without needing any extra row, so short patterns get big, easy-to-follow boxes.
 // A two-sided rudiment keeps each side on one line, shrinking (never below `smallest`) when needed; if a side still does not fit at the
 // smallest size the sides are allowed to wrap onto two lines at beat boundaries instead.
-export function fitBox(grid: Grid, maxWidth: number, normal = 32, smallest = 20, maxBox = 52, gap = 5, beatGap = 6): { box: number; grace: number; wrapSides: boolean } {
+export function fitBox(grid: Grid, maxWidth: number, normal = 32, smallest = 20, maxBox = 52, gap = 5, beatGap = 6, twoSidedMax = 38): { box: number; grace: number; wrapSides: boolean } {
   const graceFor = (box: number) => Math.max(13, Math.round(box * 0.55));
   const widest = (rows: GuideRow[], box: number, grace: number) => Math.max(...rows.map((r) => {
     let w = 0;
@@ -198,7 +198,7 @@ export function fitBox(grid: Grid, maxWidth: number, normal = 32, smallest = 20,
     return { box: normal, grace: graceFor(normal), wrapSides: false };
   }
   // Two-sided rudiments stack two lines, so their boxes are capped to keep the window short.
-  for (let box = Math.min(maxBox, 38); box >= smallest; box--) {
+  for (let box = Math.min(maxBox, twoSidedMax); box >= smallest; box--) {
     const grace = graceFor(box);
     const rows = layoutRows(grid, maxWidth, box, grace, false, gap, beatGap);
     if (widest(rows, box, grace) <= maxWidth) return { box, grace, wrapSides: false };
