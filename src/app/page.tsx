@@ -471,7 +471,7 @@ const translations = {
       todaysPractice: "Today's practice", metronome: "Metronome", howLong: "HOW LONG DID YOU PRACTISE?", practiceTimeHeading: "PRACTICE TIME", whatPractised: "ADD WHAT YOU PRACTISED",
       notes: "NOTES", notesPrefix: "Notes:", optional: "OPTIONAL", notesPlaceholder: "What did you practise today?", savePractice: "Save practice", practiceSaved: "✓ Practice saved",
       todayGoal: "TODAY'S GOAL", equipment: "PRACTISED WITH", drumset: "Drum Set", pad: "Practice Pad", equipmentBoth: "Drum Set & Practice Pad", addNotes: "+ Add notes", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} on ${equipmentName}`,
-      detailTitle: "TODAY'S PRACTICE", removeBtn: "Remove", removeOther: "Remove other practice", removeOtherConfirm: "Remove the other practice? This can't be undone.", addBtn: "Add other practice", editBtn: "Edit", skillBreakdown: "Skill Trainer", otherBreakdown: "Other practice", exerciseCount: (n: number) => `${n} ${n === 1 ? "exercise" : "exercises"}`, todaySummary: "TODAY", noPracticeYet: "No practice yet.", secondsCarried: "extra (not counted in minutes yet)", todaySoFar: (total: string) => `${total} already logged today, this adds on top`,
+      detailTitle: "TODAY'S PRACTICE", removeBtn: "Remove", removeOther: "Remove other practice", removeOtherConfirm: "Remove the other practice? This can't be undone.", addBtn: "Add other practice", editBtn: "Edit", moreCount: (n: number) => `+${n} more`, skillBreakdown: "Skill Trainer", otherBreakdown: "Other practice", exerciseCount: (n: number) => `${n} ${n === 1 ? "exercise" : "exercises"}`, todaySummary: "TODAY", noPracticeYet: "No practice yet.", secondsCarried: "extra (not counted in minutes yet)", todaySoFar: (total: string) => `${total} already logged today, this adds on top`,
       resetPractice: "Reset", confirmResetPractice: "Clear today's other practice and start over? Your Skill Trainer time stays. This can't be undone.",
       noGoalTitle: "Set your daily goal", noGoalSubtitle: "Small daily minutes turn into real progress. Pick a goal and start your streak today.", noGoalBtn: "Set my goal",
       whatDidYouPractiseTitle: "WHAT DID YOU PRACTISE?", whatDidYouPractiseSubtitle: "Pick at least one.", addOwnPlaceholder: "Add your own...", addOwnBtn: "Add",
@@ -495,7 +495,7 @@ const translations = {
       intro: "Stay accountable, climb the leaderboard, and make practice more fun.", createGroupBtn: "Create a group", joinWithCode: "Join with invite code",
       groupNamePlaceholder: "Group name", inviteCodePlaceholder: "Invite code", pleaseWait: "Please wait...", createGroup: "Create group",
       joinGroup: "Join group", back: "Back", inviteNotFound: "That invite code was not found.", couldNotCreate: "Could not create group.",
-      leaderboard: "LEADERBOARD", timePractised: "TIME PRACTISED", daysShort: "days", you: "You",
+      leaderboard: "GROUP BOARD", timePractised: "TIME PRACTISED", daysShort: "days", you: "You",
       teacherBadge: "Admin", showTeacherStats: "Show admin stats",
       awardMostDays: "Most practice days this year", awardMostMinutes: "Most time practised",
       medalBoard: "Hall of Fame", medalBoardEmpty: "No one yet", medalBoardAllTime: "ALL-TIME", medalBoardThisWeek: "THIS WEEK",
@@ -651,7 +651,7 @@ const translations = {
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", practiceTimeHeading: "TIEMPO DE PRÁCTICA", whatPractised: "AÑADE LO QUE PRACTICASTE",
       notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
       todayGoal: "META DE HOY", equipment: "PRACTICASTE CON", drumset: "Batería", pad: "Pad de práctica", equipmentBoth: "Batería y pad de práctica", addNotes: "+ Añadir notas", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} en ${equipmentName}`,
-      detailTitle: "PRÁCTICA DE HOY", removeBtn: "Quitar", removeOther: "Quitar otra práctica", removeOtherConfirm: "¿Quitar la otra práctica? Esta acción no se puede deshacer.", addBtn: "Añadir otra práctica", editBtn: "Editar", skillBreakdown: "Skill Trainer", otherBreakdown: "Otra práctica", exerciseCount: (n: number) => `${n} ${n === 1 ? "ejercicio" : "ejercicios"}`, todaySummary: "HOY", noPracticeYet: "Aún no hay práctica.", secondsCarried: "extra (aún no contado en minutos)", todaySoFar: (total: string) => `${total} ya registrados hoy, esto se suma`,
+      detailTitle: "PRÁCTICA DE HOY", removeBtn: "Quitar", removeOther: "Quitar otra práctica", removeOtherConfirm: "¿Quitar la otra práctica? Esta acción no se puede deshacer.", addBtn: "Añadir otra práctica", editBtn: "Editar", moreCount: (n: number) => `+${n} más`, skillBreakdown: "Skill Trainer", otherBreakdown: "Otra práctica", exerciseCount: (n: number) => `${n} ${n === 1 ? "ejercicio" : "ejercicios"}`, todaySummary: "HOY", noPracticeYet: "Aún no hay práctica.", secondsCarried: "extra (aún no contado en minutos)", todaySoFar: (total: string) => `${total} ya registrados hoy, esto se suma`,
       resetPractice: "Reiniciar", confirmResetPractice: "¿Borrar la otra práctica de hoy y empezar de nuevo? El tiempo del Skill Trainer se queda. No se puede deshacer.",
       noGoalTitle: "Define tu meta diaria", noGoalSubtitle: "Unos minutos cada día se convierten en progreso real. Elige una meta y empieza tu racha hoy.", noGoalBtn: "Definir mi meta",
       whatDidYouPractiseTitle: "¿QUÉ PRACTICASTE?", whatDidYouPractiseSubtitle: "Elige al menos uno.", addOwnPlaceholder: "Añade lo tuyo...", addOwnBtn: "Añadir",
@@ -675,7 +675,7 @@ const translations = {
       intro: "Mantente responsable, sube en la clasificación y haz que practicar sea más divertido.", createGroupBtn: "Crear un grupo", joinWithCode: "Unirse con código de invitación",
       groupNamePlaceholder: "Nombre del grupo", inviteCodePlaceholder: "Código de invitación", pleaseWait: "Un momento...", createGroup: "Crear grupo",
       joinGroup: "Unirse al grupo", back: "Atrás", inviteNotFound: "No se encontró ese código de invitación.", couldNotCreate: "No se pudo crear el grupo.",
-      leaderboard: "CLASIFICACIÓN", timePractised: "TIEMPO PRACTICADO", daysShort: "días", you: "Tú",
+      leaderboard: "TABLA DEL GRUPO", timePractised: "TIEMPO PRACTICADO", daysShort: "días", you: "Tú",
       teacherBadge: "Admin", showTeacherStats: "Mostrar estadísticas del admin",
       awardMostDays: "Más días de práctica este año", awardMostMinutes: "Más tiempo practicado",
       medalBoard: "Salón de la Fama", medalBoardEmpty: "Nadie todavía", medalBoardAllTime: "SIEMPRE", medalBoardThisWeek: "ESTA SEMANA",
@@ -831,7 +831,7 @@ const translations = {
       todaysPractice: "Oefening van vandaag", metronome: "Metronoom", howLong: "HOE LANG HEB JE GEOEFEND?", practiceTimeHeading: "OEFENTIJD", whatPractised: "VOEG TOE WAT JE GEOEFEND HEBT",
       notes: "NOTITIES", notesPrefix: "Notities:", optional: "OPTIONEEL", notesPlaceholder: "Wat heb je vandaag geoefend?", savePractice: "Oefening opslaan", practiceSaved: "✓ Oefening opgeslagen",
       todayGoal: "DOEL VAN VANDAAG", equipment: "GEOEFEND OP", drumset: "Drumstel", pad: "Oefenpad", equipmentBoth: "Drumstel en oefenpad", addNotes: "+ Notitie toevoegen", minShort: "min", minOn: (minutes: number, equipmentName: string) => `${formatMinutes(minutes)} op ${equipmentName}`,
-      detailTitle: "OEFENING VANDAAG", removeBtn: "Verwijderen", removeOther: "Overige oefening verwijderen", removeOtherConfirm: "De overige oefening verwijderen? Dit kan niet ongedaan worden gemaakt.", addBtn: "Overige oefening toevoegen", editBtn: "Bewerken", skillBreakdown: "Skill Trainer", otherBreakdown: "Overige oefening", exerciseCount: (n: number) => `${n} ${n === 1 ? "oefening" : "oefeningen"}`, todaySummary: "VANDAAG", noPracticeYet: "Nog niet geoefend.", secondsCarried: "extra (nog niet meegeteld in minuten)", todaySoFar: (total: string) => `${total} vandaag al opgeslagen, dit komt erbij`,
+      detailTitle: "OEFENING VANDAAG", removeBtn: "Verwijderen", removeOther: "Overige oefening verwijderen", removeOtherConfirm: "De overige oefening verwijderen? Dit kan niet ongedaan worden gemaakt.", addBtn: "Overige oefening toevoegen", editBtn: "Bewerken", moreCount: (n: number) => `+${n} meer`, skillBreakdown: "Skill Trainer", otherBreakdown: "Overige oefening", exerciseCount: (n: number) => `${n} ${n === 1 ? "oefening" : "oefeningen"}`, todaySummary: "VANDAAG", noPracticeYet: "Nog niet geoefend.", secondsCarried: "extra (nog niet meegeteld in minuten)", todaySoFar: (total: string) => `${total} vandaag al opgeslagen, dit komt erbij`,
       resetPractice: "Wissen", confirmResetPractice: "De overige oefening van vandaag wissen en opnieuw beginnen? Je Skill Trainer-tijd blijft staan. Dit kan niet ongedaan worden gemaakt.",
       noGoalTitle: "Stel je dagelijkse doel in", noGoalSubtitle: "Een paar minuten per dag worden echte vooruitgang. Kies een doel en begin vandaag je reeks.", noGoalBtn: "Mijn doel instellen",
       whatDidYouPractiseTitle: "WAT HEB JE GEOEFEND?", whatDidYouPractiseSubtitle: "Kies er minstens één.", addOwnPlaceholder: "Voeg je eigen toe...", addOwnBtn: "Toevoegen",
@@ -855,7 +855,7 @@ const translations = {
       intro: "Hou elkaar scherp, klim op de ranglijst en maak oefenen leuker.", createGroupBtn: "Maak een groep", joinWithCode: "Meedoen met uitnodigingscode",
       groupNamePlaceholder: "Naam van de groep", inviteCodePlaceholder: "Uitnodigingscode", pleaseWait: "Even geduld...", createGroup: "Groep maken",
       joinGroup: "Meedoen", back: "Terug", inviteNotFound: "Die uitnodigingscode is niet gevonden.", couldNotCreate: "De groep kon niet worden gemaakt.",
-      leaderboard: "RANGLIJST", timePractised: "GEOEFENDE TIJD", daysShort: "dagen", you: "Jij",
+      leaderboard: "GROEPSBORD", timePractised: "GEOEFENDE TIJD", daysShort: "dagen", you: "Jij",
       teacherBadge: "Beheerder", showTeacherStats: "Toon statistieken van de beheerder",
       awardMostDays: "Meeste oefendagen dit jaar", awardMostMinutes: "Meeste tijd geoefend",
       medalBoard: "Hall of Fame", medalBoardEmpty: "Nog niemand", medalBoardAllTime: "ALLE TIJDEN", medalBoardThisWeek: "DEZE WEEK",
@@ -2408,16 +2408,16 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
       {todaySkillSeconds > 0 ? <div className="today-breakdown">
         <div className="today-breakdown-block">
           <div className="today-breakdown-head"><span>{T.today.skillBreakdown}</span><strong>{formatMinutes(Math.max(1, Math.round(todaySkillSeconds / 60)))} · {T.today.exerciseCount(todaySkillExercises.length)}</strong></div>
-          <div className="detail-chips">{todaySkillExercises.map((item) => <PracticedChip key={item} item={item} skill language={language} onOpen={PRACTICE_EXERCISES.some((e) => e.en === item) ? () => onOpenExercise(item) : undefined} />)}</div>
+          <div className="detail-chips">{todaySkillExercises.slice(0, 2).map((item) => <PracticedChip key={item} item={item} skill language={language} onOpen={PRACTICE_EXERCISES.some((e) => e.en === item) ? () => onOpenExercise(item) : undefined} />)}{todaySkillExercises.length > 2 && <button type="button" className="more-chip" onClick={() => setShowDetail(true)}>{T.today.moreCount(todaySkillExercises.length - 2)}</button>}</div>
         </div>
         {(todayOtherSeconds > 0 || todayOtherItems.length > 0) && <div className="today-breakdown-block">
           <div className="today-breakdown-head"><span>{T.today.otherBreakdown}</span>{todayOtherSeconds > 0 && <strong>{formatMinutes(Math.max(1, Math.round(todayOtherSeconds / 60)))}</strong>}</div>
-          {todayOtherItems.length > 0 && <div className="detail-chips">{todayOtherItems.map((item) => <PracticedChip key={item} item={item} skill={false} language={language} />)}</div>}
+          {todayOtherItems.length > 0 && <div className="detail-chips">{todayOtherItems.slice(0, 2).map((item) => <PracticedChip key={item} item={item} skill={false} language={language} />)}{todayOtherItems.length > 2 && <button type="button" className="more-chip" onClick={() => setShowDetail(true)}>{T.today.moreCount(todayOtherItems.length - 2)}</button>}</div>}
         </div>}
       </div> : (() => {
         const loggedItems = todayLog ? [...todayLog.items, ...todayLog.customItems] : [];
         const allItems: string[] = Array.from(new Set([...loggedItems, ...todaySkillExercises]));
-        return allItems.length > 0 ? <div className="detail-chips">{allItems.map((item) => <PracticedChip key={item} item={item} skill={todaySkillExercises.includes(item)} language={language} onOpen={todaySkillExercises.includes(item) && PRACTICE_EXERCISES.some((e) => e.en === item) ? () => onOpenExercise(item) : undefined} />)}</div> : (todayMinutes === 0 ? <p className="hint">{T.today.noPracticeYet}</p> : null);
+        return allItems.length > 0 ? <div className="detail-chips">{allItems.slice(0, 2).map((item) => <PracticedChip key={item} item={item} skill={todaySkillExercises.includes(item)} language={language} onOpen={todaySkillExercises.includes(item) && PRACTICE_EXERCISES.some((e) => e.en === item) ? () => onOpenExercise(item) : undefined} />)}{allItems.length > 2 && <button type="button" className="more-chip" onClick={() => setShowDetail(true)}>{T.today.moreCount(allItems.length - 2)}</button>}</div> : (todayMinutes === 0 ? <p className="hint">{T.today.noPracticeYet}</p> : null);
       })()}
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>}
@@ -2751,8 +2751,9 @@ function DayEditor({ date, log, lockedSeconds = 0, picker, skillExercises = [], 
   </>;
 }
 function Stat({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><strong>{value}</strong></div>; }
+// A small teacher hat next to a name (the word "Admin" is only in the tooltip / screen reader label).
 function TeacherBadge({ T }: { T: any }) {
-  return <span className="teacher-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l9 4.5-9 4.5-9-4.5L12 3z" /><path d="M7 10.5V16c0 1.1 2.24 2 5 2s5-.9 5-2v-5.5" /></svg>{T.group.teacherBadge}</span>;
+  return <span className="teacher-badge" title={T.group.teacherBadge} aria-label={T.group.teacherBadge}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l9 4.5-9 4.5-9-4.5L12 3z" /><path d="M7 10.5V16c0 1.1 2.24 2 5 2s5-.9 5-2v-5.5" /></svg></span>;
 }
 // Trophy/medal/consistency/streak/challenge/improved silhouettes are Lucide's (ISC license,
 // lucide.dev) -- their proportions are hand-tuned by icon designers, not something worth

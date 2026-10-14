@@ -1683,3 +1683,14 @@ html.native .shell.has-timer-banner .page{padding-top:30px}
 /* Edit and Remove are the same size; the equipment line under "Other practice" is small, never bigger than the card title. */
 .today-detail .today-detail-edit,.today-detail .today-detail-remove{flex:1 1 0;white-space:nowrap}
 .today-detail .roster-equipment{display:block;margin:0 0 6px;font-size:11px;line-height:1.3;color:#9aa19d}
+
+/* "+N more" chip on the Home today card: opens the full breakdown pop-up. */
+.more-chip{padding:5px 11px;border-radius:99px;border:1px dashed #6f351a;background:transparent;color:#ffb877;font:600 12.5px 'DM Sans'}
+.more-chip:active{background:#2a1710}
+
+/* Home today card: the times next to "Skill Trainer" and "Other practice" are regular weight, not bold. */
+.today-breakdown .today-breakdown-head strong{font-weight:400}
+
+/* Teacher badge: just a small hat in a tiny circle. */
+.teacher-badge{width:17px;height:17px;padding:0;gap:0;justify-content:center;margin-left:6px;border-radius:50%;font-size:0}
+.teacher-badge svg{width:10px;height:10px}
