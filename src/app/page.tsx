@@ -64,6 +64,51 @@ function getSharedAudio(): AudioContext {
   if (!sharedAudio) sharedAudio = IS_ANDROID ? new Ctor({ latencyHint: "playback" }) : new Ctor();
   return sharedAudio;
 }
+const sleepMs = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+// A context can say "running" while its clock is frozen (nothing is heard). It is only alive if its clock really moves.
+async function audioAlive(ctx: AudioContext): Promise<boolean> {
+  if (ctx.state !== "running") return false;
+  const t0 = ctx.currentTime;
+  await sleepMs(160);
+  return ctx.currentTime - t0 > 0.08;
+}
+function beepWavUrl(): string {
+  const sampleRate = 22050, n = Math.floor(sampleRate * 0.4);
+  const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const str = (o: number, t: string) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  str(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); str(8, "WAVE"); str(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, "data"); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.round(Math.sin((2 * Math.PI * 880 * i) / sampleRate) * 9000 * Math.min(1, (n - i) / 2000)), true);
+  return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+}
+// Sound check (shown behind the metronome settings button): reports what the phone's sound system is doing and plays a test beep either through Web Audio
+// (what the metronome uses) or through a normal audio element, so it is clear which one still works when the metronome is silent.
+async function runSoundCheck(kind: "webaudio" | "media"): Promise<string> {
+  const lines: string[] = [];
+  const nav = navigator as unknown as { audioSession?: { type?: string; state?: string } };
+  try {
+    lines.push(`phone: ${IS_IOS_DEVICE ? "iPhone/iPad" : IS_ANDROID ? "Android" : "other"}`);
+    lines.push(`audioSession: ${nav.audioSession ? `type=${nav.audioSession.type} state=${nav.audioSession.state}` : "not available"}`);
+    const ctx = getSharedAudio();
+    lines.push(`context before: ${ctx.state}`);
+    if (kind === "webaudio") {
+      await wakeAudio(ctx);
+      lines.push(`context after wake: ${ctx.state}`);
+      const t0 = ctx.currentTime; await sleepMs(300);
+      lines.push(`clock moved: ${(ctx.currentTime - t0).toFixed(2)}s (should be about 0.30)`);
+      const osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.frequency.value = 880; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+      osc.connect(g); g.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.55);
+      lines.push("played a beep through Web Audio");
+    } else {
+      const el = new Audio(beepWavUrl());
+      await el.play();
+      lines.push("played a beep through a normal audio element");
+    }
+    lines.push(`silent keep-alive: ${silentEl ? (silentEl.paused ? "paused" : "playing") : "not created"}`);
+  } catch (e) { lines.push(`error: ${(e as Error).message}`); }
+  return lines.join("\n");
+}
 function dropSharedAudio() { try { void sharedAudio?.close(); } catch { /* already closed */ } sharedAudio = null; }
 async function wakeAudio(ctx: AudioContext) {
   if (ctx.state === "running") return;
@@ -668,7 +713,7 @@ const translations = {
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
       startPractice: "Start Practice", stickingLabel: "STICKING",
-      start: "▶ Start", stop: "■ Stop", clickSettings: "Click sound", subClicks: "Subdivision clicks", volOff: "Only the beat", volFull: "Full", subClicksHint: "The click on every beat stays the same. This only changes the clicks in between.", sessionComplete: "SESSION COMPLETE",
+      start: "▶ Start", stop: "■ Stop", clickSettings: "Click sound", subClicks: "Subdivision clicks", volOff: "Only the beat", volFull: "Full", subClicksHint: "The click on every beat stays the same. This only changes the clicks in between.", soundCheck: "Sound check", testMetronomeSound: "Test metronome sound", testPlainSound: "Test plain sound", noSound: "No sound from the phone. A quick refresh fixes it.", refreshSound: "Refresh", sessionComplete: "SESSION COMPLETE",
       addTimeQuestion: (label: string) => `Add ${label} to today's practice?`, addTimeTooShort: "Too short to log — adjust the timer above", sessionLasted: (time: string) => `Your metronome session lasted ${time}.`, minAbbr: "min", secAbbr: "sec",
       notNow: "Not now", addTime: "Add time",
       timeSignature: "BEATS / BAR", bannerTitle: "Metronome", pause: "Pause", resume: "Resume", viewStrokes: "Strokes", viewNotation: "Notation", subdivisionLabel: "CLICKS / BEAT", leadHand: "STARTS WITH", clicksFixed: ((n: number) => `${n} per beat (set by the exercise)`), historyTitle: (n: number) => `HISTORY (${n})`,
@@ -848,7 +893,7 @@ const translations = {
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
       startPractice: "Empezar práctica", stickingLabel: "BAQUETEO",
-      start: "▶ Iniciar", stop: "■ Detener", clickSettings: "Sonido del clic", subClicks: "Clics de subdivisión", volOff: "Solo el pulso", volFull: "Máximo", subClicksHint: "El clic de cada pulso no cambia. Esto solo cambia los clics intermedios.", sessionComplete: "SESIÓN COMPLETA",
+      start: "▶ Iniciar", stop: "■ Detener", clickSettings: "Sonido del clic", subClicks: "Clics de subdivisión", volOff: "Solo el pulso", volFull: "Máximo", subClicksHint: "El clic de cada pulso no cambia. Esto solo cambia los clics intermedios.", soundCheck: "Prueba de sonido", testMetronomeSound: "Probar sonido del metrónomo", testPlainSound: "Probar sonido normal", noSound: "El teléfono no da sonido. Una actualización rápida lo arregla.", refreshSound: "Actualizar", sessionComplete: "SESIÓN COMPLETA",
       addTimeQuestion: (label: string) => `¿Añadir ${label} a la práctica de hoy?`, addTimeTooShort: "Muy corto para registrar — ajusta el tiempo arriba", sessionLasted: (time: string) => `Tu sesión de metrónomo duró ${time}.`, minAbbr: "min", secAbbr: "seg",
       notNow: "Ahora no", addTime: "Añadir tiempo",
       timeSignature: "TIEMPOS / COMPÁS", bannerTitle: "Metrónomo", pause: "Pausa", resume: "Reanudar", viewStrokes: "Golpes", viewNotation: "Notación", subdivisionLabel: "CLICS / TIEMPO", leadHand: "EMPIEZA CON", clicksFixed: ((n: number) => `${n} por tiempo (según el ejercicio)`), historyTitle: (n: number) => `HISTORIAL (${n})`,
@@ -1028,7 +1073,7 @@ const translations = {
     metronome: {
       practiceTool: "OEFENHULP", title: "METRONOOM", practiceTimer: "OEFENTIMER", sessionTime: "SESSIETIJD", tapTempo: "TEMPO TIKKEN",
       startPractice: "Begin met oefenen", stickingLabel: "HANDENVOLGORDE",
-      start: "▶ Start", stop: "■ Stop", clickSettings: "Klikgeluid", subClicks: "Kliks tussen de tellen", volOff: "Alleen de tel", volFull: "Vol", subClicksHint: "De klik op elke tel blijft gelijk. Dit verandert alleen de kliks ertussen.", sessionComplete: "SESSIE VOLTOOID",
+      start: "▶ Start", stop: "■ Stop", clickSettings: "Klikgeluid", subClicks: "Kliks tussen de tellen", volOff: "Alleen de tel", volFull: "Vol", subClicksHint: "De klik op elke tel blijft gelijk. Dit verandert alleen de kliks ertussen.", soundCheck: "Geluidstest", testMetronomeSound: "Metronoomgeluid testen", testPlainSound: "Gewoon geluid testen", noSound: "Geen geluid van de telefoon. Even verversen lost het op.", refreshSound: "Verversen", sessionComplete: "SESSIE VOLTOOID",
       addTimeQuestion: (label: string) => `${label} toevoegen aan de oefening van vandaag?`, addTimeTooShort: "Te kort om te loggen, pas de timer hierboven aan", sessionLasted: (time: string) => `Je metronoomsessie duurde ${time}.`, minAbbr: "min", secAbbr: "sec",
       notNow: "Nu niet", addTime: "Tijd toevoegen",
       timeSignature: "SLAGEN / MAAT", bannerTitle: "Metronoom", pause: "Pauze", resume: "Hervat", viewStrokes: "Slagen", viewNotation: "Notatie", subdivisionLabel: "KLIKS / SLAG", leadHand: "BEGINT MET", clicksFixed: ((n: number) => `${n} per tel (bepaald door de oefening)`), historyTitle: (n: number) => `GESCHIEDENIS (${n})`,
@@ -4771,6 +4816,8 @@ const TONE_PRESETS: Record<string, ToneDef> = {
 // Small settings sheet opened by the gear button in the metronome windows: click sound and the volume of the in-between clicks.
 // It changes the app-wide settings, not just the rudiment that is open.
 function ClickSettingsPanel({ T, toneKey, onTone, subVolume, onSubVolume, onClose }: { T: any; toneKey: string; onTone: (key: string) => void; subVolume: number; onSubVolume: (v: number) => void; onClose: () => void }) {
+  const [checkResult, setCheckResult] = useState("");
+  const [checking, setChecking] = useState(false);
   return <div className="modal modal-center picker-window" onClick={onClose}>
     <div className="day-summary picker-window-card click-settings" onClick={(e) => e.stopPropagation()}>
       <button type="button" className="close" onClick={onClose}>×</button>
@@ -4781,6 +4828,12 @@ function ClickSettingsPanel({ T, toneKey, onTone, subVolume, onSubVolume, onClos
       <input className="range" type="range" min="0" max="100" step="1" value={Math.round(subVolume * 100)} aria-label={T.metronome.subClicks} onChange={(e) => onSubVolume(Number(e.target.value) / 100)} />
       <div className="click-settings-scale"><span>{T.metronome.volOff}</span><span>{T.metronome.volFull}</span></div>
       <p className="click-settings-hint">{T.metronome.subClicksHint}</p>
+      <span className="metro-section-label">{T.metronome.soundCheck}</span>
+      <div className="sound-check-row">
+        <button type="button" disabled={checking} onClick={async () => { setChecking(true); setCheckResult(await runSoundCheck("webaudio")); setChecking(false); }}>{T.metronome.testMetronomeSound}</button>
+        <button type="button" disabled={checking} onClick={async () => { setChecking(true); setCheckResult(await runSoundCheck("media")); setChecking(false); }}>{T.metronome.testPlainSound}</button>
+      </div>
+      {checkResult && <pre className="sound-check-result">{checkResult}</pre>}
       <button type="button" className="save" onClick={onClose}>{T.today.pickerDone}</button>
     </div>
   </div>;
@@ -4869,6 +4922,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   const [subVolume, setSubVolumeRaw] = useState(1 / 6);
   const subVolumeRef = useRef(1 / 6);
   const [clickSettingsOpen, setClickSettingsOpen] = useState(false);
+  const [audioDead, setAudioDead] = useState(false);
   useEffect(() => {
     try { const v = parseFloat(localStorage.getItem("sub_click_volume") ?? ""); if (Number.isFinite(v)) { const c = Math.min(1, Math.max(0, v)); setSubVolumeRaw(c); subVolumeRef.current = c; } } catch { /* storage unavailable: keep the default */ }
   }, [open]);
@@ -5115,12 +5169,14 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     let ctx = getSharedAudio();
     if (audioCtxRef.current !== ctx) { audioCtxRef.current = ctx; masterRef.current = null; }
     await wakeAudio(ctx);
-    if (ctx.state !== "running") {
+    if (!(await audioAlive(ctx))) {
       dropSharedAudio();
       ctx = getSharedAudio();
       audioCtxRef.current = ctx; masterRef.current = null;
       await wakeAudio(ctx);
-    }
+      // Still no moving clock on a brand new context: the phone's sound system itself is stuck. The metronome tells the player (and offers a refresh).
+      setAudioDead(!(await audioAlive(ctx)));
+    } else setAudioDead(false);
     if (!masterRef.current) {
       const limiter = ctx.createDynamicsCompressor();
       limiter.threshold.value = -14; limiter.knee.value = 10; limiter.ratio.value = 8; limiter.attack.value = 0.002; limiter.release.value = 0.08;
@@ -5334,6 +5390,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
           </div>)}
         </div>}
       </div>}
+      {audioDead && <div className="audio-dead" role="alert"><span>{T.metronome.noSound}</span><button type="button" onClick={() => window.location.reload()}>{T.metronome.refreshSound}</button></div>}
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" disabled={playing && !paused} value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span>{clickChoices && clickChoices.length === 1
         ? <div className="subdivision-fixed">{T.metronome.clicksFixed(clickChoices[0])}</div>
         : <select className="subdivision-select" disabled={playing && !paused} value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{(clickChoices ?? SUBDIVISION_OPTIONS).map(n => <option key={n} value={n}>{n}</option>)}</select>}</div></div>
@@ -5372,6 +5429,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       <div className="metronome-timer">{sharing ? T.sessionTimer.metronomeShared : playing ? T.metronome.practiceTimer : T.metronome.sessionTime}<strong>{elapsedLabel}</strong></div>
       <input className="range" type="range" min="40" max={exerciseEn ? Math.max(240, ...bpmLevelsFor(exerciseEn)) : 240} value={bpm} onChange={e => setBpm(+e.target.value)}/>
       <div className="tempo-actions"><button onClick={() => setBpm(Math.max(40, bpm - 1))}>−</button><button className="tap" onClick={tapTempo}>{T.metronome.tapTempo}</button><button onClick={() => setBpm(Math.min(240, bpm + 1))}>+</button></div>
+      {audioDead && <div className="audio-dead" role="alert"><span>{T.metronome.noSound}</span><button type="button" onClick={() => window.location.reload()}>{T.metronome.refreshSound}</button></div>}
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" disabled={playing && !paused} value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" disabled={playing && !paused} value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
       {playing ? <div className="metro-actions"><button type="button" className="pause" onClick={paused ? resumePlaying : pausePlaying}>{paused ? `▶ ${T.metronome.resume}` : `❚❚ ${T.metronome.pause}`}</button><button className="stop" onClick={togglePlaying}>{T.metronome.stop}</button></div>
         : <button className="start" onClick={togglePlaying}>{T.metronome.start}</button>}

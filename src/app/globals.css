@@ -1708,3 +1708,10 @@ html.native .shell.has-timer-banner .page{padding-top:30px}
 .day-streak-text strong{font:600 26px/1 'Barlow Condensed',sans-serif;color:#f1f3f0}
 .day-streak-text small{font:400 13.5px 'DM Sans',sans-serif;color:#9aa19d}
 .today-detail .day-streak{justify-content:center}
+
+/* Metronome sound check (behind the metronome settings button) and the "no sound, refresh" notice. */
+.sound-check-row{display:flex;gap:8px;margin:2px 0 8px}
+.sound-check-row button{flex:1;padding:10px 8px;border-radius:10px;border:1px solid #563622;background:#201915;color:#e7ebe8;font:600 13px 'DM Sans',sans-serif}
+.sound-check-result{margin:0 0 6px;padding:10px 12px;border-radius:10px;background:#0f1110;border:1px solid #232825;color:#c2c8c3;font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;text-align:left}
+.audio-dead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#2a1713;border:1px solid #6f3a2c;color:#f0c8bd;font:500 13px/1.35 'DM Sans',sans-serif;text-align:left}
+.audio-dead button{flex:0 0 auto;padding:8px 12px;border-radius:99px;border:0;background:#e2877d;color:#32100d;font:700 13px 'DM Sans',sans-serif}
