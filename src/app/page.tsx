@@ -2306,8 +2306,9 @@ const HOME_ICONS = {
 function HomeStat({ icon, label, value }: { icon: keyof typeof HOME_ICONS; label: string; value: string }) {
   return <div className="stat-cell"><svg viewBox="0 0 24 24" fill={icon === "bars" ? "none" : "currentColor"} stroke="currentColor" strokeWidth={icon === "bars" ? 3.2 : 1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{HOME_ICONS[icon]}</svg><span>{label}</span><strong>{value}</strong></div>;
 }
-// Opened from the Today card on Home: everything practised today, every exercise with every tempo, and the other practice.
-function TodayDetailModal({ sessions, log, skillSeconds, otherSeconds, otherItems, dailyGoal, language, T, onClose, onOpenExercise, onRemoveOther, onEdit }: { onEdit: () => void; onRemoveOther: () => void; sessions: any[]; log?: Log; skillSeconds: number; otherSeconds: number; otherItems: string[]; dailyGoal: number | null; language: Lang; T: any; onClose: () => void; onOpenExercise: (en: string) => void }) {
+// One organised view of a day, used by the Today pop-up on Home and by the calendar: the total, every exercise with every tempo from the Skill Trainer,
+// and an "Other practice" card (time, equipment, items, notes) with Edit and Remove.
+function DayBreakdown({ sessions, log, skillSeconds, otherSeconds, otherItems, dailyGoal, language, T, onClose, onOpenExercise, onRemoveOther, onEdit }: { onEdit: () => void; onRemoveOther: () => void; sessions: any[]; log?: Log; skillSeconds: number; otherSeconds: number; otherItems: string[]; dailyGoal: number | null; language: Lang; T: any; onClose: () => void; onOpenExercise?: (en: string) => void }) {
   const ratingLabel: Record<string, string> = { not_ready: T.practiceMode.ratingNotReady, tense: T.practiceMode.ratingTense, almost: T.practiceMode.ratingAlmost, comfortable: T.practiceMode.ratingComfortable, mastered: T.practiceMode.ratingMastered };
   const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
   // Per exercise (in the order first practised), per tempo: the time added up and the latest rating.
@@ -2323,14 +2324,12 @@ function TodayDetailModal({ sessions, log, skillSeconds, otherSeconds, otherItem
   groups.forEach((g) => g.tempos.sort((a, b) => a.bpm - b.bpm));
   const totalSeconds = (log?.minutes ?? 0) * 60 + (log?.seconds ?? 0);
   const hasOther = otherSeconds > 0 || otherItems.length > 0;
-  return <div className="modal modal-center" onClick={onClose}><div className="day-summary today-detail" onClick={(e) => e.stopPropagation()}>
-    <div className="ds-head"><span className="eyebrow">{T.today.detailTitle}</span><button className="close" onClick={onClose}>×</button></div>
-    <div className="day-summary-body">
+  return <>
       <strong className="today-detail-total">{formatMinutes(Math.round(totalSeconds / 60))}{dailyGoal != null ? ` / ${formatMinutes(dailyGoal)}` : ""}</strong>
       {groups.length > 0 && <div className="today-detail-section">
         <div className="today-breakdown-head"><span>{T.today.skillBreakdown}</span><strong>{formatMinutes(Math.max(1, Math.round(skillSeconds / 60)))}</strong></div>
         {groups.map((g) => <div key={g.en} className="today-detail-exercise">
-          <button type="button" className="today-detail-name" onClick={() => { if (PRACTICE_EXERCISES.some((e) => e.en === g.en)) { onClose(); onOpenExercise(g.en); } }}>
+          <button type="button" className="today-detail-name" onClick={() => { if (onOpenExercise && PRACTICE_EXERCISES.some((e) => e.en === g.en)) { onClose(); onOpenExercise(g.en); } }}>
             <span>{PRACTICE_EXERCISES.find((e) => e.en === g.en)?.[language] ?? g.en}</span><small>{clock(g.seconds)}</small>
           </button>
           {g.tempos.map((t) => <div key={t.bpm} className="today-detail-tempo"><span className="td-bpm">{t.bpm} BPM</span><span className="td-rating">{RATING_ICON[t.rating] ?? ""} {ratingLabel[t.rating] ?? t.rating}</span><span className="td-time">{clock(t.seconds)}</span></div>)}
@@ -2346,7 +2345,13 @@ function TodayDetailModal({ sessions, log, skillSeconds, otherSeconds, otherItem
           {hasOther && <button type="button" className="today-detail-remove" onClick={onRemoveOther}>{T.today.removeBtn}</button>}
         </div>
       </div>
-    </div>
+  </>;
+}
+// Opened from the Today card on Home.
+function TodayDetailModal({ onClose, T, ...rest }: { onEdit: () => void; onRemoveOther: () => void; sessions: any[]; log?: Log; skillSeconds: number; otherSeconds: number; otherItems: string[]; dailyGoal: number | null; language: Lang; T: any; onClose: () => void; onOpenExercise: (en: string) => void }) {
+  return <div className="modal modal-center" onClick={onClose}><div className="day-summary today-detail" onClick={(e) => e.stopPropagation()}>
+    <div className="ds-head"><span className="eyebrow">{T.today.detailTitle}</span><button className="close" onClick={onClose}>×</button></div>
+    <div className="day-summary-body"><DayBreakdown {...rest} T={T} onClose={onClose} /></div>
   </div></div>;
 }
 function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysThisYear, pinnedExercises, practiceSessions, user, pointsEnabled, dailyGoal, logs, saveLogFor, deleteLogFor, confirm, openSettings, onGoToPractice, onGoToRudiments, onOpenExercise, onManagePins, onViewPoints, onOpenSessionTimer, onOpenMetronome, onRemoveOther, picker, displayName, language, T }: any) {
@@ -2445,7 +2450,7 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
       </> : <button type="button" className="home-pinned-empty" onClick={onManagePins}>{T.practiceMode.pinManagerEmpty}</button>}
     </div>
     <div className="section-title"><h2 className="home-title">{T.calendar.title}</h2></div>
-    <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} practiceSessions={practiceSessions} language={language} T={T} picker={picker} />
+    <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} practiceSessions={practiceSessions} language={language} T={T} picker={picker} onOpenExercise={onOpenExercise} />
     {showDetail && <TodayDetailModal sessions={practiceSessions.filter((x: any) => x.practiced_on === dateKey)} log={todayLog} skillSeconds={todaySkillSeconds} otherSeconds={todayOtherSeconds} otherItems={todayOtherItems} dailyGoal={dailyGoal} language={language} T={T} onClose={() => setShowDetail(false)} onOpenExercise={onOpenExercise} onEdit={() => { setShowDetail(false); setShowEditToday(true); }} onRemoveOther={async () => { if (await confirm(T.today.removeOtherConfirm)) { await onRemoveOther(); setShowDetail(false); } }} />}
     {showEditToday && <DaySummaryModal startEditing onBack={() => { setShowEditToday(false); setShowDetail(true); }} date={dateKey} log={todayLog} dailyGoal={dailyGoal} logs={logs} practiceSessions={practiceSessions} locale={localeFor(language)} language={language} T={T} onClose={() => setShowEditToday(false)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} picker={picker} />}
   </section>;
@@ -2453,7 +2458,7 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
 
 type SaveLogFor = (targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[]) => Promise<boolean>;
 
-function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practiceSessions, language, T, picker }: { picker?: PickerData; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; practiceSessions: any[]; language: Lang; T: any }) {
+function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practiceSessions, language, T, picker, onOpenExercise }: { onOpenExercise?: (en: string) => void; picker?: PickerData; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; practiceSessions: any[]; language: Lang; T: any }) {
   const today = new Date(); const [selectedDate, setSelectedDate] = useState(dateKey); const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1)); const year = viewDate.getFullYear(); const month = viewDate.getMonth(); const days = new Date(year, month + 1, 0).getDate(); const starts = (new Date(year, month, 1).getDay() + 6) % 7; const selectedLog = logs[selectedDate];
   const locale = localeFor(language);
   const [summaryDate, setSummaryDate] = useState<string | null>(null);
@@ -2479,7 +2484,7 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practice
       })() : <p>{T.calendar.noPractice}</p>)}
     </div>}
     {summaryDate && <DaySummaryModal date={summaryDate} log={logs[summaryDate]} dailyGoal={dailyGoal} logs={logs} practiceSessions={practiceSessions} locale={locale} language={language} T={T}
-      onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} picker={picker}
+      onClose={() => setSummaryDate(null)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} picker={picker} onOpenExercise={onOpenExercise}
       onNavigateDay={(delta) => setSummaryDate((current) => current ? shiftDateKey(current, delta) : current)} />}
   </>;
 }
@@ -2557,8 +2562,8 @@ function ChipDropdown({ label, selectedCount, open, onToggleOpen, searchable, se
     </div>}
   </>;
 }
-function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale, language, T, onClose, onSave, onDelete, confirm, roster, onNavigateDay, startEditing, onBack, picker }: {
-  startEditing?: boolean; onBack?: () => void; picker?: PickerData;
+function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale, language, T, onClose, onSave, onDelete, confirm, roster, onNavigateDay, startEditing, onBack, picker, onOpenExercise }: {
+  startEditing?: boolean; onBack?: () => void; picker?: PickerData; onOpenExercise?: (en: string) => void;
   date: string; log?: Log; dailyGoal: number | null; logs: Record<string, Log>; practiceSessions?: any[]; locale: string; language: Lang; T: any;
   onClose: () => void; onSave: SaveLogFor; onDelete: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>;
   roster?: { members: { id: string; name: string; color: string }[]; dayLogs: Record<string, { minutes: number; seconds: number; equipment: string | null; drumsetMinutes: number | null; padMinutes: number | null; items: string[]; customItems: string[]; notes: string; skillItems?: string[] }>; currentUserId: string };
@@ -2568,8 +2573,11 @@ function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale,
   const streakHere = calculateStreaks(logs, date).current;
   const hasPractice = !!log && log.minutes > 0;
   const daySkillExercises = (practiceSessions ?? []).filter((s) => s.practiced_on === date).map((s) => s.item_en);
+  const daySkillSeconds = lockedSecondsFor(practiceSessions ?? [], log, date);
+  const dayOtherSeconds = Math.max(0, (log ? log.minutes * 60 + (log.seconds ?? 0) : 0) - daySkillSeconds);
+  const dayOtherItems = log ? Array.from(new Set([...log.items, ...log.customItems])).filter((item) => !daySkillExercises.includes(item)) : [];
   const rosterRows = roster ? roster.members.filter((m) => (roster.dayLogs[m.id]?.minutes ?? 0) > 0).map((m) => ({ ...m, ...roster.dayLogs[m.id] })).sort((a, b) => b.minutes - a.minutes) : null;
-  return <div className="modal modal-center" onClick={onClose}><div className="day-summary day-editor-modal" onClick={(e) => e.stopPropagation()}>
+  return <div className="modal modal-center" onClick={onClose}><div className={editing ? "day-summary day-editor-modal" : "day-summary day-editor-modal today-detail"} onClick={(e) => e.stopPropagation()}>
     <div className="ds-head">
       {editing && <button className="ds-back" onClick={() => (onBack ? onBack() : setEditing(false))}>‹</button>}
       {!editing && onNavigateDay && <button type="button" className="ds-day-nav" onClick={() => onNavigateDay(-1)}>‹</button>}
@@ -2591,14 +2599,12 @@ function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale,
         </div>)}</div> : <p className="hint">{T.group.noOnePractised}</p>
       ) : (
         hasPractice && log ? <>
-          <strong className="ds-minutes">{formatMinutes(log.minutes)} {T.calendar.minPractised}{log.equipment ? ` - ${equipmentSplitLabel(log.drumsetMinutes, log.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(log.equipment, T))}` : ""}</strong>
-          {(log.items.length > 0 || log.customItems.length > 0 || daySkillExercises.length > 0) && <div className="detail-chips">{Array.from(new Set([...log.items, ...log.customItems, ...daySkillExercises])).map((item) => <PracticedChip key={item} item={item} skill={daySkillExercises.includes(item)} language={language} />)}</div>}
-          {log.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {log.notes}</p>}
-          {dailyGoal != null && <p className={log.minutes >= dailyGoal ? "ds-goal met" : "ds-goal"}>{log.minutes >= dailyGoal ? T.calendar.goalMet : T.calendar.goalMissed(formatMinutes(log.minutes), formatMinutes(dailyGoal))}</p>}
+          <DayBreakdown sessions={(practiceSessions ?? []).filter((x) => x.practiced_on === date)} log={log} skillSeconds={daySkillSeconds} otherSeconds={dayOtherSeconds} otherItems={dayOtherItems} dailyGoal={dailyGoal} language={language} T={T} onClose={onClose} onOpenExercise={onOpenExercise}
+            onEdit={() => setEditing(true)} onRemoveOther={async () => { if (await confirm(T.today.removeOtherConfirm)) await onDelete(date); }} />
           {streakHere > 1 && <p className="ds-streak">{T.calendar.streakOnDay(streakHere)}</p>}
         </> : <p className="hint">{T.calendar.noPracticeShort}</p>
       )}
-      <button className="secondary" onClick={() => setEditing(true)}>{hasPractice ? T.calendar.editDay : T.calendar.nothingToEdit}</button>
+      {!hasPractice && <button className="secondary" onClick={() => setEditing(true)}>{T.calendar.nothingToEdit}</button>}
     </>}
     </div>
   </div></div>;
