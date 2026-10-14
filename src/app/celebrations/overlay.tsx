@@ -50,14 +50,14 @@ function Overlay({ item, getAudio, language, onDone, silent }: { item: Item; get
         st.render(END);
         setReady(true); shown = true;
         if (st.noContinue) finish(); else setShowCont(true);
-        if (audible && ctx) audio = playChime(ctx, adult);
+        if (audible && ctx) { const a = await playChime(ctx, adult); if (cancelled) a.stop(); else audio = a; }
         const strongest = hap.reduce((m, h) => Math.max(m, h[0]), 0);
         if (strongest) void fireHaptic(strongest);
         // keep the idle motion off as well: the end frame stays still
         return;
       }
       let lead = 0;
-      if (audible && ctx) { lead = 0.04; audio = startAudio(ctx, adult, st); }
+      if (audible && ctx) { lead = 0.04; try { const a = await startAudio(ctx, adult, st); if (cancelled) { a.stop(); return; } audio = a; } catch { /* no sound: the animation still plays */ } }
       hap.forEach(([ms, at]) => hapticTimers.push(window.setTimeout(() => void fireHaptic(ms), at * 1000)));
       start = performance.now() + lead * 1000;
       st.render(0);

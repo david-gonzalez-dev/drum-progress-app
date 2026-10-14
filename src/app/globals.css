@@ -1827,3 +1827,55 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .points-hist-text strong{font:700 15px 'DM Sans'}
 .points-hist-text span{font:500 14px 'DM Sans';color:#9aa19d}
 .points-hist-amount{font:800 30px/1 'Barlow Condensed';flex:none}
+.first-hint{margin:12px 0 4px;padding:12px 14px;border-radius:14px;background:#1b1410;border:1px solid #3d2a20;color:#ffb877;font:600 15px/1.4 "DM Sans";text-align:left}
+.dob-input.dob-locked{opacity:.5;cursor:not-allowed}
+.lb-row.open{opacity:.45}
+.lb-row.open .lb-name b{font-weight:600;color:#9aa19d}
+.lb-avatar-open{background:#262a28;color:#6d746f}
+.sx-seg button.sx-seg-two{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px}
+.sx-seg button.sx-seg-two b{font:700 13.5px 'DM Sans',sans-serif}
+.sx-seg button.sx-seg-two small{font:500 11.5px 'DM Sans',sans-serif;opacity:.75}
+.sx-autosaved{min-height:20px;margin:8px 0 0;text-align:center;color:#68d391;font:600 14px "DM Sans"}
+
+/* Session timer on the Practice tab: a quiet secondary row, not as loud as the Start Practice card on Home */
+.timer-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#141716;border:1px solid #262b28;border-radius:14px;padding:10px 14px;margin:0 0 14px;color:#f6f7f5}
+.timer-row-icon{flex:none;width:34px;height:34px;border-radius:50%;background:#1d2220;color:#9aa19d;display:flex;align-items:center;justify-content:center}
+.timer-row-icon svg{width:18px;height:18px}
+.timer-row-text{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.timer-row-text strong{font:700 15px 'DM Sans'}
+.timer-row-text small{font:500 13px 'DM Sans';color:#8d9690}
+.timer-row-chev{flex:none;width:16px;height:16px;color:#6d746f}
+/* "Continue where you left off": a shorter card */
+.hub-continue{padding:8px 14px;gap:12px;border-radius:16px}
+.hub-continue-play{width:34px;height:34px}
+.hub-continue-play svg{width:16px;height:16px}
+.hub-continue .hub-text strong{font-size:16px;line-height:1.15}
+.hub-continue .hub-text small{line-height:1.1}
+
+/* Same card as the others, but a soft light sweeps across the Skill Trainer card every few seconds */
+.hub-card.hub-card-shine{position:relative;overflow:hidden;border-color:#6b3a18;box-shadow:0 0 0 1px rgba(255,107,26,.12),0 6px 22px rgba(255,107,26,.14)}
+.hub-card.hub-card-shine::after{content:"";position:absolute;top:-30%;bottom:-30%;left:0;width:22%;background:linear-gradient(90deg,transparent,rgba(255,200,150,.22),transparent);transform:translateX(-160%) skewX(-20deg);animation:hubShine 5.5s ease-in-out 1.2s infinite;pointer-events:none}
+@keyframes hubShine{0%{transform:translateX(-160%) skewX(-20deg)}30%,100%{transform:translateX(560%) skewX(-20deg)}}
+@media (prefers-reduced-motion: reduce){.hub-card.hub-card-shine::after{animation:none;display:none}}
+/* Skill Trainer card: thicker, glowing border */
+.hub-card.hub-card-shine{border:2px solid #ff6b1a;box-shadow:0 0 0 1px rgba(255,155,80,.25),0 0 22px rgba(255,107,26,.45),0 8px 30px rgba(255,107,26,.25),inset 0 0 18px rgba(255,107,26,.12)}
+.hub-card.hub-card-shine{box-shadow:0 0 0 1px rgba(255,155,80,.18),0 0 12px rgba(255,107,26,.28),0 6px 20px rgba(255,107,26,.14),inset 0 0 10px rgba(255,107,26,.07)}
+
+/* Rudiment level cards with a drum photo on the right, fading into the dark card */
+.tier-card.tier-card-img{min-height:168px;padding:20px 76px 20px 20px;background:#0f1110;isolation:isolate}
+.tier-card.tier-card-img::before{content:"";position:absolute;inset:0;z-index:-1;background-size:cover;background-position:right center;opacity:.9;-webkit-mask-image:linear-gradient(90deg,transparent 18%,#000 62%);mask-image:linear-gradient(90deg,transparent 18%,#000 62%)}
+.tier-card-basics.tier-card-img::before{background-image:url(/images/card-snare.webp)}
+.tier-card-intermediate.tier-card-img::before{background-image:url(/images/card-tom.webp)}
+.tier-card-advanced.tier-card-img::before{background-image:url(/images/card-cymbal.webp)}
+.tier-card-img .tier-card-title{margin:0 0 6px;font-size:30px}
+.tier-card-desc{margin:0 0 14px;max-width:62%;font:500 14px/1.35 'DM Sans';color:#b4b9b5}
+.tier-card-img .tier-card-progress{max-width:62%}
+.tier-card-img .tier-card-chev{background:rgba(20,22,21,.7);border:1px solid #3a3f3c}
+.tier-card.tier-card-img::before{opacity:.25}
+.tier-card.tier-card-img::before{opacity:.2}
+.tier-card-desc{max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tier-card.tier-card-img::before{opacity:.15}
+.tier-card.tier-card-img::before{background-size:auto 124%;background-repeat:no-repeat;background-position:right center}
+.tier-card.tier-card-img::before{background-size:auto 132%}
+.tier-card.tier-card-img::before{background-size:cover}
+.tier-card.tier-card-img::before{background-size:auto 138%}

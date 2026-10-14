@@ -54,46 +54,50 @@ export function buildScene(c: Celebration, env: Env): SceneInstance {
 export { makeEnv };
 
 /* ---------- audio ---------- */
-type Rig = { comp: DynamicsCompressorNode; noise: AudioBuffer };
-const rigs = new WeakMap<AudioContext, Rig>();
-function rigFor(ctx: AudioContext): Rig {
-  let rig = rigs.get(ctx);
-  if (!rig) {
-    const noise = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-    const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -16; comp.ratio.value = 4; comp.attack.value = 0.002; comp.release.value = 0.15;
-    const master = ctx.createGain(); master.gain.value = 0.85 * 0.3; // all celebrations at 30% of the reference volume
-    comp.connect(master).connect(ctx.destination);
-    // the deep "boom" (kick, whoomp, low toms) is cut below about 140 Hz; the sounds keep their snap and everything else
-    const lowCut = ctx.createBiquadFilter(); lowCut.type = "highpass"; lowCut.frequency.value = 140; lowCut.Q.value = 0.7;
-    lowCut.connect(comp);
-    rig = { comp: lowCut as unknown as DynamicsCompressorNode, noise }; rigs.set(ctx, rig);
-  }
-  return rig;
-}
+// Each animation's sound is first rendered offline (same voices, same numbers) into one audio buffer, which is then scaled so its loudest point is a fixed, quiet level,
+// and only that buffer is played. So the loudness no longer depends on how many voices a scene stacks, on a compressor or on a master knob.
+// PEAK_BIG: full-screen celebrations. PEAK_SMALL: the little inline sounds (save, cheer).
+const PEAK_BIG = 0.1, PEAK_SMALL = 0.05;
 export type AudioPlay = { stop: () => void; base?: number }; // base: the audio-clock time the scene's t=0 is scheduled at
-/* Schedules the whole scene on the audio clock, 40 ms ahead; the visual clock starts at the same moment. Adults play on a quieter bus (0.8). */
-export function startAudio(ctx: AudioContext, adult: boolean, scene: SceneInstance): AudioPlay {
-  const rig = rigFor(ctx);
-  const bus = ctx.createGain(); bus.gain.value = adult ? 0.8 : 1; bus.connect(rig.comp);
-  const base = ctx.currentTime + 0.04;
-  scene.audio(base, createSynth(ctx, bus, rig.noise));
-  return { base, stop() { try { bus.gain.setTargetAtTime(0, ctx.currentTime, 0.03); window.setTimeout(() => { try { bus.disconnect(); } catch { /* already gone */ } }, 400); } catch { /* nothing to stop */ } } };
+type OfflineCtor = new (channels: number, length: number, sampleRate: number) => OfflineAudioContext;
+async function renderSound(sampleRate: number, seconds: number, adult: boolean, peak: number, fn: (base: number, S: Synth) => void): Promise<AudioBuffer> {
+  const Off: OfflineCtor = (window as unknown as { OfflineAudioContext?: OfflineCtor; webkitOfflineAudioContext?: OfflineCtor }).OfflineAudioContext ?? (window as unknown as { webkitOfflineAudioContext: OfflineCtor }).webkitOfflineAudioContext;
+  const off = new Off(1, Math.ceil(sampleRate * seconds), sampleRate);
+  const noise = off.createBuffer(1, off.sampleRate * 2, off.sampleRate);
+  const nd = noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  // the same chain as the reference (compressor), plus a cut of the deep "boom" below about 140 Hz
+  const comp = off.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.ratio.value = 4; comp.attack.value = 0.002; comp.release.value = 0.15;
+  const lowCut = off.createBiquadFilter(); lowCut.type = "highpass"; lowCut.frequency.value = 140; lowCut.Q.value = 0.7;
+  lowCut.connect(comp); comp.connect(off.destination);
+  const bus = off.createGain(); bus.gain.value = adult ? 0.8 : 1; bus.connect(lowCut);
+  fn(0.04, createSynth(off as unknown as AudioContext, bus, noise));
+  const buf = await off.startRendering();
+  const d = buf.getChannelData(0); let top = 0;
+  for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > top) top = a; }
+  const k = top > 0 ? Math.min(1, peak / top) : 1; // never louder than rendered, always no louder than the fixed peak
+  for (let i = 0; i < d.length; i++) d[i] *= k;
+  return buf;
+}
+function playBuffer(ctx: AudioContext, buf: AudioBuffer): AudioPlay {
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const g = ctx.createGain(); g.gain.value = 1;
+  src.connect(g).connect(ctx.destination);
+  const t0 = ctx.currentTime;
+  src.start(t0); // the buffer already has the scene's t=0 at 0.04 s
+  return { base: t0 + 0.04, stop() { try { g.gain.setTargetAtTime(0, ctx.currentTime, 0.03); window.setTimeout(() => { try { src.stop(); src.disconnect(); g.disconnect(); } catch { /* already gone */ } }, 400); } catch { /* nothing to stop */ } } };
+}
+export async function startAudio(ctx: AudioContext, adult: boolean, scene: SceneInstance): Promise<AudioPlay> {
+  const buf = await renderSound(ctx.sampleRate, Math.min(8, scene.END + 3), adult, PEAK_BIG, (base, S) => scene.audio(base, S));
+  return playBuffer(ctx, buf);
 }
 /* A few sounds on the shared context for the small inline moments (they never create or wake the context themselves: no sound is fine). */
-export function playCustom(ctx: AudioContext, adult: boolean, fn: (base: number, S: Synth) => void): AudioPlay {
-  const rig = rigFor(ctx);
-  const bus = ctx.createGain(); bus.gain.value = adult ? 0.8 : 1; bus.connect(rig.comp);
-  fn(ctx.currentTime + 0.04, createSynth(ctx, bus, rig.noise));
-  return { stop() { try { bus.gain.setTargetAtTime(0, ctx.currentTime, 0.03); window.setTimeout(() => { try { bus.disconnect(); } catch { /* already gone */ } }, 400); } catch { /* nothing to stop */ } } };
+export async function playCustom(ctx: AudioContext, adult: boolean, fn: (base: number, S: Synth) => void): Promise<AudioPlay> {
+  return playBuffer(ctx, await renderSound(ctx.sampleRate, 2.5, adult, PEAK_SMALL, fn));
 }
 /* Reduced motion: only the closing chime. */
-export function playChime(ctx: AudioContext, adult: boolean): AudioPlay {
-  const rig = rigFor(ctx);
-  const bus = ctx.createGain(); bus.gain.value = adult ? 0.8 : 1; bus.connect(rig.comp);
-  createSynth(ctx, bus, rig.noise).ting(ctx.currentTime + 0.04, 0.8, 1318.5);
-  return { stop() { try { bus.gain.setTargetAtTime(0, ctx.currentTime, 0.03); window.setTimeout(() => { try { bus.disconnect(); } catch { /* already gone */ } }, 400); } catch { /* nothing to stop */ } } };
+export async function playChime(ctx: AudioContext, adult: boolean): Promise<AudioPlay> {
+  return playBuffer(ctx, await renderSound(ctx.sampleRate, 2, adult, PEAK_SMALL * 1.5, (base, S) => S.ting(base, 0.8, 1318.5)));
 }
 
 /* ---------- haptics ---------- */

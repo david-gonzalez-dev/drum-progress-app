@@ -52,8 +52,8 @@ export function SaveButton({ saved, onClick, disabled, label, savedLabel, peekAu
     setMorph(true);
     const w0 = b.offsetWidth, h = b.offsetHeight;
     const ctx = peekAudio?.() ?? null;
-    let audio: AudioPlay | null = null;
-    if (ctx && ctx.state === "running") audio = playCustom(ctx, true, (base, S) => { S.wood(base, 0.45, 1800); S.ting(base + 0.46, 0.45, 1568); });
+    let audio: AudioPlay | null = null, gone = false;
+    if (ctx && ctx.state === "running") playCustom(ctx, true, (base, S) => { S.wood(base, 0.45, 1800); S.ting(base + 0.46, 0.45, 1568); }).then((a) => { if (gone) a.stop(); else audio = a; }).catch(() => {});
     const hap = [window.setTimeout(() => void fireHaptic(12), 0), window.setTimeout(() => void fireHaptic(20), 460)];
     b.style.transition = "none";
     let raf = 0; const t0 = performance.now();
@@ -72,7 +72,7 @@ export function SaveButton({ saved, onClick, disabled, label, savedLabel, peekAu
       if (t < 1.0) raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
-    return () => { cancelAnimationFrame(raf); hap.forEach(clearTimeout); audio?.stop(); b.style.transition = "width .25s ease, border-radius .25s ease"; reset(); b.style.transition = "width .25s ease, border-radius .25s ease"; setMorph(false); };
+    return () => { gone = true; cancelAnimationFrame(raf); hap.forEach(clearTimeout); audio?.stop(); b.style.transition = "width .25s ease, border-radius .25s ease"; reset(); b.style.transition = "width .25s ease, border-radius .25s ease"; setMorph(false); };
   }, [saved]); // eslint-disable-line react-hooks/exhaustive-deps
   return <button ref={btn} type="button" className={`${saved ? "save saved" : "save"} cel-save${morph ? " cel-morph" : ""}`} onClick={onClick} disabled={disabled}>
     <span ref={lab} className="cel-save-label">{saved ? savedLabel : label}</span>
@@ -95,8 +95,8 @@ export function CheerToast({ name, title, text, onOpen, peekAudio }: { name: str
     if (reducedMotion()) return;
     const TAPS = [0.32, 0.44];
     const ctx = peekAudio?.() ?? null;
-    let audio: AudioPlay | null = null;
-    if (ctx && ctx.state === "running") audio = playCustom(ctx, true, (b, S) => { S.wood(b + 0.12, 0.4, 1200); TAPS.forEach((tp) => S.wood(b + tp, 0.38, 2300)); S.ting(b + 0.5, 0.35, 1760); });
+    let audio: AudioPlay | null = null, gone = false;
+    if (ctx && ctx.state === "running") playCustom(ctx, true, (b, S) => { S.wood(b + 0.12, 0.4, 1200); TAPS.forEach((tp) => S.wood(b + tp, 0.38, 2300)); S.ting(b + 0.5, 0.35, 1760); }).then((a) => { if (gone) a.stop(); else audio = a; }).catch(() => {});
     const hap = window.setTimeout(() => void fireHaptic(15), 120);
     let raf = 0; const t0 = performance.now();
     const loop = (now: number) => {
@@ -112,7 +112,7 @@ export function CheerToast({ name, title, text, onOpen, peekAudio }: { name: str
     };
     el.style.transform = `translate(-50%, -150px)`;
     raf = requestAnimationFrame(loop);
-    return () => { cancelAnimationFrame(raf); clearTimeout(hap); audio?.stop(); };
+    return () => { gone = true; cancelAnimationFrame(raf); clearTimeout(hap); audio?.stop(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return <button ref={root} type="button" className="cheer-incoming cel-cheer" onClick={onOpen}>
     <span className="cel-cheer-avatar" aria-hidden="true">{(name[0] || "?").toUpperCase()}</span>
