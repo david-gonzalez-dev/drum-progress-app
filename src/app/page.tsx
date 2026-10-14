@@ -638,7 +638,7 @@ const translations = {
     },
     sessionTimer: {
       focusRunning: "Your timer is running", focusTitle: "What are you working on?", focusSkip: "Skip", focusPinned: "Pinned exercises", focusRudimentsSub: "Skill Trainer", focusExercisesSub: "Hands, feet and patterns", focusMetronomeSub: "Practice with a click", focusFree: "Free play", focusFreeSub: "Play what you like", pillLabel: "Session Timer", title: "SESSION TIMER", metronomeShared: "Session timer", allAlreadyLogged: "All of this time was already logged from Skill Trainer.", alreadyLogged: (t: string) => `${t} of this was already logged from Skill Trainer, so it is not counted twice.`, modeStopwatch: "Stopwatch", modeTimer: "Timer",
-      durationLabel: "DURATION", timeUp: "Time's up!", sessionFinished: "Session finished", tapToOpen: "tap to open", tapToLog: "tap to log it", longSessionWarning: "That is over 3 hours. If you forgot to stop it, adjust the time below or tap Not now.", logTitle: "Log your practice", addToToday: "Add to today", receiptSession: "Session total", receiptLogged: "Counted in Skill Trainer", receiptAdding: "Adding now", changeAmount: "Change amount", hideChange: "Hide", whatDidYouPractise: "What did you practise?", anythingElse: "Anything else?", chooseWhat: "Choose what you practised", pickAtLeastOne: "Pick at least one thing to save this.", skillTrainerBadge: "Skill Trainer", addAmount: (t: string) => `Add ${t}`, adjustHint: "ADJUST TIME", resetTime: (original: string) => `Reset to ${original}`,
+      durationLabel: "DURATION", timeUp: "Time's up!", sessionFinished: "Session finished", tapToOpen: "tap to open", tapToLog: "tap to log it", longSessionWarning: "That is over 3 hours. If you forgot to stop it, adjust the time below or tap Not now.", logTitle: "Log your practice", addToToday: "Add to today", savedPill: "Saved", receiptSession: "Session total", receiptLogged: "Skill Trainer", receiptAdding: "Adding now", changeAmount: "Change amount", hideChange: "Hide", whatDidYouPractise: "What did you practise?", anythingElse: "Anything else?", chooseWhat: "Choose what you practised", pickAtLeastOne: "Pick at least one thing to save this.", skillTrainerBadge: "Skill Trainer", addAmount: (t: string) => `Add ${t}`, adjustHint: "ADJUST TIME", resetTime: (original: string) => `Reset to ${original}`,
     },
   },
   es: {
@@ -818,7 +818,7 @@ const translations = {
     },
     sessionTimer: {
       focusRunning: "Tu temporizador está en marcha", focusTitle: "¿En qué vas a trabajar?", focusSkip: "Omitir", focusPinned: "Ejercicios fijados", focusRudimentsSub: "Skill Trainer", focusExercisesSub: "Manos, pies y patrones", focusMetronomeSub: "Practica con un clic", focusFree: "Juego libre", focusFreeSub: "Toca lo que quieras", pillLabel: "Temporizador de Sesión", title: "TEMPORIZADOR DE SESIÓN", metronomeShared: "Temporizador de sesión", allAlreadyLogged: "Todo este tiempo ya se registró desde el Skill Trainer.", alreadyLogged: (t: string) => `${t} de esto ya se registró desde el Skill Trainer, así que no se cuenta dos veces.`, modeStopwatch: "Cronómetro", modeTimer: "Temporizador",
-      durationLabel: "DURACIÓN", timeUp: "¡Se acabó el tiempo!", sessionFinished: "Sesión terminada", tapToOpen: "toca para abrir", tapToLog: "toca para registrarla", longSessionWarning: "Son más de 3 horas. Si olvidaste pararlo, ajusta el tiempo abajo o toca Ahora no.", logTitle: "Registra tu práctica", addToToday: "Añadir a hoy", receiptSession: "Total de la sesión", receiptLogged: "Contado en Skill Trainer", receiptAdding: "Añadiendo ahora", changeAmount: "Cambiar cantidad", hideChange: "Ocultar", whatDidYouPractise: "¿Qué practicaste?", anythingElse: "¿Algo más?", chooseWhat: "Elige qué practicaste", pickAtLeastOne: "Elige al menos una cosa para guardarlo.", skillTrainerBadge: "Skill Trainer", addAmount: (t: string) => `Añadir ${t}`, adjustHint: "AJUSTAR TIEMPO", resetTime: (original: string) => `Restablecer a ${original}`,
+      durationLabel: "DURACIÓN", timeUp: "¡Se acabó el tiempo!", sessionFinished: "Sesión terminada", tapToOpen: "toca para abrir", tapToLog: "toca para registrarla", longSessionWarning: "Son más de 3 horas. Si olvidaste pararlo, ajusta el tiempo abajo o toca Ahora no.", logTitle: "Registra tu práctica", addToToday: "Añadir a hoy", savedPill: "Guardado", receiptSession: "Total de la sesión", receiptLogged: "Skill Trainer", receiptAdding: "Añadiendo ahora", changeAmount: "Cambiar cantidad", hideChange: "Ocultar", whatDidYouPractise: "¿Qué practicaste?", anythingElse: "¿Algo más?", chooseWhat: "Elige qué practicaste", pickAtLeastOne: "Elige al menos una cosa para guardarlo.", skillTrainerBadge: "Skill Trainer", addAmount: (t: string) => `Añadir ${t}`, adjustHint: "AJUSTAR TIEMPO", resetTime: (original: string) => `Restablecer a ${original}`,
     },
   },
   nl: {
@@ -998,7 +998,7 @@ const translations = {
     },
     sessionTimer: {
       focusRunning: "Je timer loopt", focusTitle: "Waar ga je aan werken?", focusSkip: "Overslaan", focusPinned: "Vastgezette oefeningen", focusRudimentsSub: "Skill Trainer", focusExercisesSub: "Handen, voeten en patronen", focusMetronomeSub: "Oefen met een klik", focusFree: "Vrij spelen", focusFreeSub: "Speel wat je wilt", pillLabel: "Sessietimer", title: "SESSIETIMER", metronomeShared: "Sessietimer", allAlreadyLogged: "Al deze tijd is al gelogd via de Skill Trainer.", alreadyLogged: (t: string) => `${t} hiervan was al gelogd via de Skill Trainer en wordt dus niet dubbel geteld.`, modeStopwatch: "Stopwatch", modeTimer: "Timer",
-      durationLabel: "DUUR", timeUp: "De tijd is om!", sessionFinished: "Sessie afgelopen", tapToOpen: "tik om te openen", tapToLog: "tik om te loggen", longSessionWarning: "Dat is meer dan 3 uur. Als je vergeten bent te stoppen, pas de tijd hieronder aan of tik op Nu niet.", logTitle: "Log je oefening", addToToday: "Voeg toe aan vandaag", receiptSession: "Totaal van de sessie", receiptLogged: "Geteld in Skill Trainer", receiptAdding: "Nu toevoegen", changeAmount: "Hoeveelheid aanpassen", hideChange: "Verberg", whatDidYouPractise: "Wat heb je geoefend?", anythingElse: "Nog iets anders?", chooseWhat: "Kies wat je geoefend hebt", pickAtLeastOne: "Kies minstens één ding om dit op te slaan.", skillTrainerBadge: "Skill Trainer", addAmount: (t: string) => `${t} toevoegen`, adjustHint: "TIJD AANPASSEN", resetTime: (original: string) => `Terugzetten naar ${original}`,
+      durationLabel: "DUUR", timeUp: "De tijd is om!", sessionFinished: "Sessie afgelopen", tapToOpen: "tik om te openen", tapToLog: "tik om te loggen", longSessionWarning: "Dat is meer dan 3 uur. Als je vergeten bent te stoppen, pas de tijd hieronder aan of tik op Nu niet.", logTitle: "Log je oefening", addToToday: "Voeg toe aan vandaag", savedPill: "Opgeslagen", receiptSession: "Totaal van de sessie", receiptLogged: "Skill Trainer", receiptAdding: "Nu toevoegen", changeAmount: "Hoeveelheid aanpassen", hideChange: "Verberg", whatDidYouPractise: "Wat heb je geoefend?", anythingElse: "Nog iets anders?", chooseWhat: "Kies wat je geoefend hebt", pickAtLeastOne: "Kies minstens één ding om dit op te slaan.", skillTrainerBadge: "Skill Trainer", addAmount: (t: string) => `${t} toevoegen`, adjustHint: "TIJD AANPASSEN", resetTime: (original: string) => `Terugzetten naar ${original}`,
     },
   },
 } as const;
@@ -1352,7 +1352,7 @@ export default function Home() {
   const displayName = profileName || user?.user_metadata?.display_name || String(user?.user_metadata?.full_name ?? "").trim().split(/\s+/)[0] || user?.email?.split("@")[0] || "Drummer";
   const [language, setLanguage] = useState<Lang>("en");
   const [dailyGoal, setDailyGoal] = useState<number | null>(null);
-  const [metronomeTone, setMetronomeTone] = useState("clave"); // "clave" is the stored name of the Stick tone, the default
+  const [metronomeTone, setMetronomeTone] = useState("wood");
   // Picked right inside the metronome; saved straight away.
   async function changeMetronomeTone(key: string) {
     setMetronomeTone(key);
@@ -4749,7 +4749,7 @@ function ClickSettingsPanel({ T, toneKey, onTone, subVolume, onSubVolume, onClos
     </div>
   </div>;
 }
-const TONE_KEYS = ["clave", "wood", "click", "beep"]; // Stick first (the default), then Wood, Click, Marimba
+const TONE_KEYS = ["wood", "clave", "click", "beep"]; // Wood first (the default), then Stick, Click, Marimba
 const SUBDIVISION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer, onSessionEnd, initialBpm, tone, onToneChange, exerciseLabel, exerciseEn, lockTempo, difficulty, onOpen, onBannerChange, stacked, sessions, userItems, userBooks, onAddUserItem, onRemoveUserItem, sortedRudiments, sortedExercises, language, T }: { open: boolean; close: () => void; onAddPractice?: (seconds: number, items: string[], customItems: string[]) => void; sharedTimer?: { startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null; onUsedDuringTimer?: () => void; onSessionEnd?: (seconds: number) => void; initialBpm?: number; tone?: string; onToneChange?: (key: string) => void; exerciseLabel?: string; exerciseEn?: string; lockTempo?: boolean; difficulty?: Difficulty; onOpen?: () => void; onBannerChange?: (active: boolean) => void; stacked?: boolean; sessions?: { item_en: string; bpm: number; rating: string; practiced_on: string; notes: string | null; issues: string[]; created_at: string }[]; userItems?: string[]; userBooks?: string[]; onAddUserItem?: (kind: "item" | "book", name: string) => Promise<void>; onRemoveUserItem?: (kind: "item" | "book", name: string) => Promise<void>; sortedRudiments?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; sortedExercises?: { category: string; subcategory: { en: string; es: string } | null; en: string; es: string; nl: string }[]; language?: Lang; T: any }) {
@@ -4828,7 +4828,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   const bpmRef = useRef(bpm);
   const beatsPerMeasureRef = useRef(beatsPerBar);
   const subdivisionRef = useRef(subdivision);
-  const [toneKey, setToneKey] = useState(tone ?? "clave");
+  const [toneKey, setToneKey] = useState(tone ?? "wood");
   // Volume of the in-between clicks (16ths, triplets...) relative to the beat click: 0 = silent, 1 = as loud as the beat. One setting for every rudiment.
   const [subVolume, setSubVolumeRaw] = useState(1 / 6);
   const subVolumeRef = useRef(1 / 6);
@@ -4841,8 +4841,8 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     setSubVolumeRaw(c); subVolumeRef.current = c;
     try { localStorage.setItem("sub_click_volume", String(c)); } catch { /* ignore */ }
   }
-  useEffect(() => { setToneKey(tone ?? "clave"); }, [tone]);
-  const toneRef = useRef(TONE_PRESETS[tone ?? "clave"] ?? TONE_PRESETS.clave);
+  useEffect(() => { setToneKey(tone ?? "wood"); }, [tone]);
+  const toneRef = useRef(TONE_PRESETS[tone ?? "wood"] ?? TONE_PRESETS.wood);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<AudioNode | null>(null);
   const schedulerRef = useRef<number | null>(null);
@@ -5139,9 +5139,22 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       enablePlaybackAudio();
       enablePlaybackAudio();
       // Android's WebView needs bigger audio buffers (latencyHint "playback") and a longer look-ahead, or the clicks stutter and drift.
-      const ctx = audioCtxRef.current ?? (IS_ANDROID ? new AudioContextClass({ latencyHint: "playback" }) : new AudioContextClass());
-      audioCtxRef.current = ctx;
-      if (ctx.state === "suspended") await ctx.resume();
+      const makeContext = () => (IS_ANDROID ? new AudioContextClass({ latencyHint: "playback" }) : new AudioContextClass());
+      const tryResume = async (c: AudioContext) => { try { await Promise.race([c.resume(), new Promise((resolve) => window.setTimeout(resolve, 600))]); } catch { /* handled below */ } };
+      let ctx = audioCtxRef.current;
+      // An "interrupted" (iOS) or closed context never wakes up by itself: replace it right here, while the tap that started the metronome still counts.
+      if (ctx && (ctx.state === "closed" || (ctx.state as string) === "interrupted")) { try { void ctx.close(); } catch { /* already closed */ } ctx = null; }
+      if (!ctx) { ctx = makeContext(); audioCtxRef.current = ctx; masterRef.current = null; }
+      // iOS can leave a context "interrupted" or stuck after a call, a lock, another app's sound or a long time in the background: that is silent forever
+      // (until the app is restarted). Wake it up, and if it still is not running, throw it away and start with a fresh one.
+      if (ctx.state !== "running") await tryResume(ctx);
+      if (ctx.state !== "running") {
+        try { await ctx.close(); } catch { /* already closed */ }
+        ctx = makeContext(); audioCtxRef.current = ctx; masterRef.current = null;
+        await tryResume(ctx);
+      }
+      // If the sound system stops later (an interruption while playing), wake it up again as soon as the app is back.
+      ctx.onstatechange = () => { const c = audioCtxRef.current; if (c && c === ctx && playingRef.current && !pausedRef.current && c.state !== "running" && !document.hidden) c.resume().catch(() => {}); };
       if (!masterRef.current) {
         const limiter = ctx.createDynamicsCompressor();
         limiter.threshold.value = -14; limiter.knee.value = 10; limiter.ratio.value = 8; limiter.attack.value = 0.002; limiter.release.value = 0.08;
@@ -5616,7 +5629,7 @@ function SessionTimer({ pinnedExercises, onFocusChoice, open, close, onOpen, onB
       {netSeconds <= 0 && <p>{T.sessionTimer.allAlreadyLogged}</p>}
       <div className="add-receipt">
         <div><span>{T.sessionTimer.receiptSession}</span><b>{formatMMSS(elapsed)}</b></div>
-        {creditApplied > 0 && <div><span>{T.sessionTimer.receiptLogged}</span><b>{formatMMSS(creditApplied)}</b></div>}
+        {creditApplied > 0 && <div><span>{T.sessionTimer.receiptLogged}</span><span className="rcpt-right"><i className="saved-pill">✓ {T.sessionTimer.savedPill}</i><b>{formatMMSS(creditApplied)}</b></span></div>}
         {creditApplied > 0 && <div className="total"><span>{T.sessionTimer.receiptAdding}</span><b>{formatMMSS(netSeconds)}</b></div>}
       </div>
       {addPromptSeconds > LONG_SESSION_WARNING_SECONDS && <p className="add-time-warning">{T.sessionTimer.longSessionWarning}</p>}
