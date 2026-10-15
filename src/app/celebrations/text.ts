@@ -8,7 +8,7 @@ type Texts = {
   tempoTitle: string; tempoNext: (bpm: number) => string; tempoTop: string; bpm: string;
   goalUnit: string; goalTitle: string;
   streakLabel: string; streakSub: (n: number) => string;
-  masteredTitle: (level: string) => string; masteredSub: (rudiment: string, next: string) => string;
+  masteredTitle: (level: string) => string; masteredSub: (rudiment: string, next: string) => string; masteredComplete: (rudiment: string) => string; legendBadge: string;
   challengeTitle: string; challengeSub: (days: number, exercise: string) => string;
   onboardTitle: string; onboardSub: string; onboardCont: string;
   ratedTitle: string; ratedTitleKids: string; ratedWords: { a: string; b: string; today: string; before: string; day: string; days: string };
@@ -24,7 +24,7 @@ export const CEL_TEXT: Record<Lang, Texts> = {
     streakLabel: "DAY STREAK",
     // placeholder copy
     streakSub: (n) => (n >= 100 ? "One hundred days. Legendary." : n >= 30 ? "A whole month. Massive." : n >= 14 ? "Two weeks strong" : n >= 7 ? "One full week in a row" : "Three days in a row"),
-    masteredTitle: (l) => `${l} mastered`, masteredSub: (r, n) => `${r} moves up to ${n}`,
+    masteredTitle: (l) => `${l} mastered`, masteredSub: (r, n) => `${r} moves up to ${n}`, masteredComplete: (r) => `${r} is complete`, legendBadge: "LEGEND",
     challengeTitle: "Challenge won", challengeSub: (d, e) => `${d} days of ${e}`,
     onboardTitle: "You're ready", onboardSub: "Let's play your first rudiment", onboardCont: "Start practicing",
     ratedTitle: "Rating improved", ratedTitleKids: "Getting better!", ratedWords: { a: "From", b: "to", today: "today", before: "in", day: "day", days: "days" },
@@ -37,7 +37,7 @@ export const CEL_TEXT: Record<Lang, Texts> = {
     goalUnit: "MIN HOY", goalTitle: "Objetivo diario cumplido",
     streakLabel: "DÍAS SEGUIDOS",
     streakSub: (n) => (n >= 100 ? "Cien días. Legendario." : n >= 30 ? "Un mes entero. Enorme." : n >= 14 ? "Dos semanas a tope" : n >= 7 ? "Una semana completa seguida" : "Tres días seguidos"),
-    masteredTitle: (l) => `${l} dominado`, masteredSub: (r, n) => `${r} sube a ${n}`,
+    masteredTitle: (l) => `${l} dominado`, masteredSub: (r, n) => `${r} sube a ${n}`, masteredComplete: (r) => `${r} está completo`, legendBadge: "LEYENDA",
     challengeTitle: "Reto superado", challengeSub: (d, e) => `${d} días de ${e}`,
     onboardTitle: "Estás listo", onboardSub: "Toquemos tu primer rudimento", onboardCont: "Empezar a practicar",
     ratedTitle: "Has mejorado", ratedTitleKids: "¡Cada vez mejor!", ratedWords: { a: "De", b: "a", today: "hoy", before: "en", day: "día", days: "días" },
@@ -50,7 +50,7 @@ export const CEL_TEXT: Record<Lang, Texts> = {
     goalUnit: "MIN VANDAAG", goalTitle: "Dagdoel bereikt",
     streakLabel: "DAGEN OP RIJ",
     streakSub: (n) => (n >= 100 ? "Honderd dagen. Legendarisch." : n >= 30 ? "Een hele maand. Enorm." : n >= 14 ? "Twee weken sterk" : n >= 7 ? "Een hele week op rij" : "Drie dagen op rij"),
-    masteredTitle: (l) => `${l} beheerst`, masteredSub: (r, n) => `${r} gaat door naar ${n}`,
+    masteredTitle: (l) => `${l} beheerst`, masteredSub: (r, n) => `${r} gaat door naar ${n}`, masteredComplete: (r) => `${r} is voltooid`, legendBadge: "LEGENDE",
     challengeTitle: "Uitdaging gewonnen", challengeSub: (d, e) => `${d} dagen ${e}`,
     onboardTitle: "Je bent klaar", onboardSub: "Laten we je eerste rudiment spelen", onboardCont: "Begin met oefenen",
     ratedTitle: "Beoordeling verbeterd", ratedTitleKids: "Je wordt steeds beter!", ratedWords: { a: "Van", b: "naar", today: "vandaag", before: "in", day: "dag", days: "dagen" },

@@ -28,7 +28,7 @@ function LoopScene({ def, className, viewBox, label }: { def: SceneDef<Record<st
   return <svg ref={ref} className={className} viewBox={viewBox} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true}><g id="stage" /></svg>;
 }
 /* The logo as a thin outline that draws itself in and taps and glows every 3.2 seconds. One for every empty screen. */
-export function EmptyLogo() { return <LoopScene def={logoEmptyScene} className="cel-empty-logo" viewBox="-290 -500 740 600" />; }
+export function EmptyLogo() { return <LoopScene def={logoEmptyScene} className="cel-empty-logo" viewBox="-380 -500 760 600" />; }
 /* A metronome swinging at 100 BPM, instead of a spinner. Only appears if the wait lasts longer than about 0.3 seconds, so it never flashes. */
 export function LoadingMetronome({ delayMs = 300 }: { delayMs?: number }) {
   const [on, setOn] = useState(false);

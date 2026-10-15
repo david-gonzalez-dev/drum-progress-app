@@ -20,7 +20,7 @@ const TEXT = {
     monthly: "Monthly ranking", points: "Practice points", levelRow: (l: string) => `${l} level`,
     cats: { consistency: "Consistency", skill: "Skill progress", points: "Points" }, periods: { month: "This month", year: "This year" }, allLevels: "All levels",
     tiers: { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", legend: "Legend" } as Record<string, string>,
-    openSpot: "Open spot", unitDays: "days", unitTempos: "tempos", unitPoints: "points", you: "You", empty: "No one here yet. Be the first!", loadError: "The leaderboard isn't available right now.", loading: "Loading…",
+    openSpot: "Open spot", ofPlayers: (n: number) => `of ${n} ${n === 1 ? "drummer" : "drummers"}`, thisMonth: "this month", pointsRanking: "Points ranking", unitDays: "days", unitTempos: "tempos", unitPoints: "points", you: "You", empty: "No one here yet. Be the first!", loadError: "The leaderboard isn't available right now.", loading: "Loading…",
     howConsistency: "Counts days with 5+ minutes of practice. Total minutes are never ranked.", howSkill: "Counts tempos you newly unlocked in the Skill Trainer.", howPoints: "Drum Points: 1 point per minute of Skill Trainer practice, plus points from your teacher.", resets: "Resets automatically each month and year. Your history is never deleted.",
     gateTitle: "Join the worldwide leaderboard", gate1: "Your first name, last initial and scores will be visible to other players who join.", gate2: "Nothing else is shared: no email, notes or practice details.", gate3: "You can leave at any time. Your practice history stays yours.",
     joinBtn: "Join", leaveBtn: "Leave the leaderboard", leaveConfirm: "Tap again to leave", hiddenNote: "You're not shown on the leaderboard right now (hidden by an administrator).", goSettings: "Go to Settings", needAgeTitle: "Add your date of birth to join", needAge: "Add your date of birth in Settings to join the leaderboard. It stays private.", boards: { under_10: "Up to 10", "10_17": "11–17", "18_plus": "18+" }, gates: { under_10: "You are on the Up to 10 board: you only see and are seen by other players aged 10 and under, with first names only.", "10_17": "You are on the 11–17 board: you only see and are seen by other players aged 11 to 17, with first names only.", "18_plus": "You are on the 18+ board: you only see and are seen by other players aged 18 and older." }, error: "Something went wrong. Please try again.",
@@ -32,7 +32,7 @@ const TEXT = {
     monthly: "Ranking mensual", points: "Puntos de práctica", levelRow: (l: string) => `Nivel ${l}`,
     cats: { consistency: "Constancia", skill: "Progreso técnico", points: "Puntos" }, periods: { month: "Este mes", year: "Este año" }, allLevels: "Todos los niveles",
     tiers: { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", legend: "Legend" } as Record<string, string>,
-    openSpot: "Lugar libre", unitDays: "días", unitTempos: "tempos", unitPoints: "puntos", you: "Tú", empty: "Aún no hay nadie. ¡Sé el primero!", loadError: "La tabla no está disponible ahora mismo.", loading: "Cargando…",
+    openSpot: "Lugar libre", ofPlayers: (n: number) => `de ${n} ${n === 1 ? "baterista" : "bateristas"}`, thisMonth: "este mes", pointsRanking: "Ranking de puntos", unitDays: "días", unitTempos: "tempos", unitPoints: "puntos", you: "Tú", empty: "Aún no hay nadie. ¡Sé el primero!", loadError: "La tabla no está disponible ahora mismo.", loading: "Cargando…",
     howConsistency: "Cuenta los días con 5+ minutos de práctica. Los minutos totales nunca se clasifican.", howSkill: "Cuenta los tempos que desbloqueaste de nuevo en el Skill Trainer.", howPoints: "Drum Points: 1 punto por minuto de práctica en el Skill Trainer, más puntos de tu profesor.", resets: "Se reinicia sola cada mes y cada año. Tu historial nunca se borra.",
     gateTitle: "Únete a la tabla mundial", gate1: "Tu nombre, la inicial de tu apellido y tus puntuaciones serán visibles para otros jugadores que se unan.", gate2: "No se comparte nada más: ni email, ni notas, ni detalles de práctica.", gate3: "Puedes salir cuando quieras. Tu historial sigue siendo tuyo.",
     joinBtn: "Unirme", leaveBtn: "Salir de la tabla", leaveConfirm: "Toca otra vez para salir", hiddenNote: "Ahora mismo no apareces en la tabla (oculto por un administrador).", goSettings: "Ir a Ajustes", needAgeTitle: "Añade tu fecha de nacimiento para unirte", needAge: "Añade tu fecha de nacimiento en Ajustes para unirte a la tabla. Se mantiene privada.", boards: { under_10: "Hasta 10", "10_17": "11–17", "18_plus": "18+" }, gates: { under_10: "Estás en la tabla de hasta 10 años: solo ves y te ven otros jugadores de hasta 10 años, solo con el nombre.", "10_17": "Estás en la tabla de 11–17: solo ves y te ven jugadores de 11 a 17 años, solo con el nombre.", "18_plus": "Estás en la tabla de 18+: solo ves y te ven jugadores de 18 años o más." }, error: "Algo salió mal. Inténtalo de nuevo.",
@@ -44,7 +44,7 @@ const TEXT = {
     monthly: "Maandranglijst", points: "Oefenpunten", levelRow: (l: string) => `Niveau ${l}`,
     cats: { consistency: "Regelmaat", skill: "Vaardigheid", points: "Punten" }, periods: { month: "Deze maand", year: "Dit jaar" }, allLevels: "Alle niveaus",
     tiers: { beginner: "Beginner", intermediate: "Gemiddeld", advanced: "Gevorderd", legend: "Legende" } as Record<string, string>,
-    openSpot: "Vrije plek", unitDays: "dagen", unitTempos: "tempo's", unitPoints: "punten", you: "Jij", empty: "Nog niemand hier. Wees de eerste!", loadError: "De ranglijst is nu niet beschikbaar.", loading: "Laden…",
+    openSpot: "Vrije plek", ofPlayers: (n: number) => `van ${n} ${n === 1 ? "drummer" : "drummers"}`, thisMonth: "deze maand", pointsRanking: "Puntenranglijst", unitDays: "dagen", unitTempos: "tempo's", unitPoints: "punten", you: "Jij", empty: "Nog niemand hier. Wees de eerste!", loadError: "De ranglijst is nu niet beschikbaar.", loading: "Laden…",
     howConsistency: "Telt dagen met 5+ minuten oefenen. Totale minuten tellen nooit mee.", howSkill: "Telt tempo's die je nieuw hebt ontgrendeld in de Skill Trainer.", howPoints: "Drum Points: 1 punt per minuut oefenen in de Skill Trainer, plus punten van je leraar.", resets: "Begint automatisch opnieuw elke maand en elk jaar. Je geschiedenis wordt nooit verwijderd.",
     gateTitle: "Doe mee aan de wereldwijde ranglijst", gate1: "Je voornaam, de initiaal van je achternaam en je scores zijn zichtbaar voor andere spelers die meedoen.", gate2: "Er wordt niets anders gedeeld: geen e-mail, notities of oefendetails.", gate3: "Je kunt op elk moment stoppen. Je oefengeschiedenis blijft van jou.",
     joinBtn: "Meedoen", leaveBtn: "Stop met de ranglijst", leaveConfirm: "Tik nogmaals om te stoppen", hiddenNote: "Je wordt nu niet getoond op de ranglijst (verborgen door een beheerder).", goSettings: "Naar Instellingen", needAgeTitle: "Voeg je geboortedatum toe om mee te doen", needAge: "Voeg je geboortedatum toe in Instellingen om mee te doen aan de ranglijst. Het blijft privé.", boards: { under_10: "Tot 10", "10_17": "11–17", "18_plus": "18+" }, gates: { under_10: "Je staat op de ranglijst tot 10 jaar: je ziet en wordt gezien door andere spelers tot 10 jaar, alleen met voornaam.", "10_17": "Je staat op de ranglijst 11–17: je ziet en wordt gezien door spelers van 11 tot 17, alleen met voornaam.", "18_plus": "Je staat op de ranglijst 18+: je ziet en wordt gezien door spelers van 18 en ouder." }, error: "Er ging iets mis. Probeer het opnieuw.",
@@ -130,15 +130,14 @@ export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen, us
       : <div className="lb-panel">
         <div className="lb-rank-col">
           <span className="lb-rank-label">{t.rankMonth}</span>
-          {summary.pos != null ? <><span className="lb-rank-num">#{summary.pos}</span>
+          {summary.pos != null ? <><span className="lb-rank-line"><span className="lb-rank-num">#{summary.pos}</span>{summary.total > 0 && <span className="lb-rank-of">{t.ofPlayers(summary.total)}</span>}</span>
+            <span className="lb-level-chip">{levelWord}</span>
             {moved !== 0 && <span className={moved > 0 ? "lb-moved up" : "lb-moved down"}>{moved > 0 ? "▲" : "▼"} {moved > 0 ? t.positionsUp(moved) : t.positionsDown(-moved)}</span>}</>
             : <><span className="lb-rank-none">{t.notRanked}</span><span className="lb-rank-hint">{t.notRankedHint}</span></>}
         </div>
-        <div className="lb-links">
-          {!pointsOnly && <button type="button" onClick={() => onOpen({ category: "consistency", period: "month", level: "all" })}><span>{t.monthly}</span><Chevron /></button>}
-          {summary.board !== "18_plus" && <button type="button" onClick={() => onOpen({ category: "points", period: "month", level: "all" })}><span>{t.points}</span><Chevron /></button>}
-          {!pointsOnly && <button type="button" onClick={() => onOpen({ category: "skill", period: "month", level: summary.level })}><span>{t.levelRow(levelWord)}</span><Chevron /></button>}
-        </div>
+        {summary.board !== "18_plus" && <div className="lb-links">
+          <button type="button" onClick={() => onOpen({ category: "points", period: "month", level: "all" })}><span>{t.points}</span><Chevron /></button>
+        </div>}
       </div>}
   </div>;
 }

@@ -370,8 +370,8 @@
 .admin-points-total{font:800 34px 'Barlow Condensed';color:#ff9b50;margin:0 0 4px;line-height:1}
 .admin-controls-hint{display:block;color:#6d746f;font-size:12px;margin:0 0 12px}
 .admin-award-row{display:flex;align-items:center;gap:6px;margin-bottom:16px}
-.admin-award-amount{width:44px;flex-shrink:0;text-align:center;border:1px solid #2c312e;background:#191c1a;color:#fff;border-radius:10px;padding:11px 4px;font:15px 'DM Sans'}
-.admin-award-reason{flex:1;min-width:0;border:1px solid #2c312e;background:#191c1a;color:#fff;border-radius:10px;padding:11px 13px;font:15px 'DM Sans'}
+.admin-award-amount{width:44px;flex-shrink:0;text-align:center;border:1px solid #2c312e;background:#191c1a;color:#fff;border-radius:10px;padding:11px 4px;font:16px 'DM Sans'}
+.admin-award-reason{flex:1;min-width:0;border:1px solid #2c312e;background:#191c1a;color:#fff;border-radius:10px;padding:11px 13px;font:16px 'DM Sans'}
 .admin-award-reason::placeholder{color:#747b76}
 .admin-points-positive{color:#68d391}
 .admin-points-negative{color:#e2877d}
@@ -435,12 +435,12 @@
 .chip.selected .chip-caret{color:#250d02}
 .picker-window{z-index:5}
 .picker-window-card{text-align:left}
-.rudiment-search{width:100%;border:1px solid #2c312e;background:#191c1a;color:#fff;border-radius:10px;padding:11px 13px;margin:14px 0 10px;font:15px 'DM Sans'}
+.rudiment-search{width:100%;border:1px solid #2c312e;background:#191c1a;color:#fff;border-radius:10px;padding:11px 13px;margin:14px 0 10px;font:16px 'DM Sans'}
 .rudiment-search::placeholder{color:#747b76}
 .picker-window-card>.onboard-exercise-list{margin-top:14px}
 .rudiment-list{max-height:50vh;overflow-y:auto;margin-bottom:0}
 .custom-item-row{display:flex;gap:8px;margin-top:12px}
-.custom-item-row input{flex:1;min-width:0;border:1px solid #2c312e;background:#191c1a;color:#fff;border-radius:10px;padding:11px 13px;font:15px 'DM Sans'}
+.custom-item-row input{flex:1;min-width:0;border:1px solid #2c312e;background:#191c1a;color:#fff;border-radius:10px;padding:11px 13px;font:16px 'DM Sans'}
 .custom-item-row input::placeholder{color:#747b76}
 .custom-item-add{flex-shrink:0;border:0;border-radius:10px;background:#ff6b1a;color:#250d02;font:700 15px 'DM Sans';padding:0 16px}
 .custom-item-add:disabled{opacity:.4}
@@ -1879,3 +1879,127 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .tier-card.tier-card-img::before{background-size:auto 132%}
 .tier-card.tier-card-img::before{background-size:cover}
 .tier-card.tier-card-img::before{background-size:auto 138%}
+.cel-empty-logo{width:180px;max-width:55%;margin:4px auto 6px}
+/* Skill Trainer level cards: shorter, so all three fit on an iPhone screen */
+.tier-card.tier-card-img{min-height:0;padding:14px 72px 14px 18px}
+.tier-card-img .tier-card-num{font-size:14px;margin-bottom:0}
+.tier-card-img .tier-card-title{font-size:25px;margin:0 0 2px}
+.tier-card-img .tier-card-desc{margin:0 0 8px;font-size:13px}
+.tier-card-img .tier-card-count{font-size:13px;margin-bottom:5px}
+.tier-card-img .tier-card-bar-track{height:6px}
+.tier-select-list{gap:10px}
+.tier-card.tier-card-img::before{background-size:auto 232px;background-position:right center}
+/* photo fades out on every side (left, top and bottom), so no edge of the picture shows */
+.tier-card.tier-card-img::before{-webkit-mask-image:linear-gradient(90deg,transparent 12%,#000 62%),linear-gradient(180deg,transparent 0,#000 28%,#000 72%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent 12%,#000 62%),linear-gradient(180deg,transparent 0,#000 28%,#000 72%,transparent 100%);mask-composite:intersect}
+.tier-card.tier-card-img::before{-webkit-mask-image:linear-gradient(90deg,transparent 8%,#000 50%,#000 86%,transparent 100%),linear-gradient(180deg,transparent 0,#000 22%,#000 78%,transparent 100%);mask-image:linear-gradient(90deg,transparent 8%,#000 50%,#000 86%,transparent 100%),linear-gradient(180deg,transparent 0,#000 22%,#000 78%,transparent 100%)}
+/* the photo layer is exactly as wide as the picture, so its left edge can fade out completely (on any screen width) */
+.tier-card.tier-card-img::before{left:auto;right:0;width:348px;max-width:100%;background-size:auto 232px;background-position:center center;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 55%),linear-gradient(180deg,transparent 0,#000 22%,#000 78%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 55%),linear-gradient(180deg,transparent 0,#000 22%,#000 78%,transparent 100%)}
+.tier-card.tier-card-img::before{opacity:.22}
+/* iPhone zooms the whole page when a field smaller than 16px gets focus; every text field stays at least 16px */
+@supports (-webkit-touch-callout:none){input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=date]),select,textarea{font-size:max(16px,1em)!important}}
+.rating-mark{display:inline-block;vertical-align:-2px;flex:none}
+/* History in the Skill Trainer window: never taller than about 3 entries, the rest scrolls inside, so the window stays a normal size */
+.metro-history-list{max-height:min(230px,30vh);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-right:2px}
+.metro-history-list{max-height:min(138px,18vh)}
+.tier-card-hand.tier-card-img::before{background-image:url(/images/card-hands.webp)}
+.tier-card-footwork.tier-card-img::before{background-image:url(/images/card-pedal.webp)}
+.tier-card-coordination.tier-card-img::before{background-image:url(/images/card-kit.webp)}
+/* Exercise / rudiment rows in the lists: less tall */
+.ex-row{padding:9px 14px;gap:12px;border-radius:14px}
+.ex-row+.ex-row{margin-top:7px}
+.ex-row .name{font-size:16px;margin:0 0 3px;line-height:1.2}
+.ex-row .meta{font-size:13px}
+.ex-row-locked .locked-hint{margin:2px 0 0}
+.ex-row .track{max-width:none}
+.legend-badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:99px;background:#2a2410;border:1px solid #F5C542;color:#F5C542;font:800 10.5px/1.4 "DM Sans";letter-spacing:.08em;vertical-align:2px}
+.ex-row.ex-row-legend{border-color:#F5C542;box-shadow:0 0 14px rgba(245,197,66,.16)}
+.ex-row-legend .track i{background:linear-gradient(90deg,#e6a82a,#F5C542)}
+.ex-row-legend .best-dot{background:#F5C542!important}
+.ex-row-legend .frac{color:#F5C542}
+
+/* Personal challenges (designer brief): Active / Completed sections, day bars, gold completed pill, "..." menu */
+.pc2-label{display:flex;justify-content:space-between;margin:22px 0 10px;font:700 11px 'DM Sans';letter-spacing:.9px;color:#7d7d7d}
+.pc2-count{letter-spacing:0;font-weight:500}
+.pc2-card{background:#171717;border:1px solid #262626;border-radius:16px;padding:16px;position:relative;margin-bottom:10px}
+.pc2-card.pc2-done{background:#141414}
+.pc2-card.pc2-done .pc2-title{color:#e6e6e6}
+.pc2-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pc2-title{font:700 16px 'DM Sans';color:#f5f5f5}
+.pc2-meta{font:400 13px 'DM Sans';color:#8a8a8a;margin-top:3px}
+.pc2-bars{display:flex;gap:6px;margin-top:14px}
+.pc2-bars i{flex:1;height:6px;border-radius:3px;background:#2a2a2a;box-sizing:border-box}
+.pc2-bars i.on{background:#ff6a2b}
+.pc2-bars i.today{background:transparent;border:1.5px solid #ff6a2b}
+.pc2-bars i.miss{background:#3a2222}
+.pc2-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font:400 13px 'DM Sans'}
+.pc2-row b{color:#cfcfcf}.pc2-row em{font-style:normal;color:#8a8a8a}
+.pc2-practise{background:#ff6a2b;color:#1a0e08;font:700 13px 'DM Sans';border:0;border-radius:10px;padding:8px 14px}
+.pc2-pill{display:inline-flex;align-items:center;gap:5px;font:700 12px 'DM Sans';color:#F5C542;background:#2a2516;border-radius:999px;padding:4px 10px}
+.pc2-date{color:#7d7d7d;font-size:12px}
+.pc2-more-wrap{position:relative;flex:none}
+.pc2-more{width:44px;height:44px;margin:-12px -10px 0 0;border:0;background:transparent;color:#8a8a8a;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.pc2-scrim{position:fixed;inset:0;z-index:30}
+.pc2-menu{position:absolute;right:0;top:34px;z-index:31;background:#232323;border:1px solid #333;border-radius:12px;padding:6px;width:210px}
+.pc2-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border:0;background:transparent;color:#E5484D;font:500 14px 'DM Sans';border-radius:8px;text-align:left}
+.pc2-new{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:22px;height:48px;border-radius:14px;border:1px dashed #3a3a3a;background:transparent;color:#ff8a55;font:700 14px 'DM Sans'}
+/* Completed challenge: a gold edge and a soft light that sweeps across every few seconds */
+.pc2-card.pc2-done{position:relative;overflow:hidden;background:linear-gradient(135deg,#1d1a10 0%,#141414 70%);border-color:#7a5f1c;box-shadow:0 0 0 1px rgba(245,197,66,.14),0 0 18px rgba(245,197,66,.14)}
+.pc2-card.pc2-done::after{content:"";position:absolute;top:-30%;bottom:-30%;left:0;width:20%;background:linear-gradient(90deg,transparent,rgba(255,226,150,.2),transparent);transform:translateX(-160%) skewX(-20deg);animation:pcShine 5s ease-in-out 1s infinite;pointer-events:none}
+.pc2-done .pc2-pill{box-shadow:0 0 10px rgba(245,197,66,.3)}
+@keyframes pcShine{0%{transform:translateX(-160%) skewX(-20deg)}30%,100%{transform:translateX(620%) skewX(-20deg)}}
+@media (prefers-reduced-motion: reduce){.pc2-card.pc2-done::after{animation:none;display:none}}
+
+/* Milestones on Progress: rings (gold = maxed, orange = in progress), a "Next up" card, no green */
+.ms-card{background:#121413;border:1px solid #222724;border-radius:22px;padding:18px 16px 14px}
+.ms-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
+.ms-title{font:800 28px 'Barlow Condensed';margin:0;color:#f6f7f5;letter-spacing:.3px}
+.ms-count{font:500 15px 'DM Sans';color:#8d9690}.ms-count b{color:#f6f7f5;font-weight:800}
+.ms-next{display:flex;gap:14px;align-items:center;background:#1a120d;border:1px solid #33211a;border-radius:16px;padding:14px;margin-bottom:16px}
+.ms-next-icon{flex:none;width:52px;height:52px;border-radius:14px;background:#2a170a;color:#ff8a4a;display:flex;align-items:center;justify-content:center}
+.ms-next-icon svg{width:26px;height:26px}
+.ms-next-body{flex:1;min-width:0}
+.ms-next-label{display:block;font:800 12px 'DM Sans';letter-spacing:1.2px;color:#ff8a4a}
+.ms-next-title{display:block;font:700 18px 'DM Sans';color:#f6f7f5;margin:1px 0 2px}
+.ms-next-row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.ms-next-desc{font:500 13px 'DM Sans';color:#9aa19d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-next-val{font:500 13px 'DM Sans';color:#9aa19d;flex:none}.ms-next-val b{color:#f6f7f5;font-weight:800}
+.ms-bar{height:7px;border-radius:99px;background:#26211f;margin-top:8px;overflow:hidden}
+.ms-bar i{display:block;height:100%;border-radius:99px;background:#f0743a}
+.ms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px}
+.ms-tile{display:flex;flex-direction:column;align-items:center;gap:3px;background:transparent;border:0;padding:0;color:#f6f7f5;min-width:0}
+.ms-ring{position:relative;width:62px;height:62px;color:#f6f7f5}
+.ms-ring>svg:first-child{width:100%;height:100%;display:block}
+.ms-ring .ms-track{fill:none;stroke:#262a28;stroke-width:5}
+.ms-ring .ms-arc{fill:none;stroke:#f0743a;stroke-width:5;stroke-linecap:round}
+.ms-ring.max .ms-track{stroke:#F5C542}.ms-ring.max .ms-arc{stroke:#F5C542}
+.ms-ring.max{color:#F5C542}.ms-ring.idle{color:#6d746f}
+.ms-glyph{position:absolute;left:50%;top:50%;width:26px;height:26px;transform:translate(-50%,-50%)}
+.ms-name{font:700 12.5px 'DM Sans';margin-top:3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-sub{font:500 12px 'DM Sans';color:#8d9690}.ms-sub.max{color:#F5C542;font-weight:600}
+.ach-check{color:#F5C542}
+.ms-name{font-size:12px;letter-spacing:-.1px;overflow:visible;text-overflow:clip}.ms-grid{gap:14px 2px}
+/* the level name glows much less */
+.sk-overall-name,.sk-lv-legend .sk-overall-name,.sk-lv-advanced .sk-overall-name,.sk-lv-intermediate .sk-overall-name,.sk-lv-beginner .sk-overall-name{text-shadow:0 0 8px rgba(255,138,61,.16)}
+.lb-rank-line{display:flex;align-items:baseline;gap:10px}
+.lb-rank-of{font:600 15px 'DM Sans';color:#9aa19d}
+.lb-level-chip{display:inline-block;align-self:flex-start;margin-top:8px;padding:3px 10px;border-radius:99px;background:#2a170a;border:1px solid #5a3316;color:#ff9b50;font:700 12px 'DM Sans'}
+.won-board .won-list{display:flex;flex-direction:column;gap:0}
+.won-card2{margin-bottom:10px}
+
+/* Your practice: tile grid, the bigger the share of your time the bigger the tile */
+.ptiles{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:84px;gap:8px}
+.ptile{position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:10px 12px;border-radius:16px;border:1px solid rgba(255,107,26,.28);background:linear-gradient(145deg,rgba(255,107,26,var(--a,.2)),rgba(255,107,26,.04));overflow:hidden;min-width:0}
+.ptile-0{grid-column:span 2;grid-row:span 2;padding:14px 16px;background:linear-gradient(145deg,rgba(255,107,26,.42),rgba(255,107,26,.08));border-color:rgba(255,155,80,.5)}
+.ptile-1,.ptile-2,.ptile-3,.ptile-4,.ptile-5{grid-column:span 2}
+.ptile-rank{font:800 13px 'Barlow Condensed';color:rgba(255,255,255,.4);letter-spacing:1px}
+.ptile-name{font:700 14px/1.2 'DM Sans';color:#f6f7f5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ptile-0 .ptile-name{font-size:20px;-webkit-line-clamp:3}
+.ptile-foot{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.ptile-foot b{font:700 13px 'DM Sans';color:#ffd9bd}
+.ptile-0 .ptile-foot b{font-size:22px;font-family:'Barlow Condensed';font-weight:800}
+.ptile-foot em{font:600 12px 'DM Sans';font-style:normal;color:rgba(255,255,255,.5)}
+.ptiles{grid-auto-rows:88px}
+.ptile-name{-webkit-line-clamp:1}
+.ptile-0 .ptile-name{-webkit-line-clamp:3}
+.ptile-0 .ptile-foot b{font-size:20px;white-space:nowrap}
+.ptile-rank{line-height:1}

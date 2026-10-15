@@ -9,7 +9,8 @@ export type MasteredCfg = {
   rungs: number[];     // the level's tempos (BPM), lowest first
   levelName: string;   // finished level, e.g. "Beginner" (used in the title by the caller)
   nextName: string;    // the new level, upper case, e.g. "INTERMEDIATE"
-  chevrons: number;    // the new level's chevron count (Intermediate 2, Advanced 3)
+  chevrons: number;    // the new level's chevron count (Intermediate 2, Advanced 3, Legend 4)
+  gold?: boolean;      // the final level (Legend): the new chevron and the level name are gold
   title: string;       // "Beginner mastered"
   sub: string;         // "Flams moves up to Intermediate"
 };
@@ -22,7 +23,8 @@ export const masteredScene: SceneDef<MasteredCfg> = {
     const T5 = cfg.rungs, n = T5.length;
     const nameSize = Math.min(34, Math.max(18, (440 / Math.max(cfg.name.length, 1) - 9) / 0.66));
     const nameSpacing = nameSize < 34 ? Math.max(3, 9 * (nameSize / 34)) : 9;
-    const chev = Math.max(2, Math.min(3, cfg.chevrons)), sp = chev === 3 ? 56 : 72, finalY = 62 - sp * (chev - 1);
+    const chev = Math.max(2, Math.min(4, cfg.chevrons)), sp = chev === 4 ? 44 : chev === 3 ? 56 : 72, finalY = 62 - sp * (chev - 1);
+    const GOLD = "#F5C542", newCol = cfg.gold ? GOLD : ORANGE;
     const statics = [...Array(chev - 1)].map((_, k) => `<path d="M-92 26 L0 -36 L92 26" transform="translate(0 ${62 - sp * k})" fill="none" stroke="url(#cel-metal)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>`).join("");
     $("stage").innerHTML = `<g id="root">
     <circle id="aGlow" cx="0" cy="${CY}" r="720" fill="url(#cel-aglow)" opacity="0"/>
@@ -36,8 +38,8 @@ export const masteredScene: SceneDef<MasteredCfg> = {
       <g id="emblem" opacity="0">
         ${txt(0, -118, f1(nameSize) as unknown as number, 700, CREAM, "", `id="ename" text-anchor="middle" letter-spacing="${f1(nameSpacing)}" opacity=".6"`)}
         ${statics}
-        <path id="chev2" d="M-92 26 L0 -36 L92 26" fill="none" stroke="${ORANGE}" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
-        ${txt(0, 168, 34, 800, BR.light, "", `id="nextName" text-anchor="middle" letter-spacing="9"`)}
+        <path id="chev2" d="M-92 26 L0 -36 L92 26" fill="none" stroke="${newCol}" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+        ${txt(0, 168, 34, 800, cfg.gold ? GOLD : BR.light, "", `id="nextName" text-anchor="middle" letter-spacing="9"`)}
       </g>
     </g>
     <g id="sparks"></g>

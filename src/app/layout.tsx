@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 // The iPhone build draws edge to edge under the notch/status bar (padding comes from the safe-area CSS);
 // the normal website keeps the browser default.
 const IS_NATIVE = process.env.NEXT_PUBLIC_NATIVE === "1";
-export const viewport: Viewport = IS_NATIVE ? { viewportFit: "cover", themeColor: "#080909" } : {};
+export const viewport: Viewport = IS_NATIVE ? { viewportFit: "cover", themeColor: "#080909", maximumScale: 1, userScalable: false } : {};
 
 // Reading headers() opts this layout into per-request dynamic rendering,
 // which is required for the CSP nonce set in middleware.ts to stay fresh
