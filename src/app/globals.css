@@ -2018,3 +2018,13 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 
 /* Leaderboard card stays orange; only the trophy (the prize) is gold */
 .lb-trophy{filter:drop-shadow(0 6px 14px rgba(245,197,66,.35))}
+
+/* Start Practice: a slimmer button now that it has no subtitle */
+.start-cta{padding:9px 16px 9px 10px;border-radius:22px;margin:2px 0 14px}
+.start-cta-play{width:38px;height:38px}
+.start-cta-play svg{width:18px;height:18px}
+.start-cta-text strong{font-size:19px}
+
+/* Skill Trainer tier cards: a tiny bit bigger */
+.tier-card.tier-card-img{padding-top:21px;padding-bottom:21px}
+.tier-card-img .tier-card-title{font-size:26px}
