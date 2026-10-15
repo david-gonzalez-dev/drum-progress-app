@@ -8,3 +8,4 @@ node_modules
 # iPhone app build helpers
 /.ios-build
 /ios-www
+app-store/screenshots/_originals-private/

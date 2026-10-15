@@ -706,7 +706,7 @@ const translations = {
     metronome: {
       practiceTool: "PRACTICE TOOL", title: "METRONOME", practiceTimer: "PRACTICE TIMER", sessionTime: "SESSION TIME", tapTempo: "TAP TEMPO",
       startPractice: "Start Practice", stickingLabel: "STICKING",
-      start: "▶ Start", stop: "■ Stop", clickSettings: "Click sound", subClicks: "Subdivision clicks", volOff: "Only the beat", volFull: "Full", subClicksHint: "The click on every beat stays the same. This only changes the clicks in between.", noSound: "No sound from the phone. A quick refresh fixes it.", refreshSound: "Refresh", sessionComplete: "SESSION COMPLETE",
+      start: "▶\uFE0E Start", stop: "■ Stop", clickSettings: "Click sound", subClicks: "Subdivision clicks", volOff: "Only the beat", volFull: "Full", subClicksHint: "The click on every beat stays the same. This only changes the clicks in between.", noSound: "No sound from the phone. A quick refresh fixes it.", refreshSound: "Refresh", sessionComplete: "SESSION COMPLETE",
       addTimeQuestion: (label: string) => `Add ${label} to today's practice?`, addTimeTooShort: "Too short to log — adjust the timer above", sessionLasted: (time: string) => `Your metronome session lasted ${time}.`, minAbbr: "min", secAbbr: "sec",
       notNow: "Not now", addTime: "Add time",
       timeSignature: "BEATS / BAR", bannerTitle: "Metronome", pause: "Pause", resume: "Resume", viewStrokes: "Strokes", viewNotation: "Notation", subdivisionLabel: "CLICKS / BEAT", leadHand: "STARTS WITH", clicksFixed: ((n: number) => `${n} per beat (set by the exercise)`), historyTitle: (n: number) => `HISTORY (${n})`,
@@ -886,7 +886,7 @@ const translations = {
     metronome: {
       practiceTool: "HERRAMIENTA DE PRÁCTICA", title: "METRÓNOMO", practiceTimer: "TEMPORIZADOR", sessionTime: "TIEMPO DE SESIÓN", tapTempo: "MARCAR TEMPO",
       startPractice: "Empezar práctica", stickingLabel: "BAQUETEO",
-      start: "▶ Iniciar", stop: "■ Detener", clickSettings: "Sonido del clic", subClicks: "Clics de subdivisión", volOff: "Solo el pulso", volFull: "Máximo", subClicksHint: "El clic de cada pulso no cambia. Esto solo cambia los clics intermedios.", noSound: "El teléfono no da sonido. Una actualización rápida lo arregla.", refreshSound: "Actualizar", sessionComplete: "SESIÓN COMPLETA",
+      start: "▶\uFE0E Iniciar", stop: "■ Detener", clickSettings: "Sonido del clic", subClicks: "Clics de subdivisión", volOff: "Solo el pulso", volFull: "Máximo", subClicksHint: "El clic de cada pulso no cambia. Esto solo cambia los clics intermedios.", noSound: "El teléfono no da sonido. Una actualización rápida lo arregla.", refreshSound: "Actualizar", sessionComplete: "SESIÓN COMPLETA",
       addTimeQuestion: (label: string) => `¿Añadir ${label} a la práctica de hoy?`, addTimeTooShort: "Muy corto para registrar — ajusta el tiempo arriba", sessionLasted: (time: string) => `Tu sesión de metrónomo duró ${time}.`, minAbbr: "min", secAbbr: "seg",
       notNow: "Ahora no", addTime: "Añadir tiempo",
       timeSignature: "TIEMPOS / COMPÁS", bannerTitle: "Metrónomo", pause: "Pausa", resume: "Reanudar", viewStrokes: "Golpes", viewNotation: "Notación", subdivisionLabel: "CLICS / TIEMPO", leadHand: "EMPIEZA CON", clicksFixed: ((n: number) => `${n} por tiempo (según el ejercicio)`), historyTitle: (n: number) => `HISTORIAL (${n})`,
@@ -1066,7 +1066,7 @@ const translations = {
     metronome: {
       practiceTool: "OEFENHULP", title: "METRONOOM", practiceTimer: "OEFENTIMER", sessionTime: "SESSIETIJD", tapTempo: "TEMPO TIKKEN",
       startPractice: "Begin met oefenen", stickingLabel: "HANDENVOLGORDE",
-      start: "▶ Start", stop: "■ Stop", clickSettings: "Klikgeluid", subClicks: "Kliks tussen de tellen", volOff: "Alleen de tel", volFull: "Vol", subClicksHint: "De klik op elke tel blijft gelijk. Dit verandert alleen de kliks ertussen.", noSound: "Geen geluid van de telefoon. Even verversen lost het op.", refreshSound: "Verversen", sessionComplete: "SESSIE VOLTOOID",
+      start: "▶\uFE0E Start", stop: "■ Stop", clickSettings: "Klikgeluid", subClicks: "Kliks tussen de tellen", volOff: "Alleen de tel", volFull: "Vol", subClicksHint: "De klik op elke tel blijft gelijk. Dit verandert alleen de kliks ertussen.", noSound: "Geen geluid van de telefoon. Even verversen lost het op.", refreshSound: "Verversen", sessionComplete: "SESSIE VOLTOOID",
       addTimeQuestion: (label: string) => `${label} toevoegen aan de oefening van vandaag?`, addTimeTooShort: "Te kort om te loggen, pas de timer hierboven aan", sessionLasted: (time: string) => `Je metronoomsessie duurde ${time}.`, minAbbr: "min", secAbbr: "sec",
       notNow: "Nu niet", addTime: "Tijd toevoegen",
       timeSignature: "SLAGEN / MAAT", bannerTitle: "Metronoom", pause: "Pauze", resume: "Hervat", viewStrokes: "Slagen", viewNotation: "Notatie", subdivisionLabel: "KLIKS / SLAG", leadHand: "BEGINT MET", clicksFixed: ((n: number) => `${n} per tel (bepaald door de oefening)`), historyTitle: (n: number) => `GESCHIEDENIS (${n})`,
@@ -5637,8 +5637,8 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" disabled={playing && !paused} value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span>{clickChoices && clickChoices.length === 1
         ? <div className="subdivision-fixed">{T.metronome.clicksFixed(clickChoices[0])}</div>
         : <select className="subdivision-select" disabled={playing && !paused} value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{(clickChoices ?? SUBDIVISION_OPTIONS).map(n => <option key={n} value={n}>{n}</option>)}</select>}</div></div>
-      {playing ? <div className="metro-actions"><button type="button" className="pause" onClick={paused ? resumePlaying : pausePlaying}>{paused ? `▶ ${T.metronome.resume}` : `❚❚ ${T.metronome.pause}`}</button><button className="stop" onClick={togglePlaying}>{T.metronome.stop}</button></div>
-        : <button className="start" onClick={togglePlaying}>{`▶ ${T.metronome.startPractice}`}</button>}
+      {playing ? <div className="metro-actions"><button type="button" className="pause" onClick={paused ? resumePlaying : pausePlaying}>{paused ? `▶\uFE0E ${T.metronome.resume}` : `❚❚ ${T.metronome.pause}`}</button><button className="stop" onClick={togglePlaying}>{T.metronome.stop}</button></div>
+        : <button className="start" onClick={togglePlaying}>{`▶\uFE0E ${T.metronome.startPractice}`}</button>}
     </div>{clickSettingsOpen && <ClickSettingsPanel T={T} toneKey={toneKey} onTone={(key) => { setToneKey(key); onToneChange?.(key); }} subVolume={subVolume} onSubVolume={setSubVolume} onClose={() => setClickSettingsOpen(false)} />}</div>;
   }
 
@@ -5674,7 +5674,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       <div className="tempo-actions"><button onClick={() => setBpm(Math.max(40, bpm - 1))}>−</button><button className="tap" onClick={tapTempo}>{T.metronome.tapTempo}</button><button onClick={() => setBpm(Math.min(240, bpm + 1))}>+</button></div>
       {audioDead && <div className="audio-dead" role="alert"><span>{T.metronome.noSound}</span><button type="button" onClick={() => window.location.reload()}>{T.metronome.refreshSound}</button></div>}
       <div className="metro-selects"><div className="metro-select-field"><span className="metro-section-label">{T.metronome.timeSignature}</span><select className="subdivision-select" disabled={playing && !paused} value={beatsPerBar} onChange={e => setBeatsPerBar(Number(e.target.value))}>{BEATS_PER_BAR_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div><div className="metro-select-field"><span className="metro-section-label">{T.metronome.subdivisionLabel}</span><select className="subdivision-select" disabled={playing && !paused} value={subdivision} onChange={e => setSubdivision(Number(e.target.value))}>{SUBDIVISION_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}</select></div></div>
-      {playing ? <div className="metro-actions"><button type="button" className="pause" onClick={paused ? resumePlaying : pausePlaying}>{paused ? `▶ ${T.metronome.resume}` : `❚❚ ${T.metronome.pause}`}</button><button className="stop" onClick={togglePlaying}>{T.metronome.stop}</button></div>
+      {playing ? <div className="metro-actions"><button type="button" className="pause" onClick={paused ? resumePlaying : pausePlaying}>{paused ? `▶\uFE0E ${T.metronome.resume}` : `❚❚ ${T.metronome.pause}`}</button><button className="stop" onClick={togglePlaying}>{T.metronome.stop}</button></div>
         : <button className="start" onClick={togglePlaying}>{T.metronome.start}</button>}
     </>}
   </div>{clickSettingsOpen && <ClickSettingsPanel T={T} toneKey={toneKey} onTone={(key) => { setToneKey(key); onToneChange?.(key); }} subVolume={subVolume} onSubVolume={setSubVolume} onClose={() => setClickSettingsOpen(false)} />}</div>; }
