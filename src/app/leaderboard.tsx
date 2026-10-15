@@ -58,7 +58,7 @@ function Chevron() { return <svg className="lb-chev" viewBox="0 0 24 24" fill="n
 function Trophy() {
   return <svg className="lb-trophy" viewBox="0 0 120 130" aria-hidden="true">
     <defs>
-      <linearGradient id="lbTrophyGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff9b50" /><stop offset="1" stopColor="#d9501a" /></linearGradient>
+      <linearGradient id="lbTrophyGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FFD86B" /><stop offset="1" stopColor="#C98A12" /></linearGradient>
     </defs>
     <path d="M30 24H14c0 22 8 34 26 38" fill="none" stroke="url(#lbTrophyGrad)" strokeWidth="9" strokeLinecap="round" />
     <path d="M90 24h16c0 22-8 34-26 38" fill="none" stroke="url(#lbTrophyGrad)" strokeWidth="9" strokeLinecap="round" />
@@ -131,7 +131,6 @@ export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen, us
         <div className="lb-rank-col">
           <span className="lb-rank-label">{t.rankMonth}</span>
           {summary.pos != null ? <><span className="lb-rank-line"><span className="lb-rank-num">#{summary.pos}</span>{summary.total > 0 && <span className="lb-rank-of">{t.ofPlayers(summary.total)}</span>}</span>
-            <span className="lb-level-chip">{levelWord}</span>
             {moved !== 0 && <span className={moved > 0 ? "lb-moved up" : "lb-moved down"}>{moved > 0 ? "▲" : "▼"} {moved > 0 ? t.positionsUp(moved) : t.positionsDown(-moved)}</span>}</>
             : <><span className="lb-rank-none">{t.notRanked}</span><span className="lb-rank-hint">{t.notRankedHint}</span></>}
         </div>
