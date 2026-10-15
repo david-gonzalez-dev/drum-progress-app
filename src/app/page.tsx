@@ -1300,6 +1300,22 @@ export default function Home() {
     import("@capacitor/app").then(({ App }) => App.addListener("backButton", () => backRef.current())).then((h) => { if (cancelled) h.remove(); else handle = h; });
     return () => { cancelled = true; handle?.remove(); };
   }, []);
+  // Swipe back (the app builds): drag from the left edge of the screen to the right and the visible back arrow is pressed, like any iPhone app.
+  useEffect(() => {
+    if (!IS_NATIVE_BUILD) return;
+    let sx = 0, sy = 0, live = false;
+    const start = (e: TouchEvent) => { const t = e.touches[0]; live = e.touches.length === 1 && t.clientX < 28; sx = t.clientX; sy = t.clientY; };
+    const end = (e: TouchEvent) => {
+      if (!live) return; live = false;
+      const t = e.changedTouches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
+      if (dx < 70 || dy > dx * 0.6) return;
+      const el = document.querySelector<HTMLElement>(".modal .close, .feel-back, .ds-back, .back-row button, .page-back");
+      el?.click();
+    };
+    document.addEventListener("touchstart", start, { passive: true });
+    document.addEventListener("touchend", end, { passive: true });
+    return () => { document.removeEventListener("touchstart", start); document.removeEventListener("touchend", end); };
+  }, []);
   const [minutes, setMinutes] = useState("0");
   const [seconds, setSeconds] = useState("0");
   // Quick Practice's own entry field -- how much to ADD right now, always starting back at 0,
@@ -2594,7 +2610,7 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
     <header className="hero home-hero"><div className="hero-text"><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><div className="hero-actions"><button type="button" className="avatar settings-avatar metro-avatar" onClick={onOpenMetronome} aria-label={T.today.metronome}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6l3.5 17.5a1 1 0 01-1 1.2h-11a1 1 0 01-1-1.2z" /><path d="M12 17.5L15.5 6.5" /><circle cx="14.2" cy="10.4" r="1.3" fill="currentColor" /></svg></button><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></div></header>
     <button type="button" className={welcome ? "start-cta cel-welcome" : "start-cta"} onClick={onGoToPractice}>
       <span className="start-cta-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg></span>
-      <span className="start-cta-text"><strong>{T.today.startPracticeTitle}</strong><small>{T.today.startPracticeSub}</small></span>
+      <span className="start-cta-text"><strong>{T.today.startPracticeTitle}</strong></span>
       <svg className="start-cta-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
     </button>
     <div className="form-card stats-tile stats-icons"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><HomeStat icon="flame" label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><HomeStat icon="crown" label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <HomeStat icon="bars" label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
