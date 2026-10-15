@@ -18,7 +18,7 @@ Character limits are Apple's. No em dashes anywhere, on purpose.
 - These three links are the same ones the app opens, so the app and the store agree.
 
 ## Promotional text (max 170, can be changed any time without a new build)
-Log every practice, unlock tempos on rudiments and exercises, keep your streak alive and celebrate every milestone. Built by a drum teacher for drummers of all ages.
+Log every practice, unlock tempos, keep your streak and earn Drum Points. Built by a drum teacher for drummers of all ages.
 
 ## Description (max 4000)
 DrumSkills is a practice companion for drummers. Log what you practised, build a streak, and watch your tempo go up level by level.
@@ -50,6 +50,11 @@ GROUPS
 CHALLENGES
 - Set your own challenge, like 3 minutes a day on one exercise for 7 days
 - Your teacher can give you a challenge too
+
+DRUM POINTS FOR YOUNG DRUMMERS
+- Players aged 16 and younger can earn Drum Points: 1 point for every full minute of Skill Trainer practice
+- Yearly and all-time boards with other young drummers who joined, showing first names only
+- Optional: the app asks once, and it can be switched off any time in Settings
 
 OPTIONAL WORLDWIDE LEADERBOARD
 - Off by default. Join if you want to compare practice days with drummers in your age group.

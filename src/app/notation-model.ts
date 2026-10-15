@@ -8,6 +8,8 @@ export type NoteEvent = {
   start: number; // global slot index where the note starts
   dur: number; // length in slots (the stroke plus the rests it holds through)
   hand: Hand;
+  voice?: "kick" | "hat"; // bass drum or hi-hat pedal instead of the snare line
+  label?: string; // letter shown instead of the hand ("K")
   rest?: boolean; // a written rest (no stroke, no sticking letter)
   arrow?: "down" | "up"; // down / up stroke marker (Push Pull)
   plain?: boolean; // a stroke with no sticking given: no R / L letter
@@ -41,7 +43,7 @@ export function buildNotation(grid: Grid): NotationSide[] {
       const slot = grid.slots[i];
       const beat = Math.floor((i - a) / grid.perBeat);
       if (slot) {
-        events.push({ start: i, dur: 1, hand: slot.hand, accent: slot.accent, graces: slot.graces, arrow: slot.arrow, plain: slot.plain, base: "quarter", dots: 0, triplet: false, beams: 0, beat });
+        events.push({ start: i, dur: 1, hand: slot.hand, voice: slot.voice, label: slot.label, accent: slot.accent, graces: slot.graces, arrow: slot.arrow, plain: slot.plain, base: "quarter", dots: 0, triplet: false, beams: 0, beat });
       } else if (grid.rests?.[i]) {
         const last = events[events.length - 1];
         if (last && last.rest) last.dur += 1; // neighbouring rest slots are one rest

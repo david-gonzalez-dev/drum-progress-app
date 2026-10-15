@@ -3,10 +3,11 @@
 // 4 = sixteenth, 6 and up work too). Each slot is a rest or one stroke (hand, optional accent, optional grace notes that lead
 // into it and take no slot of their own). A trailing digit means that many strokes of the hand in consecutive slots.
 // Pattern shorthand: "-" holds the previous stroke longer, "." is a written rest. "R" stroke, "l" grace note before the next stroke, "-" rest slot, ">R" accented stroke, "R2" two strokes,
-// "—" starts a second row (second side of a two-sided rudiment).
+// "—" starts a second row (second side of a two-sided rudiment). Feet: "K" = kick drum, "FR" / "FL" = right / left foot on the bass drum, "HL" / "HR" = foot on the hi-hat pedal.
 export type Hand = "R" | "L";
 // arrow = a down or up stroke marker (Push Pull); plain = a stroke with no sticking given (the Three-Note Patterns): drawn without an R or L.
-export type GridSlot = { hand: Hand; graces: Hand[]; accent: boolean; arrow?: "down" | "up"; plain?: boolean } | null;
+// voice: a stroke that is not a hand on the snare: "kick" = bass drum (K, or a foot R / L), "hat" = hi-hat pedal (foot). label overrides the letter shown ("K" for the kick).
+export type GridSlot = { hand: Hand; graces: Hand[]; accent: boolean; arrow?: "down" | "up"; plain?: boolean; voice?: "kick" | "hat"; label?: string } | null;
 // rests[i] is true where slot i is a written REST (drawn as a rest symbol); a slot that is null but not a rest is the previous stroke being held.
 export type Grid = { perBeat: number; slots: GridSlot[]; rowStarts: number[]; rests?: boolean[] };
 // status: "stated" = given or confirmed by the teacher; "chart" = read from the official PAS International Drum Rudiments chart;
@@ -27,14 +28,15 @@ export function parseGrid(perBeat: number, pattern: string): Grid {
     const accent = raw[0] === ">";
     const body = accent ? raw.slice(1) : raw;
     // letter (R L, lowercase = grace note, * = a stroke with no sticking), optional repeat count, optional d / u = down / up stroke arrow
-    const m = /^([RLrl*])(\d*)([du])?$/.exec(body);
+    const m = /^(K|F[RL]|H[RL]|[RLrl*])(\d*)([du])?$/.exec(body);
     if (!m) throw new Error(`Bad grid token: ${raw}`);
     const letter = m[1], plain = letter === "*";
-    const hand = (plain ? "R" : letter.toUpperCase()) as Hand;
-    if (!plain && letter !== letter.toUpperCase()) { graces.push(hand); continue; }
+    const foot = letter === "K" ? { voice: "kick" as const, label: "K", hand: "R" as Hand } : letter[0] === "F" ? { voice: "kick" as const, hand: letter[1] as Hand } : letter[0] === "H" ? { voice: "hat" as const, hand: letter[1] as Hand } : null;
+    const hand = foot ? foot.hand : ((plain ? "R" : letter.toUpperCase()) as Hand);
+    if (!foot && !plain && letter !== letter.toUpperCase()) { graces.push(hand); continue; }
     const count = m[2] ? Number(m[2]) : 1;
     const arrow = m[3] === "d" ? "down" : m[3] === "u" ? "up" : undefined;
-    for (let i = 0; i < count; i++) { slots.push({ hand, graces: i === 0 ? graces : [], accent, ...(arrow ? { arrow } : {}), ...(plain ? { plain: true } : {}) }); rests.push(false); }
+    for (let i = 0; i < count; i++) { slots.push({ hand, graces: i === 0 ? graces : [], accent, ...(arrow ? { arrow } : {}), ...(plain ? { plain: true } : {}), ...(foot ? { voice: foot.voice, ...(foot.label ? { label: foot.label } : {}) } : {}) }); rests.push(false); }
     graces = [];
   }
   return { perBeat, slots, rowStarts, rests };
@@ -98,6 +100,24 @@ export const RUDIMENT_RHYTHMS: Record<string, RudimentRhythm> = {
   // Skill Trainer exercises that are written out the same way as the rudiments.
   "Push Pull - Right Hand": { perBeat: 2, pattern: "Rd Ru Rd Ru Rd Ru Rd Ru", status: "stated", note: "One bar of eight eighth notes; down stroke, up stroke, alternating" },
   "Push Pull - Left Hand": { perBeat: 2, pattern: "Ld Lu Ld Lu Ld Lu Ld Lu", status: "stated", note: "One bar of eight eighth notes; down stroke, up stroke, alternating" },
+  // Footwork: one foot, continuous eighth notes (one bar). The three bass drum techniques look the same on paper; only how the foot moves differs.
+  "Bass Drum - Heel Down": { perBeat: 2, pattern: "FR FR FR FR FR FR FR FR", status: "stated", note: "One bar of eight eighth notes, right foot on the bass drum" },
+  "Bass Drum - Heel Up": { perBeat: 2, pattern: "FR FR FR FR FR FR FR FR", status: "stated", note: "One bar of eight eighth notes, right foot on the bass drum" },
+  "Bass Drum - Slide Technique": { perBeat: 2, pattern: "FR FR FR FR FR FR FR FR", status: "stated", note: "One bar of eight eighth notes, right foot on the bass drum" },
+  "Hi-hat Pedal - Heel Up": { perBeat: 2, pattern: "HL HL HL HL HL HL HL HL", status: "stated", note: "One bar of eight eighth notes, left foot on the hi-hat pedal" },
+  "Hi-hat Pedal - Heel Down": { perBeat: 2, pattern: "HL HL HL HL HL HL HL HL", status: "stated", note: "One bar of eight eighth notes, left foot on the hi-hat pedal" },
+  "Double Bass Drum": { perBeat: 4, pattern: "FR FL FR FL", status: "stated", reversible: true, note: "Alternating right and left foot on the bass drum, sixteenth notes (starts with R or L)" },
+  // Coordination: hands (R, L) and kick (K) in sixteenth notes, one pattern per beat.
+  "RLKK": { perBeat: 4, pattern: "R L K K", status: "stated", note: "Sixteenth notes: right hand, left hand, kick, kick" },
+  "RKKL": { perBeat: 4, pattern: "R K K L", status: "stated", note: "Sixteenth notes: right hand, kick, kick, left hand" },
+  "KKRL": { perBeat: 4, pattern: "K K R L", status: "stated", note: "Sixteenth notes: kick, kick, right hand, left hand" },
+  "KRLK": { perBeat: 4, pattern: "K R L K", status: "stated", note: "Sixteenth notes: kick, right hand, left hand, kick" },
+  "RLLK": { perBeat: 4, pattern: "R L L K", status: "stated", note: "Sixteenth notes: right hand, left hand, left hand, kick" },
+  // Single-line strokes.
+  "Flow, 16th Notes": { perBeat: 4, pattern: "R L R L", status: "stated", reversible: true, note: "Alternating hands, sixteenth notes" },
+  "16th Note Single Strokes Around the Set": { perBeat: 4, pattern: "R L R L", status: "stated", reversible: true, note: "Alternating hands, sixteenth notes; moving around the drums is not written" },
+  "Finger Technique (Single-Handed)": { perBeat: 2, pattern: "R R R R", status: "stated", reversible: true, note: "One hand, continuous eighth notes (starts with R or L)" },
+  "R L L (Triplets)": { perBeat: 3, pattern: "R L L", status: "stated", reversible: true, note: "One eighth-note triplet per beat: R L L, or L R R when starting with the left hand" },
   "Three-Note Pattern #1": { perBeat: 4, pattern: "R - R R", status: "stated", reversible: true, note: "One eighth note and two sixteenth notes, one hand (starts with R or L)" },
   "Three-Note Pattern #2": { perBeat: 4, pattern: "R R R -", status: "stated", reversible: true, note: "Two sixteenth notes and one eighth note, one hand (starts with R or L)" },
   "Three-Note Pattern #3": { perBeat: 4, pattern: "R R - R", status: "stated", reversible: true, note: "One sixteenth, one eighth and one sixteenth note, one hand (starts with R or L)" },
@@ -120,6 +140,8 @@ export const NOT_SIMPLIFIED: Record<string, string> = {
   "13 Stroke Roll": "A roll is defined by close, even double strokes", "15 Stroke Roll": "A roll is defined by close, even double strokes", "17 Stroke Roll": "A roll is defined by close, even double strokes",
   "Single Dragadiddle": "Contains 32nd-note double strokes; needs a teacher-written arrangement",
   "Push Pull - Right Hand": "The exercise is the eight-note down/up pattern", "Push Pull - Left Hand": "The exercise is the eight-note down/up pattern",
+  "RLKK": "The exercise is this sixteenth-note pattern", "RKKL": "The exercise is this sixteenth-note pattern", "KKRL": "The exercise is this sixteenth-note pattern", "KRLK": "The exercise is this sixteenth-note pattern", "RLLK": "The exercise is this sixteenth-note pattern",
+  "Double Bass Drum": "The exercise is sixteenth-note double bass",
   "Three-Note Pattern #1": "The exercise is this rhythm", "Three-Note Pattern #2": "The exercise is this rhythm", "Three-Note Pattern #3": "The exercise is this rhythm",
 };
 

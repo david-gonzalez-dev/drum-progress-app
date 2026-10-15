@@ -85,7 +85,12 @@ function ChunkSvg({ side, chunk, unit, width, scale, beatsPerBar, activeStroke, 
   const hasTuplet = side.tuplets.some((t) => t.every((i) => idx.includes(i)));
   const STAFF_Y = STEM + 8 + (hasAccent ? 10 : 0) + (hasTuplet ? 16 : 0);
   const hasArrow = idx.some((i) => side.events[i].arrow);
-  const HEIGHT = STAFF_Y + 34 + (hasArrow ? 18 : 0);
+  // Feet: a row with only kick (or only pedal) notes draws them on the staff line itself; mixed with hand strokes the kick sits in the space below the line and the pedal under it.
+  const hasHands = idx.some((i) => !side.events[i].voice && !side.events[i].rest), hasKick = idx.some((i) => side.events[i].voice === "kick"), hasHat = idx.some((i) => side.events[i].voice === "hat");
+  const mixed = hasHands && (hasKick || hasHat);
+  const lower = mixed ? (hasHat ? 26 : 13) : 0;
+  const yOfNote = (e: NoteEvent) => STAFF_Y + (mixed ? (e.voice === "kick" ? 13 : e.voice === "hat" ? 26 : 0) : 0);
+  const HEIGHT = STAFF_Y + 34 + lower + (hasArrow ? 18 : 0);
   const xOf = (k: number) => PAD + 12 + (side.events[idx[k]].start - chunk.startSlot) * unit + extra[k];
   const pos = new Map<number, number>(); // event index -> x
   idx.forEach((ei, k) => pos.set(ei, xOf(k)));
@@ -148,17 +153,19 @@ function ChunkSvg({ side, chunk, unit, width, scale, beatsPerBar, activeStroke, 
       return;
     }
     const hollow = e.base === "half" || e.base === "whole";
-    shapes.push(<Head key={`h${ei}`} x={x} y={STAFF_Y} hollow={hollow} color={c} />);
-    if (e.base !== "whole") shapes.push(<line key={`s${ei}`} x1={stemX(ei)} y1={STAFF_Y - 1} x2={stemX(ei)} y2={top} stroke={c} strokeWidth={1.7} />);
+    const ny = yOfNote(e);
+    if (e.voice === "hat") { const d = 5.2; shapes.push(<path key={`h${ei}`} d={`M ${x - d} ${ny - d} L ${x + d} ${ny + d} M ${x + d} ${ny - d} L ${x - d} ${ny + d}`} stroke={c} strokeWidth={2.4} strokeLinecap="round" />); }
+    else shapes.push(<Head key={`h${ei}`} x={x} y={ny} hollow={hollow} color={c} />);
+    if (e.base !== "whole") shapes.push(<line key={`s${ei}`} x1={stemX(ei)} y1={ny - 1} x2={stemX(ei)} y2={top} stroke={c} strokeWidth={1.7} />);
     if (e.beams > 0 && !beamed.has(ei)) {
       for (let level = 0; level < e.beams; level++) shapes.push(<path key={`f${ei}-${level}`} d={`M ${stemX(ei)} ${top + level * 6} c 1 6 10 8 8 18`} fill="none" stroke={c} strokeWidth={2.2} strokeLinecap="round" />);
     }
     if (e.dots) shapes.push(<circle key={`d${ei}`} cx={x + 11} cy={STAFF_Y - 5} r={1.9} fill={c} />);
     if (e.accent) shapes.push(<text key={`a${ei}`} x={x + 1} y={top - 8} textAnchor="middle" fontSize={15} fontWeight={800} fill={active ? ACTIVE : ACCENT} fontFamily="DM Sans, sans-serif">&gt;</text>);
-    if (!e.plain) shapes.push(<text key={`t${ei}`} x={x} y={STAFF_Y + 28} textAnchor="middle" fontSize={15} fontWeight={700} fill={active ? ACTIVE : COLOR} fontFamily="DM Sans, sans-serif">{e.hand}</text>);
+    if (!e.plain) shapes.push(<text key={`t${ei}`} x={x} y={STAFF_Y + 28 + lower} textAnchor="middle" fontSize={15} fontWeight={700} fill={active ? ACTIVE : COLOR} fontFamily="DM Sans, sans-serif">{e.label ?? e.hand}</text>);
     if (e.arrow) {
       // down / up stroke arrow under the note (Push Pull)
-      const ay = STAFF_Y + (e.plain ? 24 : 36), down = e.arrow === "down";
+      const ay = STAFF_Y + lower + (e.plain ? 24 : 36), down = e.arrow === "down";
       shapes.push(<path key={`ar${ei}`} d={down ? `M ${x} ${ay} V ${ay + 13} M ${x - 4} ${ay + 8.5} L ${x} ${ay + 13.5} L ${x + 4} ${ay + 8.5}` : `M ${x} ${ay + 13} V ${ay} M ${x - 4} ${ay + 4.5} L ${x} ${ay - 0.5} L ${x + 4} ${ay + 4.5}`} fill="none" stroke={active ? ACTIVE : ACCENT} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />);
     }
     // grace notes sit just before the main note: one slashed note for a flam, a beamed pair for a drag

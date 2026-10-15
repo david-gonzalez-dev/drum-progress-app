@@ -444,6 +444,15 @@ const CHALLENGE_EXERCISE_OPTIONS: { en: string; es: string; nl: string }[] = (()
   });
   return combined;
 })();
+// Players on the Essentials library (kids) only get the essential rudiments and exercises to pick from, like everywhere else in the Skill Trainer.
+function challengeOptionsFor(kidMode: boolean) {
+  if (!kidMode) return CHALLENGE_EXERCISE_OPTIONS;
+  return CHALLENGE_EXERCISE_OPTIONS.filter((o) => {
+    const e = PRACTICE_EXERCISES.find((x) => x.en === o.en);
+    if (!e) return true; // general practice items, not exercises
+    return e.category === "rudiments" ? (e as any).difficulty !== "advanced" : ESSENTIAL_EXERCISES.has(e.en);
+  });
+}
 const BPM_LEVELS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 165, 170, 175, 180, 185, 190, 195, 200, 205, 210, 215, 220];
 const PRACTICE_TIERS = [
   { key: "beginner", min: 50, max: 90 },
@@ -1395,7 +1404,13 @@ export default function Home() {
   // "credit", so the timer doesn't add them a second time when it is logged. Stored so a reload doesn't lose it.
   const [timerRun, setTimerRun] = useState<{ startedAt: number; mode: "stopwatch" | "timer"; durationMinutes: number } | null>(null);
   const [timerCredit, setTimerCredit] = useState<{ startedAt: number; seconds: number; metronome: boolean; items: string[] } | null>(null);
-  useEffect(() => { if (!user) { setTimerRun(null); setTimerCredit(null); } }, [user]); // logged out or deleted: the timer is gone
+  useEffect(() => {
+    if (user) return;
+    // Logged out or deleted: the timer is gone, and the next person to log in starts at Home with a clean screen (not on the Settings page the last person left from).
+    setTimerRun(null); setTimerCredit(null); setUserDataReady(false); setPracticeSessions([]); setLogs({}); // nothing of the last person stays behind for the next one
+    setTab("today"); setPracticeStep("home"); setSkillTab("rudiments"); setShowPointsDetail(false); setShowPinManager(false); setMetronome(false); setSessionTimer(false);
+    window.scrollTo(0, 0);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("session_timer_credit_v1") ?? "null");
@@ -1611,9 +1626,13 @@ export default function Home() {
       let seen: string[] | null = null;
       try { const raw = localStorage.getItem(key); seen = raw ? JSON.parse(raw) : null; } catch { seen = null; }
       if (seen === null) { try { localStorage.setItem(key, JSON.stringify(completed.map((c: any) => c.id))); } catch { /* ignore */ } return; }
-      const fresh = completed.filter((c: any) => !seen!.includes(c.id));
-      if (!fresh.length || cancelled) return;
-      try { localStorage.setItem(key, JSON.stringify([...seen, ...fresh.map((c: any) => c.id)])); } catch { /* ignore */ }
+      const unseen = completed.filter((c: any) => !seen!.includes(c.id));
+      if (!unseen.length || cancelled) return;
+      try { localStorage.setItem(key, JSON.stringify([...seen, ...unseen.map((c: any) => c.id)])); } catch { /* ignore */ }
+      // Only a challenge that was finished in the last few days gets the celebration; an older one is simply marked as seen.
+      const oldest = shiftDateKey(dateKey, -3);
+      const fresh = unseen.filter((c: any) => shiftDateKey(c.start_date, Math.max(0, (c.length_days ?? 1) - 1)) >= oldest);
+      if (!fresh.length) return;
       if (pointsEnabled) setWonPopup((current) => [...current, ...fresh.filter((f: any) => !current.some((x) => x.id === f.id))]); // kids keep the pop-up
       else {
         // Adults: "The medal" replaces the pop-up.
@@ -3065,7 +3084,7 @@ function DayEditor({ date, log, lockedSeconds = 0, picker, skillExercises = [], 
       <div className="minutes-island compact">
         <button className="minutes-step" onClick={() => setMinutes(clampMin((Number(minutes) || 0) - 5))}>-5</button>
         <button className="minutes-step" onClick={() => setMinutes(clampMin((Number(minutes) || 0) - 1))}>-1</button>
-        <div className="minutes-value"><input inputMode="numeric" size={3} value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} onBlur={() => { if (floorMin > 0 && (Number(minutes) || 0) < floorMin) setMinutes(String(floorMin)); }} /><span>min</span></div>
+        <div className="minutes-value"><input inputMode="numeric" size={3} style={{ width: `${Math.max(1, String(minutes).length) + 0.2}ch`, maxWidth: "none", textAlign: "right" }} value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} onBlur={() => { if (floorMin > 0 && (Number(minutes) || 0) < floorMin) setMinutes(String(floorMin)); }} /><span>min</span></div>
         <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 1))}>+1</button>
         <button className="minutes-step" onClick={() => setMinutes(String((Number(minutes) || 0) + 5))}>+5</button>
       </div>
@@ -4244,11 +4263,12 @@ function Progress({ onOpenExercise, onOpenSettings, onRankUp, pointsOnly, practi
     </div>}
   </Wrapper>;
 }
-function PersonalChallenges({ user, practiceSessions, confirm, setError, language, T, onOpenExercise }: any) {
+function PersonalChallenges({ user, practiceSessions, confirm, setError, language, T, onOpenExercise, kidMode }: any) {
   const [challenges, setChallenges] = useState<any[]>([]);
   const [logsCache, setLogsCache] = useState<Record<string, { minutes: number; items: string[]; customItems: string[]; updatedAt: string }>>({});
   const [showNew, setShowNew] = useState(false);
-  const [exerciseEn, setExerciseEn] = useState(CHALLENGE_EXERCISE_OPTIONS[0]?.en ?? "");
+  const [exerciseEn, setExerciseEn] = useState(challengeOptionsFor(!!kidMode)[0]?.en ?? "");
+  useEffect(() => { const o = challengeOptionsFor(!!kidMode); if (!o.some((x) => x.en === exerciseEn)) setExerciseEn(o[0]?.en ?? ""); }, [kidMode]); // eslint-disable-line react-hooks/exhaustive-deps
   const [targetMinutes, setTargetMinutes] = useState("10");
   const [targetBpm, setTargetBpm] = useState("");
   const [lengthDays, setLengthDays] = useState("7");
@@ -4311,7 +4331,7 @@ function PersonalChallenges({ user, practiceSessions, confirm, setError, languag
     {showNew && <div className="challenge-form">
       <label className="input-label">{T.personalChallenges.exerciseLabel}</label>
       <select className="group-input" value={exerciseEn} onChange={(e) => { setExerciseEn(e.target.value); setTargetBpm(""); }}>
-        {CHALLENGE_EXERCISE_OPTIONS.map((opt) => <option key={opt.en} value={opt.en}>{opt[language as Lang]}</option>)}
+        {challengeOptionsFor(!!kidMode).map((opt) => <option key={opt.en} value={opt.en}>{opt[language as Lang]}</option>)}
       </select>
       <label className="input-label">{T.personalChallenges.minutesLabel}</label>
       <input className="group-input" inputMode="numeric" value={targetMinutes} onChange={(e) => setTargetMinutes(e.target.value.replace(/\D/g, ""))} />
@@ -4784,7 +4804,7 @@ function PracticeMode({ whenCelebrationsDone, onMetronomeToneChange, skillTab, s
   if (step === "challenges") {
     return <section className="page">
       <div className="back-row"><button onClick={() => setStep("home")}>‹</button><div className="title-block"><p className="eyebrow">{T.practiceMode.pageTitle}</p></div></div>
-      <PersonalChallenges user={user} practiceSessions={sessions} confirm={confirm} setError={setError} language={language} T={T} onOpenExercise={openExercise} />
+      <PersonalChallenges user={user} practiceSessions={sessions} confirm={confirm} setError={setError} language={language} T={T} onOpenExercise={openExercise} kidMode={kidMode} />
     </section>;
   }
   if (step === "quick") {
@@ -5719,10 +5739,10 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
             const i = row.start + k;
             const gap = k > 0 && guide.perBeat > 1 && sideIndex(guide, i) % guide.perBeat === 0;
             const here = activeStroke === i;
-            const cls = `stroke-box ${slot ? (slot.plain ? "plain" : slot.hand.toLowerCase()) : "rest"}${slot?.accent ? " accent" : ""}${here && activeGrace < 0 ? " active" : ""}`;
+            const cls = `stroke-box ${slot ? (slot.plain ? "plain" : slot.voice ? "foot " + (slot.label === "K" ? "k" : slot.hand.toLowerCase()) : slot.hand.toLowerCase()) : "rest"}${slot?.accent ? " accent" : ""}${here && activeGrace < 0 ? " active" : ""}`;
             return <span key={i} className={`stroke-cell${gap ? " gap" : ""}`} aria-current={here ? "step" : undefined}>
               {slot && slot.graces.map((g, gi) => <span key={gi} className={`grace-box ${g.toLowerCase()}${here && activeGrace === gi ? " active" : ""}`} aria-label="grace note">{g.toLowerCase()}</span>)}
-              <span className={cls}>{slot ? (slot.plain ? "•" : slot.hand) : "–"}{slot?.accent && <i className="stroke-accent" aria-label="accent">&gt;</i>}{slot?.arrow && <i className="stroke-arrow" aria-label={slot.arrow === "down" ? "down stroke" : "up stroke"}>{slot.arrow === "down" ? "↓" : "↑"}</i>}</span>
+              <span className={cls}>{slot ? (slot.plain ? "•" : (slot.label ?? slot.hand)) : "–"}{slot?.accent && <i className="stroke-accent" aria-label="accent">&gt;</i>}{slot?.arrow && <i className="stroke-arrow" aria-label={slot.arrow === "down" ? "down stroke" : "up stroke"}>{slot.arrow === "down" ? "↓" : "↑"}</i>}</span>
             </span>;
           })}</div>)}
           </div></div></div>

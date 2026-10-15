@@ -2085,3 +2085,17 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 
 /* Skill Trainer: Rudiments / Exercises tabs, a bit bigger */
 .skill-tabs button{font-size:16px;padding:11px 6px}
+
+/* Kick (K) in the stroke guide: gold, so it reads apart from the hands */
+.stroke-box.k:not(.active){color:#f5c542;border-color:#7a5f1f}
+
+/* Running timer / metronome card: thin. (On the iPhone app the old rule added the notch space inside the card as well, which made it very tall.) */
+.session-timer-banner,html.native .session-timer-banner{padding:6px 14px 6px 8px;gap:10px;border-radius:20px}
+.session-timer-banner svg{width:34px;height:34px;padding:7px}
+.session-timer-banner strong{font-size:27px}
+.session-timer-banner span{font-size:13px}
+.session-timer-banner.metro-banner.stacked{top:calc(60px + env(safe-area-inset-top));padding-top:6px}
+.shell.has-timer-banner,html.native .shell.has-timer-banner{padding-top:calc(60px + env(safe-area-inset-top))}
+.shell.has-two-banners,html.native .shell.has-two-banners{padding-top:calc(112px + env(safe-area-inset-top))}
+/* No animation on the timer / metronome card icon (it flickered) */
+.session-timer-banner svg,.session-timer-banner.finished svg{animation:none}

@@ -19,7 +19,7 @@ SHOTS = [   # (file name in raw/ without .png, caption): this is the order in th
     ("5-leaderboard", "Compete with drummers worldwide"),
     ("6-challenges", "Take on your own challenges"),
 ]
-SIZES = {"6.9-inch": (1290, 2796), "6.5-inch": (1284, 2778)}
+SIZES = {"6.9-inch": (1290, 2796), "6.5-inch": (1284, 2778), "6.3-inch": (1206, 2622)}
 ORANGE, CREAM = (255, 107, 26), (246, 230, 214)
 
 def background(w, h):
@@ -38,7 +38,7 @@ def fit_caption(draw, text, w):
         size -= 6
     return font
 
-def frame(shot_path, caption, size):
+def frame(shot_path, caption, size, rf=0.085):
     w, h = size
     canvas = background(w, h)
     d = ImageDraw.Draw(canvas)
@@ -50,7 +50,7 @@ def frame(shot_path, caption, size):
     pw = int(w * 0.84)
     ph = int(shot.height * pw / shot.width)
     shot = shot.resize((pw, ph), Image.LANCZOS)
-    radius = int(pw * 0.085)
+    radius = int(pw * rf)
     mask = Image.new("L", (pw, ph), 0)
     ImageDraw.Draw(mask).rounded_rectangle((0, 0, pw, ph), radius=radius, fill=255)
     x, y = (w - pw) // 2, int(h * 0.17)
@@ -72,5 +72,27 @@ def main():
                 frame(raws[key], caption, size).save(os.path.join(out, "%02d-%s.png" % (i, key)), optimize=True)
                 print("made", name, key)
 
+IPAD_SHOTS = [   # (file name in raw-ipad/ without .png, caption)
+    ("1-home", "Stay consistent every day"),
+    ("2-practice", "Everything you need to practise"),
+    ("10-skill-trainer", "From basics to complex"),
+    ("8-paradiddle-ladder", "Unlock every tempo step by step"),
+    ("3-metronome-paradiddle", "Read the notation as you play"),
+    ("7-metronome-paradiddlestick", "Or follow the sticking"),
+    ("4-progress", "Watch your skills grow"),
+    ("9-groupexample", "Practise together as a group"),
+    ("5-leaderboard", "Compete with drummers worldwide"),
+]
+def main_ipad():
+    """iPad: plain iPad screenshots in raw-ipad/ (names as in IPAD_SHOTS); framed files go to out/ipad-13/ (2064 x 2752)."""
+    raws = {os.path.splitext(os.path.basename(p))[0]: p for p in glob.glob(os.path.join(HERE, "raw-ipad", "*")) if p.lower().endswith(".png")}
+    if not raws: return
+    out = os.path.join(HERE, "out", "ipad-13"); os.makedirs(out, exist_ok=True)
+    for i, (key, caption) in enumerate(IPAD_SHOTS, 1):
+        if key in raws:
+            frame(raws[key], caption, (2064, 2752), rf=0.03).save(os.path.join(out, "%02d-%s.png" % (i, key)), optimize=True)
+            print("made ipad-13", key)
+
 if __name__ == "__main__":
     main()
+    main_ipad()
