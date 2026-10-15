@@ -675,7 +675,7 @@ const translations = {
     },
     settings: {
       makeItYours: "MAKE IT YOURS", title: "SETTINGS", displayName: "DISPLAY NAME", dailyGoal: "DAILY PRACTICE GOAL", minutes: "minutes",
-      language: "LANGUAGE", pushLabel: "Cheer notifications", pushDesc: "Get a notification on this phone when someone in your group sends you a cheer.", pushBlocked: "Notifications are blocked. Turn them on for DrumSkills in your phone's settings.", pushError: "Could not turn on notifications. Please try again.", showDaysThisYear: "Days practiced this year", showDaysThisYearDesc: "Adds a count of practice days this year to your Home stats.", on: "ON", off: "OFF", save: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR", autoColor: "Auto",
+      language: "LANGUAGE", pushLabel: "Cheer notifications", pushDesc: "Get a notification on this phone when someone in your group sends you a cheer.", pushBlocked: "Notifications are blocked. Turn them on for DrumSkills in your phone's settings.", pushError: "Could not turn on notifications. Please try again.", showDaysThisYear: "Days practiced this year", showDaysThisYearDesc: "Adds a count of practice days this year to your Home stats.", on: "ON", off: "OFF", save: "Save settings", saveBtn: "Save settings", saved: "✓ Settings saved", logout: "Log out", calendarColor: "GROUP CALENDAR COLOR", autoColor: "Auto",
       metronomeTone: "METRONOME TONE", toneNames: { click: "Click", beep: "Marimba", wood: "Wood", clave: "Stick" },
       profileSection: "PROFILE", practiceSection: "PRACTICE", preferencesSection: "PREFERENCES", accountSection: "ACCOUNT SETTINGS", pleaseWait: "Please wait...",
       confirmLogout: "Log out of DrumSkills?", libraryLabel: "CONTENT LIBRARY", libraryFull: "Full Library", libraryEssentials: "Essentials", libraryHint: "Essentials shows a shorter list for beginners.", dobLabel: "DATE OF BIRTH", dobSaved: "Saved. It stays private. If it is wrong, contact support to correct it.", dobHint: "Add it to get the right leaderboard group and starting settings. It stays private.", dobSave: "Save", difficultyLabel: "PRACTICE DIFFICULTY", difficultyBeginner: "Beginner", difficultyDeveloping: "Developing", difficultyStandard: "Standard", difficultyHint: "Beginner: quarter notes. Developing: eighth notes. Standard: the rudiment as written. The tempo (BPM) never changes.",
@@ -855,7 +855,7 @@ const translations = {
     },
     settings: {
       makeItYours: "PERSONALÍZALO", title: "AJUSTES", displayName: "NOMBRE", dailyGoal: "META DIARIA DE PRÁCTICA", minutes: "minutos",
-      language: "IDIOMA", pushLabel: "Notificaciones de ánimo", pushDesc: "Recibe una notificación en este teléfono cuando alguien de tu grupo te envíe un ánimo.", pushBlocked: "Las notificaciones están bloqueadas. Actívalas para DrumSkills en los ajustes del teléfono.", pushError: "No se pudieron activar las notificaciones. Inténtalo de nuevo.", showDaysThisYear: "Días practicados este año", showDaysThisYearDesc: "Añade un contador de días practicados este año a tus estadísticas de Inicio.", on: "SÍ", off: "NO", save: "Guardar ajustes", saved: "✓ Ajustes guardados", logout: "Cerrar sesión", calendarColor: "COLOR DEL CALENDARIO DE GRUPO", autoColor: "Auto",
+      language: "IDIOMA", pushLabel: "Notificaciones de ánimo", pushDesc: "Recibe una notificación en este teléfono cuando alguien de tu grupo te envíe un ánimo.", pushBlocked: "Las notificaciones están bloqueadas. Actívalas para DrumSkills en los ajustes del teléfono.", pushError: "No se pudieron activar las notificaciones. Inténtalo de nuevo.", showDaysThisYear: "Días practicados este año", showDaysThisYearDesc: "Añade un contador de días practicados este año a tus estadísticas de Inicio.", on: "SÍ", off: "NO", save: "Guardar ajustes", saveBtn: "Guardar ajustes", saved: "✓ Ajustes guardados", logout: "Cerrar sesión", calendarColor: "COLOR DEL CALENDARIO DE GRUPO", autoColor: "Auto",
       metronomeTone: "SONIDO DEL METRÓNOMO", toneNames: { click: "Click", beep: "Marimba", wood: "Madera", clave: "Baqueta" },
       profileSection: "PERFIL", practiceSection: "PRÁCTICA", preferencesSection: "PREFERENCIAS", accountSection: "AJUSTES DE CUENTA", pleaseWait: "Un momento...",
       confirmLogout: "¿Cerrar sesión en DrumSkills?", libraryLabel: "BIBLIOTECA DE CONTENIDO", libraryFull: "Biblioteca Completa", libraryEssentials: "Esenciales", libraryHint: "Esenciales muestra una lista más corta para principiantes.", dobLabel: "FECHA DE NACIMIENTO", dobSaved: "Guardada. Se mantiene privada. Si es incorrecta, contacta con soporte para corregirla.", dobHint: "Añádela para tener el grupo de la tabla y los ajustes iniciales correctos. Se mantiene privada.", dobSave: "Guardar", difficultyLabel: "DIFICULTAD DE PRÁCTICA", difficultyBeginner: "Principiante", difficultyDeveloping: "En desarrollo", difficultyStandard: "Estándar", difficultyHint: "Principiante: negras. En desarrollo: corcheas. Estándar: el rudimento tal como está escrito. El tempo (BPM) nunca cambia.",
@@ -1035,7 +1035,7 @@ const translations = {
     },
     settings: {
       makeItYours: "MAAK HET JOUW EIGEN", title: "INSTELLINGEN", displayName: "WEERGAVENAAM", dailyGoal: "DAGELIJKS OEFENDOEL", minutes: "minuten",
-      language: "TAAL", pushLabel: "Aanmoedigingsmeldingen", pushDesc: "Krijg een melding op deze telefoon als iemand in je groep je aanmoedigt.", pushBlocked: "Meldingen staan uit. Zet ze aan voor DrumSkills in de instellingen van je telefoon.", pushError: "Meldingen aanzetten is niet gelukt. Probeer het opnieuw.", showDaysThisYear: "Geoefende dagen dit jaar", showDaysThisYearDesc: "Voegt het aantal oefendagen dit jaar toe aan je Home-statistieken.", on: "AAN", off: "UIT", save: "Instellingen opslaan", saved: "✓ Instellingen opgeslagen", logout: "Uitloggen", calendarColor: "KALENDERKLEUR IN DE GROEP", autoColor: "Automatisch",
+      language: "TAAL", pushLabel: "Aanmoedigingsmeldingen", pushDesc: "Krijg een melding op deze telefoon als iemand in je groep je aanmoedigt.", pushBlocked: "Meldingen staan uit. Zet ze aan voor DrumSkills in de instellingen van je telefoon.", pushError: "Meldingen aanzetten is niet gelukt. Probeer het opnieuw.", showDaysThisYear: "Geoefende dagen dit jaar", showDaysThisYearDesc: "Voegt het aantal oefendagen dit jaar toe aan je Home-statistieken.", on: "AAN", off: "UIT", save: "Instellingen opslaan", saveBtn: "Instellingen opslaan", saved: "✓ Instellingen opgeslagen", logout: "Uitloggen", calendarColor: "KALENDERKLEUR IN DE GROEP", autoColor: "Automatisch",
       metronomeTone: "METRONOOMGELUID", toneNames: { click: "Klik", beep: "Marimba", wood: "Hout", clave: "Stok" },
       profileSection: "PROFIEL", practiceSection: "OEFENEN", preferencesSection: "VOORKEUREN", accountSection: "ACCOUNTINSTELLINGEN", pleaseWait: "Even geduld...",
       confirmLogout: "Uitloggen bij DrumSkills?", libraryLabel: "INHOUDSBIBLIOTHEEK", libraryFull: "Volledige bibliotheek", libraryEssentials: "Basis", libraryHint: "Basis toont een kortere lijst voor beginners.", dobLabel: "GEBOORTEDATUM", dobSaved: "Opgeslagen. Het blijft privé. Klopt het niet, neem dan contact op met support om het te corrigeren.", dobHint: "Voeg het toe voor de juiste ranglijstgroep en beginstanden. Het blijft privé.", dobSave: "Opslaan", difficultyLabel: "OEFENNIVEAU", difficultyBeginner: "Beginner", difficultyDeveloping: "Opbouw", difficultyStandard: "Standaard", difficultyHint: "Beginner: kwartnoten. Opbouw: achtste noten. Standaard: de rudiment zoals geschreven. Het tempo (BPM) verandert nooit.",
@@ -1180,6 +1180,29 @@ function DateDMY({ value, onChange, min, max }: { value: string; onChange: (valu
     <select aria-label="Year" value={y} onChange={(e) => commit(Number(e.target.value), m, d)}>{Array.from({ length: lastYear - firstYear + 1 }, (_, i) => firstYear + i).map((n) => <option key={n} value={n}>{n}</option>)}</select>
   </div>;
 }
+const DOB_LABELS: Record<Lang, { day: string; month: string; year: string }> = { en: { day: "Day", month: "Month", year: "Year" }, nl: { day: "Dag", month: "Maand", year: "Jaar" }, es: { day: "Día", month: "Mes", year: "Año" } };
+// Date of birth picker: three drop-downs (day / month / year), empty until the person picks them. Gives "" until all three are chosen, then "YYYY-MM-DD".
+function DobPicker({ value, onChange, labels }: { value: string; onChange: (value: string) => void; labels: { day: string; month: string; year: string } }) {
+  const [y0, m0, d0] = value ? value.split("-").map(Number) : [0, 0, 0];
+  const [y, setY] = useState(y0), [m, setM] = useState(m0), [d, setD] = useState(d0);
+  const thisYear = new Date().getFullYear();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const maxDay = y && m ? new Date(y, m, 0).getDate() : 31;
+  function update(ny: number, nm: number, nd: number) {
+    setY(ny); setM(nm);
+    const day = nd && ny && nm ? Math.min(nd, new Date(ny, nm, 0).getDate()) : nd;
+    setD(day);
+    if (ny && nm && day) {
+      const next = `${ny}-${pad(nm)}-${pad(day)}`;
+      onChange(next > new Date().toISOString().slice(0, 10) ? "" : next);
+    } else onChange("");
+  }
+  return <div className="date-dmy dob-picker">
+    <select aria-label={labels.day} value={d || ""} onChange={(e) => update(y, m, Number(e.target.value))}><option value="" disabled>{labels.day}</option>{Array.from({ length: maxDay }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{pad(n)}</option>)}</select>
+    <select aria-label={labels.month} value={m || ""} onChange={(e) => update(y, Number(e.target.value), d)}><option value="" disabled>{labels.month}</option>{Array.from({ length: 12 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{pad(n)}</option>)}</select>
+    <select aria-label={labels.year} value={y || ""} onChange={(e) => update(Number(e.target.value), m, d)}><option value="" disabled>{labels.year}</option>{Array.from({ length: 111 }, (_, i) => thisYear - i).map((n) => <option key={n} value={n}>{n}</option>)}</select>
+  </div>;
+}
 // Little music-note drawing for the note-value chip on an exercise's detail screen.
 function NoteValueIcon({ subdivision }: { subdivision: "quarter" | "eighth" | "triplet" | "sixteenth" | "sixteenthTriplet" }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -1279,6 +1302,8 @@ function calculateStreaks(logs: Record<string, Log>, today: string) {
   return { current, longest };
 }
 
+// True when this page was opened from the link in the sign-up confirmation email (Supabase adds #...type=signup). Read before the client clears the address.
+const OPENED_FROM_CONFIRM_LINK = typeof window !== "undefined" && /[#&]type=signup\b/.test(window.location.hash);
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 export default function Home() {
@@ -1420,6 +1445,14 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
+  // Opened from the confirmation email: show a short "confirmed" page and drop the web session, so the person goes back to the app and logs in there.
+  useEffect(() => {
+    if (!OPENED_FROM_CONFIRM_LINK) return;
+    setEmailConfirmed(true);
+    try { history.replaceState(null, "", window.location.pathname); } catch { /* ignore */ }
+    supabase.auth.signOut({ scope: "local" }).catch(() => {});
+  }, []);
   const { current: streak, longest: longestStreak } = useMemo(() => calculateStreaks(logs, dateKey), [logs]);
   // Rudiments this student actually logs most often float to the top of the picker instead of
   // making them scroll a long alphabetical-ish list every time -- "remembered" from their own
@@ -1722,6 +1755,14 @@ export default function Home() {
   }
   // Players up to 16 who were not asked yet (accounts made before Drum Points existed) are asked once, after the setup screens.
   useEffect(() => { if (user && drumState?.eligible && !drumState.prompted && !showOnboarding) setShowPointsAsk(true); }, [user, drumState, showOnboarding]);
+  // Asked again after the date of birth is entered later (Settings), so the Drum Points switch appears straight away for players up to 16.
+  async function refreshDrumState() {
+    const { data, error } = await supabase.rpc("drum_points_state");
+    const st: any = Array.isArray(data) ? data[0] : data;
+    if (error || !st) return;
+    setDrumState({ eligible: !!st.eligible, enabled: !!st.enabled, prompted: !!st.prompted });
+    setPointsEnabled(!!st.eligible && !!st.enabled);
+  }
   async function chooseLanguage(next: Lang, save: boolean) {
     setLanguage(next);
     if (save && user) failed(await supabase.from("settings").upsert({ user_id: user.id, language: next }, { onConflict: "user_id" }));
@@ -2001,6 +2042,7 @@ export default function Home() {
     await saveLogFor(dateKey, newMinutes, newSelected, notes, equipment, isSplit ? (Number(drumsetMinutes) || 0) : null, isSplit ? (Number(padMinutes) || 0) : null, newSeconds, newCustomItems, markMetronome);
   }
   async function signOut() { try { await removeToken(supabase); } catch { /* keep going */ } await supabase.auth.signOut(); }
+  if (emailConfirmed) return <EmailConfirmed onDone={() => setEmailConfirmed(false)} />;
   if (passwordRecovery) return <ResetPassword onDone={() => setPasswordRecovery(false)} />;
   if (loading) return <main className="shell"><div className="auth-shell"><LoadingMetronome /></div></main>;
   if (!user) return <Login error={authError} setError={setAuthError} />;
@@ -2011,7 +2053,7 @@ export default function Home() {
     {tab === "practice" && <PracticeMode whenCelebrationsDone={whenCelebrationsIdle} onMetronomeToneChange={changeMetronomeTone} skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} practiceDifficulty={practiceDifficulty} T={T} />}
     {tab === "group" && <Group onGroupCount={setGroupCount} user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
     {tab === "progress" && <Progress key={progressResetKey} pointsOnly={(ageGroup === "under_10" || ageGroup === "10_13") && !allRankings} onRankUp={celebrateRankUp} onOpenExercise={openExerciseDetail} onOpenSettings={() => { setTab("settings"); window.scrollTo(0, 0); }} practiceSessions={practiceSessions} logs={logs} user={user} language={language} kidMode={kidMode} T={T} />}
-    {tab === "settings" && <Settings signOut={async () => { if (await askConfirm(T.settings.confirmLogout)) signOut(); }} allRankings={allRankings} onAllRankings={changeAllRankings} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} drumState={drumState} onDrumPoints={answerDrumPoints} ageBand={ageGroup} practiceDifficulty={practiceDifficulty} onAgeBandSaved={setAgeGroup} onDifficultySaved={setPracticeDifficulty} onBack={() => setTab("today")} T={T} />}
+    {tab === "settings" && <Settings signOut={async () => { if (await askConfirm(T.settings.confirmLogout)) signOut(); }} allRankings={allRankings} onAllRankings={changeAllRankings} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} drumState={drumState} onDrumPoints={answerDrumPoints} ageBand={ageGroup} practiceDifficulty={practiceDifficulty} onAgeBandSaved={(band) => { setAgeGroup(band); void refreshDrumState(); }} onDifficultySaved={setPracticeDifficulty} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage key={adminResetKey} user={user} language={language} T={T} />}
     {incomingCheer && <CheerToast key={`${incomingCheer.kind}-${incomingCheer.name}-${incomingCheer.cheerKey}`} name={incomingCheer.name} title={incomingCheer.kind === "heart" ? T.cheers.heartedYours(incomingCheer.name) : T.cheers.incoming(incomingCheer.name)} text={cheerText(incomingCheer.cheerKey, language)} onOpen={() => { setTab("group"); setIncomingCheer(null); }} peekAudio={peekSharedAudio} />}
     {authError && <button className="error-toast" onClick={() => setAuthError("")}>{authError} ×</button>}
@@ -2327,7 +2369,7 @@ function OnboardingModal({ currentGoal, onSkip, onFinish, onBand, onLanguage, on
     </> : step === "dob" ? <>
       <h2 className="edit-rating-title">{T.onboarding.dobTitle}</h2>
       <p className="settings-neutral-hint">{T.onboarding.dobHint}</p>
-      <input type="date" className="dob-input" aria-label={T.onboarding.dobTitle} value={dob} max={new Date().toISOString().slice(0, 10)} min={`${new Date().getFullYear() - 110}-01-01`} onChange={(e) => { setDob(e.target.value); setDobError(""); }} />
+      <DobPicker value={dob} labels={DOB_LABELS[language]} onChange={(v) => { setDob(v); setDobError(""); }} />
       {dobError && <p className="auth-error-inline">{dobError}</p>}
       <button className="save" disabled={!dob || dobBusy} onClick={saveDob}>{T.onboarding.continueBtn}</button>
       <button className="auth-switch" onClick={() => { setBand(null); setStep("exercises"); }}>{T.onboarding.skipBtn}</button>
@@ -2429,20 +2471,30 @@ function Login({ error, setError }: { error: string; setError: (message: string)
     // so there is nothing to tell them.
     setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup" && !(result.data as { session?: unknown } | null)?.session) setError(A.checkEmail);
   }
+  const canSubmit = !(busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && (!consent || !firstName.trim())));
   async function google() { setBusy(true); const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); if (oauthError) { setError(oauthError.message); setBusy(false); } }
-  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>{A.tagline}</p><div className="auth-card">
+  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>{A.tagline}</p><div className="auth-card" onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing && (e.target as HTMLElement).tagName === "INPUT" && (e.target as HTMLInputElement).type !== "checkbox" && canSubmit) { e.preventDefault(); void submit(); } }}>
     <h2>{mode === "login" ? A.welcome : mode === "signup" ? A.start : A.reset}</h2>
     {mode === "signup" && <input type="text" placeholder={A.firstName} value={firstName} maxLength={20} autoComplete="given-name" autoCapitalize="words" onChange={e => setFirstName(e.target.value.replace(/\s/g, ""))} />}
     <input type="email" placeholder={A.email} value={email} onChange={e => setEmail(e.target.value)} />
     {mode !== "forgot" && <PasswordField value={password} onChange={setPassword} placeholder={A.password} isNew={mode === "signup"} />}
     {mode === "login" && <button className="auth-forgot" onClick={() => { setMode("forgot"); setError(""); }}>{A.forgot}</button>}
     {mode === "signup" && <label className="auth-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>{A.consentA}<a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">{A.terms}</a>{A.and}<a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">{A.privacy}</a>.</span></label>}
-    <button className="auth-primary" disabled={busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && (!consent || !firstName.trim()))} onClick={submit}>{busy ? A.wait : mode === "login" ? A.logIn : mode === "signup" ? A.create : A.sendLink}</button>
+    <button className="auth-primary" disabled={!canSubmit} onClick={submit}>{busy ? A.wait : mode === "login" ? A.logIn : mode === "signup" ? A.create : A.sendLink}</button>
     {mode !== "forgot" && !IS_NATIVE_BUILD && <div className="or">{A.or}</div>}
     {mode !== "forgot" && !IS_NATIVE_BUILD && <button className="google" disabled={busy || (mode === "signup" && !consent)} onClick={google}>G <span>{A.google}</span></button>}
     <button className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? A.newHere : mode === "signup" ? A.haveAccount : A.back}</button>
   </div>{error && <p className="auth-error">{error}</p>}
   <p className="auth-legal"><a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">{A.privacyShort}</a> · <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">{A.terms}</a> · <a href={LEGAL_URLS.support} target="_blank" rel="noopener noreferrer">{A.support}</a></p></section></main>;
+}
+function EmailConfirmed({ onDone }: { onDone: () => void }) {
+  const lang = typeof navigator !== "undefined" && navigator.language?.toLowerCase().startsWith("nl") ? "nl" : typeof navigator !== "undefined" && navigator.language?.toLowerCase().startsWith("es") ? "es" : "en";
+  const X = {
+    en: { title: "Email confirmed", text: "Your account is ready. Go back to the DrumSkills app and log in with your email and password.", web: "Or log in here on the website" },
+    nl: { title: "E-mail bevestigd", text: "Je account is klaar. Ga terug naar de DrumSkills-app en log in met je e-mail en wachtwoord.", web: "Of log hier in op de website" },
+    es: { title: "Correo confirmado", text: "Tu cuenta está lista. Vuelve a la app DrumSkills e inicia sesión con tu correo y contraseña.", web: "O inicia sesión aquí en la web" },
+  }[lang];
+  return <main className="shell"><div className="auth-shell"><h1>{X.title.toUpperCase()}</h1><p>{X.text}</p><button type="button" className="auth-switch" onClick={onDone}>{X.web}</button></div></main>;
 }
 function ResetPassword({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
@@ -2453,7 +2505,7 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
     setBusy(false);
     if (updateError) setError(updateError.message); else onDone();
   }
-  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>{A.newPasswordIntro}</p><div className="auth-card"><h2>{A.newPasswordTitle}</h2><PasswordField value={password} onChange={setPassword} placeholder={A.newPassword} isNew /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? A.wait : A.update}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
+  return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>{A.newPasswordIntro}</p><div className="auth-card" onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing && !busy && password) { e.preventDefault(); void submit(); } }}><h2>{A.newPasswordTitle}</h2><PasswordField value={password} onChange={setPassword} placeholder={A.newPassword} isNew /><button className="auth-primary" disabled={busy || !password} onClick={submit}>{busy ? A.wait : A.update}</button></div>{error && <p className="auth-error">{error}</p>}</section></main>;
 }
 
 function YourPointsCard({ pointsEnabled, rows, onViewPoints, T }: any) {
@@ -4269,6 +4321,7 @@ function PracticeMode({ whenCelebrationsDone, onMetronomeToneChange, skillTab, s
     setShowWhatModal(false);
   }
   const [selectedRating, setSelectedRating] = useState<string | null>(null);
+  const [ratingBusy, setRatingBusy] = useState(false); // from the tap on Save until the celebration is on screen: taps are blocked and a metronome shows
   const [showIssues, setShowIssues] = useState(false); // the "what happened?" pop-up after Not ready / Tense / Almost there
   const [sessionIssues, setSessionIssues] = useState<string[]>([]);
   const [sessionNote, setSessionNote] = useState("");
@@ -4476,14 +4529,17 @@ function PracticeMode({ whenCelebrationsDone, onMetronomeToneChange, skillTab, s
     setStep("rate");
   }
   async function submitRating(rating: string, withoutDetails = false) {
-    if (!exercise) return;
-    await onLogSession(exercise, bpm, rating, pendingMinutes, pendingSeconds, withoutDetails ? [] : sessionIssues, withoutDetails ? "" : sessionNote.trim());
-    // Any celebration comes first (rating, then the animation, then the tempo list): the screen only moves on after Continue.
-    await whenCelebrationsDone?.();
-    setJustPracticedLevel(bpm);
-    // Comfortable or mastered: on to the tempo list (scrolled to the tempo just practised). Not ready, tense or almost: back to the same
-    // metronome window at the same tempo, ready for another round.
-    setStep(rating === "comfortable" || rating === "mastered" ? "detail" : "session");
+    if (!exercise || ratingBusy) return;
+    setRatingBusy(true);
+    try {
+      await onLogSession(exercise, bpm, rating, pendingMinutes, pendingSeconds, withoutDetails ? [] : sessionIssues, withoutDetails ? "" : sessionNote.trim());
+      // Any celebration comes first (rating, then the animation, then the tempo list): the screen only moves on after Continue.
+      await whenCelebrationsDone?.();
+      setJustPracticedLevel(bpm);
+      // Comfortable or mastered: on to the tempo list (scrolled to the tempo just practised). Not ready, tense or almost: back to the same
+      // metronome window at the same tempo, ready for another round.
+      setStep(rating === "comfortable" || rating === "mastered" ? "detail" : "session");
+    } finally { setRatingBusy(false); }
   }
   function handleRatingTap(r: string) {
     // Tapping a rating only selects it; a Save button then confirms. The struggling ratings also
@@ -4871,6 +4927,7 @@ function PracticeMode({ whenCelebrationsDone, onMetronomeToneChange, skillTab, s
           ? <HoldBackSheet language={language as Lang} rating={selectedRating} ratingLabel={RATING_LABEL[selectedRating]} issues={sessionIssues} setIssues={setSessionIssues} note={sessionNote} setNote={setSessionNote} onSave={() => submitRating(selectedRating)} onSkip={() => submitRating(selectedRating, true)} onBack={() => setShowIssues(false)} />
           : <RatingSheet language={language as Lang} subtitle={`${label} · ${bpm} BPM`} labels={RATING_LABEL} selected={selectedRating} goesOn={!!selectedRating && RATINGS_NEEDING_NOTE.includes(selectedRating)} onSelect={handleRatingTap} onSave={() => { if (!selectedRating) return; if (RATINGS_NEEDING_NOTE.includes(selectedRating)) setShowIssues(true); else submitRating(selectedRating); }} onSkip={skipRating} />}
       </div></div>
+      {ratingBusy && <div className="cel-hold" role="status" aria-live="polite"><LoadingMetronome delayMs={250} /></div>}
     </section>;
   }
   return null;
@@ -4903,17 +4960,15 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
   const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [passwordBusy, setPasswordBusy] = useState(false); const [passwordMsg, setPasswordMsg] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState(""); const [deleteBusy, setDeleteBusy] = useState(false);
   useEffect(() => { supabase.from("settings").select("daily_goal_minutes,language,metronome_tone,show_days_this_year,kid_mode").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (data) { const row: any = data; setGoal(row.daily_goal_minutes != null ? String(row.daily_goal_minutes) : ""); setLanguage(row.language); if (row.metronome_tone) setTone(row.metronome_tone); if (row.show_days_this_year != null) setShowDaysThisYear(row.show_days_this_year); setKidMode(!!row.kid_mode); } supabase.from("profiles").select("color").eq("id", user.id).maybeSingle().then(({ data }) => { setColor(data?.color ?? null); setSettingsLoaded(true); }); }); }, [user]);
-  // Settings save by themselves a moment after the last change (no Save button to forget).
+  // A Save button at the bottom. Changes that were not saved yet are also saved when you leave this screen, so nothing is lost.
+  const [saveBusy, setSaveBusy] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const autoBase = useRef<string | null>(null);
   const autoSnap = JSON.stringify([name, goal, language, color, showDaysThisYear, kidMode, difficulty]);
-  useEffect(() => {
-    if (!settingsLoaded) return;
-    if (autoBase.current === null) { autoBase.current = autoSnap; return; }
-    if (autoSnap === autoBase.current || !name.trim()) return;
-    const h = window.setTimeout(async () => { autoBase.current = autoSnap; await saveSettings(); }, 900);
-    return () => window.clearTimeout(h);
-  }, [autoSnap, settingsLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (settingsLoaded && autoBase.current === null) autoBase.current = autoSnap; }, [autoSnap, settingsLoaded]);
+  const leaveRef = useRef<() => void>(() => {});
+  leaveRef.current = () => { if (settingsLoaded && autoBase.current !== null && autoSnap !== autoBase.current && name.trim()) { autoBase.current = autoSnap; void saveSettings(); } };
+  useEffect(() => () => leaveRef.current(), []);
   // Goal is only included in the upsert when the field actually has a value -- leaving it
   // blank and saving other settings (name, language, etc.) shouldn't silently invent a goal.
   async function saveSettings() {
@@ -4980,7 +5035,7 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
           {dobShown && <div className="dob-row"><input type="date" className="dob-input dob-locked" aria-label={T.settings.dobLabel} value={dobShown} disabled readOnly /></div>}
           <span className="sx-sub">{T.settings.dobSaved}</span>
         </> : <>
-          <div className="dob-row"><input type="date" className="dob-input" aria-label={T.settings.dobLabel} value={dobInput} max={new Date().toISOString().slice(0, 10)} min={`${new Date().getFullYear() - 110}-01-01`} onChange={(e) => { setDobInput(e.target.value); setDobMsg(""); }} />
+          <div className="dob-row"><DobPicker value={dobInput} labels={DOB_LABELS[currentLanguage]} onChange={(v) => { setDobInput(v); setDobMsg(""); }} />
             <button type="button" className="dob-save" disabled={!dobInput || dobBusy} onClick={async () => { setDobBusy(true); setDobMsg(""); const { data, error } = await supabase.rpc("set_my_date_of_birth", { p_dob: dobInput }); setDobBusy(false); if (error) setDobMsg(T.onboarding.dobError); else onAgeBandSaved(asAgeBand(data)); }}>{T.settings.dobSave}</button></div>
           <span className="sx-sub">{dobMsg || T.settings.dobHint}</span>
         </>}
@@ -5015,7 +5070,7 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
         if (res.ok) setPushOn(true); else setPushMsg(res.reason === "denied" ? T.settings.pushBlocked : T.settings.pushError);
       }}><span className="sx-switch-text"><span className="sx-label">{T.settings.pushLabel}</span><span className="sx-sub">{pushMsg || T.settings.pushDesc}</span></span><i className={pushOn ? "sx-switch on" : "sx-switch"}><b /></i></button>}
     </div></>}
-    <p className="sx-autosaved" aria-live="polite">{saved ? T.settings.saved : ""}</p>
+    {(saved || saveBusy || (settingsLoaded && autoBase.current !== null && autoSnap !== autoBase.current)) && <div className="sx-savebar"><SaveButton saved={saved} disabled={!name.trim() || saveBusy} onClick={async () => { autoBase.current = autoSnap; setSaveBusy(true); try { await saveSettings(); } finally { setSaveBusy(false); } }} label={T.settings.saveBtn} savedLabel={T.settings.saved} peekAudio={peekSharedAudio} /></div>}
     <p className="sx-title">{T.settings.accountSection}</p>
     <div className="sx-card">
       <button type="button" className="sx-row sx-link" onClick={() => setOpenPanel(openPanel === "email" ? null : "email")}><span className="sx-label">{T.settings.changeEmail}</span>{chev}</button>

@@ -7,14 +7,18 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = "/Users/david/Documents/AI Projects/Drum Progress Promo/fonts"   # Barlow Condensed (titles), as used by the other App Store graphics
-CAPTIONS = {   # one short line each, no more than 5 words
-    "1-home": "Log every practice",
-    "2-practice": "Climb the tempo ladder",
-    "3-metronome": "Practise with the metronome",
-    "4-progress": "See your progress grow",
-    "5-leaderboard": "Compete with drummers worldwide",
-    "6-challenges": "Take on daily challenges",
-}
+SHOTS = [   # (file name in raw/ without .png, caption): this is the order in the store; Apple allows 10
+    ("1-home", "Stay consistent every day"),
+    ("10-skill-trainer", "From basics to complex"),
+    ("8-paradiddle-ladder", "Unlock every tempo step by step"),
+    ("3-metronome-paradiddle", "Read the notation as you play"),
+    ("7-metronome-paradiddlestick", "Or follow the sticking"),
+    ("11-animationtempounlocked", "Celebrate every milestone"),
+    ("4-progress", "Watch your skills grow"),
+    ("9-groupexample", "Practise together as a group"),
+    ("5-leaderboard", "Compete with drummers worldwide"),
+    ("6-challenges", "Take on your own challenges"),
+]
 SIZES = {"6.9-inch": (1290, 2796), "6.5-inch": (1284, 2778)}
 ORANGE, CREAM = (255, 107, 26), (246, 230, 214)
 
@@ -59,13 +63,13 @@ def frame(shot_path, caption, size):
     return canvas.crop((0, 0, w, h))
 
 def main():
-    raws = {os.path.splitext(os.path.basename(p))[0]: p for p in glob.glob(os.path.join(HERE, "raw", "*.png"))}
+    raws = {os.path.splitext(os.path.basename(p))[0]: p for p in glob.glob(os.path.join(HERE, "raw", "*")) if p.lower().endswith(".png")}
     if not raws: print("No screenshots found in raw/ yet."); return
     for name, size in SIZES.items():
         out = os.path.join(HERE, "out", name); os.makedirs(out, exist_ok=True)
-        for key, caption in CAPTIONS.items():
+        for i, (key, caption) in enumerate(SHOTS, 1):
             if key in raws:
-                frame(raws[key], caption, size).save(os.path.join(out, key + ".png"), optimize=True)
+                frame(raws[key], caption, size).save(os.path.join(out, "%02d-%s.png" % (i, key)), optimize=True)
                 print("made", name, key)
 
 if __name__ == "__main__":

@@ -2028,3 +2028,22 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 /* Skill Trainer tier cards: a tiny bit bigger */
 .tier-card.tier-card-img{padding-top:21px;padding-bottom:21px}
 .tier-card-img .tier-card-title{font-size:26px}
+
+/* The date of birth field must never be wider than its card (iPhone date fields have a minimum width of their own) */
+.dob-input{box-sizing:border-box;max-width:100%;min-width:0;display:block}
+
+
+/* From the tap on Save (rating) until the celebration is on screen: blocks extra taps, and shows the metronome if it takes longer than a moment */
+.cel-hold{position:fixed;inset:0;z-index:99990;display:flex;align-items:center;justify-content:center;background:rgba(9,9,9,.5)}
+
+/* Settings: the Save button floats above the bottom bar, only while there are unsaved changes (and for the moment it shows the check) */
+.sx-savebar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom));width:min(100%,540px);padding:0 18px;box-sizing:border-box;z-index:40;animation:sxSaveIn .22s ease-out}
+.sx-savebar .save{box-shadow:0 12px 30px rgba(0,0,0,.55),0 8px 24px -8px rgba(255,107,26,.5)}
+@keyframes sxSaveIn{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* Date of birth: three drop-downs, bigger touch targets in the welcome window */
+.dob-picker{margin:14px 0 6px}
+.dob-picker select{padding:14px 2px;font-size:17px}
+.dob-picker select:last-of-type{flex:1.4}
+.dob-row .dob-picker{margin:0;flex:1}
+.dob-row .dob-picker select{padding:10px 2px;font-size:15px}
