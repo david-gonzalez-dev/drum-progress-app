@@ -30,6 +30,7 @@ function Overlay({ item, getAudio, language, onDone, silent }: { item: Item; get
     const finish = () => { hapticTimers.push(window.setTimeout(onDone, 300)); };
     const killAudio = () => { audio?.stop(); audio = null; hapticTimers.forEach((h) => window.clearTimeout(h)); hapticTimers.length = 0; };
     skipRef.current = () => { if (END && (performance.now() - start) / 1000 < END) { killAudio(); start = performance.now() - END * 1000; } };
+    setReady(true); // the dark screen is there at once (it blocks taps and shows the app is busy); the animation starts when fonts and sound are ready
     (async () => {
       // the fonts are lazy: wait (briefly) so the first frame is not drawn in a fallback font
       try { if (document.fonts) await Promise.race([Promise.all([document.fonts.load("800 60px 'DM Sans'"), document.fonts.load("800 60px 'Barlow Condensed'")]), new Promise((r) => window.setTimeout(r, 450))]); } catch { /* fine */ }
@@ -110,7 +111,7 @@ export function useCelebrations({ getAudio, language }: { getAudio: () => AudioC
     // One of each kind (a later one replaces an earlier one unless the earlier one is bigger), then smallest first, biggest last, at most 3 (the smallest are dropped).
     const byKind = new Map<string, Item>();
     list.forEach((c) => { const key = c.kind === "challenge" ? `challenge-${c.id}` : c.kind; const old = byKind.get(key); if (!old || sizeOf(c) >= sizeOf(old)) byKind.set(key, c); });
-    const order = ["rated", "kids", "tempo", "goal", "rank", "streak", "onboard", "mastered", "challenge"];
+    const order = ["rated", "short", "kids", "tempo", "goal", "rank", "streak", "onboard", "mastered", "challenge"];
     const sorted = [...byKind.values()].sort((a, b) => sizeOf(a) - sizeOf(b) || order.indexOf(a.kind) - order.indexOf(b.kind)).slice(-3);
     outstanding.current -= list.length - sorted.length;
     setQueue((q) => [...q, ...sorted]);

@@ -11,6 +11,7 @@ type Texts = {
   masteredTitle: (level: string) => string; masteredSub: (rudiment: string, next: string) => string; masteredComplete: (rudiment: string) => string; legendBadge: string;
   challengeTitle: string; challengeSub: (days: number, exercise: string) => string;
   onboardTitle: string; onboardSub: string; onboardCont: string;
+  short: { title: string; unit: string; of: (min: number) => string; lines: (sec: number, min: number) => string[] };
   ratedTitle: string; ratedTitleKids: string; ratedWords: { a: string; b: string; today: string; before: string; day: string; days: string };
   rankLabel: string; rankPassedOne: (name: string) => string; rankPassedMany: (n: number) => string; rankSub: (rank: number) => string; rankSubYear: (rank: number) => string; rankUnit: string; rankUnitPoints: string; you: string;
 };
@@ -27,6 +28,7 @@ export const CEL_TEXT: Record<Lang, Texts> = {
     masteredTitle: (l) => `${l} mastered`, masteredSub: (r, n) => `${r} moves up to ${n}`, masteredComplete: (r) => `${r} is complete`, legendBadge: "LEGEND",
     challengeTitle: "Challenge won", challengeSub: (d, e) => `${d} days of ${e}`,
     onboardTitle: "You're ready", onboardSub: "Let's play your first rudiment", onboardCont: "Start practicing",
+    short: { title: "Almost there", unit: "SEC", of: (n) => `of ${n} min`, lines: (s, n) => [`You practised ${s} sec`, `Next time hold it for ${n} min non-stop`, "to unlock this tempo"] },
     ratedTitle: "Rating improved", ratedTitleKids: "Getting better!", ratedWords: { a: "From", b: "to", today: "today", before: "in", day: "day", days: "days" },
     rankLabel: "LEADERBOARD", rankPassedOne: (name) => `You passed ${name}`, rankPassedMany: (n) => `You passed ${n} people`, rankSub: (r) => `Up to #${r} this month`, rankSubYear: (r) => `Up to #${r} this year`, rankUnit: "days", rankUnitPoints: "points", you: "You",
   },
@@ -40,6 +42,7 @@ export const CEL_TEXT: Record<Lang, Texts> = {
     masteredTitle: (l) => `${l} dominado`, masteredSub: (r, n) => `${r} sube a ${n}`, masteredComplete: (r) => `${r} está completo`, legendBadge: "LEYENDA",
     challengeTitle: "Reto superado", challengeSub: (d, e) => `${d} días de ${e}`,
     onboardTitle: "Estás listo", onboardSub: "Toquemos tu primer rudimento", onboardCont: "Empezar a practicar",
+    short: { title: "Casi lo tienes", unit: "SEG", of: (n) => `de ${n} min`, lines: (s, n) => [`Practicaste ${s} s`, `La próxima vez aguanta ${n} min seguidos`, "para desbloquear este tempo"] },
     ratedTitle: "Has mejorado", ratedTitleKids: "¡Cada vez mejor!", ratedWords: { a: "De", b: "a", today: "hoy", before: "en", day: "día", days: "días" },
     rankLabel: "CLASIFICACIÓN", rankPassedOne: (name) => `Superaste a ${name}`, rankPassedMany: (n) => `Superaste a ${n} personas`, rankSub: (r) => `Subes al n.º ${r} este mes`, rankSubYear: (r) => `Subes al n.º ${r} este año`, rankUnit: "días", rankUnitPoints: "puntos", you: "Tú",
   },
@@ -53,6 +56,7 @@ export const CEL_TEXT: Record<Lang, Texts> = {
     masteredTitle: (l) => `${l} beheerst`, masteredSub: (r, n) => `${r} gaat door naar ${n}`, masteredComplete: (r) => `${r} is voltooid`, legendBadge: "LEGENDE",
     challengeTitle: "Uitdaging gewonnen", challengeSub: (d, e) => `${d} dagen ${e}`,
     onboardTitle: "Je bent klaar", onboardSub: "Laten we je eerste rudiment spelen", onboardCont: "Begin met oefenen",
+    short: { title: "Bijna!", unit: "SEC", of: (n) => `van ${n} min`, lines: (s, n) => [`Je oefende ${s} sec`, `Houd het ${n} min vol zonder te stoppen`, "om dit tempo te ontgrendelen"] },
     ratedTitle: "Beoordeling verbeterd", ratedTitleKids: "Je wordt steeds beter!", ratedWords: { a: "Van", b: "naar", today: "vandaag", before: "in", day: "dag", days: "dagen" },
     rankLabel: "RANGLIJST", rankPassedOne: (name) => `Je passeerde ${name}`, rankPassedMany: (n) => `Je passeerde ${n} mensen`, rankSub: (r) => `Gestegen naar #${r} deze maand`, rankSubYear: (r) => `Gestegen naar #${r} dit jaar`, rankUnit: "dagen", rankUnitPoints: "punten", you: "Jij",
   },

@@ -14,6 +14,7 @@ import { challengeScene, type ChallengeCfg } from "./scenes/challenge";
 import { onboardScene, type OnboardCfg } from "./scenes/onboard";
 import { launchScene, type LaunchCfg } from "./scenes/launch";
 import { ratedScene, ratedKidsScene, type RatedCfg } from "./scenes/rated";
+import { shortScene, type ShortCfg } from "./scenes/short";
 
 export type Celebration =
   | { kind: "kids"; cfg: KidsCfg }
@@ -25,12 +26,13 @@ export type Celebration =
   | { kind: "challenge"; cfg: ChallengeCfg }
   | { kind: "onboard"; cfg: OnboardCfg }
   | { kind: "rated"; cfg: RatedCfg } // adult or kids version (cfg.kids)
+  | { kind: "short"; cfg: ShortCfg } // a Comfortable / Mastered session that was too short to unlock the tempo: "hold it longer next time"
   | { kind: "launch"; cfg: LaunchCfg }; // plays on its own at app start, never queued
 
 /* 1 = normal, 2 = medium, 3 = big. The queue plays the smallest first and the biggest last. */
 export function sizeOf(c: Celebration): number {
   if (c.kind === "kids") return c.cfg.m ? 3 : 1;
-  if (c.kind === "rated") return 1;
+  if (c.kind === "rated" || c.kind === "short") return 1;
   if (c.kind === "streak") return c.cfg.n >= 30 ? 3 : 2;
   if (c.kind === "mastered" || c.kind === "challenge") return 3;
   return 2;
@@ -49,6 +51,7 @@ export function buildScene(c: Celebration, env: Env): SceneInstance {
     case "onboard": return onboardScene.build(env, c.cfg);
     case "launch": return launchScene.build(env, c.cfg);
     case "rated": return (c.cfg.kids ? ratedKidsScene : ratedScene).build(env, c.cfg);
+    case "short": return shortScene.build(env, c.cfg);
   }
 }
 export { makeEnv };

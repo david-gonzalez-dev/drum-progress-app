@@ -70,9 +70,11 @@ function Trophy() {
 }
 
 // The card at the top of the Progress tab.
+// The last summary per account, so the card on Progress is there at once when you come back to the tab.
+const summaryCache: Record<string, Summary> = {};
 export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen, userId, onRankUp, pointsOnly }: { db: any; language: Lang; refreshKey: number; onOpen: (f?: Partial<BoardFilter>) => void; userId?: string; onRankUp?: (info: RankUp) => void; pointsOnly?: boolean }) {
   const t = TEXT[language];
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const [summary, setSummary] = useState<Summary | null>(() => summaryCache[userId ?? "me"] ?? null); // the last numbers are shown at once; fresh ones replace them quietly
   const [failed, setFailed] = useState(false);
   // Adults only: when the monthly rank is better than the last time it was seen, the "Overtake" celebration plays once (with the final rank, however many players were passed).
   useEffect(() => {
@@ -103,6 +105,7 @@ export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen, us
     });
     return () => { cancelled = true; };
   }, [summary, userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (summary) summaryCache[userId ?? "me"] = summary; }, [summary, userId]);
   useEffect(() => {
     let cancelled = false;
     supabase.rpc("leaderboard_summary").then(({ data, error }: any) => {
@@ -114,7 +117,7 @@ export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen, us
     return () => { cancelled = true; };
   }, [refreshKey]);
   // If the database part isn't installed yet (or it fails), the card stays hidden rather than showing an error on Progress.
-  if (failed) return null;
+  if (failed && !summary) return null;
   if (!summary) return <div className="lb-card lb-card-skel" aria-hidden="true" />;
   const moved = summary.pos != null && summary.prev_pos != null ? summary.prev_pos - summary.pos : 0;
   const levelWord = t.tiers[summary.level] ?? summary.level;
