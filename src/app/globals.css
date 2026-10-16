@@ -2160,3 +2160,11 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 
 /* The second line on the Essentials rudiment list ("Unlock 2 tempos to open the next rudiment") is a quiet hint under the highlighted rule, not a second box */
 .category-list-hint{margin:2px 2px 14px;color:#9aa19d;font:500 14px/1.4 'DM Sans'}
+
+/* Group header on a phone: a long group name plus five icon buttons were wider than the screen and pushed the whole page sideways. The icons now drop below the name when they do not fit, and a long name can break. */
+.group-head{flex-wrap:wrap;row-gap:12px}
+.group-head>div:first-child{flex:1 1 180px;min-width:0;max-width:100%}
+.group-head-actions{margin-left:auto}
+.group-head h1,.group-title-btn h1{overflow-wrap:anywhere}
+.group-title-last{white-space:normal;overflow-wrap:anywhere}
+.page.group-page,.page{overflow-x:clip}
