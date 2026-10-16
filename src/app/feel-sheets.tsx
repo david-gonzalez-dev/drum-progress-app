@@ -46,10 +46,10 @@ export const FEEL_EXTRA_TAGS: L3[] = [
   ...LOCATIONS.map((l) => ({ en: PAIN_TAG(l.key), es: `Dolor: ${l.label.es.toLowerCase()}`, nl: `Pijn: ${l.label.nl.toLowerCase()}` })),
 ];
 
-const TEXT: Record<Lang, { title1: string; title2: string; skip1: string; skip2: string; save: string; next: string; back: string; more: string; fewer: string; note: string; moreLabel: string; warn: string; notePlaceholder: string }> = {
-  en: { title1: "How did that feel?", title2: "What held you back?", skip1: "Skip, don't log this", skip2: "Skip and save", save: "Save", next: "Next", back: "Back", more: "More options", fewer: "Fewer options", note: "+ Add note", moreLabel: "MORE", warn: "Sharp or lasting pain? Stop and rest. Tell your teacher.", notePlaceholder: "Add a note (optional)" },
-  es: { title1: "¿Cómo te sentiste?", title2: "¿Qué te frenó?", skip1: "Omitir, no guardar esto", skip2: "Omitir y guardar", save: "Guardar", next: "Siguiente", back: "Atrás", more: "Más opciones", fewer: "Menos opciones", note: "+ Añadir nota", moreLabel: "MÁS", warn: "¿Dolor agudo o que no pasa? Para y descansa. Díselo a tu profesor.", notePlaceholder: "Añade una nota (opcional)" },
-  nl: { title1: "Hoe voelde dat?", title2: "Wat hield je tegen?", skip1: "Overslaan, niet loggen", skip2: "Overslaan en opslaan", save: "Opslaan", next: "Volgende", back: "Terug", more: "Meer opties", fewer: "Minder opties", note: "+ Notitie toevoegen", moreLabel: "MEER", warn: "Scherpe of aanhoudende pijn? Stop en rust uit. Vertel het je leraar.", notePlaceholder: "Voeg een notitie toe (optioneel)" },
+const TEXT: Record<Lang, { title1: string; title2: string; skip1: string; skip2: string; save: string; saving: string; next: string; back: string; more: string; fewer: string; note: string; moreLabel: string; warn: string; notePlaceholder: string }> = {
+  en: { title1: "How did that feel?", title2: "What held you back?", skip1: "Skip, don't log this", skip2: "Skip and save", save: "Save", saving: "Saving…", next: "Next", back: "Back", more: "More options", fewer: "Fewer options", note: "+ Add note", moreLabel: "MORE", warn: "Sharp or lasting pain? Stop and rest. Tell your teacher.", notePlaceholder: "Add a note (optional)" },
+  es: { title1: "¿Cómo te sentiste?", title2: "¿Qué te frenó?", skip1: "Omitir, no guardar esto", skip2: "Omitir y guardar", save: "Guardar", saving: "Guardando…", next: "Siguiente", back: "Atrás", more: "Más opciones", fewer: "Menos opciones", note: "+ Añadir nota", moreLabel: "MÁS", warn: "¿Dolor agudo o que no pasa? Para y descansa. Díselo a tu profesor.", notePlaceholder: "Añade una nota (opcional)" },
+  nl: { title1: "Hoe voelde dat?", title2: "Wat hield je tegen?", skip1: "Overslaan, niet loggen", skip2: "Overslaan en opslaan", save: "Opslaan", saving: "Opslaan…", next: "Volgende", back: "Terug", more: "Meer opties", fewer: "Minder opties", note: "+ Notitie toevoegen", moreLabel: "MEER", warn: "Scherpe of aanhoudende pijn? Stop en rust uit. Vertel het je leraar.", notePlaceholder: "Voeg een notitie toe (optioneel)" },
 };
 
 // One colour per rating (a flat dot, never an emoji); the selected row and the pill on the second sheet use it.
@@ -62,7 +62,7 @@ function Check({ color }: { color: string }) { return <svg className="feel-check
 function Star() { return <svg className="feel-star" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="#F5C542" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" /></svg>; }
 
 /* Sheet 1 */
-export function RatingSheet({ language, subtitle, labels, selected, goesOn, onSelect, onSave, onSkip }: { language: Lang; subtitle: string; goesOn: boolean; labels: Record<string, string>; selected: string | null; onSelect: (r: string) => void; onSave: () => void; onSkip: () => void }) {
+export function RatingSheet({ language, subtitle, labels, selected, goesOn, onSelect, onSave, onSkip, busy }: { busy?: boolean; language: Lang; subtitle: string; goesOn: boolean; labels: Record<string, string>; selected: string | null; onSelect: (r: string) => void; onSave: () => void; onSkip: () => void }) {
   const t = TEXT[language];
   return <div className="feel-sheet">
     <h2 className="feel-title">{t.title1}</h2>
@@ -70,7 +70,7 @@ export function RatingSheet({ language, subtitle, labels, selected, goesOn, onSe
     <div className="feel-rows">
       {RATING_KEYS.map((r) => {
         const col = RATING_COLOR[r], on = selected === r;
-        return <button key={r} type="button" className={on ? "feel-row on" : "feel-row"} style={on ? { borderColor: col.c, background: col.bg } : undefined} onClick={() => onSelect(r)}>
+        return <button key={r} type="button" className={on ? "feel-row on" : "feel-row"} style={on ? { borderColor: col.c, background: col.bg } : undefined} onClick={() => { if (!busy) onSelect(r); }}>
           {r === "mastered" ? <Star /> : <span className="feel-dot" style={{ background: col.c }} />}
           <span>{labels[r]}</span>
           {on && <Check color={col.c} />}
@@ -78,14 +78,14 @@ export function RatingSheet({ language, subtitle, labels, selected, goesOn, onSe
       })}
     </div>
     <div className="feel-foot">
-      <button type="button" className="feel-save" disabled={!selected} onClick={onSave}>{selected && goesOn ? t.next : t.save}<span>→</span></button>
-      <button type="button" className="feel-skip" onClick={onSkip}>{t.skip1}</button>
+      <button type="button" className={busy ? "feel-save busy" : "feel-save"} disabled={!selected || busy} onClick={onSave}>{busy && <i className="feel-fill" aria-hidden="true" />}<em className="feel-save-label">{busy ? t.saving : selected && goesOn ? t.next : t.save}{!busy && <span>→</span>}</em></button>
+      <button type="button" className="feel-skip" disabled={busy} onClick={onSkip}>{t.skip1}</button>
     </div>
   </div>;
 }
 
 /* Sheet 2 */
-export function HoldBackSheet({ language, rating, ratingLabel, issues, setIssues, note, setNote, onSave, onSkip, onBack }: { onBack: () => void; language: Lang; rating: string; ratingLabel: string; issues: string[]; setIssues: (next: string[]) => void; note: string; setNote: (v: string) => void; onSave: () => void; onSkip: () => void }) {
+export function HoldBackSheet({ language, rating, ratingLabel, issues, setIssues, note, setNote, onSave, onSkip, onBack, busy }: { busy?: boolean; onBack: () => void; language: Lang; rating: string; ratingLabel: string; issues: string[]; setIssues: (next: string[]) => void; note: string; setNote: (v: string) => void; onSave: () => void; onSkip: () => void }) {
   const t = TEXT[language];
   const col = RATING_COLOR[rating] ?? RATING_COLOR.almost;
   const has = (tag: string) => issues.includes(tag);
@@ -110,7 +110,7 @@ export function HoldBackSheet({ language, rating, ratingLabel, issues, setIssues
   function toggleMore(tag: string) { setIssues(has(tag) ? issues.filter((x) => x !== tag) : [...issues, tag]); }
   const rows: Tile[][] = []; for (let i = 0; i < TILES.length; i += 2) rows.push(TILES.slice(i, i + 2));
   return <div className="feel-sheet">
-    <button type="button" className="feel-back" onClick={onBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>{t.back}</button>
+    <button type="button" className="feel-back" disabled={busy} onClick={onBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>{t.back}</button>
     <h2 className="feel-title">{t.title2}</h2>
     <span className="feel-pill" style={{ color: col.c, background: col.bg }}><i style={{ background: col.c }} />{ratingLabel}</span>
     <div className="feel-grid">
@@ -127,8 +127,8 @@ export function HoldBackSheet({ language, rating, ratingLabel, issues, setIssues
     <div className="feel-links"><button type="button" onClick={() => setMoreOpen(!moreOpen)}>{moreOpen ? t.fewer : t.more}</button>{!noteOpen && <button type="button" onClick={() => setNoteOpen(true)}>{t.note}</button>}</div>
     {noteOpen && <textarea ref={noteRef} className="feel-note" maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.notePlaceholder} />}
     <div className="feel-foot">
-      <button type="button" className="feel-save" onClick={onSave}>{t.save}<span>→</span></button>
-      <button type="button" className="feel-skip" onClick={onSkip}>{t.skip2}</button>
+      <button type="button" className={busy ? "feel-save busy" : "feel-save"} disabled={busy} onClick={onSave}>{busy && <i className="feel-fill" aria-hidden="true" />}<em className="feel-save-label">{busy ? t.saving : t.save}{!busy && <span>→</span>}</em></button>
+      <button type="button" className="feel-skip" disabled={busy} onClick={onSkip}>{t.skip2}</button>
     </div>
   </div>;
 }

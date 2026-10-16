@@ -276,6 +276,17 @@ function autoColorForUserId(userId: string) {
 // given group is visually distinguishable on its leaderboards/calendar.
 // The Group tab uses one warm palette instead of each person's own colour pick, so it matches the rest of the app.
 // The viewer always gets the vivid orange; everyone else follows in a fixed order (sorted by id, so it is stable).
+// Supabase returns at most 1000 rows per request. A group of 10 to 30 people has far more practice rows than that, so these read page by page until a page comes back short.
+async function fetchAllRows(make: (from: number, to: number) => PromiseLike<{ data: any[] | null }>): Promise<{ data: any[] }> {
+  const PAGE = 1000; let all: any[] = []; let from = 0;
+  while (true) {
+    const { data } = await make(from, from + PAGE - 1);
+    all = all.concat(data ?? []);
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
+  return { data: all };
+}
 const GROUP_PALETTE = ["#ff7a3c", "#f4d9bd", "#c4561f", "#ffb27a", "#8f5a34", "#e8c39a", "#6e4528", "#b9b1a8"];
 function applyGroupPalette<T extends { id: string; color: string }>(members: T[], viewerId: string): T[] {
   const ordered = [...members].sort((a, b) => (a.id === viewerId ? -1 : b.id === viewerId ? 1 : a.id.localeCompare(b.id)));
@@ -444,6 +455,12 @@ const CHALLENGE_EXERCISE_OPTIONS: { en: string; es: string; nl: string }[] = (()
   });
   return combined;
 })();
+// What the Essentials library (kids) contains: rudiments that are not advanced, and the essential exercises.
+function isEssentialExercise(e: { en: string; category: string }) {
+  if (e.category === "rudiments") return (e as any).difficulty !== "advanced";
+  if (e.category === "exercises") return ESSENTIAL_EXERCISES.has(e.en);
+  return true;
+}
 // Players on the Essentials library (kids) only get the essential rudiments and exercises to pick from, like everywhere else in the Skill Trainer.
 function challengeOptionsFor(kidMode: boolean) {
   if (!kidMode) return CHALLENGE_EXERCISE_OPTIONS;
@@ -754,7 +771,7 @@ const translations = {
     confirm: { cancel: "Cancelar", confirm: "Confirmar" },
     drumPoints: { yearAndWeek: "¡Eres el n.º 1 este año y esta semana!", weekBest: "¡Eres el n.º 1 esta semana!", weekPoints: (n: number) => `${n} ${n === 1 ? "punto" : "puntos"} esta semana`, askTitle: "Drum Points", askText: "Gana 1 punto por cada minuto que practicas. Compárate con bateristas de tu edad (solo nombres).", askYes: "Sí, cuenta mis puntos", askNo: "Ahora no", earned: (n: number) => `+${n} ${n === 1 ? "punto" : "puntos"}`, thisYear: "este año", yearTotal: "Puntos este año", movedUp: "¡Has subido!", passed: (name: string) => `¡Superaste a ${name}!`, passMore: (g: number, name: string) => `Practica ${g} ${g === 1 ? "minuto" : "minutos"} más para superar a ${name}`, numberOne: "¡Eres el n.º 1 este año!", nice: "¡Genial!", boardYear: "Este año", boardAll: "Siempre", boardTitle: "Clasificación Drum Points", boardEmpty: "Aún no hay puntos. Practica un tempo durante un minuto para empezar.", switchLabel: "Drum Points", switchDesc: "Gana puntos por practicar y compárate con bateristas de tu edad.", cardYear: "Este año" },
     today: {
-      heroLine1: "DISCIPLINA", heroLine1b: "CONSTRUYE", heroLine2: "HABILIDAD.", startPracticeTitle: "Empezar práctica", startPracticeSub: "Pon un temporizador y a ello", noPracticeTitle: "Aún no hay práctica", goalShort: "Meta", practiceRudiment: "Practica un rudimento", seeAll: "Ver todo", currentStreak: "Racha actual", days: "días", pointsTitle: "PUNTOS",
+      heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", startPracticeTitle: "Empezar práctica", startPracticeSub: "Pon un temporizador y a ello", noPracticeTitle: "Aún no hay práctica", goalShort: "Meta", practiceRudiment: "Practica un rudimento", seeAll: "Ver todo", currentStreak: "Racha actual", days: "días", pointsTitle: "PUNTOS",
       pointsCardTitle: "TUS PUNTOS", pointsCardCta: "Ver recompensas", pointsCardKickoff: "Empieza a ganar puntos", pointsCardRankOne: "Eres el número 1", pointsCardTop3: "Estás en el Top 3", pointsCardKeepGoing: "Sigue así",
       todaysPractice: "Práctica de hoy", metronome: "Metrónomo", howLong: "¿CUÁNTO TIEMPO PRACTICASTE?", practiceTimeHeading: "TIEMPO DE PRÁCTICA", whatPractised: "AÑADE LO QUE PRACTICASTE",
       notes: "NOTAS", notesPrefix: "Notas:", optional: "OPCIONAL", notesPlaceholder: "¿Qué practicaste hoy?", savePractice: "Guardar práctica", practiceSaved: "✓ Práctica guardada",
@@ -934,7 +951,7 @@ const translations = {
     confirm: { cancel: "Annuleren", confirm: "Bevestigen" },
     drumPoints: { yearAndWeek: "Je staat #1 dit jaar en deze week!", weekBest: "Je staat #1 deze week!", weekPoints: (n: number) => `${n} ${n === 1 ? "punt" : "punten"} deze week`, askTitle: "Drum Points", askText: "Krijg 1 punt voor elke minuut oefenen. Vergelijk met drummers van jouw leeftijd (alleen voornamen).", askYes: "Ja, tel mijn punten", askNo: "Nu niet", earned: (n: number) => `+${n} ${n === 1 ? "punt" : "punten"}`, thisYear: "dit jaar", yearTotal: "Punten dit jaar", movedUp: "Je bent gestegen!", passed: (name: string) => `Je bent ${name} voorbij!`, passMore: (g: number, name: string) => `Oefen nog ${g} ${g === 1 ? "minuut" : "minuten"} om ${name} voorbij te gaan`, numberOne: "Je staat #1 dit jaar!", nice: "Top!", boardYear: "Dit jaar", boardAll: "Altijd", boardTitle: "Drum Points ranglijst", boardEmpty: "Nog geen punten. Oefen een minuut op een tempo om te beginnen.", switchLabel: "Drum Points", switchDesc: "Verdien punten met oefenen en vergelijk je met drummers van jouw leeftijd.", cardYear: "Dit jaar" },
     today: {
-      heroLine1: "DISCIPLINE", heroLine1b: "BOUWT", heroLine2: "VAARDIGHEID.", startPracticeTitle: "Begin met oefenen", startPracticeSub: "Zet een timer en ga aan de slag", noPracticeTitle: "Nog niet geoefend", goalShort: "Doel", practiceRudiment: "Oefen een rudiment", seeAll: "Alles bekijken", currentStreak: "Huidige reeks", days: "dagen", pointsTitle: "PUNTEN",
+      heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", startPracticeTitle: "Begin met oefenen", startPracticeSub: "Zet een timer en ga aan de slag", noPracticeTitle: "Nog niet geoefend", goalShort: "Doel", practiceRudiment: "Oefen een rudiment", seeAll: "Alles bekijken", currentStreak: "Huidige reeks", days: "dagen", pointsTitle: "PUNTEN",
       pointsCardTitle: "JOUW PUNTEN", pointsCardCta: "Beloningen bekijken", pointsCardKickoff: "Begin met punten verdienen", pointsCardRankOne: "Je staat op nummer 1", pointsCardTop3: "Je staat in de top 3", pointsCardKeepGoing: "Ga zo door",
       todaysPractice: "Oefening van vandaag", metronome: "Metronoom", howLong: "HOE LANG HEB JE GEOEFEND?", practiceTimeHeading: "OEFENTIJD", whatPractised: "VOEG TOE WAT JE GEOEFEND HEBT",
       notes: "NOTITIES", notesPrefix: "Notities:", optional: "OPTIONEEL", notesPlaceholder: "Wat heb je vandaag geoefend?", savePractice: "Oefening opslaan", practiceSaved: "✓ Oefening opgeslagen",
@@ -1497,7 +1514,7 @@ export default function Home() {
   // Rudiments this student actually logs most often float to the top of the picker instead of
   // making them scroll a long alphabetical-ish list every time -- "remembered" from their own
   // saved history rather than a separate counter that could drift out of sync.
-  const sortedRudiments = useMemo(() => {
+  const sortedRudimentsAll = useMemo(() => {
     const counts: Record<string, number> = {};
     Object.values(logs).forEach((log) => { (log.customItems ?? []).forEach((ci) => { counts[ci] = (counts[ci] ?? 0) + 1; }); });
     return [...PRACTICE_EXERCISES.filter((e) => e.category === "rudiments")].sort((a, b) => (counts[b.en] ?? 0) - (counts[a.en] ?? 0));
@@ -1505,7 +1522,7 @@ export default function Home() {
   // Same idea as sortedRudiments, but for Skill Trainer's "exercises" category (Push Pull, Heel
   // Down/Up, RLKK-style patterns, etc.) -- these had no way to be tagged from Quick Practice at
   // all before, only reachable by drilling into Skill Trainer itself.
-  const sortedExercises = useMemo(() => {
+  const sortedExercisesAll = useMemo(() => {
     const counts: Record<string, number> = {};
     Object.values(logs).forEach((log) => { (log.customItems ?? []).forEach((ci) => { counts[ci] = (counts[ci] ?? 0) + 1; }); });
     return [...PRACTICE_EXERCISES.filter((e) => e.category === "exercises")].sort((a, b) => (counts[b.en] ?? 0) - (counts[a.en] ?? 0));
@@ -1527,6 +1544,9 @@ export default function Home() {
   // student via admin_set_kid_mode, but it's not an enforced restriction: the student can always
   // change it back themselves.
   const [kidMode, setKidMode] = useState(false);
+  // The "what did you practise" pickers (Quick Practice, timer, metronome) only offer the Essentials to players on that library.
+  const sortedRudiments = useMemo(() => (kidMode ? sortedRudimentsAll.filter(isEssentialExercise) : sortedRudimentsAll), [sortedRudimentsAll, kidMode]);
+  const sortedExercises = useMemo(() => (kidMode ? sortedExercisesAll.filter(isEssentialExercise) : sortedExercisesAll), [sortedExercisesAll, kidMode]);
   // Age category (asked once in onboarding; stays empty for accounts that never answered) and the practice difficulty that picks the
   // rhythmic arrangement in the Skill Trainer. Difficulty starts from the age but is independent of it and can always be changed.
   const [userDataReady, setUserDataReady] = useState(false);
@@ -2107,7 +2127,7 @@ export default function Home() {
     <Metronome open={metronome} close={() => setMetronome(false)} onOpen={() => setMetronome(true)} onBannerChange={setMetroBanner} stacked={timerBanner} onAddPractice={addMetronomePractice} sharedTimer={timerRun} onUsedDuringTimer={() => addTimerCredit(0, true)} tone={metronomeTone} onToneChange={changeMetronomeTone} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     <SessionTimer pinnedExercises={pinnedExercises} open={sessionTimer} close={() => setSessionTimer(false)} onOpen={() => setSessionTimer(true)} onBannerChange={setTimerBanner} onRunChange={setTimerRun} timerCredit={timerCredit} onCreditReset={() => saveTimerCredit(null)} onAddPractice={(seconds, items, customItems, usedMetronome) => addMetronomePractice(seconds, items, customItems, usedMetronome)} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} language={language} T={T} />
     {confirmState && <ConfirmModal message={confirmState.message} onConfirm={() => { confirmState.resolve(true); setConfirmState(null); }} onCancel={() => { confirmState.resolve(false); setConfirmState(null); }} T={T} />}
-    {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onTogglePin={togglePin} onClose={() => setShowPinManager(false)} language={language} T={T} />}
+    {showPinManager && <PinManagerModal pinnedExercises={pinnedExercises} onMove={movePin} onUnpin={unpinExercise} onTogglePin={togglePin} onClose={() => setShowPinManager(false)} language={language} T={T} kidMode={kidMode} />}
     {showPointsDetail && <PointsDetailModal user={user} onClose={() => setShowPointsDetail(false)} T={T} />}
     {wonPopup.length > 0 && !showOnboarding && (() => {
       const c = wonPopup[0];
@@ -2128,11 +2148,11 @@ export default function Home() {
     {celebrationOverlay}
   </main>;
 }
-function PinManagerModal({ pinnedExercises, onMove, onUnpin, onTogglePin, onClose, language, T }: { pinnedExercises: string[]; onMove: (itemEn: string, direction: -1 | 1) => void; onUnpin: (itemEn: string) => void; onTogglePin: (itemEn: string) => void; onClose: () => void; language: Lang; T: any }) {
+function PinManagerModal({ pinnedExercises, onMove, onUnpin, onTogglePin, onClose, language, T, kidMode }: { kidMode?: boolean; pinnedExercises: string[]; onMove: (itemEn: string, direction: -1 | 1) => void; onUnpin: (itemEn: string) => void; onTogglePin: (itemEn: string) => void; onClose: () => void; language: Lang; T: any }) {
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState("");
   const canAddMore = pinnedExercises.length < MAX_PINNED_EXERCISES;
-  const availableExercises = PRACTICE_EXERCISES.filter((e) => (e.category === "rudiments" || e.category === "exercises") && !pinnedExercises.includes(e.en) && (!search.trim() || e[language as Lang].toLowerCase().includes(search.trim().toLowerCase())));
+  const availableExercises = PRACTICE_EXERCISES.filter((e) => (e.category === "rudiments" || e.category === "exercises") && (!kidMode || isEssentialExercise(e)) && !pinnedExercises.includes(e.en) && (!search.trim() || e[language as Lang].toLowerCase().includes(search.trim().toLowerCase())));
   return <div className="modal modal-center" onClick={onClose}><div className="day-summary day-editor-modal" onClick={(e) => e.stopPropagation()}>
     <div className="ds-head">
       <span className="eyebrow">{T.practiceMode.pinManagerTitle}</span>
@@ -2733,7 +2753,7 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
     return () => window.clearTimeout(h);
   }, [user?.id]);
   return <section className="page today">
-    <header className="hero home-hero"><div className="hero-text"><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><div className="hero-actions"><button type="button" className="avatar settings-avatar metro-avatar" onClick={onOpenMetronome} aria-label={T.today.metronome}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6l3.5 17.5a1 1 0 01-1 1.2h-11a1 1 0 01-1-1.2z" /><path d="M12 17.5L15.5 6.5" /><circle cx="14.2" cy="10.4" r="1.3" fill="currentColor" /></svg></button><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></div></header>
+    <header className="hero home-hero"><div className="hero-text"><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><div className="hero-actions"><button type="button" className="avatar settings-avatar metro-avatar" onClick={onOpenSessionTimer} aria-label={T.today.sessionTimer ?? "Session Timer"}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M9 2h6" /></svg></button><button type="button" className="avatar settings-avatar metro-avatar" onClick={onOpenMetronome} aria-label={T.today.metronome}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6l3.5 17.5a1 1 0 01-1 1.2h-11a1 1 0 01-1-1.2z" /><path d="M12 17.5L15.5 6.5" /><circle cx="14.2" cy="10.4" r="1.3" fill="currentColor" /></svg></button><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></div></header>
     <button type="button" className={welcome ? "start-cta cel-welcome" : "start-cta"} onClick={onGoToPractice}>
       <span className="start-cta-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg></span>
       <span className="start-cta-text"><strong>{T.today.startPracticeTitle}</strong></span>
@@ -2777,7 +2797,6 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
       {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
     </div>}
     <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} onSeeAll={onGoToPractice} onOpenExercise={onOpenExercise} />
-    <UnlocksFeed sessions={practiceSessions} limit={2} language={language} T={T} onOpenExercise={onOpenExercise} onSeeAll={onGoToProgress} titleClass="home-title" hideEmpty />
     <div className="home-pinned">
       <div className="home-pinned-head-row">
         <button type="button" className="home-title home-pinned-title" onClick={onManagePins}><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.progressPage.pinned}</button>
@@ -2806,6 +2825,7 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
     </div>
     <div className="section-title"><h2 className="home-title">{T.calendar.title}</h2></div>
     <Calendar logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={confirm} practiceSessions={practiceSessions} language={language} T={T} picker={picker} onOpenExercise={onOpenExercise} />
+    <UnlocksFeed sessions={practiceSessions} limit={2} language={language} T={T} onOpenExercise={onOpenExercise} onSeeAll={onGoToProgress} titleClass="home-title" hideEmpty />
     {showDetail && <TodayDetailModal sessions={practiceSessions.filter((x: any) => x.practiced_on === dateKey)} log={todayLog} skillSeconds={todaySkillSeconds} otherSeconds={todayOtherSeconds} otherItems={todayOtherItems} dailyGoal={dailyGoal} language={language} T={T} onClose={() => setShowDetail(false)} onOpenExercise={onOpenExercise} onEdit={() => { setShowDetail(false); setShowEditToday(true); }} onRemoveOther={async () => { if (await confirm(T.today.removeOtherConfirm)) { await onRemoveOther(); setShowDetail(false); } }} />}
     {showEditToday && <DaySummaryModal startEditing onBack={() => { setShowEditToday(false); setShowDetail(true); }} date={dateKey} log={todayLog} dailyGoal={dailyGoal} logs={logs} practiceSessions={practiceSessions} locale={localeFor(language)} language={language} T={T} onClose={() => setShowEditToday(false)} onSave={saveLogFor} onDelete={deleteLogFor} confirm={confirm} picker={picker} />}
   </section>;
@@ -3310,6 +3330,11 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
   const [openChallenge, setOpenChallenge] = useState<string | null>(null);
   const [showAllImprovements, setShowAllImprovements] = useState(false);
   const [showGroupMore, setShowGroupMore] = useState(false);
+  const [showInvite, setShowInvite] = useState(false); // the "invite to the group" sheet: the code in big letters with Copy and Share
+  const [showMembers, setShowMembers] = useState(false); // the members list (the creator can remove people from it)
+  const [showAllBoard, setShowAllBoard] = useState(false); // big groups: the board shows the top 5 and you until this is switched on
+  const [expandedRank, setExpandedRank] = useState<string[]>([]); // big groups: challenge cards that show everyone
+  const BIG_TEXT: Record<Lang, { all: (n: number) => string; less: string; you: string; few: string; many: string }> = { en: { all: (n) => `Show all ${n}`, less: "Show less", you: "You", few: "few", many: "many practised" }, nl: { all: (n) => `Toon alle ${n}`, less: "Minder tonen", you: "Jij", few: "weinig", many: "veel geoefend" }, es: { all: (n) => `Ver todos (${n})`, less: "Ver menos", you: "Tú", few: "pocos", many: "muchos practicaron" } };
   // The "tap a name" hint is only needed until someone has sent their first cheer to a person.
   const [cheerHintSeen, setCheerHintSeen] = useState(() => { try { return localStorage.getItem("cheer_hint_seen") === "1"; } catch { return false; } });
   // Tapping the Group tab again (or the group's name) opens a small list to switch between groups.
@@ -3381,9 +3406,9 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
       const yearEnd = effectiveStart ? dateKey : `${dateKey.slice(0, 4)}-12-31`;
       const totalDaysElapsed = effectiveStart ? Math.max(1, Math.round((new Date(dateKey + "T12:00:00").getTime() - new Date(yearStart + "T12:00:00").getTime()) / 86400000) + 1) : 365;
       const [logsRes, yearRes, sessionsRes, exerciseRows] = await Promise.all([
-        supabase.from("group_practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since),
-        supabase.from("group_practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd),
-        supabase.from("group_practice_sessions").select("user_id,practice_exercise_id,bpm,rating,duration_minutes,practiced_on").in("user_id", memberIds).order("practiced_on"),
+        fetchAllRows((a, b) => supabase.from("group_practice_logs").select("user_id, minutes").in("user_id", memberIds).gte("practiced_on", since).order("practiced_on").order("user_id").range(a, b)),
+        fetchAllRows((a, b) => supabase.from("group_practice_logs").select("user_id, practiced_on, minutes").in("user_id", memberIds).gte("practiced_on", yearStart).lte("practiced_on", yearEnd).order("practiced_on").order("user_id").range(a, b)),
+        fetchAllRows((a, b) => supabase.from("group_practice_sessions").select("user_id,practice_exercise_id,bpm,rating,duration_minutes,practiced_on").in("user_id", memberIds).order("practiced_on").order("user_id").range(a, b)),
         supabase.from("practice_exercises").select("id,name_en"),
       ]);
       const sums: Record<string, number> = {};
@@ -3507,7 +3532,7 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
     // days before it are outside the group's tracking window, so the calendar shouldn't show
     // activity for them even though the underlying practice_logs rows exist.
     const statsStart = groupStatsStart(group);
-    supabase.from("group_practice_logs").select("practiced_on, user_id, minutes").in("user_id", memberIds).gte("practiced_on", monthStart).lte("practiced_on", monthEnd).then(({ data }) => {
+    fetchAllRows((a, b) => supabase.from("group_practice_logs").select("practiced_on, user_id, minutes").in("user_id", memberIds).gte("practiced_on", monthStart).lte("practiced_on", monthEnd).order("practiced_on").order("user_id").range(a, b)).then(({ data }) => {
       // Same hide-admin-stats rule as the leaderboards, applied to everyone including the
       // admin's own view -- students already get this for free via RLS (they never receive
       // the admin's rows at all when hidden), but the admin's own query still gets their own
@@ -3664,12 +3689,38 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
     const { data, error } = await supabase.rpc("join_group_by_code", { p_code: code.trim() });
     const joined = data && data.length ? data[0] : null;
     if (error || !joined) { setError(T.group.inviteNotFound); setBusy(false); return; }
-    setGroups((current) => current.some((g) => g.id === joined.id) ? current : [...current, joined]);
+    // The join function only hands back five columns. The group's own settings (does it show the teacher's stats, the counting start date, weekly awards) are fetched in full here;
+    // without them the teacher was left out of the board until the next time the Group tab was opened.
+    const { data: full } = await supabase.from("groups").select("id,name,invite_code,created_at,created_by,show_teacher_stats,count_days_from_creation,weekly_awards_enabled,stats_start_date").eq("id", joined.id).maybeSingle();
+    const joinedFull = full ?? joined;
+    setGroups((current) => current.some((g) => g.id === joined.id) ? current.map((g) => (g.id === joined.id ? joinedFull : g)) : [...current, joinedFull]);
     setActiveGroupId(joined.id);
     setAddingGroup(false); setMode("start"); setCode("");
     setBusy(false);
   }
   function copyInvite() { navigator.clipboard.writeText(group.invite_code); setCopied(true); setTimeout(() => setCopied(false), 1500); }
+  const INVITE_TEXT: Record<Lang, { title: string; hint: string; copy: string; copied: string; share: string; message: (name: string, code: string) => string }> = {
+    en: { title: "Invite to your group", hint: "Share this code. Anyone who has it can join the group in DrumSkills (Group tab, then the plus).", copy: "Copy code", copied: "Copied!", share: "Share", message: (n, c) => `Join my group "${n}" on DrumSkills. Code: ${c}` },
+    nl: { title: "Nodig uit voor je groep", hint: "Deel deze code. Iedereen met de code kan de groep in DrumSkills joinen (tab Groep, dan de plus).", copy: "Kopieer code", copied: "Gekopieerd!", share: "Delen", message: (n, c) => `Doe mee met mijn groep "${n}" in DrumSkills. Code: ${c}` },
+    es: { title: "Invita a tu grupo", hint: "Comparte este código. Quien lo tenga puede unirse al grupo en DrumSkills (pestaña Grupo, luego el más).", copy: "Copiar código", copied: "¡Copiado!", share: "Compartir", message: (n, c) => `Únete a mi grupo "${n}" en DrumSkills. Código: ${c}` },
+  };
+  const MEMBERS_TEXT: Record<Lang, { title: string; teacher: string; you: string; remove: string; confirm: (n: string) => string; failed: string; members: (n: number) => string }> = {
+    en: { title: "Members", teacher: "Teacher", you: "You", remove: "Remove", confirm: (n) => `Remove ${n} from the group?`, failed: "Could not remove this member.", members: (n) => `Members (${n})` },
+    nl: { title: "Leden", teacher: "Docent", you: "Jij", remove: "Verwijderen", confirm: (n) => `${n} uit de groep verwijderen?`, failed: "Kon dit lid niet verwijderen.", members: (n) => `Leden (${n})` },
+    es: { title: "Miembros", teacher: "Profesor", you: "Tú", remove: "Quitar", confirm: (n) => `¿Quitar a ${n} del grupo?`, failed: "No se pudo quitar a este miembro.", members: (n) => `Miembros (${n})` },
+  };
+  async function removeMember(m: { id: string; name: string }) {
+    if (!group || !(await confirm(MEMBERS_TEXT[language as Lang].confirm(m.name)))) return;
+    const { error } = await supabase.rpc("remove_group_member", { p_group_id: group.id, p_user_id: m.id });
+    if (error) { setError(MEMBERS_TEXT[language as Lang].failed); return; }
+    setMembers((cur) => cur.filter((x) => x.id !== m.id));
+    setTotals((cur) => cur.filter((x) => x.id !== m.id)); setWeekTotals((cur) => cur.filter((x) => x.id !== m.id)); setDaysTotals((cur) => cur.filter((x) => x.id !== m.id));
+  }
+  async function shareInvite() {
+    const text = INVITE_TEXT[language as Lang].message(group.name, group.invite_code);
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch { /* cancelled or not possible: fall back to copying */ }
+    copyInvite();
+  }
   async function leaveGroup() {
     if (!group) return;
     if (!(await confirm(T.group.confirmLeave))) return;
@@ -3735,6 +3786,9 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 20a2 2 0 01-3.4 0" /></svg>
             {unreadCount > 0 && <i className="bell-badge">{unreadCount > 9 ? "9+" : unreadCount}</i>}
           </button>
+          <button type="button" className="group-add-btn" onClick={() => setShowInvite(true)} aria-label={INVITE_TEXT[language as Lang].title} title={INVITE_TEXT[language as Lang].title}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V3M8 7l4-4 4 4" /><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
+          </button>
           <button type="button" className="group-add-btn" onClick={() => setShowMedalBoard(true)} aria-label={T.group.medalBoard} title={T.group.medalBoard}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3" /></svg>
           </button>
@@ -3749,6 +3803,11 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
         const sum = rows.reduce((acc, r) => acc + r.total, 0);
         const R = 47, C = 2 * Math.PI * R;
         let offset = 0;
+        // Big groups (more than 7 people): the donut shows the top 5 and one grey slice for everyone else; the list shows the top 5 and you, with "Show all" to expand.
+        const big = rows.length > 7;
+        const myIdx = rows.findIndex((r) => r.id === user.id);
+        const donutRows: any[] = big ? [...rows.slice(0, 5), { id: "others", color: "#3a3f3c", total: Math.max(0, sum - rows.slice(0, 5).reduce((a, r) => a + r.total, 0)) }] : rows;
+        const shownRows = !big || showAllBoard ? rows : [...rows.slice(0, 5), ...(myIdx >= 5 ? [rows[myIdx]] : [])];
         return <div className="time-card board-card">
           <div className="board-head">
             <span className="section-label">{T.group.leaderboard}</span>
@@ -3762,9 +3821,9 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
             <div className="board-donut">
               <svg viewBox="0 0 120 120" aria-hidden="true">
                 <circle cx="60" cy="60" r={R} fill="none" stroke="#1d2220" strokeWidth="22" />
-                {sum > 0 && rows.map((r) => {
+                {sum > 0 && donutRows.map((r) => {
                   const len = (r.total / sum) * C;
-                  const seg = <circle key={r.id} cx="60" cy="60" r={R} fill="none" stroke={r.color} strokeWidth="22" strokeDasharray={`${Math.max(0, len - (rows.length > 1 ? 2.5 : 0))} ${C}`} strokeDashoffset={-offset} transform="rotate(-90 60 60)" />;
+                  const seg = <circle key={r.id} cx="60" cy="60" r={R} fill="none" stroke={r.color} strokeWidth="22" strokeDasharray={`${Math.max(0, len - (donutRows.length > 1 ? 2.5 : 0))} ${C}`} strokeDashoffset={-offset} transform="rotate(-90 60 60)" />;
                   offset += len;
                   return seg;
                 })}
@@ -3772,12 +3831,14 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
               
             </div>
             <div className="board-list">
-              {rows.map((r, idx) => <div key={r.id} className="board-row">
+              {shownRows.map((r) => <div key={r.id} className={big && rows.indexOf(r) > 4 && !showAllBoard ? "board-row board-row-me" : "board-row"}>
+                {big && <span className="board-rank">{rows.indexOf(r) + 1}</span>}
                 <i className="board-dot" style={{ background: r.color }} />
                 <span className="board-name">{r.id === user.id ? r.name : <span role="button" tabIndex={0} className="name-cheer" onClick={() => openCheerFor(r.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCheerFor(r.id); }}>{r.name}</span>}</span>
                 <span className="board-time">{formatMinutes(r.total)}</span>
                 <span className="board-days">{r.days ? `${r.days.days} / ${r.days.totalDays}` : ""}<small>{T.group.daysShort}</small></span>
               </div>)}
+              {big && <button type="button" className="board-more" onClick={() => setShowAllBoard(!showAllBoard)}>{showAllBoard ? BIG_TEXT[language as Lang].less : BIG_TEXT[language as Lang].all(rows.length)}</button>}
             </div>
           </div>
         </div>;
@@ -3836,7 +3897,12 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
             </div>
             {challengeMenuId === c.id && <div className="challenge-menu"><button type="button" className="challenge-delete" onClick={() => { setChallengeMenuId(null); deleteChallenge(c.id); }}>{T.group.deleteChallenge}</button></div>}
             {c.ranking.length <= 1 && <div className="challenge-bar-row"><div className="leaderboard-bar-track"><div className="leaderboard-bar" style={{ width: `${pct}%` }} /></div><span className="challenge-progress-label">{progressLabel}</span></div>}
-            {c.ranking.length > 1 && <div className="challenge-ranking">{c.ranking.map((r: any, idx: number) => <div key={r.id} className={r.id === user.id ? "challenge-rank-row is-me" : "challenge-rank-row"}><span className="rank-medal">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`}</span><span className="rank-name">{r.name}</span><div className="rank-bar"><div style={{ width: `${Math.min(100, (r.progress / Math.max(1, r.target)) * 100)}%` }} /></div><span className="rank-value">{c.goal_type === "minutes" ? T.group.minutesProgress(r.progress, r.target) : T.group.daysProgress(r.progress, r.target)}</span></div>)}</div>}
+            {c.ranking.length > 1 && <div className="challenge-ranking">{(() => {
+              const myRank = c.ranking.findIndex((r: any) => r.id === user.id);
+              const manyRank = c.ranking.length > 6, openRank = expandedRank.includes(c.id);
+              const list = !manyRank || openRank ? c.ranking.map((r: any, idx: number) => ({ r, idx })) : [...c.ranking.slice(0, 3).map((r: any, idx: number) => ({ r, idx })), ...(myRank >= 3 ? [{ r: c.ranking[myRank], idx: myRank }] : [])];
+              return <>{list.map(({ r, idx }: any) => <div key={r.id} className={r.id === user.id ? "challenge-rank-row is-me" : "challenge-rank-row"}><span className="rank-medal">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`}</span><span className="rank-name">{r.name}</span><div className="rank-bar"><div style={{ width: `${Math.min(100, (r.progress / Math.max(1, r.target)) * 100)}%` }} /></div><span className="rank-value">{c.goal_type === "minutes" ? T.group.minutesProgress(r.progress, r.target) : T.group.daysProgress(r.progress, r.target)}</span></div>)}{manyRank && <button type="button" className="rank-more" onClick={() => setExpandedRank((cur) => (cur.includes(c.id) ? cur.filter((x) => x !== c.id) : [...cur, c.id]))}>{openRank ? BIG_TEXT[language as Lang].less : BIG_TEXT[language as Lang].all(c.ranking.length)}</button>}</>;
+            })()}</div>}
             {isOpen && <>
             <p className="challenge-desc">{desc} · {formatDMY(c.start_date).slice(0, 5)} - {formatDMY(c.end_date).slice(0, 5)}</p>
             {stakes.length > 0 && <p className="challenge-stakes">{stakes.join("  ·  ")}</p>}
@@ -3852,11 +3918,13 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const d = i + 1; const key = formatLocalDate(year, month, d); const dayMinutes = monthLogs[key] ?? {};
             const dayMemberIds = Object.keys(dayMinutes);
+            // One coloured dot per person who practised, you first. At most 4 dots; when more people practised, a small "+" sits right beside them (the day pop-up has the full list).
+            const who = [...members].filter((m) => dayMemberIds.includes(m.id)).sort((a, b) => (a.id === user.id ? -1 : b.id === user.id ? 1 : 0));
             const className = (key === dateKey ? "is-today " : "") + (dayMemberIds.length > 0 ? "done" : "");
-            return <button key={d} className={className} onClick={() => { if (key <= dateKey) setSummaryDayKey(key); }}><span>{d}</span>{dayMemberIds.length > 0 && <div className="day-dots">{members.map((m) => dayMemberIds.includes(m.id) && <i key={m.id} style={{ background: m.color }} />)}</div>}</button>;
+            return <button key={d} className={className} onClick={() => { if (key <= dateKey) setSummaryDayKey(key); }}><span>{d}</span>{dayMemberIds.length > 0 && <div className="day-dots">{who.slice(0, 4).map((m) => <i key={m.id} style={{ background: m.color }} />)}{who.length > 4 && <svg className="day-plus" viewBox="0 0 10 10" width="9" height="9" aria-label="more"><path d="M5 1v8M1 5h8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" fill="none" /></svg>}</div>}</button>;
           })}
         </div>
-        <div className="calendar-legend">{members.map((m) => <span key={m.id}><i style={{ background: m.color }} />{m.name}{m.id === teacherId && <TeacherBadge T={T} />}</span>)}</div>
+        {members.length <= 8 && <div className="calendar-legend">{members.map((m) => <span key={m.id}><i style={{ background: m.color }} />{m.name}{m.id === teacherId && <TeacherBadge T={T} />}</span>)}</div>}
       </div></div>
       {groupImprovements.length > 0 && <div className="time-card">
         <span className="section-label">{T.admin.improvementsLabel}</span>
@@ -3903,12 +3971,36 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
         <div className="cheer-list">{CHEER_KEYS.map((c) => <button key={c.key} type="button" className="cheer-option" disabled={cheerBusy} onClick={() => sendCheer(c.key)}>{c[language as Lang]}</button>)}</div>
       </div></div>}
       {cheerToast && <div className="cheer-toast">✓ {T.cheers.sent}{lastSentCheerId && <button type="button" onClick={async () => { const id = lastSentCheerId; setLastSentCheerId(null); setCheerToast(false); if (id) await removeCheer({ id, from_user: user.id }); }}>{T.cheers.undo}</button>}</div>}
+      {showInvite && <div className="modal modal-center" onClick={() => setShowInvite(false)}><div className="day-summary invite-sheet" onClick={(e) => e.stopPropagation()}>
+        <button className="close" onClick={() => setShowInvite(false)} aria-label="Close">×</button>
+        <h2 className="edit-rating-title">{INVITE_TEXT[language as Lang].title}</h2>
+        <p className="invite-sheet-group">{group.name}</p>
+        <div className="invite-sheet-code" aria-label="Invite code">{group.invite_code}</div>
+        <p className="invite-sheet-hint">{INVITE_TEXT[language as Lang].hint}</p>
+        <button type="button" className="save" onClick={shareInvite}>{INVITE_TEXT[language as Lang].share}</button>
+        <button type="button" className="auth-switch" onClick={copyInvite}>{copied ? INVITE_TEXT[language as Lang].copied : INVITE_TEXT[language as Lang].copy}</button>
+      </div></div>}
       {showGroupSettings && <GroupSettingsModal group={group} setGroupSetting={setGroupSetting} setGroupDateMode={setGroupDateMode} onClose={() => setShowGroupSettings(false)} T={T} />}
+      {showMembers && <div className="modal modal-center" onClick={() => setShowMembers(false)}><div className="day-summary invite-sheet members-sheet" onClick={(e) => e.stopPropagation()}>
+        <button className="close" onClick={() => setShowMembers(false)} aria-label="Close">×</button>
+        <h2 className="edit-rating-title">{MEMBERS_TEXT[language as Lang].title}</h2>
+        <p className="invite-sheet-group">{group.name}</p>
+        <div className="members-list">
+          {members.map((m) => <div key={m.id} className="members-row">
+            <i className="members-dot" style={{ background: m.color }} />
+            <span className="members-name">{m.name}{m.id === user.id && <em>{MEMBERS_TEXT[language as Lang].you}</em>}{m.id === teacherId && <em className="teacher">{MEMBERS_TEXT[language as Lang].teacher}</em>}</span>
+            {user.id === teacherId && m.id !== user.id && <button type="button" className="members-remove" onClick={() => removeMember(m)}>{MEMBERS_TEXT[language as Lang].remove}</button>}
+          </div>)}
+        </div>
+      </div></div>}
+      <div className="group-bottom-actions">
+        <button type="button" className="group-members-btn" onClick={() => setShowMembers(true)}>{MEMBERS_TEXT[language as Lang].members(members.length)}</button>
+        <button type="button" className="group-leave-link" onClick={leaveGroup}>{T.group.leaveGroup}</button>
+      </div>
       <div className="group-invite-footer">
         <button type="button" className="group-more-btn" onClick={() => setShowGroupMore(!showGroupMore)}>{T.group.moreOptions} {showGroupMore ? "▴" : "▾"}</button>
         {showGroupMore && <>
           <div className="group-invite-row"><span className="section-sublabel">{T.group.inviteShort}</span><button className="invite-chip" onClick={copyInvite}>{copied ? T.group.copied : group.invite_code}</button></div>
-          <button className="leave-group-btn" onClick={leaveGroup}>{T.group.leaveGroup}</button>
           {group.created_by === user.id && <button className="delete-group-btn" onClick={deleteGroup}>{T.group.deleteGroupBtn}</button>}
         </>}
       </div>
@@ -4737,7 +4829,7 @@ function PracticeMode({ whenCelebrationsDone, onMetronomeToneChange, skillTab, s
       {query ? (matches.length ? <div className="book-list">{matches.map((item) => <ExerciseRow key={item.en} item={item} />)}</div> : <p className="hint">{T.practiceMode.skillNoMatch}</p>)
         : skillTab === "rudiments" && kidMode ? <>
           {/* Essentials has so few rudiments that category cards just add a tap, so it shows one plain list (easiest tier first). */}
-          <p className="category-list-intro">{T.practiceMode.rudimentListIntro}</p>
+          <p className="category-list-hint">{T.practiceMode.rudimentListIntro}</p>
           <div className="book-list">{[...allRudiments].sort((a, b) => RUDIMENT_TIERS.indexOf(a.tier as any) - RUDIMENT_TIERS.indexOf(b.tier as any)).map((item) => <ExerciseRow key={item.en} item={item} />)}</div>
         </>
         : skillTab === "rudiments" ? <div className="tier-select-list">
@@ -5011,11 +5103,10 @@ function PracticeMode({ whenCelebrationsDone, onMetronomeToneChange, skillTab, s
       <div className="back-row"><div className="title-block"><p className="eyebrow">{T.practiceMode.title}</p><h2>{label} · {bpm} BPM</h2></div></div>
       <div className="modal modal-center"><div className="day-summary rate-window">
         {showIssues && selectedRating
-          ? <HoldBackSheet language={language as Lang} rating={selectedRating} ratingLabel={RATING_LABEL[selectedRating]} issues={sessionIssues} setIssues={setSessionIssues} note={sessionNote} setNote={setSessionNote} onSave={() => submitRating(selectedRating)} onSkip={() => submitRating(selectedRating, true)} onBack={() => setShowIssues(false)} />
-          : <RatingSheet language={language as Lang} subtitle={`${label} · ${bpm} BPM`} labels={RATING_LABEL} selected={selectedRating} goesOn={!!selectedRating && RATINGS_NEEDING_NOTE.includes(selectedRating)} onSelect={handleRatingTap} onSave={() => { if (!selectedRating) return; if (RATINGS_NEEDING_NOTE.includes(selectedRating)) setShowIssues(true); else submitRating(selectedRating); }} onSkip={skipRating} />}
+          ? <HoldBackSheet language={language as Lang} rating={selectedRating} ratingLabel={RATING_LABEL[selectedRating]} issues={sessionIssues} setIssues={setSessionIssues} note={sessionNote} setNote={setSessionNote} onSave={() => submitRating(selectedRating)} onSkip={() => submitRating(selectedRating, true)} onBack={() => setShowIssues(false)} busy={ratingBusy} />
+          : <RatingSheet language={language as Lang} subtitle={`${label} · ${bpm} BPM`} labels={RATING_LABEL} selected={selectedRating} goesOn={!!selectedRating && RATINGS_NEEDING_NOTE.includes(selectedRating)} onSelect={handleRatingTap} onSave={() => { if (!selectedRating) return; if (RATINGS_NEEDING_NOTE.includes(selectedRating)) setShowIssues(true); else submitRating(selectedRating); }} onSkip={skipRating} busy={ratingBusy} />}
       </div></div>
-      {ratingBusy && <div className="cel-hold" role="status" aria-live="polite"><LoadingMetronome delayMs={250} /></div>}
-    </section>;
+          </section>;
   }
   return null;
 }
@@ -5119,7 +5210,7 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
       <div className="sx-row sx-stack">
         <span className="sx-label sx-caps">{T.settings.dobLabel}</span>
         {currentBand ? <>
-          {dobShown && <div className="dob-row"><input type="date" className="dob-input dob-locked" aria-label={T.settings.dobLabel} value={dobShown} disabled readOnly /></div>}
+          {dobShown && <div className="dob-row"><div className="dob-shown" aria-label={T.settings.dobLabel}>{new Date(dobShown + "T12:00:00").toLocaleDateString(localeFor(currentLanguage), { day: "numeric", month: "short", year: "numeric" })}</div></div>}
           <span className="sx-sub">{T.settings.dobSaved}</span>
         </> : <>
           <div className="dob-row"><DobPicker value={dobInput} labels={DOB_LABELS[currentLanguage]} onChange={(v) => { setDobInput(v); setDobMsg(""); }} />
@@ -5235,6 +5326,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   const [beatsPerBar, setBeatsPerBar] = useState(4);
   const [subdivision, setSubdivision] = useState(1);
   const [activeBeat, setActiveBeat] = useState(0);
+  const [pulseKey, setPulseKey] = useState(0); // goes up on every beat: restarts the ring and flash around the BPM circle, exactly on the click
   const [elapsed, setElapsed] = useState(0);
   const [showAddPrompt, setShowAddPrompt] = useState(false);
   const [addPromptSeconds, setAddPromptSeconds] = useState(0);
@@ -5492,7 +5584,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       if (isBeat) {
         const beatIndex = beatNumber % beatsPerMeasure;
         const delayMs = Math.max(0, (nextNoteTimeRef.current - ctx.currentTime) * 1000);
-        beatTimeoutsRef.current.push(window.setTimeout(() => setActiveBeat(beatIndex), delayMs));
+        beatTimeoutsRef.current.push(window.setTimeout(() => { setActiveBeat(beatIndex); setPulseKey((k) => k + 1); }, delayMs));
       }
       beatRef.current += 1;
       nextNoteTimeRef.current += (60 / bpmRef.current) / steps;
@@ -5809,7 +5901,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       <div className="add-time-buttons"><button className="discard" onClick={discardTime}>{T.metronome.notNow}</button><button className="add" onClick={addTime} disabled={addPromptSeconds <= 0 || (addItems.length === 0 && addCustomItems.length === 0)}>{T.sessionTimer.addToToday}</button>
       </div>
     </div> : <>
-      <div className={playing && !paused ? "pulse playing" : "pulse"} style={{ animationDuration: `${60 / bpm}s` }}><span>{bpm}</span><small>BPM</small></div>
+      <div className={playing && !paused ? "pulse playing" : "pulse"}>{playing && !paused && pulseKey > 0 && <>{activeBeat === 0 && <><i key={`r${pulseKey}`} className="pulse-ring down" aria-hidden="true" /><i key={`w${pulseKey}`} className="pulse-ring down w2" aria-hidden="true" /></>}<i key={`f${pulseKey}`} className={activeBeat === 0 ? "pulse-flash down" : "pulse-flash"} aria-hidden="true" /></>}<span>{bpm}</span><small>BPM</small></div>
       <div className="beat-dots">{Array.from({ length: beatsPerMeasure }).map((_, i) => <i key={i} className={playing && activeBeat === i ? "beat-dot active" : "beat-dot"} />)}</div>
       <div className="metronome-timer"><strong>{elapsedLabel}</strong></div>
       <input className="range" type="range" min="40" max={exerciseEn ? Math.max(240, ...bpmLevelsFor(exerciseEn)) : 240} value={bpm} onChange={e => setBpm(+e.target.value)}/>
@@ -6179,28 +6271,8 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
   // Every user's raw daily logs, fetched once -- admin already has read access to everyone's
   // practice_logs (see the existing admin RLS policy), so month/year totals are just a client-side
   // sum over a date range instead of needing a second parameterized RPC.
-  const [allLogs, setAllLogs] = useCachedState<{ user_id: string; practiced_on: string; minutes: number }[] | null>(user?.id, "admin_allLogs", null);
-  useEffect(() => {
-    // Supabase caps a single request at 1000 rows -- across every user's logs combined, that
-    // cap can be hit well before any one user's full history is covered, which silently
-    // truncated Month/Year totals for whichever users' rows fell past row 1000 (their "All"
-    // total, computed server-side by admin_list_users(), stayed correct while Month/Year,
-    // computed client-side from this truncated list, came out wrong). Page through in batches
-    // of 1000 until a batch comes back short, so the full table is always loaded.
-    async function loadAllLogs() {
-      const PAGE_SIZE = 1000;
-      let all: { user_id: string; practiced_on: string; minutes: number }[] = [];
-      let from = 0;
-      while (true) {
-        const { data } = await supabase.from("practice_logs").select("user_id,practiced_on,minutes").range(from, from + PAGE_SIZE - 1);
-        all = all.concat(data ?? []);
-        if (!data || data.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
-      }
-      setAllLogs(all);
-    }
-    loadAllLogs();
-  }, []);
+  // Month / Last month / Year totals come from one small server call (admin_range_totals) instead of downloading every practice log of every user.
+  const [rangeData, setRangeData] = useState<{ key: string; map: Record<string, { minutes: number; logs: number }> } | null>(null);
   // Cross-student speed comparison: which exercise's Skill Trainer sessions to chart, and the
   // raw sessions (every student) for that one exercise -- re-fetched only when the exercise
   // picker changes, so switching exercises doesn't require reloading everything.
@@ -6649,11 +6721,20 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
   // Last Month is the only range with an upper bound too (it must stop at the end of that
   // month, not run into the current one) -- every other range already means "...through today".
   const rangeEndKey = statsRange === "lastMonth" ? monthStartKey : null;
-  const rangedUsers = rangeStartKey && allLogs
-    ? (users ?? []).map((u) => {
-        const inRangeLogs = allLogs.filter((l) => l.user_id === u.id && l.practiced_on >= rangeStartKey && (!rangeEndKey || l.practiced_on < rangeEndKey));
-        return { ...u, total_minutes: inRangeLogs.reduce((sum, l) => sum + l.minutes, 0), total_logs: inRangeLogs.length };
-      })
+  const rangeKey = rangeStartKey ? `${rangeStartKey}|${rangeEndKey ?? ""}` : "";
+  useEffect(() => {
+    if (!rangeStartKey) return;
+    let alive = true;
+    supabase.rpc("admin_range_totals", { p_from: rangeStartKey, p_to: rangeEndKey }).then(({ data, error }: any) => {
+      if (!alive || error) return;
+      const map: Record<string, { minutes: number; logs: number }> = {};
+      (data ?? []).forEach((r: any) => { map[r.user_id] = { minutes: Number(r.total_minutes), logs: Number(r.total_logs) }; });
+      setRangeData({ key: rangeKey, map });
+    });
+    return () => { alive = false; };
+  }, [rangeKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rangedUsers = rangeStartKey && rangeData && rangeData.key === rangeKey
+    ? (users ?? []).map((u) => ({ ...u, total_minutes: rangeData.map[u.id]?.minutes ?? 0, total_logs: rangeData.map[u.id]?.logs ?? 0 }))
     : (users ?? []);
   const statsUsers = excludeSelf && user ? rangedUsers.filter((u) => u.id !== user.id) : rangedUsers;
   const totalUsers = statsUsers.length;

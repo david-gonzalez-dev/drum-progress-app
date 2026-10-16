@@ -38,6 +38,7 @@ function Overlay({ item, getAudio, language, onDone, silent }: { item: Item; get
       env.$("bg").setAttribute("fill", adult ? "url(#cel-abg)" : "#111111");
       env.glint(-0.2); env.setFlash(0);
       const st = buildScene(item, env);
+      st.render(0); // draw the very first frame (everything hidden) at once: until the sound is ready the freshly built shapes would otherwise show in their finished state for a moment
       END = st.END;
       setContText(st.cont ?? null); setNoCont(!!st.noContinue);
       // The shared audio context is woken up in the tap that led here; if it is still asleep, give it a moment before the sound starts.

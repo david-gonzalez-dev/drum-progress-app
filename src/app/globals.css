@@ -2099,3 +2099,64 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .shell.has-two-banners,html.native .shell.has-two-banners{padding-top:calc(112px + env(safe-area-inset-top))}
 /* No animation on the timer / metronome card icon (it flickered) */
 .session-timer-banner svg,.session-timer-banner.finished svg{animation:none}
+
+/* Date of birth once saved: plain text in a field-shaped box (a disabled iPhone / iPad date input draws its text too close to the top edge) */
+.dob-shown{width:100%;box-sizing:border-box;padding:13px 16px;border-radius:14px;border:1.5px solid #303632;background:#1c211f;color:#8d9690;font:600 17px/1.3 'DM Sans'}
+
+/* The BPM circle in the Metronome: it reacts to every real beat (a ring spreads out and a flash lights it, stronger on the first beat), instead of a timer of its own that drifts away from the beat dots */
+.pulse{position:relative}
+.pulse.playing{animation:none}
+.pulse>span,.pulse>small{position:relative;z-index:1}
+.pulse-ring{position:absolute;inset:-1px;border-radius:50%;border:2px solid #ff6b1a;pointer-events:none;animation:pulseRing .55s ease-out forwards}
+.pulse-ring.down{border-color:#ffb877;border-width:3px;animation-name:pulseRingDown}
+.pulse-flash{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(255,107,26,.5),rgba(255,107,26,0) 72%);pointer-events:none;animation:pulseFlash .3s ease-out forwards}
+.pulse-flash.down{background:radial-gradient(circle,rgba(255,183,119,.7),rgba(255,107,26,0) 75%)}
+@keyframes pulseRing{from{transform:scale(1);opacity:.85}to{transform:scale(1.28);opacity:0}}
+@keyframes pulseRingDown{from{transform:scale(1);opacity:1}to{transform:scale(1.55);opacity:0}}
+@keyframes pulseFlash{from{opacity:1;transform:scale(1.04)}to{opacity:0;transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){.pulse-ring,.pulse-flash{animation:none;opacity:0}}
+/* Waves only on beat 1: two rings, the second a moment later and a little wider. The other beats only flash. */
+.pulse-ring.w2{animation-name:pulseRingWave;animation-delay:.12s;animation-fill-mode:both;border-width:2px}
+@keyframes pulseRingWave{from{transform:scale(1);opacity:.75}to{transform:scale(1.85);opacity:0}}
+
+/* Group: invite sheet (the code in big letters, Share and Copy) */
+.invite-sheet{text-align:center}
+.invite-sheet .edit-rating-title{margin-bottom:2px}
+.invite-sheet-group{margin:0 0 14px;color:#9aa19d;font-size:15px}
+.invite-sheet-code{margin:0 auto 12px;padding:14px 18px;border-radius:16px;border:1px solid #472315;background:#1c130d;color:#ff9b50;font:800 44px/1 'Barlow Condensed';letter-spacing:6px;user-select:all;-webkit-user-select:all;word-break:break-all}
+.invite-sheet-hint{margin:0 0 16px;color:#b7aea6;font-size:14px;line-height:1.45}
+
+/* Group: Members and Leave group are always visible at the bottom */
+.group-bottom-actions{display:flex;flex-direction:column;align-items:center;gap:12px;margin:26px 0 4px}
+.group-members-btn{width:100%;border:1px solid #3a3f3c;background:#171b19;color:#e7ebe8;border-radius:14px;padding:13px 16px;font:700 16px 'DM Sans'}
+.group-leave-link{background:none;border:0;color:#e2877d;font:600 15px 'DM Sans';padding:6px 4px}
+.members-sheet{text-align:left}
+.members-sheet .edit-rating-title,.members-sheet .invite-sheet-group{text-align:center}
+.members-list{display:flex;flex-direction:column;max-height:52vh;overflow:auto}
+.members-row{display:flex;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid #262b28}
+.members-row:first-child{border-top:0}
+.members-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.members-name{flex:1;min-width:0;font:600 17px 'DM Sans';color:#f0f2ef;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.members-name em{font:600 12px 'DM Sans';font-style:normal;color:#9aa19d;border:1px solid #3a3f3c;border-radius:99px;padding:2px 8px}
+.members-name em.teacher{color:#ff9b50;border-color:#5a3418;background:#2a170a}
+.members-remove{flex-shrink:0;border:1px solid #5a2e28;background:#2a1512;color:#e2877d;border-radius:10px;padding:7px 12px;font:700 14px 'DM Sans'}
+
+/* The Save / Next button on the rating sheets turns into a loading button that fills up while the session is saved (instead of a separate loader on top) */
+.feel-save{position:relative;overflow:hidden}
+.feel-save-label{position:relative;z-index:1;font-style:normal;display:inline-flex;align-items:center;gap:8px}
+.feel-save.busy,.feel-save.busy:disabled{opacity:1;background:#3a2316;color:#fff4ea}
+.feel-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#ff6a2b,#ff9b50);animation:feelFill 2.4s cubic-bezier(.15,.7,.2,1) forwards}
+@keyframes feelFill{to{width:94%}}
+@media (prefers-reduced-motion: reduce){.feel-fill{animation:none;width:60%}}
+
+/* Big groups (10 to 30 people) */
+.board-rank{width:18px;flex-shrink:0;text-align:right;color:#7d837f;font:700 13px 'DM Sans'}
+.board-row-me{border-top:1px dashed #3a3f3c;margin-top:4px;padding-top:6px}
+.board-more,.rank-more{display:block;margin:8px auto 0;background:none;border:0;color:#ff9b50;font:700 14px 'DM Sans';padding:6px 10px}
+
+/* Calendar: at most 4 dots, then a small "+" right beside them when more people practised */
+.day-dots .day-plus{width:9px;height:9px;flex-shrink:0;color:#e0cbbd;align-self:center;margin-left:1px}
+.day-dots{align-items:center}
+
+/* The second line on the Essentials rudiment list ("Unlock 2 tempos to open the next rudiment") is a quiet hint under the highlighted rule, not a second box */
+.category-list-hint{margin:2px 2px 14px;color:#9aa19d;font:500 14px/1.4 'DM Sans'}
