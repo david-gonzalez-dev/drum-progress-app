@@ -2367,3 +2367,9 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 /* Group board: names and times in regular weight, not bold */
 .board-name{font-weight:400}
 .board-time{font-weight:400}
+
+/* A very long name in a chip is cut with "..." instead of making the card huge */
+.detail-chips em{max-width:100%;min-width:0;display:inline-flex;align-items:center;box-sizing:border-box}
+.detail-chips em .chip-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.today-breakdown-block .detail-chips em{max-width:calc(50% - 4px)}
+.today-breakdown-block .detail-chips .more-chip{flex-shrink:0}

@@ -219,12 +219,12 @@ function PracticedChip({ item, skill, language, onOpen }: { item: string; skill:
   // A Skill Trainer item can open its exercise page (on Home); other chips are just labels.
   if (skill && onOpen) return <em className="skill-chip skill-chip-link" role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>
-    {practicedItemLabel(item, language)}
+    <span className="chip-text">{practicedItemLabel(item, language)}</span>
     <svg className="skill-chip-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
   </em>;
   return <em className={skill ? "skill-chip" : undefined}>
     {skill && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>}
-    {practicedItemLabel(item, language)}
+    <span className="chip-text">{practicedItemLabel(item, language)}</span>
   </em>;
 }
 // Time practised in the Skill Trainer is locked: it is part of the day's total, but nobody can lower the total below it
