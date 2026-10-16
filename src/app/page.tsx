@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { enqueueTick, dueEvent, type StrokeEvent } from "./stroke-guide";
@@ -3256,6 +3257,12 @@ function useCachedState<T>(uid: string | undefined, key: string, initial: T) {
   useEffect(() => { if (uid) (groupViewCache[uid] ??= {})[key] = v; }, [uid, key, v]);
   return [v, setV] as const;
 }
+const WEEK_TEXT: Record<Lang, { title: string; month: string; close: string }> = {
+  en: { title: "This week", month: "Month", close: "Close" },
+  nl: { title: "Deze week", month: "Maand", close: "Sluiten" },
+  es: { title: "Esta semana", month: "Mes", close: "Cerrar" },
+};
+
 function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T, cheers, cheersSeenAt, onCheersSeen, onCheersChanged, groupPickerKey }: { groupPickerKey: number; cheers: Cheer[]; cheersSeenAt: string; onCheersSeen: () => void; onCheersChanged: () => void; onGroupCount?: (n: number) => void; user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
   const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [groups, setGroups] = useCachedState<any[]>(user?.id, "groups", []); const [activeGroupId, setActiveGroupId] = useCachedState<string | null>(user?.id, "activeGroupId", null); const [addingGroup, setAddingGroup] = useState(false); const [busy, setBusy] = useState(false);
   // New-group setup defaults -- practice tracking defaults to "from today" (matching the
@@ -3277,6 +3284,7 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
   const [groupImprovements, setGroupImprovements] = useCachedState<{ key: string; name: string; exerciseEn: string; bpm: number; date: string }[]>(user?.id, "groupImprovements", []);
   const [weeklyAwards, setWeeklyAwards] = useCachedState<{ icon: AwardIconId; title: string; leader: { id: string; name: string } | null; hasValue: boolean; value: string }[]>(user?.id, "weeklyAwards", []);
   const [showMedalBoard, setShowMedalBoard] = useState(false);
+  const [showMonth, setShowMonth] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [viewDate, setViewDate] = useState(() => new Date());
   const [monthLogs, setMonthLogs] = useCachedState<Record<string, Record<string, number>>>(user?.id, "monthLogs", {});
@@ -3331,6 +3339,8 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
   const [showAllImprovements, setShowAllImprovements] = useState(false);
   const [showGroupMore, setShowGroupMore] = useState(false);
   const [showInvite, setShowInvite] = useState(false); // the "invite to the group" sheet: the code in big letters with Copy and Share
+  const [showGroupMenu, setShowGroupMenu] = useState(false); // the one "..." button in the header that opens the rest
+  const MENU_TEXT: Record<Lang, { menu: string; newGroup: string }> = { en: { menu: "Group menu", newGroup: "Create or join a group" }, nl: { menu: "Groepsmenu", newGroup: "Groep maken of joinen" }, es: { menu: "Menú del grupo", newGroup: "Crear o unirse a un grupo" } };
   const [showMembers, setShowMembers] = useState(false); // the members list (the creator can remove people from it)
   const [showAllBoard, setShowAllBoard] = useState(false); // big groups: the board shows the top 5 and you until this is switched on
   const [expandedRank, setExpandedRank] = useState<string[]>([]); // big groups: challenge cards that show everyone
@@ -3525,8 +3535,9 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
   useEffect(() => {
     if (!group || !members.length) { setMonthLogs({}); return; }
     const year = viewDate.getFullYear(); const month = viewDate.getMonth();
-    const monthStart = formatLocalDate(year, month, 1);
-    const monthEnd = formatLocalDate(year, month, new Date(year, month + 1, 0).getDate());
+    const monthStart = formatLocalDate(year, month, 1) < weekStartKey ? formatLocalDate(year, month, 1) : weekStartKey;
+    const monthEndRaw = formatLocalDate(year, month, new Date(year, month + 1, 0).getDate());
+    const monthEnd = monthEndRaw > shiftDateKey(weekStartKey, 6) ? monthEndRaw : shiftDateKey(weekStartKey, 6);
     const memberIds = members.map((m) => m.id);
     // Same start date the leaderboards use (custom date, or the group's own creation date) --
     // days before it are outside the group's tracking window, so the calendar shouldn't show
@@ -3786,27 +3797,27 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 20a2 2 0 01-3.4 0" /></svg>
             {unreadCount > 0 && <i className="bell-badge">{unreadCount > 9 ? "9+" : unreadCount}</i>}
           </button>
-          <button type="button" className="group-add-btn" onClick={() => setShowInvite(true)} aria-label={INVITE_TEXT[language as Lang].title} title={INVITE_TEXT[language as Lang].title}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V3M8 7l4-4 4 4" /><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
-          </button>
-          <button type="button" className="group-add-btn" onClick={() => setShowMedalBoard(true)} aria-label={T.group.medalBoard} title={T.group.medalBoard}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3" /></svg>
-          </button>
-          {user.id === teacherId && <button type="button" className="group-add-btn" onClick={() => setShowGroupSettings(true)} aria-label={T.group.groupSettings} title={T.group.groupSettings}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>
-          </button>}
-          <button type="button" className="group-add-btn" onClick={() => { setAddingGroup(true); setMode("start"); }}>+</button>
+          <div className="group-menu-wrap">
+            <button type="button" className="group-add-btn group-menu-btn" onClick={() => setShowGroupMenu(!showGroupMenu)} aria-haspopup="menu" aria-expanded={showGroupMenu} aria-label={MENU_TEXT[language as Lang].menu} title={MENU_TEXT[language as Lang].menu}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
+            </button>
+            {showGroupMenu && <>
+              <div className="group-menu-scrim" onClick={() => setShowGroupMenu(false)} />
+              <div className="group-menu" role="menu">
+                                <button type="button" role="menuitem" className="group-menu-item" onClick={() => { setShowGroupMenu(false); setShowInvite(true); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V3M8 7l4-4 4 4" /><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg><span>{INVITE_TEXT[language as Lang].title}</span></button>
+                {user.id === teacherId && <button type="button" role="menuitem" className="group-menu-item" onClick={() => { setShowGroupMenu(false); setShowGroupSettings(true); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg><span>{(() => { const t = String(T.group.groupSettings); return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase(); })()}</span></button>}
+                <button type="button" role="menuitem" className="group-menu-item" onClick={() => { setShowGroupMenu(false); setAddingGroup(true); setMode("start"); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg><span>{MENU_TEXT[language as Lang].newGroup}</span></button>
+              </div>
+            </>}
+          </div>
         </div>
       </header>
       {(() => {
         const rows = (timeView === "week" ? weekTotals : totals).map((m) => ({ ...m, days: daysTotals.find((d) => d.id === m.id) }));
         const sum = rows.reduce((acc, r) => acc + r.total, 0);
-        const R = 47, C = 2 * Math.PI * R;
-        let offset = 0;
         // Big groups (more than 7 people): the donut shows the top 5 and one grey slice for everyone else; the list shows the top 5 and you, with "Show all" to expand.
         const big = rows.length > 7;
         const myIdx = rows.findIndex((r) => r.id === user.id);
-        const donutRows: any[] = big ? [...rows.slice(0, 5), { id: "others", color: "#3a3f3c", total: Math.max(0, sum - rows.slice(0, 5).reduce((a, r) => a + r.total, 0)) }] : rows;
         const shownRows = !big || showAllBoard ? rows : [...rows.slice(0, 5), ...(myIdx >= 5 ? [rows[myIdx]] : [])];
         return <div className="time-card board-card">
           <div className="board-head">
@@ -3818,18 +3829,6 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
           </div>
           {members.length > 1 && !cheerHintSeen && <span className="section-sublabel cheer-hint">{T.cheers.tapNameHint}</span>}
           <div className="board-body">
-            <div className="board-donut">
-              <svg viewBox="0 0 120 120" aria-hidden="true">
-                <circle cx="60" cy="60" r={R} fill="none" stroke="#1d2220" strokeWidth="22" />
-                {sum > 0 && donutRows.map((r) => {
-                  const len = (r.total / sum) * C;
-                  const seg = <circle key={r.id} cx="60" cy="60" r={R} fill="none" stroke={r.color} strokeWidth="22" strokeDasharray={`${Math.max(0, len - (donutRows.length > 1 ? 2.5 : 0))} ${C}`} strokeDashoffset={-offset} transform="rotate(-90 60 60)" />;
-                  offset += len;
-                  return seg;
-                })}
-              </svg>
-              
-            </div>
             <div className="board-list">
               {shownRows.map((r) => <div key={r.id} className={big && rows.indexOf(r) > 4 && !showAllBoard ? "board-row board-row-me" : "board-row"}>
                 {big && <span className="board-rank">{rows.indexOf(r) + 1}</span>}
@@ -3843,6 +3842,11 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
           </div>
         </div>;
       })()}
+      <button type="button" className="hof-card" onClick={() => setShowMedalBoard(true)}>
+        <span className="hof-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3" /></svg></span>
+        <span className="hof-text"><strong>{T.group.medalBoard}</strong></span>
+        <svg className="hof-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+      </button>
       <div className="challenges-section">
         <div className="section-head"><span className="section-label">{T.group.challenges}</span>{user.id === teacherId && <button onClick={() => setShowNewChallenge(!showNewChallenge)}>{showNewChallenge ? T.group.cancel : T.group.newChallenge}</button>}</div>
         {showNewChallenge && <div className="challenge-form">
@@ -3888,7 +3892,7 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
           const stakes = [c.reward && `${T.group.reward} ${c.reward}`, c.punishment && `${T.group.punishment} ${c.punishment}`].filter(Boolean);
           const isOpen = openChallenge === c.id;
           return <div key={c.id} className="challenge-card challenge-compact">
-            <div className="challenge-head challenge-head-tap" role="button" tabIndex={0} aria-expanded={isOpen} onClick={() => setOpenChallenge(isOpen ? null : c.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setOpenChallenge(isOpen ? null : c.id); }}><h3>{c.name}{c.joined && <i className="challenge-tick" role="img" aria-label={T.group.joined} title={T.group.joined}>✓</i>}</h3>
+            <div className="challenge-head challenge-head-tap" role="button" tabIndex={0} aria-expanded={isOpen} onClick={() => setOpenChallenge(isOpen ? null : c.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setOpenChallenge(isOpen ? null : c.id); }}><h3>{c.name}</h3>
               <div className="challenge-head-right">
                 {!c.joined ? <button type="button" className="challenge-join-chip" onClick={(e) => { e.stopPropagation(); joinChallenge(c.id); }}>{T.group.joinChallengeBtn}</button> : null}
                 {c.created_by === user.id && <button type="button" className="challenge-more" aria-label="Menu" onClick={(e) => { e.stopPropagation(); setChallengeMenuId(challengeMenuId === c.id ? null : c.id); }}>⋯</button>}
@@ -3910,7 +3914,23 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
           </div>;
         })}
       </div>
-      <div className="group-progress"><div className="calendar-card">
+      <div className="group-progress"><div className="week-card">
+        <div className="week-head"><span className="section-label">{WEEK_TEXT[language as Lang].title}</span><button type="button" className="week-month-link" onClick={() => setShowMonth(true)}>{WEEK_TEXT[language as Lang].month}</button></div>
+        <div className="week-strip">
+          {Array.from({ length: 7 }).map((_, i) => {
+            const key = shiftDateKey(weekStartKey, i);
+            const who = members.filter((m) => Object.keys(monthLogs[key] ?? {}).includes(m.id)).sort((x, y) => (x.id === user.id ? -1 : y.id === user.id ? 1 : 0));
+            const future = key > dateKey;
+            return <button key={key} type="button" className={"week-day" + (key === dateKey ? " is-today" : "") + (future ? " is-future" : "")} onClick={() => { if (!future) setSummaryDayKey(key); }}>
+              <small>{T.group.weekdaysMon[i]}</small>
+              <b>{Number(key.slice(8))}</b>
+              <span className="week-avatars">{who.slice(0, 3).map((m) => <i key={m.id} className="week-avatar" style={{ background: m.color }} title={m.name}>{(m.name || "?").trim().charAt(0).toUpperCase()}</i>)}{who.length > 3 && <i className="week-avatar week-more">+{who.length - 3}</i>}</span>
+            </button>;
+          })}
+        </div>
+      </div></div>
+      {showMonth && <div className="modal modal-center" onClick={() => setShowMonth(false)}><div className="month-pop" onClick={(e) => e.stopPropagation()}>
+      <div className="calendar-card">
         <div className="cal-head"><button onClick={() => setViewDate(new Date(year, month - 1, 1))}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => setViewDate(new Date(year, month + 1, 1))}>›</button></div>
         <div className="week">{T.group.weekdaysMon.map((x: string, i: number) => <span key={i}>{x}</span>)}</div>
         <div className="days">
@@ -3925,7 +3945,9 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
           })}
         </div>
         {members.length <= 8 && <div className="calendar-legend">{members.map((m) => <span key={m.id}><i style={{ background: m.color }} />{m.name}{m.id === teacherId && <TeacherBadge T={T} />}</span>)}</div>}
-      </div></div>
+      </div>
+        <button type="button" className="week-close" onClick={() => setShowMonth(false)}>{WEEK_TEXT[language as Lang].close}</button>
+      </div></div>}
       {groupImprovements.length > 0 && <div className="time-card">
         <span className="section-label">{T.admin.improvementsLabel}</span>
         <div className="admin-log-list admin-log-list-compact">
@@ -4342,16 +4364,32 @@ function Progress({ onOpenExercise, onOpenSettings, onRankUp, pointsOnly, practi
       <span className="section-label">{T.progressPage.yourPractice}</span>
       {/* Tile grid: the bigger the share of your time, the bigger the tile (most practised first) */}
       <div className="ptiles">
-        {(showAllPractice ? totals : totals.slice(0, VISIBLE_LIMIT)).map((t, idx) => {
+        {totals.slice(0, VISIBLE_LIMIT).map((t, idx) => {
           const sum = totals.reduce((n, x) => n + x.minutes, 0) || 1;
           return <div key={t.en} className={`ptile ptile-${Math.min(idx, 5)}`} style={{ "--a": String(Math.max(0.1, 0.34 - idx * 0.05)) } as React.CSSProperties}>
             <span className="ptile-rank">{idx + 1}</span>
             <span className="ptile-name">{t.label}</span>
             <span className="ptile-foot"><b>{formatMinutes(t.minutes)}</b><em>{Math.round((t.minutes / sum) * 100)}%</em></span>
+            <i className="ptile-bar" aria-hidden="true"><b style={{ width: `${Math.max(3, Math.round((t.minutes / sum) * 100))}%` }} /></i>
           </div>;
         })}
       </div>
-      {totals.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllPractice(!showAllPractice)}>{showAllPractice ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
+      {totals.length > VISIBLE_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllPractice(true)}>{T.progressPage.seeMore}</button>}
+      {showAllPractice && <div className="modal modal-center" onClick={() => setShowAllPractice(false)}>
+        <div className="sk-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="sk-modal-head"><h3>{T.progressPage.yourPractice}</h3><button type="button" className="sk-modal-close" onClick={() => setShowAllPractice(false)} aria-label="Close">×</button></div>
+          <div className="sk-modal-body pm-list">{totals.map((t, idx) => {
+            const sum = totals.reduce((n, x) => n + x.minutes, 0) || 1;
+            const pct = Math.round((t.minutes / sum) * 100);
+            return <div key={t.en} className="pm-row">
+              <span className="pm-rank">{idx + 1}</span>
+              <span className="pm-name">{t.label}</span>
+              <span className="pm-val"><b>{formatMinutes(t.minutes)}</b><em>{pct}%</em></span>
+              <i className="pm-bar" aria-hidden="true"><b style={{ width: `${Math.max(3, pct)}%` }} /></i>
+            </div>;
+          })}</div>
+        </div>
+      </div>}
     </div>}
   </Wrapper>;
 }
@@ -5248,7 +5286,7 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
         if (res.ok) setPushOn(true); else setPushMsg(res.reason === "denied" ? T.settings.pushBlocked : T.settings.pushError);
       }}><span className="sx-switch-text"><span className="sx-label">{T.settings.pushLabel}</span><span className="sx-sub">{pushMsg || T.settings.pushDesc}</span></span><i className={pushOn ? "sx-switch on" : "sx-switch"}><b /></i></button>}
     </div></>}
-    {(saved || saveBusy || (settingsLoaded && autoBase.current !== null && autoSnap !== autoBase.current)) && <div className="sx-savebar"><SaveButton saved={saved} disabled={!name.trim() || saveBusy} onClick={async () => { autoBase.current = autoSnap; setSaveBusy(true); try { await saveSettings(); } finally { setSaveBusy(false); } }} label={T.settings.saveBtn} savedLabel={T.settings.saved} peekAudio={peekSharedAudio} /></div>}
+    {(saved || saveBusy || (settingsLoaded && autoBase.current !== null && autoSnap !== autoBase.current)) && (typeof document !== "undefined" ? createPortal(<div className="sx-savebar"><SaveButton saved={saved} disabled={!name.trim() || saveBusy} onClick={async () => { autoBase.current = autoSnap; setSaveBusy(true); try { await saveSettings(); } finally { setSaveBusy(false); } }} label={T.settings.saveBtn} savedLabel={T.settings.saved} peekAudio={peekSharedAudio} /></div>, document.body) : null)}
     <p className="sx-title">{T.settings.accountSection}</p>
     <div className="sx-card">
       <button type="button" className="sx-row sx-link" onClick={() => setOpenPanel(openPanel === "email" ? null : "email")}><span className="sx-label">{T.settings.changeEmail}</span>{chev}</button>

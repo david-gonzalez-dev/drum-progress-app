@@ -2168,3 +2168,156 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .group-head h1,.group-title-btn h1{overflow-wrap:anywhere}
 .group-title-last{white-space:normal;overflow-wrap:anywhere}
 .page.group-page,.page{overflow-x:clip}
+
+/* Group header: the row of round buttons sits ABOVE the group name (right aligned), and the name gets the full width underneath */
+.group-head{flex-direction:column;align-items:stretch;row-gap:10px}
+.group-head-actions{order:-1;margin-left:0;width:100%;justify-content:flex-end}
+.group-head>div:first-child{flex:none;width:100%}
+
+/* Group header: ONE round button that opens a small menu with everything else (cheers, invite, medals, settings, new group) */
+.group-menu-wrap{position:relative}
+.group-menu-btn{position:relative}
+.group-menu-btn .bell-badge{position:absolute;top:-4px;right:-4px}
+.group-menu-scrim{position:fixed;inset:0;z-index:30}
+.group-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:31;min-width:262px;background:#171b19;border:1px solid #3a2616;border-radius:16px;padding:6px;box-shadow:0 18px 40px rgba(0,0,0,.6);animation:groupMenuIn .14s ease-out}
+.group-menu-item{display:flex;align-items:center;gap:12px;width:100%;padding:12px 12px;border:0;background:transparent;color:#f0f2ef;border-radius:11px;font:600 16px 'DM Sans';text-align:left}
+.group-menu-item svg{flex-shrink:0;color:#ff9b50}
+.group-menu-item span{flex:1}
+.group-menu-item:active{background:#2a170a}
+.group-menu-count{font:700 12px 'DM Sans';font-style:normal;background:#ff6b1a;color:#250d02;border-radius:99px;padding:2px 7px}
+@keyframes groupMenuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+/* With one button only, the name and the button sit on the same line again (a long name wraps instead of pushing the button away) */
+.group-head{flex-direction:row;flex-wrap:nowrap;align-items:flex-start;row-gap:0}
+.group-head-actions{order:0;width:auto;margin-left:auto;flex-shrink:0;justify-content:flex-end}
+.group-head>div:first-child{flex:1 1 auto;min-width:0;width:auto}
+
+/* Hall of Fame: a card on the Group page, under the challenges */
+.hof-card{display:flex;align-items:center;gap:14px;width:100%;margin:6px 0 16px;padding:14px 16px;border-radius:18px;border:1px solid rgba(245,197,66,.3);background:linear-gradient(135deg,rgba(245,197,66,.14),#151716 70%);color:#f0f2ef;text-align:left;font-family:inherit}
+.hof-icon{flex:0 0 44px;width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:rgba(245,197,66,.16);border:1px solid rgba(245,197,66,.45);color:#f5c542}
+.hof-text{display:flex;flex-direction:column;flex:1;min-width:0}
+.hof-text strong{font:700 18px 'DM Sans'}
+.hof-text small{font:500 13px 'DM Sans';color:#9aa19d;margin-top:2px}
+.hof-chev{color:#f5c542;flex-shrink:0}
+.hof-card:active{border-color:rgba(245,197,66,.7)}
+
+/* Progress, Skill progress: a bit more air between the overall level card and the exercise list, and between the level name and the tier bars */
+.sk-overall{margin:8px 0 20px}
+.sk-overall-name{margin:6px 0 16px}
+.sk-overall-top{margin-bottom:2px}
+
+/* Milestones: more space between the "Next up" card and the rings below it (and a touch inside the card) */
+.ms-next{margin-bottom:26px;padding:16px 14px}
+
+/* Progress, "Your practice": calm dark tiles instead of orange-washed ones, regular (not bold) lettering, and a thin bar showing each share */
+.ptiles{gap:10px;grid-auto-rows:92px}
+.ptile{border:1px solid #252a27;background:#151816;box-shadow:none;padding:12px 14px 16px;border-radius:16px}
+.ptile-0{background:linear-gradient(150deg,rgba(255,138,61,.15),#151816 64%);border-color:rgba(255,138,61,.34);padding:16px 16px 20px}
+.ptile-rank{font:400 13px 'DM Sans';color:#6d746f;letter-spacing:.4px}
+.ptile-name{font:400 15px/1.25 'DM Sans';color:#e9ece8}
+.ptile-0 .ptile-name{font:400 22px/1.2 'DM Sans';color:#f3f5f2}
+.ptile-foot b{font:400 14px 'DM Sans';color:#ffbf8c}
+.ptile-0 .ptile-foot b{font:300 26px 'DM Sans';color:#ffbf8c;letter-spacing:-.3px}
+.ptile-foot em{font:400 12.5px 'DM Sans';color:#7c837e}
+.ptile-bar{position:absolute;left:14px;right:14px;bottom:8px;height:3px;border-radius:99px;background:#232826;overflow:hidden;display:block}
+.ptile-0 .ptile-bar{left:16px;right:16px;bottom:12px}
+.ptile-bar b{display:block;height:100%;border-radius:99px;background:#ff8a3d}
+/* a last tile that would sit alone in its row stretches across the full width */
+.ptiles .ptile:last-child:nth-child(even):nth-child(n+4){grid-column:span 4}
+
+/* Your practice: bigger small-tile text + "see more" pop-up list */
+.ptiles{grid-auto-rows:98px}
+.ptile-rank{font-size:14px}
+.ptile-name{font:400 17px/1.25 'DM Sans'}
+.ptile-0 .ptile-name{font:400 24px/1.2 'DM Sans'}
+.ptile-foot b{font:400 16px 'DM Sans'}
+.ptile-0 .ptile-foot b{font:300 28px 'DM Sans'}
+.ptile-foot em{font:400 14px 'DM Sans'}
+.pm-row{position:relative;display:grid;grid-template-columns:22px 1fr auto;align-items:baseline;gap:8px;padding:12px 2px 16px;border-top:1px solid #1d211f}
+.pm-row:first-child{border-top:0}
+.pm-rank{font:400 13px 'DM Sans';color:#6d746f}
+.pm-name{font:400 16px/1.25 'DM Sans';color:#e9ece8}
+.pm-val{display:flex;gap:8px;align-items:baseline}
+.pm-val b{font:400 15px 'DM Sans';color:#ffbf8c}
+.pm-val em{font:400 13px 'DM Sans';font-style:normal;color:#7c837e;min-width:30px;text-align:right}
+.pm-bar{position:absolute;left:30px;right:2px;bottom:7px;height:3px;border-radius:99px;background:#232826;overflow:hidden;display:block}
+.pm-bar b{display:block;height:100%;border-radius:99px;background:#ff8a3d}
+
+/* Minutes steppers: label exactly centred in the circle (iPad Safari adds button padding) */
+.minutes-step{display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1;text-align:center;font-variant-numeric:tabular-nums;-webkit-appearance:none;appearance:none}
+
+/* Skill Trainer rows: open exercises pop, locked ones clearly read as locked */
+.ex-row:not(.ex-row-locked){position:relative;background:linear-gradient(135deg,#1d2220,#161a18);border:1px solid #3a413d;box-shadow:0 2px 10px rgba(0,0,0,.35),inset 3px 0 0 #ff8a3d;padding-left:18px}
+.ex-row:not(.ex-row-locked) .name{color:#fff;font-weight:500}
+.ex-row:not(.ex-row-locked) .meta{color:#b9c0bb}
+.ex-row:not(.ex-row-locked) .frac{color:#aab1ac}
+.ex-row:not(.ex-row-locked) .track{background:#2a302d}
+.ex-row:not(.ex-row-locked) .chev{color:#ff8a3d}
+.ex-row.ex-row-legend{box-shadow:0 0 14px rgba(245,197,66,.16),inset 3px 0 0 #F5C542}
+.ex-row-locked{background:#0b0c0c;border:1px dashed #2b302d;opacity:.72}
+.ex-row-locked .name{color:#6d746f}
+.ex-row-locked .locked-hint{color:#566059;font-size:12.5px}
+.ex-row-locked .lock-icon{width:34px;height:34px;padding:8px;border-radius:50%;background:#171a18;border:1px solid #2b302d;color:#8a928c}
+
+/* The hint above the exercise list is a note, not a card: no stripe, no box */
+.category-list-intro{border:0;border-left:0;background:transparent;padding:2px 2px 0 28px;margin:6px 0 16px;color:#c9b9a8;font:500 14px/1.4 'DM Sans';position:relative}
+.category-list-intro::before{content:"i";position:absolute;left:2px;top:3px;width:18px;height:18px;border-radius:50%;border:1px solid #6b4a36;color:#ff9a5c;font:italic 600 12px/16px Georgia,serif;text-align:center}
+.category-list-intro::before{box-sizing:border-box;display:flex;align-items:center;justify-content:center;line-height:1;padding:0 0 1px 1px;top:1px;width:20px;height:20px}
+.category-list-intro{padding-left:30px}
+
+/* Hall of Fame: plain dark card, only the trophy is gold */
+.hof-card{border:1px solid #252a27;background:#151816}
+.hof-card:active{border-color:#3a413d}
+.hof-icon{background:transparent;border:0;width:36px;height:36px;flex-basis:36px;color:#f5c542}
+.hof-icon svg{width:28px;height:28px}
+
+/* Group tab: every card title uses the same heading style as the section titles */
+.hof-text strong{font:700 21px 'Barlow Condensed';letter-spacing:.2px;color:#f6f7f5}
+.cal-head h2{font:700 21px 'Barlow Condensed';letter-spacing:.2px;color:#f6f7f5}
+
+/* Group tab: lighter weights */
+.section-label,.hof-text strong,.cal-head h2{font-weight:500}
+.board-time,.board-more,.rank-more,.cf-more,.members-remove,.challenge-join-chip{font-weight:600}
+.board-rank,.cf-label,.eyebrow{font-weight:600}
+.section-label,.hof-text strong,.cal-head h2{font-size:23px}
+.time-card .section-label{font-size:17px}
+.admin-overview-leaderboard .section-label{font-size:16px}
+.time-card.board-card .section-label{font-size:23px;font-weight:500;margin:0}
+
+/* Group tab: "This week" strip + month pop-up */
+.week-card{background:#121413;border:1px solid #222724;border-radius:20px;padding:16px 12px 14px}
+.week-head{display:flex;align-items:center;justify-content:space-between;padding:0 6px;margin-bottom:12px}
+.week-head .section-label{margin:0}
+.week-month-link{background:transparent;border:1px solid #2c312e;color:#ffb27a;font:500 14px 'DM Sans';padding:6px 14px;border-radius:99px}
+.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.week-day{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:8px 0 10px;border-radius:14px;background:#171a18;border:1px solid transparent;color:#f6f7f5;font-family:inherit}
+.week-day small{font:500 11px 'DM Sans';color:#8d9690}
+.week-day b{font:500 16px 'DM Sans'}
+.week-day.is-today{border-color:rgba(255,138,61,.6);background:rgba(255,138,61,.08)}
+.week-day.is-future{opacity:.45}
+.week-avatars{display:flex;flex-direction:column;align-items:center;gap:3px;min-height:20px}
+.week-avatar{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font:600 10px/1 'DM Sans';font-style:normal;color:#101211}
+.week-avatar.week-more{background:#2a2f2c;color:#c9cfca;font-size:9px}
+.month-pop{width:min(100%,520px);max-height:84vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.week-close{align-self:center;background:#1a1e1c;border:1px solid #2c312e;color:#f6f7f5;font:500 15px 'DM Sans';padding:10px 26px;border-radius:99px}
+.week-day.is-today{border-color:transparent;background:#171a18}
+.week-day.is-today b{display:flex;align-items:center;justify-content:center;width:28px;height:28px;margin:-6px 0;border-radius:50%;background:#ff8a3d;color:#1a0f08;font-weight:600}
+.week-day.is-today small{color:#ffb27a}
+
+/* Challenge cards: neutral border (an orange outline read as "completed") */
+.challenge-compact{border:1px solid #2a302d;box-shadow:none;background:#141716}
+
+/* Active challenge: warm glow from the top, a live dot before the name */
+.challenge-compact{background:radial-gradient(120% 90% at 0% 0%,rgba(255,138,61,.13),rgba(255,138,61,0) 60%),#141716;border:1px solid #2a302d}
+.challenge-compact .challenge-head h3{display:flex;align-items:center;gap:9px}
+.challenge-compact .challenge-head h3::before{content:"";flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#ff8a3d;box-shadow:0 0 0 0 rgba(255,138,61,.55);animation:chLive 2s ease-out infinite}
+@keyframes chLive{0%{box-shadow:0 0 0 0 rgba(255,138,61,.55)}70%{box-shadow:0 0 0 7px rgba(255,138,61,0)}100%{box-shadow:0 0 0 0 rgba(255,138,61,0)}}
+.challenge-compact .leaderboard-bar{background:linear-gradient(90deg,#ff6b1a,#ffb27a)}
+@media (prefers-reduced-motion:reduce){.challenge-compact .challenge-head h3::before{animation:none}}
+.week-day.is-today{border-color:rgba(255,138,61,.6);background:rgba(255,138,61,.08)}
+.week-day.is-today b{display:block;width:auto;height:auto;margin:0;border-radius:0;background:transparent;color:#f6f7f5;font-weight:500}
+.week-day.is-today small{color:#8d9690}
+.board-donut{width:96px;height:96px}
+.board-donut-center strong{font-size:22px}
+.board-body{flex-direction:column;align-items:stretch;gap:12px}
+.board-donut{align-self:center}
+.board-list{width:100%;flex:none}
