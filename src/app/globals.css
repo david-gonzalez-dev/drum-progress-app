@@ -2321,3 +2321,8 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .board-body{flex-direction:column;align-items:stretch;gap:12px}
 .board-donut{align-self:center}
 .board-list{width:100%;flex:none}
+
+/* After creating an account: a clear "check your email" page instead of a small note under the form */
+.auth-sent{text-align:center}
+.auth-sent-text{font:400 17px/1.5 'DM Sans';color:#e9ece8;margin:6px 0 10px}
+.auth-sent-spam{font:400 14px/1.4 'DM Sans';color:#8d9690;margin:0 0 18px}

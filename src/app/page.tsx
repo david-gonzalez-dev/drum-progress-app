@@ -1357,6 +1357,16 @@ function calculateStreaks(logs: Record<string, Log>, today: string) {
 const OPENED_FROM_CONFIRM_LINK = typeof window !== "undefined" && /[#&]type=signup\b/.test(window.location.hash);
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
+// The drummer's strong hand: exercises start with it by default (the R/L buttons above the BPM can still be changed per session).
+let DOMINANT_HAND: Hand = "R";
+function applyDominantHand(value: unknown) { DOMINANT_HAND = value === "L" ? "L" : "R"; }
+async function saveDominantHand(hand: Hand) { applyDominantHand(hand); try { await supabase.auth.updateUser({ data: { dominant_hand: hand } }); } catch {} }
+const HAND_TEXT: Record<Lang, { title: string; hint: string; right: string; left: string; label: string }> = {
+  en: { title: "Are you right or left handed?", hint: "Exercises will start with your strong hand. You can change this later in Settings.", right: "Right handed", left: "Left handed", label: "STRONG HAND" },
+  nl: { title: "Ben je rechts- of linkshandig?", hint: "Oefeningen beginnen met je sterke hand. Je kunt dit later aanpassen in Instellingen.", right: "Rechtshandig", left: "Linkshandig", label: "STERKE HAND" },
+  es: { title: "¿Eres diestro o zurdo?", hint: "Los ejercicios empezarán con tu mano fuerte. Puedes cambiarlo después en Ajustes.", right: "Diestro", left: "Zurdo", label: "MANO FUERTE" },
+};
+
 export default function Home() {
   const [tab, setTab] = useState<Tab>("today");
   // Android Back button: close an open window, else go back one screen, else return to Today, else leave the app.
@@ -1415,6 +1425,7 @@ export default function Home() {
     return new Promise((resolve) => setConfirmState({ message, resolve }));
   }
   const [user, setUser] = useState<any>(null);
+  useEffect(() => { applyDominantHand(user?.user_metadata?.dominant_hand); }, [user]);
   // Group cheers: loaded for every group the user is in (RLS decides what is visible), polled gently so the
   // Group tab can show an "unread" dot. "Seen" is a per-device convenience, so it lives in localStorage.
   // Session Timer <-> everything else. While the timer RUNS, the free metronome shares its clock instead of keeping its
@@ -2369,7 +2380,8 @@ function playPointsChime() {
 type PointsSummary = { points: number; pos: number; total: number; above_name: string | null; above_gap: number | null };
 type PointsGain = { prev: PointsSummary; next: PointsSummary; earned: number; celebrated?: boolean }; // celebrated: "The Big Hit" already played, so the ranking opens straight away
 function OnboardingModal({ currentGoal, onSkip, onFinish, onBand, onLanguage, onPointsAnswer, language, T }: { onLanguage: (language: Lang, save: boolean) => void; onPointsAnswer: (on: boolean) => Promise<boolean>; currentGoal: number | null; onSkip: () => void; onFinish: (selected: string[], goalMinutes: number | null, kidMode: boolean, band: AgeBand | null) => void; onBand: (band: AgeBand | null) => void; language: Lang; T: any }) {
-  const [step, setStep] = useState<"language" | "dob" | "points" | "exercises" | "goal" | "mode" | "board">("language");
+  const [step, setStep] = useState<"language" | "dob" | "points" | "exercises" | "goal" | "mode" | "board" | "hand">("language");
+  const [handChoice, setHandChoice] = useState<Hand>("R");
   const [afterPoints, setAfterPoints] = useState<"exercises" | "goal">("exercises");
   // The language starts as the phone's language (Dutch, Spanish or English) and follows what is picked.
   useEffect(() => { try { const n = navigator.language?.toLowerCase() ?? ""; const guess: Lang = n.startsWith("nl") ? "nl" : n.startsWith("es") ? "es" : "en"; if (guess !== language) onLanguage(guess, false); } catch { /* keep English */ } }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -2405,12 +2417,12 @@ function OnboardingModal({ currentGoal, onSkip, onFinish, onBand, onLanguage, on
   const [boardBusy, setBoardBusy] = useState(false);
   const BOARD_TEXT = { en: { title: "Join the worldwide leaderboard?", body: "See how you rank against drummers around the world. Only your first name, last initial and scores are shown. You can leave any time.", yes: "Yes, join", no: "Not now" }, es: { title: "¿Unirte a la tabla mundial?", body: "Mira cómo te comparas con bateristas de todo el mundo. Solo se muestran tu nombre, la inicial de tu apellido y tus puntuaciones. Puedes salir cuando quieras.", yes: "Sí, unirme", no: "Ahora no" }, nl: { title: "Meedoen aan de wereldwijde ranglijst?", body: "Zie hoe je scoort tegenover drummers over de hele wereld. Alleen je voornaam, de initiaal van je achternaam en je scores zijn zichtbaar. Je kunt altijd stoppen.", yes: "Ja, doe mee", no: "Nu niet" } }[language as Lang];
   // Finishing goes through the leaderboard question when there is a board to join.
-  function finishWith(action: () => void) { if (band) { setFinishAction(() => action); setStep("board"); } else action(); }
+  function finishWith(action: () => void) { setFinishAction(() => action); setStep(band ? "board" : "hand"); }
   async function answerBoard(join: boolean) {
     setBoardBusy(true);
     if (join) { const { data } = await supabase.auth.getUser(); if (data.user) await supabase.from("settings").upsert({ user_id: data.user.id, leaderboard_opt_in: true }, { onConflict: "user_id" }); }
     setBoardBusy(false);
-    finishAction?.();
+    setStep("hand");
   }
   const [finalGoal, setFinalGoal] = useState<number | null>(currentGoal);
   const [kidModeChoice, setKidModeChoice] = useState(false);
@@ -2482,6 +2494,14 @@ function OnboardingModal({ currentGoal, onSkip, onFinish, onBand, onLanguage, on
         <button type="button" className={!kidModeChoice ? "equipment-option selected" : "equipment-option"} onClick={() => setKidModeChoice(false)}>{T.settings.libraryFull}</button>
       </div>
       <button className="save" onClick={() => finishWith(() => onFinish(selected, finalGoal, kidModeChoice, band))}>{T.onboarding.finishBtn}</button>
+    </> : step === "hand" ? <>
+      <h2 className="edit-rating-title">{HAND_TEXT[language as Lang].title}</h2>
+      <p className="settings-neutral-hint">{HAND_TEXT[language as Lang].hint}</p>
+      <div className="equipment-toggle onboard-mode-toggle">
+        <button type="button" className={handChoice === "R" ? "equipment-option selected" : "equipment-option"} onClick={() => setHandChoice("R")}>{HAND_TEXT[language as Lang].right}</button>
+        <button type="button" className={handChoice === "L" ? "equipment-option selected" : "equipment-option"} onClick={() => setHandChoice("L")}>{HAND_TEXT[language as Lang].left}</button>
+      </div>
+      <button className="save" onClick={async () => { await saveDominantHand(handChoice); finishAction?.(); }}>{T.onboarding.finishBtn}</button>
     </> : <>
       <h2 className="edit-rating-title">{BOARD_TEXT.title}</h2>
       <p className="settings-neutral-hint">{BOARD_TEXT.body}</p>
@@ -2508,11 +2528,11 @@ const AUTH_TEXT = {
   en: { tagline: "Build your daily drumming habit, one session at a time.", welcome: "Welcome back", start: "Start your streak", reset: "Reset your password", firstName: "First name or nickname (one word)", email: "Email address", password: "Password", forgot: "Forgot password?",
     consentA: "I am 16 or older, or I am a parent or guardian creating this account for my child (or the child's teacher, with the parent's permission). I agree to the ", terms: "Terms", and: " and ", privacy: "Privacy Policy", support: "Support", privacyShort: "Privacy",
     wait: "Please wait...", logIn: "Log in", create: "Create account", sendLink: "Send reset link", or: "OR", google: "Continue with Google", newHere: "New here? Create an account", haveAccount: "Already have an account? Log in", back: "Back to log in",
-    resetSent: "Check your email for a password reset link.", checkEmail: "If this is a new account, check your email to confirm it. Already have an account with this email? Just log in instead.", newPasswordTitle: "Set a new password", newPasswordIntro: "Choose a new password for your account.", newPassword: "New password", update: "Update password" },
+    sentTitle: "Check your email", sentText: (e: string) => `We sent a confirmation link to ${e}. Tap it, then come back here and log in.`, sentSpam: "Nothing there? Look in your spam folder.", sentBack: "Back to log in", resetSent: "Check your email for a password reset link.", checkEmail: "If this is a new account, check your email to confirm it. Already have an account with this email? Just log in instead.", newPasswordTitle: "Set a new password", newPasswordIntro: "Choose a new password for your account.", newPassword: "New password", update: "Update password" },
   nl: { tagline: "Bouw je dagelijkse drumgewoonte op, sessie voor sessie.", welcome: "Welkom terug", start: "Begin je reeks", reset: "Wachtwoord opnieuw instellen", firstName: "Voornaam of bijnaam (één woord)", email: "E-mailadres", password: "Wachtwoord", forgot: "Wachtwoord vergeten?",
     consentA: "Ik ben 16 jaar of ouder, of ik ben een ouder of voogd die dit account maakt voor mijn kind (of de leraar van het kind, met toestemming van de ouder). Ik ga akkoord met de ", terms: "Gebruiksvoorwaarden", and: " en het ", privacy: "Privacybeleid", support: "Ondersteuning", privacyShort: "Privacy",
     wait: "Even geduld...", logIn: "Inloggen", create: "Account maken", sendLink: "Herstellink sturen", or: "OF", google: "Doorgaan met Google", newHere: "Nieuw hier? Maak een account", haveAccount: "Heb je al een account? Log in", back: "Terug naar inloggen",
-    resetSent: "Controleer je e-mail voor een link om je wachtwoord opnieuw in te stellen.", checkEmail: "Als dit een nieuw account is, controleer dan je e-mail om het te bevestigen. Heb je al een account met dit e-mailadres? Log dan gewoon in.", newPasswordTitle: "Stel een nieuw wachtwoord in", newPasswordIntro: "Kies een nieuw wachtwoord voor je account.", newPassword: "Nieuw wachtwoord", update: "Wachtwoord bijwerken" },
+    sentTitle: "Check je e-mail", sentText: (e: string) => `We hebben een bevestigingslink gestuurd naar ${e}. Tik erop en kom daarna terug om in te loggen.`, sentSpam: "Niets gevonden? Kijk in je spam.", sentBack: "Terug naar inloggen", resetSent: "Controleer je e-mail voor een link om je wachtwoord opnieuw in te stellen.", checkEmail: "Als dit een nieuw account is, controleer dan je e-mail om het te bevestigen. Heb je al een account met dit e-mailadres? Log dan gewoon in.", newPasswordTitle: "Stel een nieuw wachtwoord in", newPasswordIntro: "Kies een nieuw wachtwoord voor je account.", newPassword: "Nieuw wachtwoord", update: "Wachtwoord bijwerken" },
 };
 function useAuthText() {
   const [lang, setLang] = useState<"en" | "nl">("en");
@@ -2520,7 +2540,7 @@ function useAuthText() {
   return AUTH_TEXT[lang];
 }
 function Login({ error, setError }: { error: string; setError: (message: string) => void }) {
-  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [mode, setMode] = useState<"login" | "signup" | "forgot">("login"); const [consent, setConsent] = useState(false); const [busy, setBusy] = useState(false); const [firstName, setFirstName] = useState("");
+  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [mode, setMode] = useState<"login" | "signup" | "forgot">("login"); const [consent, setConsent] = useState(false); const [sentTo, setSentTo] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [firstName, setFirstName] = useState("");
   const A = useAuthText();
   async function submit() {
     setBusy(true); setError("");
@@ -2536,9 +2556,10 @@ function Login({ error, setError }: { error: string; setError: (message: string)
     // "succeeds" with no session either way and the message below has to make sense for both cases.
     // When confirmation is off, signUp() returns a live session and the user is simply logged in,
     // so there is nothing to tell them.
-    setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup" && !(result.data as { session?: unknown } | null)?.session) setError(A.checkEmail);
+    setBusy(false); if (result.error) setError(result.error.message); else if (mode === "signup" && !(result.data as { session?: unknown } | null)?.session) { setSentTo(email); setPassword(""); }
   }
   const canSubmit = !(busy || !email || (mode !== "forgot" && !password) || (mode === "signup" && (!consent || !firstName.trim())));
+  if (sentTo) return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><div className="auth-card auth-sent"><h2>{A.sentTitle}</h2><p className="auth-sent-text">{A.sentText(sentTo)}</p><p className="auth-sent-spam">{A.sentSpam}</p><button className="auth-primary" onClick={() => { setSentTo(null); setMode("login"); setError(""); }}>{A.sentBack}</button></div></section></main>;
   async function google() { setBusy(true); const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); if (oauthError) { setError(oauthError.message); setBusy(false); } }
   return <main className="shell"><section className="auth-shell"><h1>DrumSkills</h1><p>{A.tagline}</p><div className="auth-card" onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing && (e.target as HTMLElement).tagName === "INPUT" && (e.target as HTMLInputElement).type !== "checkbox" && canSubmit) { e.preventDefault(); void submit(); } }}>
     <h2>{mode === "login" ? A.welcome : mode === "signup" ? A.start : A.reset}</h2>
@@ -4620,15 +4641,21 @@ function PracticeMode({ whenCelebrationsDone, onMetronomeToneChange, skillTab, s
   function hasHistoryAt(itemEn: string, targetBpm: number) {
     return sessions.some((s: any) => s.item_en === itemEn && s.bpm === targetBpm);
   }
+  // The newest session at this tempo decides how it is labelled: if it felt comfortable last week but "almost" this week, it now reads "almost".
+  // Unlocking is unaffected (an unlocked tempo stays unlocked), and a downgrade never plays an animation.
+  function latestSessionAt(itemEn: string, targetBpm: number) {
+    const stamp = (s: any) => String(s.created_at ?? s.practiced_on ?? "");
+    return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm).reduce((latest: any, s: any) => (!latest || stamp(s) >= stamp(latest) ? s : latest), null as any);
+  }
   function bestQualifyingRating(itemEn: string, targetBpm: number) {
-    // Only a session that counts for the unlock (long enough, or from before the new rule) can give the Mastered star.
-    const relevant = sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm && (s.rating === "comfortable" || s.rating === "mastered") && (sessionMinutesExact(s) >= UNLOCK_MINUTES || !s.practiced_on || s.practiced_on < UNLOCK_RULE_START));
-    if (relevant.some((s: any) => s.rating === "mastered")) return "mastered";
-    return relevant.length ? "comfortable" : null;
+    // Only tempos that have a counting session get a label here; the label itself is the newest feeling.
+    if (qualifyingMinutesAt(itemEn, targetBpm) <= 0) return null;
+    const latest = latestSessionAt(itemEn, targetBpm);
+    return latest ? effectiveRatingOf(latest) : null;
   }
   function bestRatingAny(itemEn: string, targetBpm: number) {
-    const relevant = sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm);
-    return relevant.reduce((best: string | null, s: any) => (!best || RATING_RANK[s.rating] > RATING_RANK[best] ? s.rating : best), null as string | null);
+    const latest = latestSessionAt(itemEn, targetBpm);
+    return latest ? effectiveRatingOf(latest) : null;
   }
   // The longest single session at this tempo (any rating): the bar fills towards ONE non-stop session, not towards a sum.
   function bestSessionMinutesAny(itemEn: string, targetBpm: number) {
@@ -5155,6 +5182,7 @@ function PageSkeleton({ bare }: { bare?: boolean }) {
   return <section className="page"><div className="skel skel-title" />{blocks}</section>;
 }
 function Settings({ allRankings, onAllRankings, signOut, user, setError, profileName, onProfileNameSaved, language: currentLanguage, onLanguageSaved, dailyGoal, onGoalSaved, metronomeTone: currentMetronomeTone, onMetronomeToneSaved, showDaysThisYear: currentShowDaysThisYear, onShowDaysThisYearSaved, kidMode: currentKidMode, onKidModeSaved, ageBand: currentBand, practiceDifficulty: currentDifficulty, onAgeBandSaved, onDifficultySaved, onBack, drumState, onDrumPoints, T }: { allRankings: boolean; onAllRankings: (on: boolean) => void; drumState: { eligible: boolean; enabled: boolean; prompted: boolean } | null; onDrumPoints: (on: boolean) => Promise<boolean>; ageBand: AgeBand | null; practiceDifficulty: Difficulty; onAgeBandSaved: (band: AgeBand | null) => void; onDifficultySaved: (difficulty: Difficulty) => void; signOut: () => void; user: any; setError: (message: string) => void; profileName: string; onProfileNameSaved: (name: string) => void; language: Lang; onLanguageSaved: (language: Lang) => void; dailyGoal: number | null; onGoalSaved: (goal: number | null) => void; metronomeTone: string; onMetronomeToneSaved: (tone: string) => void; showDaysThisYear: boolean; onShowDaysThisYearSaved: (value: boolean) => void; kidMode: boolean; onKidModeSaved: (value: boolean) => void; onBack: () => void; T: any }) {
+  const [myHand, setMyHand] = useState<Hand>(DOMINANT_HAND);
   const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [kidMode, setKidMode] = useState(currentKidMode); const [difficulty, setDifficulty] = useState<Difficulty>(currentDifficulty); const [pushOn, setPushOn] = useState(() => pushSupported() && pushWanted(user.id)); const [pushMsg, setPushMsg] = useState(""); const [dobInput, setDobInput] = useState(""); const [dobBusy, setDobBusy] = useState(false); const [dobMsg, setDobMsg] = useState(""); const [dobShown, setDobShown] = useState("");
   // Leaderboard section: join / leave the worldwide leaderboard, and (players up to 14, who only see Points) show the other rankings too.
   const [lbIn, setLbIn] = useState<boolean | null>(null);
@@ -5180,7 +5208,7 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
   const [saveBusy, setSaveBusy] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const autoBase = useRef<string | null>(null);
-  const autoSnap = JSON.stringify([name, goal, language, color, showDaysThisYear, kidMode, difficulty]);
+  const autoSnap = JSON.stringify([name, goal, language, color, showDaysThisYear, kidMode, difficulty, myHand]);
   useEffect(() => { if (settingsLoaded && autoBase.current === null) autoBase.current = autoSnap; }, [autoSnap, settingsLoaded]);
   const leaveRef = useRef<() => void>(() => {});
   leaveRef.current = () => { if (settingsLoaded && autoBase.current !== null && autoSnap !== autoBase.current && name.trim()) { autoBase.current = autoSnap; void saveSettings(); } };
@@ -5188,6 +5216,7 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
   // Goal is only included in the upsert when the field actually has a value -- leaving it
   // blank and saving other settings (name, language, etc.) shouldn't silently invent a goal.
   async function saveSettings() {
+    await saveDominantHand(myHand);
     const profile = await supabase.from("profiles").upsert({ id: user.id, name, color }, { onConflict: "id" });
     const trimmed = goal.trim();
     const parsedGoal = trimmed === "" ? null : Number(trimmed);
@@ -5263,6 +5292,10 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
       <div className="sx-row sx-stack">
         <span className="sx-label sx-caps">{T.settings.libraryLabel}</span>
         <div className="sx-seg"><button type="button" className={kidMode ? "on sx-seg-two" : "sx-seg-two"} onClick={() => setKidMode(true)}><b>{T.settings.libraryEssentials}</b><small>{LIB_SUB.e}</small></button><button type="button" className={!kidMode ? "on sx-seg-two" : "sx-seg-two"} onClick={() => setKidMode(false)}><b>{T.settings.libraryFull}</b><small>{LIB_SUB.f}</small></button></div>
+      </div>
+      <div className="sx-row sx-stack">
+        <span className="sx-label sx-caps">{HAND_TEXT[language as Lang].label}</span>
+        <div className="sx-seg"><button type="button" className={myHand === "R" ? "on sx-seg-two" : "sx-seg-two"} onClick={() => setMyHand("R")}><b>{HAND_TEXT[language as Lang].right}</b></button><button type="button" className={myHand === "L" ? "on sx-seg-two" : "sx-seg-two"} onClick={() => setMyHand("L")}><b>{HAND_TEXT[language as Lang].left}</b></button></div>
       </div>
       <div className="sx-row sx-stack">
         <span className="sx-label sx-caps">{T.settings.difficultyLabel}</span>
@@ -5454,7 +5487,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   // loop lights the box once the audio clock (plus the device's output latency) reaches that time. One clock, no separate timer.
   const [activeStroke, setActiveStroke] = useState(-1);
   const [activeGrace, setActiveGrace] = useState(-1);
-  const [startHand, setStartHand] = useState<Hand>("R");
+  const [startHand, setStartHand] = useState<Hand>(DOMINANT_HAND);
   const strokeQueueRef = useRef<StrokeEvent[]>([]);
   const strokeCounterRef = useRef(0);
   const strokeRafRef = useRef<number | null>(null);
@@ -5481,7 +5514,7 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
   const clickChoices = rhythm ? allowedClicks(rhythm.perBeat) : null;
   const guideRef = useRef(guide);
   // New exercise: the clicks per beat follow its note value and the starting hand goes back to right.
-  useEffect(() => { if (lockTempo) { setSubdivision(rhythm ? (rhythm.clicks ?? rhythm.perBeat) : 1); setStartHand("R"); setBeatsPerBar(rhythm?.beatsPerBar ?? 4); } }, [exerciseEn, difficulty]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (lockTempo) { setSubdivision(rhythm ? (rhythm.clicks ?? rhythm.perBeat) : 1); setStartHand(DOMINANT_HAND); setBeatsPerBar(rhythm?.beatsPerBar ?? 4); } }, [exerciseEn, difficulty]); // eslint-disable-line react-hooks/exhaustive-deps
   // Changed sequence (new exercise or other starting hand): restart the guide from its first slot, still on the live audio clock.
   useEffect(() => { guideRef.current = guide; stopStrokeLoop(); if (playing && !pausedRef.current && guide) startStrokeLoop(); }, [guide]); // eslint-disable-line react-hooks/exhaustive-deps
   function stopStrokeLoop() {
@@ -6515,6 +6548,23 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     if (error) setLbHidden(!hidden);
   }
 
+  const rangeStartKey = statsRange === "month" ? monthStartKey : statsRange === "lastMonth" ? lastMonthStartKey : statsRange === "year" ? yearStartKey : null;
+  // Last Month is the only range with an upper bound too (it must stop at the end of that
+  // month, not run into the current one) -- every other range already means "...through today".
+  const rangeEndKey = statsRange === "lastMonth" ? monthStartKey : null;
+  const rangeKey = rangeStartKey ? `${rangeStartKey}|${rangeEndKey ?? ""}` : "";
+  useEffect(() => {
+    if (!rangeStartKey) return;
+    let alive = true;
+    supabase.rpc("admin_range_totals", { p_from: rangeStartKey, p_to: rangeEndKey }).then(({ data, error }: any) => {
+      if (!alive || error) return;
+      const map: Record<string, { minutes: number; logs: number }> = {};
+      (data ?? []).forEach((r: any) => { map[r.user_id] = { minutes: Number(r.total_minutes), logs: Number(r.total_logs) }; });
+      setRangeData({ key: rangeKey, map });
+    });
+    return () => { alive = false; };
+  }, [rangeKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const ADMIN_HISTORY_LIMIT = 5;
   if (selected) {
     // Show a lightweight loading state instead of the full stats cards while the fetches kicked
@@ -6755,22 +6805,6 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
   // total, not additional time on top of it. admin_list_users() used to add session minutes
   // on top of log minutes, double-counting that overlap and inflating "All"; fixed there too
   // (see schema.sql), so this must stay logs-only to match.
-  const rangeStartKey = statsRange === "month" ? monthStartKey : statsRange === "lastMonth" ? lastMonthStartKey : statsRange === "year" ? yearStartKey : null;
-  // Last Month is the only range with an upper bound too (it must stop at the end of that
-  // month, not run into the current one) -- every other range already means "...through today".
-  const rangeEndKey = statsRange === "lastMonth" ? monthStartKey : null;
-  const rangeKey = rangeStartKey ? `${rangeStartKey}|${rangeEndKey ?? ""}` : "";
-  useEffect(() => {
-    if (!rangeStartKey) return;
-    let alive = true;
-    supabase.rpc("admin_range_totals", { p_from: rangeStartKey, p_to: rangeEndKey }).then(({ data, error }: any) => {
-      if (!alive || error) return;
-      const map: Record<string, { minutes: number; logs: number }> = {};
-      (data ?? []).forEach((r: any) => { map[r.user_id] = { minutes: Number(r.total_minutes), logs: Number(r.total_logs) }; });
-      setRangeData({ key: rangeKey, map });
-    });
-    return () => { alive = false; };
-  }, [rangeKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const rangedUsers = rangeStartKey && rangeData && rangeData.key === rangeKey
     ? (users ?? []).map((u) => ({ ...u, total_minutes: rangeData.map[u.id]?.minutes ?? 0, total_logs: rangeData.map[u.id]?.logs ?? 0 }))
     : (users ?? []);
