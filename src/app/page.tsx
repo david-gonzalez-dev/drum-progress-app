@@ -2762,7 +2762,7 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
   const [showEditToday, setShowEditToday] = useState(false);
   const todaySkillSeconds = lockedSecondsFor(practiceSessions, todayLog, dateKey);
   const todayOtherSeconds = Math.max(0, todayMinutes * 60 + (todayLog?.seconds ?? 0) - todaySkillSeconds);
-  const todayOtherItems: string[] = todayLog ? Array.from(new Set([...todayLog.items, ...todayLog.customItems])).filter((item) => !todaySkillExercises.includes(item)) : [];
+  const todayOtherItems: string[] = todayLog ? Array.from(new Set([...todayLog.items, ...todayLog.customItems])) : [];
   // Welcome shimmer: the first time the app opens each day, one light sweep over Start practice and one soft breath (silent).
   const [welcome, setWelcome] = useState(false);
   useEffect(() => {
@@ -2972,7 +2972,7 @@ function DaySummaryModal({ date, log, dailyGoal, logs, practiceSessions, locale,
   const daySkillExercises = (practiceSessions ?? []).filter((s) => s.practiced_on === date).map((s) => s.item_en);
   const daySkillSeconds = lockedSecondsFor(practiceSessions ?? [], log, date);
   const dayOtherSeconds = Math.max(0, (log ? log.minutes * 60 + (log.seconds ?? 0) : 0) - daySkillSeconds);
-  const dayOtherItems = log ? Array.from(new Set([...log.items, ...log.customItems])).filter((item) => !daySkillExercises.includes(item)) : [];
+  const dayOtherItems = log ? Array.from(new Set([...log.items, ...log.customItems])) : [];
   const rosterRows = roster ? roster.members.filter((m) => (roster.dayLogs[m.id]?.minutes ?? 0) > 0).map((m) => ({ ...m, ...roster.dayLogs[m.id] })).sort((a, b) => b.minutes - a.minutes) : null;
   return <div className="modal modal-center" onClick={onClose}><div className={editing ? "day-summary day-editor-modal" : "day-summary day-editor-modal today-detail"} onClick={(e) => e.stopPropagation()}>
     <div className="ds-head">
@@ -3838,6 +3838,10 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
         const sum = rows.reduce((acc, r) => acc + r.total, 0);
         // Big groups (more than 7 people): the donut shows the top 5 and one grey slice for everyone else; the list shows the top 5 and you, with "Show all" to expand.
         const big = rows.length > 7;
+        // Up to 3 people: a donut of the time share on top of the list. From 4 people on the list alone is clearer.
+        const showDonut = rows.length <= 3;
+        const R = 47, C = 2 * Math.PI * R;
+        let offset = 0;
         const myIdx = rows.findIndex((r) => r.id === user.id);
         const shownRows = !big || showAllBoard ? rows : [...rows.slice(0, 5), ...(myIdx >= 5 ? [rows[myIdx]] : [])];
         return <div className="time-card board-card">
@@ -3850,6 +3854,17 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
           </div>
           {members.length > 1 && !cheerHintSeen && <span className="section-sublabel cheer-hint">{T.cheers.tapNameHint}</span>}
           <div className="board-body">
+            {showDonut && <div className="board-donut">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r={R} fill="none" stroke="#1d2220" strokeWidth="22" />
+                {sum > 0 && rows.map((r) => {
+                  const len = (r.total / sum) * C;
+                  const seg = <circle key={r.id} cx="60" cy="60" r={R} fill="none" stroke={r.color} strokeWidth="22" strokeDasharray={`${Math.max(0, len - (rows.length > 1 ? 2.5 : 0))} ${C}`} strokeDashoffset={-offset} transform="rotate(-90 60 60)" />;
+                  offset += len;
+                  return seg;
+                })}
+              </svg>
+            </div>}
             <div className="board-list">
               {shownRows.map((r) => <div key={r.id} className={big && rows.indexOf(r) > 4 && !showAllBoard ? "board-row board-row-me" : "board-row"}>
                 {big && <span className="board-rank">{rows.indexOf(r) + 1}</span>}
@@ -3857,6 +3872,7 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
                 <span className="board-name">{r.id === user.id ? r.name : <span role="button" tabIndex={0} className="name-cheer" onClick={() => openCheerFor(r.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openCheerFor(r.id); }}>{r.name}</span>}</span>
                 <span className="board-time">{formatMinutes(r.total)}</span>
                 <span className="board-days">{r.days ? `${r.days.days} / ${r.days.totalDays}` : ""}<small>{T.group.daysShort}</small></span>
+                {!showDonut && <i className="board-bar" aria-hidden="true"><b style={{ width: `${Math.max(2, Math.round((r.total / Math.max(1, rows[0]?.total || 1)) * 100))}%`, background: r.color }} /></i>}
               </div>)}
               {big && <button type="button" className="board-more" onClick={() => setShowAllBoard(!showAllBoard)}>{showAllBoard ? BIG_TEXT[language as Lang].less : BIG_TEXT[language as Lang].all(rows.length)}</button>}
             </div>
@@ -5613,14 +5629,18 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
     // The in-between clicks follow the "Subdivision clicks" slider. They are never skipped (the scheduler needs them), only made silent.
     const peak = accentLevel === "downbeat" ? 0.42 : accentLevel === "beat" ? 0.28 : Math.max(0.0002, 0.28 * subVolumeRef.current);
     const loudness = preset.gain ?? 1;
+    // Slider all the way down ("Only the beat"): the in-between click is completely silent, not just very soft.
+    const muted = accentLevel === "sub" && subVolumeRef.current <= 0.005;
     gain.gain.setValueAtTime(0, time);
-    gain.gain.linearRampToValueAtTime(peak * loudness, time + 0.004);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay + 0.004);
+    if (!muted) {
+      gain.gain.linearRampToValueAtTime(peak * loudness, time + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay + 0.004);
+    }
     osc.connect(gain);
     gain.connect(masterRef.current ?? ctx.destination);
     osc.start(time);
     osc.stop(time + preset.decay + 0.01);
-    if (preset.noise) {
+    if (preset.noise && !muted) {
       const hit = ctx.createBufferSource();
       hit.buffer = noiseBufferFor(ctx);
       const band = ctx.createBiquadFilter();
@@ -5652,6 +5672,8 @@ function Metronome({ open, close, onAddPractice, sharedTimer, onUsedDuringTimer,
       const clickOsc = playClick(nextNoteTimeRef.current, accentLevel);
       if (clickOsc) futureClicksRef.current.push({ time: nextNoteTimeRef.current, tick, counter: counterBefore, slotSeconds: 60 / bpmRef.current / (guideRef.current?.perBeat ?? steps), osc: clickOsc });
       if (guideRef.current && guideRef.current.perBeat % steps === 0) strokeCounterRef.current = enqueueTick(strokeQueueRef.current, strokeCounterRef.current, guideRef.current, steps, nextNoteTimeRef.current, bpmRef.current);
+      // More clicks per beat than the exercise has slots (for example 16th-note clicks under a flam): the strokes stay where the exercise puts them, only on the clicks that line up with a slot.
+      else if (guideRef.current && steps % guideRef.current.perBeat === 0 && tick % (steps / guideRef.current.perBeat) === 0) strokeCounterRef.current = enqueueTick(strokeQueueRef.current, strokeCounterRef.current, guideRef.current, guideRef.current.perBeat, nextNoteTimeRef.current, bpmRef.current);
       if (isBeat) {
         const beatIndex = beatNumber % beatsPerMeasure;
         const delayMs = Math.max(0, (nextNoteTimeRef.current - ctx.currentTime) * 1000);
@@ -6765,7 +6787,8 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
                   {!log.usedMetronome && !usedSkillTrainer && <span className="admin-source-label admin-source-muted">✎ {T.admin.quickEntryBadge}</span>}
                 </div>
                 {allItems.length === 0 && !log.notes && <p className="admin-no-elements">{T.admin.noElements}</p>}
-                {allItems.length > 0 && <div className="detail-chips">{allItems.map((item: string) => <em key={item} className={skillExercises.includes(item) ? "skill-chip" : undefined}>{skillExercises.includes(item) && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>}{item}</em>)}</div>}
+                {skillExercises.length > 0 && <div className="admin-chip-group"><span className="admin-chip-label">{T.today.skillBreakdown}</span><div className="detail-chips">{skillExercises.map((item: string) => <em key={item} className="skill-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>{item}</em>)}</div></div>}
+                {log.items.length > 0 && <div className="admin-chip-group"><span className="admin-chip-label">{T.today.otherBreakdown}</span><div className="detail-chips">{log.items.map((item: string) => <em key={item}>{item}</em>)}</div></div>}
                 {log.notes && <p className="today-notes"><b>{T.admin.notesPrefix}</b> {log.notes}</p>}
               </div>;
             })}

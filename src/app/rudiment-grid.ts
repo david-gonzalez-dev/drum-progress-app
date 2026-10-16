@@ -51,6 +51,8 @@ export function reverseGrid(grid: Grid): Grid {
 // Metronome clicks per beat that line up with the grid: only whole divisions of the grid resolution (a sixteenth grid can be
 // clicked on every beat, every eighth or every sixteenth, but never in triplets). The first value is the default (the grid itself).
 export function allowedClicks(perBeat: number): number[] {
+  // Quarter, eighth and sixteenth based exercises may also be clicked in any binary subdivision (1, 2 or 4 clicks per beat).
+  if (perBeat === 1 || perBeat === 2 || perBeat === 4) return [4, 2, 1];
   const out: number[] = [];
   for (let c = 1; c <= perBeat; c++) if (perBeat % c === 0) out.push(c);
   return out.reverse();

@@ -2326,3 +2326,44 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .auth-sent{text-align:center}
 .auth-sent-text{font:400 17px/1.5 'DM Sans';color:#e9ece8;margin:6px 0 10px}
 .auth-sent-spam{font:400 14px/1.4 'DM Sans';color:#8d9690;margin:0 0 18px}
+
+/* Small phones (iPhone 12 mini and similar): a bit of air between the slogan and the three header buttons */
+@media (max-width:400px){
+  .home-hero .hero-actions{gap:6px}
+  .home-hero .settings-avatar{width:40px;height:40px}
+  .home-hero .hero-text h1{font-size:38px}
+}
+
+/* Admin daily logs: Skill Trainer exercises and tagged other-practice items shown as two labelled groups */
+.admin-chip-group{margin-top:8px}
+.admin-chip-label{display:block;font:500 12px 'DM Sans';letter-spacing:.8px;text-transform:uppercase;color:#8d9690;margin-bottom:6px}
+
+/* Groups of 4 or more: a thin bar under each member, as long as their time compared to the leader */
+.board-row{position:relative}
+.board-list.has-bars .board-row,.board-row:has(.board-bar){padding-bottom:12px}
+.board-bar{position:absolute;left:18px;right:0;bottom:4px;height:3px;border-radius:99px;background:#1d2220;overflow:hidden;display:block}
+.board-bar b{display:block;height:100%;border-radius:99px}
+
+/* Up to 3 members: the donut sits on the left, the names on the right (as before) */
+.board-body{flex-direction:row;align-items:center;gap:14px}
+.board-donut{width:118px;height:118px;align-self:auto}
+.board-donut-center strong{font-size:26px}
+.board-list{flex:1;width:auto;min-width:0}
+
+/* Groups of 4 or more: the bar sits right after the name, in the same row (no extra height) */
+.board-row:has(.board-bar){padding:7px 0;grid-template-columns:10px minmax(64px,34%) 1fr auto;grid-template-areas:"dot name bar time" "dot name bar days";column-gap:10px}
+.board-row:has(.board-bar):has(.board-rank){grid-template-columns:18px 10px minmax(64px,34%) 1fr auto;grid-template-areas:"rank dot name bar time" "rank dot name bar days"}
+.board-row:has(.board-bar) .board-rank{grid-area:rank}
+.board-row .board-bar{position:static;grid-area:bar;align-self:center;left:auto;right:auto;bottom:auto;height:6px;background:#1d2220}
+
+/* Compact rows for 4+ members: time and days on one line, so each member takes about half the height */
+.board-row:has(.board-bar){padding:5px 0;grid-template-columns:10px minmax(56px,30%) 1fr auto auto;grid-template-areas:"dot name bar time days";column-gap:8px}
+.board-row:has(.board-bar):has(.board-rank){grid-template-columns:18px 10px minmax(56px,30%) 1fr auto auto;grid-template-areas:"rank dot name bar time days"}
+.board-row:has(.board-bar) .board-days small{display:none}
+.board-row:has(.board-bar) .board-days{min-width:34px;font-size:12px}
+.board-row:has(.board-bar) .board-time{font-size:14px}
+.board-row .board-bar{height:5px}
+
+/* Group board: names and times in regular weight, not bold */
+.board-name{font-weight:400}
+.board-time{font-weight:400}
