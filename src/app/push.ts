@@ -6,7 +6,9 @@ const IS_NATIVE = process.env.NEXT_PUBLIC_NATIVE === "1";
 const enabledKey = (userId: string) => `push_enabled_${userId}`;
 const tokenKey = "push_token";
 
-export const pushSupported = () => IS_NATIVE && typeof window !== "undefined" && Capacitor.isNativePlatform();
+// Android needs a Firebase setup file (google-services.json) before it can receive notifications; until it is added, the switch is hidden there so the app can never crash on it.
+const ANDROID_PUSH_READY = process.env.NEXT_PUBLIC_ANDROID_PUSH === "1";
+export const pushSupported = () => IS_NATIVE && typeof window !== "undefined" && Capacitor.isNativePlatform() && (Capacitor.getPlatform() !== "android" || ANDROID_PUSH_READY);
 export function pushWanted(userId: string): boolean { try { return localStorage.getItem(enabledKey(userId)) === "1"; } catch { return false; } }
 
 async function register(db: any): Promise<{ ok: boolean; reason?: "denied" | "error" }> {

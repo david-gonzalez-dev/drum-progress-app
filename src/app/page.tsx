@@ -2129,7 +2129,7 @@ export default function Home() {
   return <main className={timerBanner && metroBanner ? "shell has-timer-banner has-two-banners" : timerBanner || metroBanner ? "shell has-timer-banner" : "shell"}>
     {tab === "today" && <Today pointsConfirmedOff={drumState !== null && !(drumState.eligible && drumState.enabled)} onGoToProgress={() => { setTab("progress"); window.scrollTo(0, 0); }} streak={streak} longestStreak={longestStreak} daysThisYear={daysThisYear} showDaysThisYear={showDaysThisYear} pinnedExercises={pinnedExercises} practiceSessions={practiceSessions} user={user} pointsEnabled={pointsEnabled} dailyGoal={dailyGoal} logs={logs} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} openSettings={() => setTab("settings")} onGoToPractice={() => { setPracticeStep("home"); setTab("practice"); window.scrollTo(0, 0); }} onGoToRudiments={() => { setSkillTab("rudiments"); setPracticeStep("skill"); setTab("practice"); window.scrollTo(0, 0); }} onOpenExercise={openExerciseDetail} onManagePins={() => setShowPinManager(true)} onViewPoints={() => setShowPointsDetail(true)} onOpenSessionTimer={() => setSessionTimer(true)} onOpenMetronome={() => setMetronome(true)} onRemoveOther={resetPractice} picker={{ sortedRudiments, sortedExercises, userItems, userBooks, onAddUserItem: addUserPracticeItem, onRemoveUserItem: removeUserPracticeItem }} displayName={displayName} language={language} T={T} />}
     {tab === "practice" && <PracticeMode whenCelebrationsDone={whenCelebrationsIdle} onMetronomeToneChange={changeMetronomeTone} skillTab={skillTab} setSkillTab={setSkillTab} step={practiceStep} setStep={setPracticeStep} category={practiceCategory} setCategory={setPracticeCategory} rudimentTier={practiceRudimentTier} setRudimentTier={setPracticeRudimentTier} exerciseGroup={practiceExerciseGroup} setExerciseGroup={setPracticeExerciseGroup} exercise={practiceExercise} setExercise={setPracticeExercise} bpm={practiceBpm} setBpm={setPracticeBpm} pendingMinutes={pendingSessionMinutes} setPendingMinutes={setPendingSessionMinutes} sessions={practiceSessions} onLogSession={logPracticeSession} onResetLevel={resetPracticeLevel} onEditRating={editSessionDetails} pinnedExercises={pinnedExercises} onTogglePin={togglePin} userItems={userItems} userBooks={userBooks} onAddUserItem={addUserPracticeItem} onRemoveUserItem={removeUserPracticeItem} sortedRudiments={sortedRudiments} sortedExercises={sortedExercises} kidMode={kidMode} minutes={minutes} setMinutes={setMinutes} quickAddMinutes={quickAddMinutes} setQuickAddMinutes={setQuickAddMinutes} seconds={seconds} selected={selected} toggle={toggle} customItems={customItems} setCustomItems={setCustomItems} notes={notes} setNotes={setNotes} equipment={equipment} setEquipment={setEquipment} drumsetMinutes={drumsetMinutes} setDrumsetMinutes={setDrumsetMinutes} padMinutes={padMinutes} setPadMinutes={setPadMinutes} save={save} onReset={resetPractice} saved={saved} dailyGoal={dailyGoal} logs={logs} confirm={askConfirm} openMetronome={() => setMetronome(true)} openSessionTimer={() => setSessionTimer(true)} metronomeTone={metronomeTone} user={user} setError={setAuthError} language={language} practiceDifficulty={practiceDifficulty} T={T} />}
-    {tab === "group" && <Group onGroupCount={setGroupCount} user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
+    {tab === "group" && <Group isAdmin={isAdmin} onGroupCount={setGroupCount} user={user} setError={setAuthError} logs={logs} dailyGoal={dailyGoal} saveLogFor={saveLogFor} deleteLogFor={deleteLogFor} confirm={askConfirm} language={language} T={T} cheers={cheers} cheersSeenAt={cheersSeenAt} onCheersSeen={markCheersSeen} onCheersChanged={loadCheers} groupPickerKey={groupPickerKey} />}
     {tab === "progress" && <Progress key={progressResetKey} pointsOnly={(ageGroup === "under_10" || ageGroup === "10_13") && !allRankings} onRankUp={celebrateRankUp} onOpenExercise={openExerciseDetail} onOpenSettings={() => { setTab("settings"); window.scrollTo(0, 0); }} practiceSessions={practiceSessions} logs={logs} user={user} language={language} kidMode={kidMode} T={T} />}
     {tab === "settings" && <Settings signOut={async () => { if (await askConfirm(T.settings.confirmLogout)) signOut(); }} allRankings={allRankings} onAllRankings={changeAllRankings} user={user} setError={setAuthError} profileName={displayName} onProfileNameSaved={setProfileName} language={language} onLanguageSaved={setLanguage} dailyGoal={dailyGoal} onGoalSaved={setDailyGoal} metronomeTone={metronomeTone} onMetronomeToneSaved={setMetronomeTone} showDaysThisYear={showDaysThisYear} onShowDaysThisYearSaved={setShowDaysThisYear} kidMode={kidMode} onKidModeSaved={setKidMode} drumState={drumState} onDrumPoints={answerDrumPoints} ageBand={ageGroup} practiceDifficulty={practiceDifficulty} onAgeBandSaved={(band) => { setAgeGroup(band); void refreshDrumState(); }} onDifficultySaved={setPracticeDifficulty} onBack={() => setTab("today")} T={T} />}
     {tab === "admin" && isAdmin && <AdminPage key={adminResetKey} user={user} language={language} T={T} />}
@@ -3232,14 +3232,27 @@ function MedalBoardModal({ daysTotals, totals, weeklyRows, onClose, T }: any) {
     </div>
   </div></div>;
 }
-function GroupSettingsModal({ group, setGroupSetting, setGroupDateMode, onClose, T }: any) {
+const RENAME_TEXT: Record<Lang, { label: string; save: string; saved: string }> = {
+  en: { label: "Group name", save: "Save name", saved: "Saved" },
+  nl: { label: "Groepsnaam", save: "Naam opslaan", saved: "Opgeslagen" },
+  es: { label: "Nombre del grupo", save: "Guardar nombre", saved: "Guardado" },
+};
+function GroupSettingsModal({ group, onRename, language, setGroupSetting, setGroupDateMode, onClose, T }: any) {
+  const [nameInput, setNameInput] = useState<string>(group.name ?? "");
+  const [nameBusy, setNameBusy] = useState(false);
+  const [nameSaved, setNameSaved] = useState(false);
+  const RN = RENAME_TEXT[(language ?? "en") as Lang] ?? RENAME_TEXT.en;
   return <div className="modal modal-center" onClick={onClose}><div className="day-summary" onClick={(e) => e.stopPropagation()}>
     <div className="ds-head">
       <span className="eyebrow">{T.group.groupSettings}</span>
       <button className="close" onClick={onClose}>×</button>
     </div>
     <div className="day-summary-body">
-      <h2 className="edit-rating-title">{group.name}</h2>
+      <span className="metro-section-label">{RN.label}</span>
+      <div className="group-rename-row">
+        <input className="group-input" value={nameInput} maxLength={30} onChange={(e) => { setNameInput(e.target.value); setNameSaved(false); }} />
+        <button type="button" className="save group-rename-btn" disabled={nameBusy || !nameInput.trim() || nameInput.trim() === group.name} onClick={async () => { setNameBusy(true); const ok = await onRename(nameInput); setNameBusy(false); setNameSaved(!!ok); }}>{nameSaved ? RN.saved : RN.save}</button>
+      </div>
       <div className="admin-settings-list admin-settings-list-nodivider">
         <div className="admin-settings-row admin-settings-row-stack">
           <span>{T.group.countFromCreation}</span>
@@ -3284,7 +3297,7 @@ const WEEK_TEXT: Record<Lang, { title: string; month: string; close: string }> =
   es: { title: "Esta semana", month: "Mes", close: "Cerrar" },
 };
 
-function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T, cheers, cheersSeenAt, onCheersSeen, onCheersChanged, groupPickerKey }: { groupPickerKey: number; cheers: Cheer[]; cheersSeenAt: string; onCheersSeen: () => void; onCheersChanged: () => void; onGroupCount?: (n: number) => void; user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
+function Group({ isAdmin, onGroupCount, user, setError, logs, dailyGoal, saveLogFor, deleteLogFor, confirm, language, T, cheers, cheersSeenAt, onCheersSeen, onCheersChanged, groupPickerKey }: { isAdmin?: boolean; groupPickerKey: number; cheers: Cheer[]; cheersSeenAt: string; onCheersSeen: () => void; onCheersChanged: () => void; onGroupCount?: (n: number) => void; user: any; setError: (message: string) => void; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; language: Lang; T: any }) {
   const [mode, setMode] = useState<"start" | "create" | "join">("start"); const [name, setName] = useState(""); const [code, setCode] = useState(""); const [groups, setGroups] = useCachedState<any[]>(user?.id, "groups", []); const [activeGroupId, setActiveGroupId] = useCachedState<string | null>(user?.id, "activeGroupId", null); const [addingGroup, setAddingGroup] = useState(false); const [busy, setBusy] = useState(false);
   // New-group setup defaults -- practice tracking defaults to "from today" (matching the
   // suggested creation-form layout), everything else defaults on. Existing groups are
@@ -3780,6 +3793,15 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
   // Re-validated server-side by admin_set_group_settings itself (checks is_admin() and
   // membership in this exact group) -- the client only decides whether to SHOW the controls.
   // `key` is the local groups-state field name; `param` is that field's RPC parameter name.
+  async function renameGroup(newName: string) {
+    if (!group) return false;
+    const clean = newName.trim().slice(0, 30);
+    if (!clean) return false;
+    const { error } = await supabase.rpc("rename_group", { target_group_id: group.id, new_name: clean });
+    if (error) { setError(error.message); return false; }
+    setGroups((current) => current.map((g) => (g.id === group.id ? { ...g, name: clean } : g)));
+    return true;
+  }
   async function setGroupSetting(key: "show_teacher_stats" | "weekly_awards_enabled" | "count_days_from_creation", param: "p_show_teacher_stats" | "p_weekly_awards_enabled" | "p_count_days_from_creation", enabled: boolean) {
     if (!group || enabled === group[key]) return;
     const { error } = await supabase.rpc("admin_set_group_settings", { target_group_id: group.id, [param]: enabled });
@@ -3811,8 +3833,8 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
     return <section className="page">
       <header className="simple-head group-head">
         <div>{groups.length > 1
-          ? <button type="button" className="group-title-btn" onClick={() => setShowGroupPicker(true)} aria-label={T.group.switchGroup} title={T.group.switchGroup}><h1>{(() => { const words = group.name.trim().split(" "); const last = words.pop() ?? ""; return <>{words.length ? words.join(" ") + " " : ""}<span className="group-title-last">{last}<span className="group-title-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></span></span></>; })()}</h1></button>
-          : <h1>{group.name}</h1>}</div>
+          ? <button type="button" className="group-title-btn" onClick={() => setShowGroupPicker(true)} aria-label={T.group.switchGroup} title={T.group.switchGroup}><h1 style={groupTitleStyle(group.name)}>{(() => { const words = group.name.trim().split(" "); const last = words.pop() ?? ""; return <>{words.length ? words.join(" ") + " " : ""}<span className="group-title-last">{last}<span className="group-title-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></span></span></>; })()}</h1></button>
+          : <h1 style={groupTitleStyle(group.name)}>{group.name}</h1>}</div>
         <div className="group-head-actions">
           <button type="button" className="group-add-btn group-bell-btn" onClick={openCheerInbox} aria-label={T.cheers.bellTitle} title={T.cheers.bellTitle}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 20a2 2 0 01-3.4 0" /></svg>
@@ -3826,7 +3848,7 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
               <div className="group-menu-scrim" onClick={() => setShowGroupMenu(false)} />
               <div className="group-menu" role="menu">
                                 <button type="button" role="menuitem" className="group-menu-item" onClick={() => { setShowGroupMenu(false); setShowInvite(true); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V3M8 7l4-4 4 4" /><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg><span>{INVITE_TEXT[language as Lang].title}</span></button>
-                {user.id === teacherId && <button type="button" role="menuitem" className="group-menu-item" onClick={() => { setShowGroupMenu(false); setShowGroupSettings(true); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg><span>{(() => { const t = String(T.group.groupSettings); return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase(); })()}</span></button>}
+                {(user.id === teacherId || isAdmin) && <button type="button" role="menuitem" className="group-menu-item" onClick={() => { setShowGroupMenu(false); setShowGroupSettings(true); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg><span>{(() => { const t = String(T.group.groupSettings); return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase(); })()}</span></button>}
                 <button type="button" role="menuitem" className="group-menu-item" onClick={() => { setShowGroupMenu(false); setAddingGroup(true); setMode("start"); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg><span>{MENU_TEXT[language as Lang].newGroup}</span></button>
               </div>
             </>}
@@ -4039,7 +4061,7 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
         <button type="button" className="save" onClick={shareInvite}>{INVITE_TEXT[language as Lang].share}</button>
         <button type="button" className="auth-switch" onClick={copyInvite}>{copied ? INVITE_TEXT[language as Lang].copied : INVITE_TEXT[language as Lang].copy}</button>
       </div></div>}
-      {showGroupSettings && <GroupSettingsModal group={group} setGroupSetting={setGroupSetting} setGroupDateMode={setGroupDateMode} onClose={() => setShowGroupSettings(false)} T={T} />}
+      {showGroupSettings && <GroupSettingsModal group={group} language={language} onRename={renameGroup} setGroupSetting={setGroupSetting} setGroupDateMode={setGroupDateMode} onClose={() => setShowGroupSettings(false)} T={T} />}
       {showMembers && <div className="modal modal-center" onClick={() => setShowMembers(false)}><div className="day-summary invite-sheet members-sheet" onClick={(e) => e.stopPropagation()}>
         <button className="close" onClick={() => setShowMembers(false)} aria-label="Close">×</button>
         <h2 className="edit-rating-title">{MEMBERS_TEXT[language as Lang].title}</h2>
@@ -4077,7 +4099,7 @@ function Group({ onGroupCount, user, setError, logs, dailyGoal, saveLogFor, dele
       <button className="primary" disabled={busy || !code} onClick={joinGroup}>{busy ? T.group.pleaseWait : T.group.joinGroup}</button>
       <button className="secondary" onClick={() => setMode("start")}>{T.group.back}</button>
     </> : <>
-      <input className="group-input" value={name} onChange={e => setName(e.target.value)} placeholder={T.group.groupNamePlaceholder} />
+      <input className="group-input" value={name} maxLength={30} onChange={e => setName(e.target.value)} placeholder={T.group.groupNamePlaceholder} />
       <div className="admin-controls-card create-group-settings">
         <span className="ladder-label">{T.group.groupSettings}</span>
         <div className="admin-settings-list">
@@ -6394,6 +6416,11 @@ const POINTS_LB_TEXT: Record<Lang, { label: string; sub: string }> = {
 };
 const TODAY_KEEP_GOING: Record<Lang, string> = { en: "Keep it going", nl: "Ga door", es: "Sigue así" };
 const TODAY_DETAILS: Record<Lang, string> = { en: "Details", nl: "Details", es: "Detalles" };
+// A long group name in one word would otherwise break in the middle of the word: make the title smaller until it fits.
+function groupTitleStyle(name: string): React.CSSProperties | undefined {
+  const longest = Math.max(1, ...name.trim().split(/\s+/).map((w) => w.length));
+  return longest <= 10 ? undefined : { fontSize: Math.max(24, Math.floor(215 / (longest * 0.47))) };
+}
 const SPEED_GROUP_TEXT: Record<Lang, { adults: string; kids: string }> = {
   en: { adults: "14 and up", kids: "Under 14" },
   nl: { adults: "14 en ouder", kids: "Onder 14" },
