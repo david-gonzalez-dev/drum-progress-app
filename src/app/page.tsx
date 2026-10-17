@@ -2776,11 +2776,6 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
   }, [user?.id]);
   return <section className="page today">
     <header className="hero home-hero"><div className="hero-text"><h1 className="today-hero-heading">{T.today.heroLine1}<br/>{T.today.heroLine1b}<br/><i>{T.today.heroLine2}</i></h1></div><div className="hero-actions"><button type="button" className="avatar settings-avatar metro-avatar" onClick={onOpenSessionTimer} aria-label={T.today.sessionTimer ?? "Session Timer"}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M9 2h6" /></svg></button><button type="button" className="avatar settings-avatar metro-avatar" onClick={onOpenMetronome} aria-label={T.today.metronome}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6l3.5 17.5a1 1 0 01-1 1.2h-11a1 1 0 01-1-1.2z" /><path d="M12 17.5L15.5 6.5" /><circle cx="14.2" cy="10.4" r="1.3" fill="currentColor" /></svg></button><button className="avatar settings-avatar" onClick={openSettings} aria-label={T.nav.settings}>{NAV_ICONS.settings}</button></div></header>
-    <button type="button" className={welcome ? "start-cta cel-welcome" : "start-cta"} onClick={onGoToPractice}>
-      <span className="start-cta-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg></span>
-      <span className="start-cta-text"><strong>{T.today.startPracticeTitle}</strong></span>
-      <svg className="start-cta-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
-    </button>
     <div className="form-card stats-tile stats-icons"><div className={showDaysThisYear ? "stats" : "stats stats-2"}><HomeStat icon="flame" label={T.today.currentStreak} value={String(streak) + " " + T.today.days} /><HomeStat icon="crown" label={T.calendar.longestStreak} value={String(longestStreak) + " " + T.today.days} />{showDaysThisYear && <HomeStat icon="bars" label={T.calendar.daysThisYear} value={String(daysThisYear) + " / 365"} />}</div></div>
     <YourPointsCard user={user} pointsEnabled={pointsEnabled} rows={pointsRows} onViewPoints={onViewPoints} T={T} />
     {todayMinutes === 0 && dailyGoal != null && !todayLog?.notes && todaySkillExercises.length === 0 ? <div className="form-card today-goal-card today-empty">
@@ -2788,7 +2783,7 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
         <label className="input-label">{T.today.todaySummary}</label>
         <div className="goal-progress today-empty-progress"><div className="goal-progress-label"><strong>{formatMinutes(0)} / {formatMinutes(dailyGoal)}</strong></div><div className="goal-progress-track"><div className="goal-progress-bar" style={{ width: "0%" }} /></div></div>
       </div>
-      <button type="button" className="start-session-btn today-empty-cta" onClick={onGoToRudiments}>{T.today.practiceRudiment}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
+      <button type="button" className="start-session-btn today-empty-cta" onClick={onGoToPractice}><span className="start-cta-play today-empty-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg></span>{T.today.startPracticeTitle}</button>
     </div> : <div className={todayMinutes === 0 && todaySkillExercises.length === 0 ? "form-card today-goal-card today-goal-card-empty" : "form-card today-goal-card today-goal-card-open"} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") (todayMinutes === 0 && todaySkillExercises.length === 0 ? onGoToPractice() : setShowDetail(true)); }} onClick={(e) => { if ((e.target as HTMLElement).closest("button")) return; if (todayMinutes === 0 && todaySkillExercises.length === 0) onGoToPractice(); else setShowDetail(true); }}>
       <label className="input-label">{T.today.todaySummary}{(todayMinutes > 0 || todaySkillExercises.length > 0) && <span className="today-detail-hint" aria-hidden="true">›</span>}</label>
       {dailyGoal != null ? (
@@ -2854,10 +2849,23 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
 
 type SaveLogFor = (targetDate: string, targetMinutes: number, targetItems: string[], targetNotes: string, targetEquipment: string | null, targetDrumsetMinutes?: number | null, targetPadMinutes?: number | null, targetSeconds?: number, targetCustomItems?: string[]) => Promise<boolean>;
 
+const CAL_VIEW_TEXT: Record<Lang, { month: string; week: string }> = {
+  en: { month: "Month", week: "Week" },
+  nl: { month: "Maand", week: "Week" },
+  es: { month: "Mes", week: "Semana" },
+};
 function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practiceSessions, language, T, picker, onOpenExercise }: { onOpenExercise?: (en: string) => void; picker?: PickerData; logs: Record<string, Log>; dailyGoal: number | null; saveLogFor: SaveLogFor; deleteLogFor: (date: string) => Promise<boolean>; confirm: (message: string) => Promise<boolean>; practiceSessions: any[]; language: Lang; T: any }) {
   const today = new Date(); const [selectedDate, setSelectedDate] = useState(dateKey); const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1)); const year = viewDate.getFullYear(); const month = viewDate.getMonth(); const days = new Date(year, month + 1, 0).getDate(); const starts = (new Date(year, month, 1).getDay() + 6) % 7; const selectedLog = logs[selectedDate];
   const locale = localeFor(language);
   const [summaryDate, setSummaryDate] = useState<string | null>(null);
+  // Month is the default; picking Week is remembered on this device, so it stays Week next time.
+  const [calView, setCalView] = useState<"month" | "week">("month");
+  useEffect(() => { try { if (localStorage.getItem("home_calendar_view") === "week") setCalView("week"); } catch { /* storage unavailable: stay on month */ } }, []);
+  function chooseCalView(v: "month" | "week") { setCalView(v); try { localStorage.setItem("home_calendar_view", v); } catch { /* ignore */ } }
+  const [calWeekStart, setCalWeekStart] = useState(weekStartKey);
+  function changeWeek(delta: number) { setCalWeekStart((current) => shiftDateKey(current, delta * 7)); }
+  const calWeekDays = Array.from({ length: 7 }, (_, i) => shiftDateKey(calWeekStart, i));
+  const calWeekTitle = (() => { const a = new Date(calWeekDays[0] + "T12:00:00"), b = new Date(calWeekDays[6] + "T12:00:00"); return `${a.toLocaleDateString(locale, { day: "numeric", month: "short" })} - ${b.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })}`; })();
   function changeMonth(delta: number) { setViewDate(new Date(year, month + delta, 1)); }
   function tapDay(key: string) {
     setSelectedDate(key);
@@ -2865,12 +2873,13 @@ function Calendar({ logs, dailyGoal, saveLogFor, deleteLogFor, confirm, practice
   }
   function goToToday() {
     setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    setCalWeekStart(weekStartKey);
     setSelectedDate(dateKey);
   }
   const isFuture = selectedDate > dateKey;
-  const isTodayView = month === today.getMonth() && year === today.getFullYear() && selectedDate === dateKey;
+  const isTodayView = (calView === "week" ? calWeekStart === weekStartKey : month === today.getMonth() && year === today.getFullYear()) && selectedDate === dateKey;
   return <>
-    <div className="calendar-card"><div className="cal-head"><div className="cal-nav"><button onClick={() => changeMonth(-1)}>‹</button><h2>{viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => changeMonth(1)}>›</button></div>{!isTodayView && <button type="button" className="cal-today-btn" onClick={goToToday}>{T.calendar.todayBtn}</button>}</div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className="days">{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=(logs[key]?.minutes ?? 0) > 0; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</div></div>
+    <div className="calendar-card"><div className="cal-view-toggle" role="group">{(["month", "week"] as const).map((v) => <button key={v} type="button" className={calView === v ? "on" : ""} onClick={() => chooseCalView(v)}>{CAL_VIEW_TEXT[language][v]}</button>)}</div><div className="cal-head"><div className="cal-nav"><button onClick={() => (calView === "week" ? changeWeek(-1) : changeMonth(-1))}>‹</button><h2>{calView === "week" ? calWeekTitle : viewDate.toLocaleString(locale, { month: "long", year: "numeric" })}</h2><button onClick={() => (calView === "week" ? changeWeek(1) : changeMonth(1))}>›</button></div>{!isTodayView && <button type="button" className="cal-today-btn" onClick={goToToday}>{T.calendar.todayBtn}</button>}</div><div className="week">{T.calendar.weekdays.map((x: string, i: number)=><span key={i}>{x}</span>)}</div><div className={calView === "week" ? "days days-week" : "days"}>{calView === "week" ? calWeekDays.map((key) => { const d = Number(key.slice(8)); const isToday = key === dateKey; const done = (logs[key]?.minutes ?? 0) > 0; const className = (isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={key} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button>; }) : <>{Array.from({ length: starts }).map((_,i)=><i key={"b" + i}/>)}{Array.from({ length: days }).map((_,i) => { const d=i+1; const key = formatLocalDate(year, month, d); const isToday=d===today.getDate() && month===today.getMonth() && year===today.getFullYear(); const done=(logs[key]?.minutes ?? 0) > 0; const className=(isToday ? "is-today " : "") + (selectedDate === key ? "is-selected " : "") + (done ? "done" : ""); return <button key={d} onClick={() => tapDay(key)} className={className}><span>{d}</span>{done && <b>✓</b>}</button> })}</>}</div></div>
     {selectedDate !== dateKey && <div className="day-detail"><span>{new Date(selectedDate + "T12:00:00").toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</span>
       {isFuture && <p>{T.calendar.futureDay}</p>}
       {!isFuture && (selectedLog && selectedLog.minutes > 0 ? (() => {

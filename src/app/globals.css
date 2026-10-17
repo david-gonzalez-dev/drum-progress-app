@@ -2459,3 +2459,26 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .give-full-buttons{width:min(100%,520px)}
 .give-full-buttons button{font-size:24px;padding:16px 0;border-radius:16px}
 .give-card-open{cursor:pointer}
+
+/* Empty Today card button: black play icon before "Start Practice" */
+.today-empty-play{width:34px;height:34px;margin:-2px 10px -2px -8px}
+.today-empty-play svg{width:16px;height:16px;margin-left:2px}
+.today-empty-cta{display:inline-flex;align-items:center;justify-content:center}
+/* Daily goal reached: green again */
+.goal-progress-bar.achieved{background:linear-gradient(90deg,#2fae68,#4fd18b)}
+.goal-progress-label strong.achieved{color:#4fd18b}
+
+/* Home streak card: a soft orange border with a faint glow */
+.stats-tile.stats-icons{border:1px solid rgba(255,138,61,.32);box-shadow:0 0 18px rgba(255,138,61,.10),inset 0 0 14px rgba(255,138,61,.04)}
+
+/* Home calendar: Month / Week switch */
+.cal-view-toggle{display:inline-flex;background:#161918;border:1px solid #232826;border-radius:99px;padding:3px;gap:2px;margin-bottom:12px}
+.cal-view-toggle button{border:0;background:transparent;color:#8d9690;font:500 13px 'DM Sans';padding:5px 14px;border-radius:99px}
+.cal-view-toggle button.on{background:#262b28;color:#f6f7f5}
+.days-week{grid-template-rows:none}
+/* Home calendar: green ticks for days with practice */
+.calendar-card .days button b{color:#4fd18b}
+/* Practised days: a green tinted cell and a bolder, brighter tick so they stand out */
+.calendar-card .days button b{color:#3ddc84;font-size:14px;font-weight:900;bottom:0}
+.calendar-card .days button.done span{position:relative;top:-6px}
+.calendar-card .days button.done b{bottom:1px;line-height:1}
