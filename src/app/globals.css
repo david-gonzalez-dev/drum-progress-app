@@ -2373,3 +2373,89 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .detail-chips em .chip-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .today-breakdown-block .detail-chips em{max-width:calc(50% - 4px)}
 .today-breakdown-block .detail-chips .more-chip{flex-shrink:0}
+
+/* Admin overview: collapsible tempo comparison, all users capped at about 5 rows and scrollable */
+.admin-collapse-head{display:flex;align-items:center;justify-content:space-between;width:100%;background:transparent;border:0;padding:0;color:inherit;font-family:inherit;text-align:left}
+.admin-collapse-head .admin-summary-label{margin:0}
+.admin-collapse-head .give-chev{width:18px;height:18px;color:#8d9690;transition:transform .2s}
+.admin-collapse-head .give-chev.open{transform:rotate(180deg)}
+.admin-collapse-head+*{margin-top:12px}
+.admin-users-scroll{max-height:290px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:2px}
+
+/* Tempo comparison: compact, quieter grid, markers at every unlock, two-column legend */
+.speed-select{margin:0 0 6px;padding:9px 12px;font-size:15px}
+.speed-gridline{stroke:#2a302d;stroke-dasharray:2 5}
+.speed-gridline-label,.speed-axis-label{fill:#7c837e;font-size:9px}
+.speed-axis-line{stroke:#232826}
+.speed-chart{margin-top:0}
+.speed-legend{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:10px}
+.speed-legend-row{gap:6px;min-width:0}
+.speed-legend-name{font-size:13px}
+.speed-legend-bpm{font:500 13px 'DM Sans'}
+.speed-legend-minutes{display:none}
+.speed-unqualified{margin-top:10px;padding-top:8px}
+.speed-select{padding:6px 10px;font-size:14px;font-weight:400;border-radius:10px;background:#171a18;border-color:#2a302d;color:#d2d6d3}
+.speed-legend-row{justify-content:space-between}
+.speed-group-toggle{display:inline-flex;background:#161918;border:1px solid #232826;border-radius:99px;padding:3px;gap:2px;margin-bottom:10px}
+.speed-group-toggle button{border:0;background:transparent;color:#8d9690;font:500 13px 'DM Sans';padding:5px 14px;border-radius:99px}
+.speed-group-toggle button.on{background:#262b28;color:#f6f7f5}
+
+/* Admin student page: collapsible blocks. The inner cards lose their own box so they sit flat inside the fold. */
+.admin-fold .admin-fold-body{margin-top:12px}
+.admin-fold .admin-fold-body .admin-summary-card,.admin-fold .admin-fold-body .progress-embedded{background:transparent;border:0;padding:0;margin:0 0 14px;box-shadow:none}
+.admin-fold .admin-fold-body .admin-summary-label{display:none}
+
+/* Admin student settings: a shorter card */
+.admin-controls-card{padding:10px 14px}
+.admin-controls-card .admin-settings-list{gap:2px}
+.admin-controls-card .admin-settings-row{min-height:34px}
+.admin-controls-card .admin-settings-row>span{font-size:13px}
+.admin-controls-card .admin-mini-toggle{padding:2px}
+.admin-controls-card .admin-mini-toggle button{padding:4px 10px;font-size:12px}
+.admin-student-head{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;row-gap:2px}
+.admin-student-head h1{margin:0}
+.admin-student-head .hint{margin:0;font-size:14px;color:#8d9690;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.admin-log-time{font-size:12px;font-weight:400;color:#8d9690;margin-left:4px}
+
+/* Today, no practice yet: the "TODAY" label sits in the corner so the message and button are centred in the card */
+.today-empty{justify-content:center;padding:26px 16px 22px;min-height:132px}
+.today-empty .today-empty-text .input-label{position:absolute;left:16px;top:16px;margin:0}
+.today-empty .today-empty-title{margin:0}
+.today-empty .today-empty-text{flex:0 0 auto}
+.today-empty{padding:34px 16px 24px}
+.today-empty{min-height:0;padding:48px 16px 24px}
+.today-empty{padding:58px 16px 26px}
+/* Empty Today card, progress bar variant: "0 / 5 min" with an empty bar, then the button */
+.today-empty{padding:16px 16px 18px;align-items:stretch;gap:14px;text-align:left}
+.today-empty .today-empty-text{position:static;width:100%;display:block;flex:0 0 auto}
+.today-empty .today-empty-text .input-label{position:static;display:block;margin:0 0 6px}
+.today-empty .today-empty-progress{margin:0}
+.today-empty .today-empty-cta{align-self:center}
+.today-empty{text-align:center}
+.today-empty .today-empty-text .input-label{text-align:center}
+.today-empty .goal-progress-label{justify-content:center;text-align:center}
+/* Home: Start practice a little narrower, centred */
+.start-cta{width:90%;margin-left:auto;margin-right:auto}
+
+/* Admin overview: quick point giver */
+.give-points-select{margin:10px 0 10px;width:100%}
+.give-points-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.give-points-buttons button{border:1px solid #3a2616;background:#2a170a;color:#ff9b50;font:600 17px 'DM Sans';padding:10px 0;border-radius:12px}
+.give-points-buttons button:disabled{opacity:.4}
+.give-points-done{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 0;font:400 14px 'DM Sans';color:#b9c0bb}
+.give-points-done button{background:transparent;border:1px solid #2c312e;color:#d2d6d3;font:500 13px 'DM Sans';padding:5px 12px;border-radius:99px}
+.give-points-buttons button.minus{border-color:#3b2a2a;background:#241616;color:#e59a95}
+.give-points-total{display:flex;align-items:baseline;justify-content:center;gap:8px;margin:4px 0 14px}
+.give-points-total strong{font:700 40px 'Barlow Condensed';color:#f6f7f5;line-height:1}
+.give-points-total span{font:400 14px 'DM Sans';color:#8d9690}
+.give-points-expand{position:relative;width:100%;background:transparent;border:0;color:inherit;font-family:inherit;cursor:pointer}
+.give-points-expand svg{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#8d9690}
+/* Full screen view of the point giver, to show a student in a lesson */
+.give-full{position:fixed;inset:0;z-index:300;background:#080909;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.give-full-close{position:absolute;top:calc(14px + env(safe-area-inset-top));right:18px;width:40px;height:40px;border-radius:50%;border:1px solid #2c312e;background:#1a1e1c;color:#f6f7f5;font-size:24px;line-height:1;padding:0}
+.give-full-name{font:500 26px 'DM Sans';color:#d2d6d3;margin:0 0 6px}
+.give-full-total{font:800 min(40vw,220px) 'Barlow Condensed';line-height:.95;color:#ff9b50}
+.give-full-unit{font:400 20px 'DM Sans';color:#8d9690;margin:4px 0 30px}
+.give-full-buttons{width:min(100%,520px)}
+.give-full-buttons button{font-size:24px;padding:16px 0;border-radius:16px}
+.give-card-open{cursor:pointer}

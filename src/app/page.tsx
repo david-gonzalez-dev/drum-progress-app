@@ -748,7 +748,7 @@ const translations = {
       skillProgressLabel: "SKILL PROGRESS",
       monthlyPracticeLabel: "MONTHLY PRACTICE", achievementsLabel: "ACHIEVEMENTS", noAchievements: "No achievements yet.",
       historyBtn: "History", hideHistoryBtn: "Hide history",
-      speedLabel: "SPEED BY EXERCISE", speedHint: "Highest BPM each student has played comfortably, over time.",
+      speedLabel: "TEMPO COMPARISON", speedHint: "Highest BPM each student has played comfortably, over time.",
       speedNoData: "No sessions logged for this exercise yet.", speedNotQualified: "Practising, not yet at a steady speed:",
       speedBpmSuffix: "BPM",
       improvementsLabel: "RECENT IMPROVEMENTS", improvementsEmpty: "No tempo improvements yet.",
@@ -928,7 +928,7 @@ const translations = {
       skillProgressLabel: "PROGRESO DE HABILIDADES",
       monthlyPracticeLabel: "PRÁCTICA MENSUAL", achievementsLabel: "LOGROS", noAchievements: "Aún no hay logros.",
       historyBtn: "Historial", hideHistoryBtn: "Ocultar historial",
-      speedLabel: "VELOCIDAD POR EJERCICIO", speedHint: "El BPM más alto que cada estudiante ha tocado con soltura, a lo largo del tiempo.",
+      speedLabel: "COMPARACIÓN DE TEMPOS", speedHint: "El BPM más alto que cada estudiante ha tocado con soltura, a lo largo del tiempo.",
       speedNoData: "Aún no hay sesiones registradas para este ejercicio.", speedNotQualified: "Practicando, aún sin una velocidad estable:",
       speedBpmSuffix: "BPM",
       improvementsLabel: "MEJORAS RECIENTES", improvementsEmpty: "Aún no hay mejoras de tempo.",
@@ -1108,7 +1108,7 @@ const translations = {
       skillProgressLabel: "VAARDIGHEIDSVOORTGANG",
       monthlyPracticeLabel: "OEFENEN PER MAAND", achievementsLabel: "PRESTATIES", noAchievements: "Nog geen prestaties.",
       historyBtn: "Geschiedenis", hideHistoryBtn: "Geschiedenis verbergen",
-      speedLabel: "SNELHEID PER OEFENING", speedHint: "Het hoogste BPM dat elke leerling comfortabel heeft gespeeld, in de loop van de tijd.",
+      speedLabel: "TEMPOVERGELIJKING", speedHint: "Het hoogste BPM dat elke leerling comfortabel heeft gespeeld, in de loop van de tijd.",
       speedNoData: "Nog geen sessies gelogd voor deze oefening.", speedNotQualified: "Aan het oefenen, nog niet op een vast tempo:",
       speedBpmSuffix: "BPM",
       improvementsLabel: "RECENTE VERBETERINGEN", improvementsEmpty: "Nog geen tempoverbeteringen.",
@@ -2786,9 +2786,8 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
     {todayMinutes === 0 && dailyGoal != null && !todayLog?.notes && todaySkillExercises.length === 0 ? <div className="form-card today-goal-card today-empty">
       <div className="today-empty-text">
         <label className="input-label">{T.today.todaySummary}</label>
-        <h3 className="today-empty-title">{T.today.noPracticeTitle}</h3>
+        <div className="goal-progress today-empty-progress"><div className="goal-progress-label"><strong>{formatMinutes(0)} / {formatMinutes(dailyGoal)}</strong></div><div className="goal-progress-track"><div className="goal-progress-bar" style={{ width: "0%" }} /></div></div>
       </div>
-      <span className="goal-chip goal-chip-corner">{T.today.goalShort} {formatMinutes(dailyGoal)}</span>
       <button type="button" className="start-session-btn today-empty-cta" onClick={onGoToRudiments}>{T.today.practiceRudiment}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
     </div> : <div className={todayMinutes === 0 && todaySkillExercises.length === 0 ? "form-card today-goal-card today-goal-card-empty" : "form-card today-goal-card today-goal-card-open"} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") (todayMinutes === 0 && todaySkillExercises.length === 0 ? onGoToPractice() : setShowDetail(true)); }} onClick={(e) => { if ((e.target as HTMLElement).closest("button")) return; if (todayMinutes === 0 && todaySkillExercises.length === 0) onGoToPractice(); else setShowDetail(true); }}>
       <label className="input-label">{T.today.todaySummary}{(todayMinutes > 0 || todaySkillExercises.length > 0) && <span className="today-detail-hint" aria-hidden="true">›</span>}</label>
@@ -6353,6 +6352,27 @@ function SessionTimer({ pinnedExercises, open, close, onOpen, onBannerChange, on
   </div>;
 }
 
+// A collapsible card for the student page in Admin: one tap on the title opens or closes it.
+function AdminFold({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return <div className="admin-summary-card admin-fold">
+    <button type="button" className="admin-collapse-head" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <span className="admin-summary-label">{title}</span>
+      <svg className={open ? "give-chev open" : "give-chev"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+    </button>
+    {open && <div className="admin-fold-body">{children}</div>}
+  </div>;
+}
+const GIVE_POINTS_TEXT: Record<Lang, { title: string; pick: string; total: string; expand: string; given: (n: number, name: string) => string; undo: string }> = {
+  en: { title: "GIVE POINTS", pick: "Choose a student", total: "points now", expand: "Show full screen", given: (n, name) => n > 0 ? `+${n} given to ${name}` : `−${-n} taken from ${name}`, undo: "Undo" },
+  nl: { title: "PUNTEN GEVEN", pick: "Kies een leerling", total: "punten nu", expand: "Toon op volledig scherm", given: (n, name) => n > 0 ? `+${n} gegeven aan ${name}` : `−${-n} afgenomen van ${name}`, undo: "Ongedaan maken" },
+  es: { title: "DAR PUNTOS", pick: "Elige un alumno", total: "puntos ahora", expand: "Pantalla completa", given: (n, name) => n > 0 ? `+${n} dados a ${name}` : `−${-n} quitados a ${name}`, undo: "Deshacer" },
+};
+const SPEED_GROUP_TEXT: Record<Lang, { adults: string; kids: string }> = {
+  en: { adults: "14 and up", kids: "Under 14" },
+  nl: { adults: "14 en ouder", kids: "Onder 14" },
+  es: { adults: "14 y más", kids: "Menos de 14" },
+};
 function AdminPage({ user, language, T }: { user: any; language: Lang; T: any }) {
   // The Admin page remembers what it last loaded, so it appears at once when you come back to it and refreshes quietly (same idea as the Group tab).
   const [users, setUsers] = useCachedState<{ id: string; name: string; email: string; last_active: string | null; total_logs: number; total_minutes: number }[] | null>(user?.id, "admin_users", null);
@@ -6414,6 +6434,62 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     loadAll();
   }, []);
   const [showImprovementsModal, setShowImprovementsModal] = useState(false);
+  const [showSpeed, setShowSpeed] = useState(false);
+  // Quick point giver on the overview: pick a student, tap +1 / +5 / +10.
+  const [giveToId, setGiveToId] = useState("");
+  const [givingPoints, setGivingPoints] = useState(false);
+  const [lastGiven, setLastGiven] = useState<{ id: string; name: string; amount: number } | null>(null);
+  // The chosen student's current points total (all awards added up), shown before you give or take points.
+  const [giveToTotal, setGiveToTotal] = useState<number | null>(null);
+  const [giveFull, setGiveFull] = useState(false);
+  useEffect(() => {
+    setGiveToTotal(null);
+    if (!giveToId) return;
+    let alive = true;
+    (async () => {
+      let sum = 0, from = 0;
+      while (true) {
+        const { data } = await supabase.from("point_awards").select("amount").eq("user_id", giveToId).order("created_at").range(from, from + 999);
+        const rows = data ?? [];
+        rows.forEach((r: any) => { sum += Number(r.amount) || 0; });
+        if (rows.length < 1000) break;
+        from += 1000;
+      }
+      if (alive) setGiveToTotal(sum);
+    })();
+    return () => { alive = false; };
+  }, [giveToId]);
+  async function giveQuickPoints(amount: number) {
+    const target = (users ?? []).find((u) => u.id === giveToId);
+    if (!target || !amount || givingPoints) return;
+    setGivingPoints(true);
+    const { error } = await supabase.rpc("admin_award_points", { target_user_id: target.id, points_amount: amount, points_reason: null });
+    setGivingPoints(false);
+    if (!error) { setLastGiven({ id: target.id, name: target.name || target.email, amount }); setGiveToTotal((t) => (t == null ? t : t + amount)); }
+  }
+  // Kids and adults practise at different subdivisions (their practice difficulty), so the tempo comparison is shown per group.
+  const [speedGroup, setSpeedGroup] = useState<"adults" | "kids">("adults");
+  const [difficultyById, setDifficultyById] = useState<Record<string, string> | null>(null);
+  // The exact moment each person last practised (a saved day or a Skill Trainer session), so "All users" can be ordered by time, not only by day.
+  const [lastSeenAt, setLastSeenAt] = useState<Record<string, string>>({});
+  useEffect(() => {
+    Promise.all([
+      supabase.from("practice_logs").select("user_id,updated_at").order("updated_at", { ascending: false }).limit(1000),
+      supabase.from("practice_sessions").select("user_id,created_at").order("created_at", { ascending: false }).limit(1000),
+    ]).then(([logsRes, sessRes]: any[]) => {
+      const map: Record<string, string> = {};
+      (logsRes.data ?? []).forEach((r: any) => { if (r.updated_at && (!map[r.user_id] || r.updated_at > map[r.user_id])) map[r.user_id] = r.updated_at; });
+      (sessRes.data ?? []).forEach((r: any) => { if (r.created_at && (!map[r.user_id] || r.created_at > map[r.user_id])) map[r.user_id] = r.created_at; });
+      setLastSeenAt(map);
+    });
+  }, []);
+  useEffect(() => {
+    supabase.from("settings").select("user_id,practice_difficulty").then(({ data }: any) => {
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((row: any) => { map[row.user_id] = row.practice_difficulty ?? "standard"; });
+      setDifficultyById(map);
+    });
+  }, []);
   const [selected, setSelected] = useState<{ id: string; name: string; email: string } | null>(null);
   const [logs, setLogs] = useState<any[] | null>(null);
   const [sessions, setSessions] = useState<any[] | null>(null);
@@ -6462,7 +6538,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     // switching immediately and filling in data as each request lands -- the in-between state
     // (a page with nothing on it yet) is exactly the flash this was designed to avoid.
     const [logsRes, sessionsRes, pinnedRes, settingsRes, pointsRes, challengesRes] = await Promise.all([
-      supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,used_metronome,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }),
+      supabase.from("practice_logs").select("practiced_on,minutes,seconds,notes,custom_items,used_metronome,updated_at,practice_log_items(practice_items(name_en))").eq("user_id", u.id).order("practiced_on", { ascending: false }),
       supabase.from("practice_sessions").select("bpm,rating,duration_minutes,practiced_on,created_at,practice_exercises(name_en)").eq("user_id", u.id).order("practiced_on", { ascending: false }),
       supabase.from("pinned_exercises").select("exercise_en").eq("user_id", u.id).order("sort_order"),
       supabase.from("settings").select("kid_mode, points_enabled, leaderboard_hidden").eq("user_id", u.id).maybeSingle(),
@@ -6470,7 +6546,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
       supabase.from("personal_challenges").select("id,exercise_en,target_minutes,target_bpm,length_days,start_date,assigned_by").eq("user_id", u.id),
     ]);
     setLogs((logsRes.data ?? []).map((row: any) => ({
-      date: row.practiced_on, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes, usedMetronome: !!row.used_metronome,
+      date: row.practiced_on, savedAt: row.updated_at ?? null, minutes: row.minutes, seconds: row.seconds ?? 0, notes: row.notes, usedMetronome: !!row.used_metronome,
       items: Array.from(new Set([...(row.practice_log_items ?? []).map((entry: any) => entry.practice_items?.name_en).filter(Boolean), ...(row.custom_items ?? [])])),
     })));
     setSessions((sessionsRes.data ?? []).map((row: any) => ({ created_at: row.created_at, date: row.practiced_on, practiced_on: row.practiced_on, exercise: row.practice_exercises?.name_en ?? "—", item_en: row.practice_exercises?.name_en ?? "", bpm: row.bpm, rating: row.rating, minutes: row.duration_minutes ?? 0, duration_minutes: row.duration_minutes ?? 0 })));
@@ -6595,7 +6671,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     if (logs === null || sessions === null || points === null) {
       return <section className="page">
         <button className="page-back" onClick={() => setSelected(null)}>‹ {T.admin.title}</button>
-        <header className="simple-head"><h1>{selected.name || selected.email}</h1><p className="hint">{selected.email}</p></header>
+        <header className="simple-head admin-student-head"><h1>{selected.name || selected.email}</h1>{selected.name && <p className="hint">{selected.email}</p>}</header>
         <p className="hint">…</p>
       </section>;
     }
@@ -6638,13 +6714,45 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     const maxMonthly = Math.max(1, ...monthlyData.map((m) => m.minutes));
     return <section className="page">
       <button className="page-back" onClick={() => setSelected(null)}>‹ {T.admin.title}</button>
-      <header className="simple-head"><h1>{selected.name || selected.email}</h1><p className="hint">{selected.email}</p></header>
+      <header className="simple-head admin-student-head"><h1>{selected.name || selected.email}</h1>{selected.name && <p className="hint">{selected.email}</p>}</header>
 
       <div className="admin-summary-card">
         <div className="admin-stats-row">
           <div className="admin-stat"><span>{T.today.currentStreak}</span><strong>{userStreak} {T.today.days}</strong></div>
           <div className="admin-stat"><span>{T.calendar.longestStreak}</span><strong>{userLongestStreak} {T.today.days}</strong></div>
           {selectedUserRow && <div className="admin-stat"><span>{T.admin.totalPracticeLabel}</span><strong>{formatMinutes(selectedUserRow.total_minutes)}</strong><em>{selectedUserRow.total_logs} {T.admin.totalLogsLabel}</em></div>}
+        </div>
+      </div>
+
+      <div className="admin-controls-card">
+        <div className="admin-settings-list">
+          <div className="admin-settings-row">
+            <span>{T.admin.pointGameLabel}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={!pointsEnabled ? "selected" : ""} onClick={() => setPointsEnabledValue(false)}>{T.admin.pointGameOff}</button>
+              <button type="button" className={pointsEnabled ? "selected" : ""} onClick={() => setPointsEnabledValue(true)}>{T.admin.pointGameOn}</button>
+            </div>
+          </div>
+          <div className="admin-settings-row">
+            <span>{T.settings.difficultyLabel}</span>
+            <div className="admin-mini-toggle">
+              {([["beginner", T.settings.difficultyBeginner], ["developing", T.settings.difficultyDeveloping], ["standard", T.settings.difficultyStandard]] as [Difficulty, string][]).map(([key, label]) => <button type="button" key={key} className={studentDifficulty === key ? "selected" : ""} onClick={() => setStudentDifficultyValue(key)}>{label}</button>)}
+            </div>
+          </div>
+          <div className="admin-settings-row">
+            <span>{T.admin.leaderboardLabel}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={!lbHidden ? "selected" : ""} onClick={() => setLbHiddenValue(false)}>{T.admin.leaderboardShown}</button>
+              <button type="button" className={lbHidden ? "selected" : ""} onClick={() => setLbHiddenValue(true)}>{T.admin.leaderboardHiddenOpt}</button>
+            </div>
+          </div>
+          <div className="admin-settings-row">
+            <span>{T.admin.modeLabel}</span>
+            <div className="admin-mini-toggle">
+              <button type="button" className={!kidMode ? "selected" : ""} onClick={() => setKidModeValue(false)}>{T.admin.modeStandard}</button>
+              <button type="button" className={kidMode ? "selected" : ""} onClick={() => setKidModeValue(true)}>{T.admin.modeBeginner}</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -6661,16 +6769,22 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
         </div>
       </div>
 
-      {mostPracticed.length > 0 && <div className="admin-summary-card">
-        <span className="admin-summary-label">{T.admin.mostPracticedLabel}</span>
-        <div className="admin-rank-list">
-          {mostPracticed.map(([name, count], i) => <div key={name} className="admin-rank-row">
-            <span className="admin-rank-num">{i + 1}</span>
-            <span className="admin-rank-name">{practiceItemLabel(name, language)}</span>
-            <div className="admin-rank-bar-track"><div className="admin-rank-bar" style={{ width: `${Math.max(8, (count / maxPracticeCount) * 100)}%` }} /></div>
-            <span className="admin-rank-count">{formatMinutes(count)}</span>
-          </div>)}
+      {pointsEnabled && <div className="admin-controls-card">
+        <span className="admin-summary-label">{T.admin.pointsLabel}</span>
+        <p className="admin-points-total">{points ? points.reduce((sum, p) => sum + p.amount, 0) : 0}</p>
+        <span className="admin-controls-hint">{T.admin.awardHint}</span>
+        <div className="admin-award-row">
+          <button type="button" className="minutes-step" onClick={() => awardPoints(-1, null)} disabled={awarding}>−1</button>
+          <button type="button" className="minutes-step" onClick={() => awardPoints(1, null)} disabled={awarding}>+1</button>
+          <input className="admin-award-amount" inputMode="numeric" size={3} value={awardAmount} onChange={(e) => setAwardAmount(e.target.value.replace(/[^-\d]/g, ""))} />
+          <input className="admin-award-reason" value={awardReason} onChange={(e) => setAwardReason(e.target.value)} placeholder={T.admin.reasonPlaceholder} />
+          <button type="button" className="custom-item-add" onClick={() => awardPoints(Number(awardAmount), awardReason.trim() || null)} disabled={awarding || !Number(awardAmount)}>{T.admin.awardBtn}</button>
         </div>
+      </div>}
+
+      {pinned && pinned.length > 0 && <div className="admin-summary-card admin-section-gap">
+        <span className="admin-summary-label admin-focus-label"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.admin.focusLabel}</span>
+        <div className="chips admin-focus-chips">{pinned.map((en) => <span key={en} className="chip">{PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en}</span>)}</div>
       </div>}
 
       <div className="admin-summary-card give-challenge">
@@ -6711,59 +6825,26 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
         </>}
       </div>
 
+      <AdminFold title={T.admin.mostPracticedLabel}>
+      {mostPracticed.length > 0 && <div className="admin-summary-card">
+        <span className="admin-summary-label">{T.admin.mostPracticedLabel}</span>
+        <div className="admin-rank-list">
+          {mostPracticed.map(([name, count], i) => <div key={name} className="admin-rank-row">
+            <span className="admin-rank-num">{i + 1}</span>
+            <span className="admin-rank-name">{practiceItemLabel(name, language)}</span>
+            <div className="admin-rank-bar-track"><div className="admin-rank-bar" style={{ width: `${Math.max(8, (count / maxPracticeCount) * 100)}%` }} /></div>
+            <span className="admin-rank-count">{formatMinutes(count)}</span>
+          </div>)}
+        </div>
+      </div>}
+      </AdminFold>
+
+      <AdminFold title={T.progressPage.title}>
       {/* The student's own Progress tab, read-only: leaderboard standing, overall level and skill progress, milestones, challenges won, recent unlocks. */}
       <Progress embedded kidMode={false} user={{ id: selected.id }} language={language} T={T}
         practiceSessions={(sessions ?? []).map((x) => ({ item_en: x.item_en, bpm: x.bpm, rating: x.rating, duration_minutes: x.duration_minutes, practiced_on: x.practiced_on, created_at: x.created_at ?? `${x.practiced_on}T12:00:00Z` }))}
         logs={Object.fromEntries((logs ?? []).map((l) => [l.date, { minutes: l.minutes, seconds: l.seconds ?? 0, items: l.items ?? [], customItems: [], notes: l.notes ?? "", equipment: null, drumsetMinutes: null, padMinutes: null } as Log]))} />
-
-      {pointsEnabled && <div className="admin-controls-card">
-        <span className="admin-summary-label">{T.admin.pointsLabel}</span>
-        <p className="admin-points-total">{points ? points.reduce((sum, p) => sum + p.amount, 0) : 0}</p>
-        <span className="admin-controls-hint">{T.admin.awardHint}</span>
-        <div className="admin-award-row">
-          <button type="button" className="minutes-step" onClick={() => awardPoints(-1, null)} disabled={awarding}>−1</button>
-          <button type="button" className="minutes-step" onClick={() => awardPoints(1, null)} disabled={awarding}>+1</button>
-          <input className="admin-award-amount" inputMode="numeric" size={3} value={awardAmount} onChange={(e) => setAwardAmount(e.target.value.replace(/[^-\d]/g, ""))} />
-          <input className="admin-award-reason" value={awardReason} onChange={(e) => setAwardReason(e.target.value)} placeholder={T.admin.reasonPlaceholder} />
-          <button type="button" className="custom-item-add" onClick={() => awardPoints(Number(awardAmount), awardReason.trim() || null)} disabled={awarding || !Number(awardAmount)}>{T.admin.awardBtn}</button>
-        </div>
-      </div>}
-
-      {pinned && pinned.length > 0 && <div className="admin-summary-card admin-section-gap">
-        <span className="admin-summary-label admin-focus-label"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4a1 1 0 011-1h10a1 1 0 011 1v16l-6-4-6 4V4z" /></svg>{T.admin.focusLabel}</span>
-        <div className="chips admin-focus-chips">{pinned.map((en) => <span key={en} className="chip">{PRACTICE_EXERCISES.find((e) => e.en === en)?.[language as Lang] ?? en}</span>)}</div>
-      </div>}
-      <div className="admin-controls-card">
-        <div className="admin-settings-list">
-          <div className="admin-settings-row">
-            <span>{T.admin.pointGameLabel}</span>
-            <div className="admin-mini-toggle">
-              <button type="button" className={!pointsEnabled ? "selected" : ""} onClick={() => setPointsEnabledValue(false)}>{T.admin.pointGameOff}</button>
-              <button type="button" className={pointsEnabled ? "selected" : ""} onClick={() => setPointsEnabledValue(true)}>{T.admin.pointGameOn}</button>
-            </div>
-          </div>
-          <div className="admin-settings-row">
-            <span>{T.settings.difficultyLabel}</span>
-            <div className="admin-mini-toggle">
-              {([["beginner", T.settings.difficultyBeginner], ["developing", T.settings.difficultyDeveloping], ["standard", T.settings.difficultyStandard]] as [Difficulty, string][]).map(([key, label]) => <button type="button" key={key} className={studentDifficulty === key ? "selected" : ""} onClick={() => setStudentDifficultyValue(key)}>{label}</button>)}
-            </div>
-          </div>
-          <div className="admin-settings-row">
-            <span>{T.admin.leaderboardLabel}</span>
-            <div className="admin-mini-toggle">
-              <button type="button" className={!lbHidden ? "selected" : ""} onClick={() => setLbHiddenValue(false)}>{T.admin.leaderboardShown}</button>
-              <button type="button" className={lbHidden ? "selected" : ""} onClick={() => setLbHiddenValue(true)}>{T.admin.leaderboardHiddenOpt}</button>
-            </div>
-          </div>
-          <div className="admin-settings-row">
-            <span>{T.admin.modeLabel}</span>
-            <div className="admin-mini-toggle">
-              <button type="button" className={!kidMode ? "selected" : ""} onClick={() => setKidModeValue(false)}>{T.admin.modeStandard}</button>
-              <button type="button" className={kidMode ? "selected" : ""} onClick={() => setKidModeValue(true)}>{T.admin.modeBeginner}</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      </AdminFold>
 
       <button type="button" className="see-more-btn admin-history-toggle" onClick={() => setShowHistory(!showHistory)}>{showHistory ? T.admin.hideHistoryBtn : T.admin.historyBtn}</button>
       {showHistory && <>
@@ -6780,7 +6861,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
               const allItems = Array.from(new Set([...log.items, ...skillExercises]));
               return <div key={i} className="admin-log-row">
                 <div className="admin-log-line">
-                  <span className="admin-log-date">{formatDMY(log.date)}</span>
+                  <span className="admin-log-date">{formatDMY(log.date)}{log.savedAt && <small className="admin-log-time"> {new Date(log.savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small>}</span>
                   <span className="admin-log-duration">{formatMinutes(log.minutes)}</span>
                   {log.usedMetronome && <span className="admin-source-label">⌁ {T.admin.metronomeBadge}</span>}
                   {usedSkillTrainer && <span className="admin-source-label">🎯 {T.admin.skillTrainerBadge}</span>}
@@ -6800,7 +6881,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
           <div className="admin-log-list">
             {(showAllSessions ? sessions : sessions.slice(0, ADMIN_HISTORY_LIMIT)).map((s, i) => <div key={i} className="admin-log-row">
               <div className="admin-log-head"><span>{s.exercise}</span><span>{s.bpm} BPM</span></div>
-              <div className="admin-log-head"><span>{formatDMY(s.date)}</span><span>{formatMinutes(s.minutes)}</span></div>
+              <div className="admin-log-head"><span>{formatDMY(s.date)}{s.created_at && <small className="admin-log-time"> {new Date(s.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small>}</span><span>{formatMinutes(s.minutes)}</span></div>
             </div>)}
           </div>
           {sessions.length > ADMIN_HISTORY_LIMIT && <button type="button" className="see-more-btn" onClick={() => setShowAllSessions(!showAllSessions)}>{showAllSessions ? T.progressPage.seeLess : T.progressPage.seeMore}</button>}
@@ -6870,6 +6951,8 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     speedSessions.forEach((s) => { (byUser[s.user_id] ??= []).push(s); });
     Object.entries(byUser).forEach(([uid, sess]) => {
       if (excludeSelf && user && uid === user.id) return;
+      const isKid = difficultyById?.[uid] === "beginner" || difficultyById?.[uid] === "developing";
+      if ((speedGroup === "kids") !== isKid) return;
       const dates = Array.from(new Set(sess.map((s) => s.practiced_on))).sort();
       const qualifyingByBpm: Record<number, QualAcc> = {};
       const points: SpeedPoint[] = [];
@@ -6889,7 +6972,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
     });
     speedLines.sort((a, b) => b.currentBpm - a.currentBpm);
   }
-  const SPEED_W = 320, SPEED_H = 170, SPEED_PAD_L = 32, SPEED_PAD_R = 10, SPEED_PAD_T = 12, SPEED_PAD_B = 24;
+  const SPEED_W = 320, SPEED_H = 118, SPEED_PAD_L = 30, SPEED_PAD_R = 12, SPEED_PAD_T = 10, SPEED_PAD_B = 20;
   const speedMinBpm = speedLevels[0], speedMaxBpm = speedLevels[speedLevels.length - 1];
   const speedAllDates = speedLines.flatMap((l) => l.points.map((p) => p.date));
   const speedMinDate = speedAllDates.length ? speedAllDates.reduce((a, b) => (a < b ? a : b)) : dateKey;
@@ -6912,7 +6995,7 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
   // ALL exercises (not just the one picked above) -- same qualifying logic as the speed chart,
   // but flattened into a single "X unlocked Y BPM on Z" feed, most recent first. The very
   // first unlock counts as an improvement too (going from "nothing" to a qualifying speed).
-  const IMPROVEMENTS_LIMIT = 5;
+  const IMPROVEMENTS_LIMIT = 3;
   type ImprovementEvent = { key: string; name: string; exerciseEn: string; bpm: number; date: string };
   const improvements: ImprovementEvent[] = [];
   if (allSpeedSessions && allExerciseNames) {
@@ -6995,6 +7078,29 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
         </div>}
       </div>
 
+      <div className={giveToId ? "admin-summary-card admin-section-gap give-card-open" : "admin-summary-card admin-section-gap"} onClick={(e) => { if (giveToId && !(e.target as HTMLElement).closest("select, button")) setGiveFull(true); }}>
+        <span className="admin-summary-label">{GIVE_POINTS_TEXT[language as Lang].title}</span>
+        <select className="subdivision-select speed-select give-points-select" value={giveToId} onChange={(e) => { setGiveToId(e.target.value); setLastGiven(null); }}>
+          <option value="">{GIVE_POINTS_TEXT[language as Lang].pick}</option>
+          {[...(users ?? [])].sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email)).map((u) => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+        </select>
+        {giveToId && <div className="give-points-total"><strong>{giveToTotal ?? "…"}</strong><span>{GIVE_POINTS_TEXT[language as Lang].total}</span></div>}
+        <div className="give-points-buttons">
+          {[-5, -1, 1, 5].map((n) => <button key={n} type="button" className={n < 0 ? "minus" : ""} disabled={!giveToId || givingPoints} onClick={() => giveQuickPoints(n)}>{n > 0 ? "+" : "−"}{Math.abs(n)}</button>)}
+        </div>
+        {lastGiven && lastGiven.id === giveToId && <p className="give-points-done"><span>{GIVE_POINTS_TEXT[language as Lang].given(lastGiven.amount, lastGiven.name)}</span><button type="button" disabled={givingPoints} onClick={async () => { const l = lastGiven; setGivingPoints(true); await supabase.rpc("admin_award_points", { target_user_id: l.id, points_amount: -l.amount, points_reason: null }); setGivingPoints(false); setLastGiven(null); setGiveToTotal((t) => (t == null ? t : t - l.amount)); }}>{GIVE_POINTS_TEXT[language as Lang].undo}</button></p>}
+      </div>
+
+      {giveFull && giveToId && <div className="give-full" role="dialog">
+        <button type="button" className="give-full-close" onClick={() => setGiveFull(false)} aria-label="Close">×</button>
+        <p className="give-full-name">{(users ?? []).find((u) => u.id === giveToId)?.name || (users ?? []).find((u) => u.id === giveToId)?.email}</p>
+        <div className="give-full-total">{giveToTotal ?? "…"}</div>
+        <p className="give-full-unit">{GIVE_POINTS_TEXT[language as Lang].total}</p>
+        <div className="give-points-buttons give-full-buttons">
+          {[-5, -1, 1, 5].map((n) => <button key={n} type="button" className={n < 0 ? "minus" : ""} disabled={givingPoints} onClick={() => giveQuickPoints(n)}>{n > 0 ? "+" : "\u2212"}{Math.abs(n)}</button>)}
+        </div>
+      </div>}
+
       <div className="admin-summary-card admin-section-gap">
         <span className="admin-summary-label">{T.admin.improvementsLabel}</span>
         {allSpeedSessions === null ? <p className="hint">…</p> : improvements.length === 0 ? <p className="hint speed-empty">{T.admin.improvementsEmpty}</p> : <>
@@ -7019,8 +7125,12 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
       </div>}
 
       <div className="admin-summary-card admin-section-gap">
-        <span className="admin-summary-label">{T.admin.speedLabel}</span>
-        <p className="admin-controls-hint">{T.admin.speedHint}</p>
+        <button type="button" className="admin-collapse-head" aria-expanded={showSpeed} onClick={() => setShowSpeed(!showSpeed)}>
+          <span className="admin-summary-label">{T.admin.speedLabel}</span>
+          <svg className={showSpeed ? "give-chev open" : "give-chev"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+        </button>
+        {showSpeed && <>
+          <div className="speed-group-toggle" role="group">{(["adults", "kids"] as const).map((g) => <button key={g} type="button" className={speedGroup === g ? "on" : ""} onClick={() => setSpeedGroup(g)}>{SPEED_GROUP_TEXT[language as Lang][g]}</button>)}</div>
         <select className="subdivision-select speed-select" value={speedExercise} onChange={(e) => setSpeedExercise(e.target.value)}>
           {PRACTICE_CATEGORIES.map((cat) => <optgroup key={cat} label={cat === "rudiments" ? T.practiceMode.categoryRudiments : T.practiceMode.categoryExercises}>
             {PRACTICE_EXERCISES.filter((e) => e.category === cat).map((e) => <option key={e.en} value={e.en}>{e[language as Lang]}</option>)}
@@ -7038,8 +7148,9 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
               const color = SPEED_COLORS[idx % SPEED_COLORS.length];
               const last = line.points[line.points.length - 1];
               return <g key={line.id}>
-                <path d={speedPath(line.points)} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx={speedX(dateKey)} cy={speedY(last.bpm)} r="4" fill={color} />
+                <path d={speedPath(line.points)} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                {line.points.map((p) => <circle key={p.date + p.bpm} cx={speedX(p.date)} cy={speedY(p.bpm)} r="2.4" fill={color} />)}
+                <circle cx={speedX(dateKey)} cy={speedY(last.bpm)} r="4.5" fill={color} stroke="#121413" strokeWidth="2" />
               </g>;
             })}
           </svg>}
@@ -7055,15 +7166,16 @@ function AdminPage({ user, language, T }: { user: any; language: Lang; T: any })
             {speedUnqualified.map((u) => <span key={u.id} className="speed-unqualified-name">{u.name} ({formatMinutes(u.totalMinutes)})</span>)}
           </div>}
         </>}
+        </>}
       </div>
 
       <span className="section-label admin-section-gap">{T.admin.allUsersTitle}</span>
-      <div className="onboard-exercise-list">
-        {users.map((u) => <button key={u.id} type="button" className="onboard-row admin-user-row" onClick={() => openUser(u)}>
+      <div className="onboard-exercise-list admin-users-scroll">
+        {[...users].sort((a, b) => (lastSeenAt[b.id] ?? (b.last_active ? b.last_active + "T00:00:00" : "")).localeCompare(lastSeenAt[a.id] ?? (a.last_active ? a.last_active + "T00:00:00" : ""))).map((u) => <button key={u.id} type="button" className="onboard-row admin-user-row" onClick={() => openUser(u)}>
           <div className="admin-user-info">
             <span className="onboard-row-name">{u.name || u.email}{u.name && <span className="admin-user-email-inline"> - {u.email}</span>}</span>
           </div>
-          <span className="admin-user-last">{u.last_active ? formatDMY(u.last_active) : T.admin.neverPracticed}</span>
+          <span className="admin-user-last">{lastSeenAt[u.id] ? `${formatDMY(localDateFromTimestamp(lastSeenAt[u.id])).slice(0, 5)} ${new Date(lastSeenAt[u.id]).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : u.last_active ? formatDMY(u.last_active) : T.admin.neverPracticed}</span>
         </button>)}
       </div>
     </>}
