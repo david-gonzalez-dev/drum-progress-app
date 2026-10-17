@@ -2643,7 +2643,7 @@ function YourPointsCard({ pointsEnabled, rows, onViewPoints, T }: any) {
     </div>
     <div className="points-card-main">
       <span className="input-label points-card-label">{T.today.pointsCardTitle} · {T.drumPoints.cardYear}</span>
-      <div className="points-card-line"><strong className="points-card-value">{total}</strong><span className="points-chip">{tier === "gold" && <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 18l1.5-9 4.5 4 3-7 3 7 4.5-4L21 18H3zm0 2h18v2H3z" /></svg>}{status}</span></div>
+      <div className="points-card-line"><strong className="points-card-value">{total}</strong>{tier !== "go" && <span className="points-chip">{tier === "gold" && <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 18l1.5-9 4.5 4 3-7 3 7 4.5-4L21 18H3zm0 2h18v2H3z" /></svg>}{status}</span>}</div>
     </div>
     <span className="points-card-go" aria-hidden="true">→</span>
   </button>;

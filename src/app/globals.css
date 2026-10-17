@@ -2510,3 +2510,13 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .today-goal-card .today-card-cta{display:flex;margin:14px auto 0}
 .today-detail-hint{float:right;font:500 13px 'DM Sans';letter-spacing:.2px;color:#ffb27a;text-transform:none}
 .today-goal-card-open{border-color:rgba(255,155,80,.35)}
+/* Today card button: the text is centred in the pill, the round play icon sits at the left edge */
+.today-empty-cta{position:relative;min-width:230px;justify-content:center;padding-left:52px;padding-right:52px}
+.today-empty-cta .today-empty-play{position:absolute;left:8px;top:50%;margin:0;transform:translateY(-50%)}
+/* Today card button: a bit bigger */
+.today-empty-cta{min-width:270px;min-height:56px;padding-top:15px;padding-bottom:15px;font-size:19px;padding-left:60px;padding-right:60px}
+.today-empty-cta .today-empty-play{width:40px;height:40px;left:9px}
+.today-empty-cta .today-empty-play svg{width:18px;height:18px}
+.today-empty-cta{min-width:250px;min-height:52px;padding-top:13px;padding-bottom:13px;font-size:18px;padding-left:56px;padding-right:56px}
+.today-empty-cta .today-empty-play{width:37px;height:37px;left:8px}
+.today-empty-cta .today-empty-play svg{width:17px;height:17px}
