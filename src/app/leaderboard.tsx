@@ -72,8 +72,15 @@ function Trophy() {
 // The card at the top of the Progress tab.
 // The last summary per account, so the card on Progress is there at once when you come back to the tab.
 const summaryCache: Record<string, Summary> = {};
+// Players 18 and older have a Points ranking only when they switched "Points leaderboard" on in Settings.
+function usePointsBoardIn(supabase: any, userId?: string) {
+  const [on, setOn] = useState(false);
+  useEffect(() => { if (!userId) return; supabase.from("settings").select("points_board_opt_in").eq("user_id", userId).maybeSingle().then(({ data }: any) => setOn(!!data?.points_board_opt_in)); }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  return on;
+}
 export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen, userId, onRankUp, pointsOnly }: { db: any; language: Lang; refreshKey: number; onOpen: (f?: Partial<BoardFilter>) => void; userId?: string; onRankUp?: (info: RankUp) => void; pointsOnly?: boolean }) {
   const t = TEXT[language];
+  const pbIn = usePointsBoardIn(supabase, userId);
   const [summary, setSummary] = useState<Summary | null>(() => summaryCache[userId ?? "me"] ?? null); // the last numbers are shown at once; fresh ones replace them quietly
   const [failed, setFailed] = useState(false);
   // Adults only: when the monthly rank is better than the last time it was seen, the "Overtake" celebration plays once (with the final rank, however many players were passed).
@@ -137,7 +144,7 @@ export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen, us
             {moved !== 0 && <span className={moved > 0 ? "lb-moved up" : "lb-moved down"}>{moved > 0 ? "▲" : "▼"} {moved > 0 ? t.positionsUp(moved) : t.positionsDown(-moved)}</span>}</>
             : <><span className="lb-rank-none">{t.notRanked}</span><span className="lb-rank-hint">{t.notRankedHint}</span></>}
         </div>
-        {summary.board !== "18_plus" && <div className="lb-links">
+        {(summary.board !== "18_plus" || pbIn) && <div className="lb-links">
           <button type="button" onClick={() => onOpen({ category: "points", period: "month", level: "all" })}><span>{t.points}</span><Chevron /></button>
         </div>}
       </div>}
@@ -147,6 +154,7 @@ export function LeaderboardCard({ db: supabase, language, refreshKey, onOpen, us
 // The full leaderboard screen.
 export function LeaderboardScreen({ db: supabase, user, language, initial, onBack, onOpenSettings, pointsOnly }: { db: any; user: any; language: Lang; onOpenSettings?: () => void; initial?: Partial<BoardFilter>; onBack: () => void; pointsOnly?: boolean }) {
   const t = TEXT[language];
+  const pbIn = usePointsBoardIn(supabase, user?.id);
   const [filter, setFilter] = useState<BoardFilter>({ category: pointsOnly ? "points" : initial?.category ?? "consistency", period: initial?.period ?? "month", level: initial?.level ?? "all" });
   const [summary, setSummary] = useState<Summary | null>(null);
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -204,7 +212,7 @@ export function LeaderboardScreen({ db: supabase, user, language, initial, onBac
       </div>
       : <>
         {!summary.eligible && <p className="lb-note">{t.hiddenNote}</p>}
-        {!pointsOnly && <div className="lb-seg">{(summary.board === "18_plus" ? (["consistency", "skill"] as const) : (["consistency", "skill", "points"] as const)).map((c) => <button key={c} type="button" className={filter.category === c ? "on" : ""} onClick={() => setFilter({ ...filter, category: c })}>{t.cats[c]}</button>)}</div>}
+        {!pointsOnly && <div className="lb-seg">{(summary.board === "18_plus" && !pbIn ? (["consistency", "skill"] as const) : (["consistency", "skill", "points"] as const)).map((c) => <button key={c} type="button" className={filter.category === c ? "on" : ""} onClick={() => setFilter({ ...filter, category: c })}>{t.cats[c]}</button>)}</div>}
         <div className="lb-filters">
           <select className="lb-select" aria-label={t.periods.month + " / " + t.periods.year} value={filter.period} onChange={(e) => setFilter({ ...filter, period: e.target.value as BoardFilter["period"] })}>{(["month", "year"] as const).map((p) => <option key={p} value={p}>{t.periods[p]}</option>)}</select>
           <select className="lb-select" aria-label={t.allLevels} value={filter.level} onChange={(e) => setFilter({ ...filter, level: e.target.value })}>{["all", "beginner", "intermediate", "advanced", "legend"].map((l) => <option key={l} value={l}>{l === "all" ? t.allLevels : t.tiers[l]}</option>)}</select>

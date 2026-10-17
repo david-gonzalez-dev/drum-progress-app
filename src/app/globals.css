@@ -2482,3 +2482,26 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 .calendar-card .days button b{color:#3ddc84;font-size:14px;font-weight:900;bottom:0}
 .calendar-card .days button.done span{position:relative;top:-6px}
 .calendar-card .days button.done b{bottom:1px;line-height:1}
+
+/* Your Points (kids): glowing star medallion, big gradient number, rank badge */
+.form-card.points-card.points-card-compact{position:relative;overflow:hidden;padding:16px 18px;gap:16px;background:radial-gradient(120% 140% at 0% 0%,rgba(255,138,61,.34),rgba(255,138,61,0) 58%),linear-gradient(155deg,#2d160b,#101211);border:1px solid rgba(255,155,80,.55);box-shadow:0 0 26px rgba(255,107,26,.18),inset 0 0 20px rgba(255,155,80,.06)}
+.points-card-compact .points-card-ring{width:62px;height:62px;border-radius:50%;background:radial-gradient(circle,rgba(255,170,90,.35),rgba(255,107,26,.05) 70%);box-shadow:0 0 22px rgba(255,138,61,.45)}
+.points-card-compact .points-card-ring svg:first-child{width:62px;height:62px}
+.points-card-compact .points-ring-track{stroke:rgba(255,255,255,.12)}
+.points-card-compact .points-ring-progress{stroke:#ffb95c}
+.points-card-compact .points-card-icon{width:28px;height:28px;color:#ffc46b;filter:drop-shadow(0 0 6px rgba(255,185,92,.8));animation:pointsFloat 2.6s ease-in-out infinite}
+.points-card-compact .points-card-label{font-size:12px;letter-spacing:1.2px;color:#d8b49a}
+.points-card-compact .points-card-value{font-size:54px;line-height:.95;background:linear-gradient(180deg,#fff 10%,#ffc46b 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.points-card-compact .points-card-line{align-items:center;gap:12px;flex-wrap:wrap}
+.points-chip{display:inline-flex;align-items:center;gap:6px;font:700 14px 'DM Sans';color:#2a1203;background:linear-gradient(90deg,#ffb95c,#ff8a3d);padding:5px 12px;border-radius:99px;box-shadow:0 2px 10px rgba(255,138,61,.35)}
+.points-chip svg{width:15px;height:15px}
+.points-card-gold .points-chip{background:linear-gradient(90deg,#ffe08a,#f5c542);box-shadow:0 2px 12px rgba(245,197,66,.5)}
+.points-card-start .points-chip{background:rgba(255,255,255,.1);color:#ffd9bd;box-shadow:none}
+.points-card-compact .points-card-go{font-size:22px;color:#ffb95c}
+.points-spark{position:absolute;width:5px;height:5px;border-radius:50%;background:#ffe3a8;box-shadow:0 0 8px #ffd27a;animation:pointsTwinkle 2.4s ease-in-out infinite}
+.points-spark.s1{top:2px;right:6px}
+.points-spark.s2{bottom:6px;left:2px;animation-delay:.8s}
+.points-spark.s3{top:14px;left:-4px;width:3px;height:3px;animation-delay:1.5s}
+@keyframes pointsFloat{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-2px) rotate(4deg)}}
+@keyframes pointsTwinkle{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.points-card-compact .points-card-icon,.points-spark{animation:none}.points-spark{opacity:.8}}

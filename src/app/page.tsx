@@ -590,7 +590,7 @@ const translations = {
   en: {
     nav: { today: "Home", practice: "Practice", group: "Group", progress: "Progress", settings: "Settings", admin: "Admin" },
     confirm: { cancel: "Cancel", confirm: "Confirm" },
-    drumPoints: { yearAndWeek: "You're #1 this year and this week!", weekBest: "You're #1 this week!", weekPoints: (n: number) => `${n} ${n === 1 ? "point" : "points"} this week`, askTitle: "Drum Points", askText: "Get 1 point for every minute you practise. Compare with drummers your age (first names only).", askYes: "Yes, count my points", askNo: "Not now", earned: (n: number) => `+${n} ${n === 1 ? "point" : "points"}`, thisYear: "this year", yearTotal: "Points this year", movedUp: "You moved up!", passed: (name: string) => `You passed ${name}!`, passMore: (g: number, name: string) => `Practise ${g} more ${g === 1 ? "minute" : "minutes"} to pass ${name}`, numberOne: "You're #1 this year!", nice: "Nice!", boardYear: "This year", boardAll: "All time", boardTitle: "Drum Points ranking", boardEmpty: "No points yet. Practise a tempo for a minute to start.", switchLabel: "Drum Points", switchDesc: "Earn points for practising and compare with drummers your age.", cardYear: "This year" },
+    drumPoints: { yearAndWeek: "You're #1 this year and this week!", weekBest: "You're #1 this week!", weekPoints: (n: number) => `${n} ${n === 1 ? "point" : "points"} this week`, askTitle: "Drum Points", askText: "Get 1 point for every minute you practise. Compare with drummers your age (first names only).", askYes: "Yes, count my points", askNo: "Not now", earned: (n: number) => `+${n} ${n === 1 ? "point" : "points"}`, thisYear: "this year", yearTotal: "Points this year", movedUp: "You moved up!", passed: (name: string) => `You passed ${name}!`, passMore: (g: number, name: string) => `Practise ${g} more ${g === 1 ? "minute" : "minutes"} to pass ${name}`, numberOne: "You're #1 this year!", nice: "Nice!", boardYear: "This year", boardAll: "All time", boardTitle: "Drum Points ranking", boardEmpty: "No points yet. Practise a tempo for a minute to start.", switchLabel: "Drum Points", switchDesc: "Earn 1 point for every minute you practise. Join the leaderboard to compare with others.", cardYear: "This year" },
     today: {
       heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", startPracticeTitle: "Start Practice", startPracticeSub: "Set a timer and get to it", noPracticeTitle: "No practice yet", goalShort: "Goal", practiceRudiment: "Practice a rudiment", seeAll: "See all", currentStreak: "Current streak", days: "days", pointsTitle: "POINTS",
       pointsCardTitle: "YOUR POINTS", pointsCardCta: "View rewards", pointsCardKickoff: "Start earning points", pointsCardRankOne: "You're #1", pointsCardTop3: "You're in the Top 3", pointsCardKeepGoing: "Keep going",
@@ -770,7 +770,7 @@ const translations = {
   es: {
     nav: { today: "Inicio", practice: "Práctica", group: "Grupo", progress: "Progreso", settings: "Ajustes", admin: "Admin" },
     confirm: { cancel: "Cancelar", confirm: "Confirmar" },
-    drumPoints: { yearAndWeek: "¡Eres el n.º 1 este año y esta semana!", weekBest: "¡Eres el n.º 1 esta semana!", weekPoints: (n: number) => `${n} ${n === 1 ? "punto" : "puntos"} esta semana`, askTitle: "Drum Points", askText: "Gana 1 punto por cada minuto que practicas. Compárate con bateristas de tu edad (solo nombres).", askYes: "Sí, cuenta mis puntos", askNo: "Ahora no", earned: (n: number) => `+${n} ${n === 1 ? "punto" : "puntos"}`, thisYear: "este año", yearTotal: "Puntos este año", movedUp: "¡Has subido!", passed: (name: string) => `¡Superaste a ${name}!`, passMore: (g: number, name: string) => `Practica ${g} ${g === 1 ? "minuto" : "minutos"} más para superar a ${name}`, numberOne: "¡Eres el n.º 1 este año!", nice: "¡Genial!", boardYear: "Este año", boardAll: "Siempre", boardTitle: "Clasificación Drum Points", boardEmpty: "Aún no hay puntos. Practica un tempo durante un minuto para empezar.", switchLabel: "Drum Points", switchDesc: "Gana puntos por practicar y compárate con bateristas de tu edad.", cardYear: "Este año" },
+    drumPoints: { yearAndWeek: "¡Eres el n.º 1 este año y esta semana!", weekBest: "¡Eres el n.º 1 esta semana!", weekPoints: (n: number) => `${n} ${n === 1 ? "punto" : "puntos"} esta semana`, askTitle: "Drum Points", askText: "Gana 1 punto por cada minuto que practicas. Compárate con bateristas de tu edad (solo nombres).", askYes: "Sí, cuenta mis puntos", askNo: "Ahora no", earned: (n: number) => `+${n} ${n === 1 ? "punto" : "puntos"}`, thisYear: "este año", yearTotal: "Puntos este año", movedUp: "¡Has subido!", passed: (name: string) => `¡Superaste a ${name}!`, passMore: (g: number, name: string) => `Practica ${g} ${g === 1 ? "minuto" : "minutos"} más para superar a ${name}`, numberOne: "¡Eres el n.º 1 este año!", nice: "¡Genial!", boardYear: "Este año", boardAll: "Siempre", boardTitle: "Clasificación Drum Points", boardEmpty: "Aún no hay puntos. Practica un tempo durante un minuto para empezar.", switchLabel: "Drum Points", switchDesc: "Gana 1 punto por cada minuto que practicas. Únete a la tabla para compararte con otros.", cardYear: "Este año" },
     today: {
       heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", startPracticeTitle: "Empezar práctica", startPracticeSub: "Pon un temporizador y a ello", noPracticeTitle: "Aún no hay práctica", goalShort: "Meta", practiceRudiment: "Practica un rudimento", seeAll: "Ver todo", currentStreak: "Racha actual", days: "días", pointsTitle: "PUNTOS",
       pointsCardTitle: "TUS PUNTOS", pointsCardCta: "Ver recompensas", pointsCardKickoff: "Empieza a ganar puntos", pointsCardRankOne: "Eres el número 1", pointsCardTop3: "Estás en el Top 3", pointsCardKeepGoing: "Sigue así",
@@ -950,7 +950,7 @@ const translations = {
   nl: {
     nav: { today: "Home", practice: "Oefenen", group: "Groep", progress: "Voortgang", settings: "Instellingen", admin: "Beheer" },
     confirm: { cancel: "Annuleren", confirm: "Bevestigen" },
-    drumPoints: { yearAndWeek: "Je staat #1 dit jaar en deze week!", weekBest: "Je staat #1 deze week!", weekPoints: (n: number) => `${n} ${n === 1 ? "punt" : "punten"} deze week`, askTitle: "Drum Points", askText: "Krijg 1 punt voor elke minuut oefenen. Vergelijk met drummers van jouw leeftijd (alleen voornamen).", askYes: "Ja, tel mijn punten", askNo: "Nu niet", earned: (n: number) => `+${n} ${n === 1 ? "punt" : "punten"}`, thisYear: "dit jaar", yearTotal: "Punten dit jaar", movedUp: "Je bent gestegen!", passed: (name: string) => `Je bent ${name} voorbij!`, passMore: (g: number, name: string) => `Oefen nog ${g} ${g === 1 ? "minuut" : "minuten"} om ${name} voorbij te gaan`, numberOne: "Je staat #1 dit jaar!", nice: "Top!", boardYear: "Dit jaar", boardAll: "Altijd", boardTitle: "Drum Points ranglijst", boardEmpty: "Nog geen punten. Oefen een minuut op een tempo om te beginnen.", switchLabel: "Drum Points", switchDesc: "Verdien punten met oefenen en vergelijk je met drummers van jouw leeftijd.", cardYear: "Dit jaar" },
+    drumPoints: { yearAndWeek: "Je staat #1 dit jaar en deze week!", weekBest: "Je staat #1 deze week!", weekPoints: (n: number) => `${n} ${n === 1 ? "punt" : "punten"} deze week`, askTitle: "Drum Points", askText: "Krijg 1 punt voor elke minuut oefenen. Vergelijk met drummers van jouw leeftijd (alleen voornamen).", askYes: "Ja, tel mijn punten", askNo: "Nu niet", earned: (n: number) => `+${n} ${n === 1 ? "punt" : "punten"}`, thisYear: "dit jaar", yearTotal: "Punten dit jaar", movedUp: "Je bent gestegen!", passed: (name: string) => `Je bent ${name} voorbij!`, passMore: (g: number, name: string) => `Oefen nog ${g} ${g === 1 ? "minuut" : "minuten"} om ${name} voorbij te gaan`, numberOne: "Je staat #1 dit jaar!", nice: "Top!", boardYear: "Dit jaar", boardAll: "Altijd", boardTitle: "Drum Points ranglijst", boardEmpty: "Nog geen punten. Oefen een minuut op een tempo om te beginnen.", switchLabel: "Drum Points", switchDesc: "Verdien 1 punt voor elke minuut die je oefent. Doe mee aan de ranglijst om je met anderen te vergelijken.", cardYear: "Dit jaar" },
     today: {
       heroLine1: "DISCIPLINE", heroLine1b: "BUILDS", heroLine2: "SKILL.", startPracticeTitle: "Begin met oefenen", startPracticeSub: "Zet een timer en ga aan de slag", noPracticeTitle: "Nog niet geoefend", goalShort: "Doel", practiceRudiment: "Oefen een rudiment", seeAll: "Alles bekijken", currentStreak: "Huidige reeks", days: "dagen", pointsTitle: "PUNTEN",
       pointsCardTitle: "JOUW PUNTEN", pointsCardCta: "Beloningen bekijken", pointsCardKickoff: "Begin met punten verdienen", pointsCardRankOne: "Je staat op nummer 1", pointsCardTop3: "Je staat in de top 3", pointsCardKeepGoing: "Ga zo door",
@@ -1828,7 +1828,7 @@ export default function Home() {
     return true;
   }
   // Players up to 16 who were not asked yet (accounts made before Drum Points existed) are asked once, after the setup screens.
-  useEffect(() => { if (user && drumState?.eligible && !drumState.prompted && !showOnboarding) setShowPointsAsk(true); }, [user, drumState, showOnboarding]);
+  useEffect(() => { if (user && drumState?.eligible && !drumState.prompted && ageGroup && ageGroup !== "18_plus" && !showOnboarding) setShowPointsAsk(true); }, [user, drumState, showOnboarding, ageGroup]);
   // Asked again after the date of birth is entered later (Settings), so the Drum Points switch appears straight away for players up to 16.
   async function refreshDrumState() {
     const { data, error } = await supabase.rpc("drum_points_state");
@@ -2317,6 +2317,10 @@ function PointsDetailModal({ user, onClose, T }: { user: any; onClose: () => voi
     supabase.from("point_awards").select("id,amount,reason,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => setPoints(data ?? []));
   }, [user.id]);
   const total = (points ?? []).reduce((sum, p) => sum + p.amount, 0);
+  // Show the window only once its data has arrived, so nothing flickers in and out for a split second.
+  const [ready, setReady] = useState(false);
+  useEffect(() => { if (points !== null && board !== null) setReady(true); }, [points, board]);
+  if (!ready) return <div className="modal modal-center" onClick={onClose} aria-hidden="true" />;
   return <div className="modal modal-center" onClick={onClose}><div className="day-summary points-detail" onClick={(e) => e.stopPropagation()}>
     <div className="ds-head">
       <span className="eyebrow">{T.today.pointsCardTitle}</span>
@@ -2405,7 +2409,7 @@ function OnboardingModal({ currentGoal, onSkip, onFinish, onBand, onLanguage, on
     // Players up to 16 are asked about Drum Points here (the server works out the exact age).
     const { data: st } = await supabase.rpc("drum_points_state");
     const state: any = Array.isArray(st) ? st[0] : st;
-    if (state?.eligible && !state.prompted) { setAfterPoints(after); setStep("points"); } else setStep(after);
+    if (state?.eligible && !state.prompted && next && next !== "18_plus") { setAfterPoints(after); setStep("points"); } else setStep(after);
   }
   const [selected, setSelected] = useState<string[]>([]);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
@@ -2623,20 +2627,23 @@ function YourPointsCard({ pointsEnabled, rows, onViewPoints, T }: any) {
   const mine = rows.find((r: any) => r.is_me);
   const total = mine ? Number(mine.points) : 0;
   const rank = mine ? Number(mine.pos) : 0;
-  const status = total === 0 ? T.today.pointsCardKickoff : rank === 1 ? T.today.pointsCardRankOne : rank > 0 && rank <= 3 ? T.today.pointsCardTop3 : T.today.pointsCardKeepGoing;
+  const alone = rows.length <= 1;
+  const status = total === 0 ? T.today.pointsCardKickoff : alone ? T.today.pointsCardKeepGoing : rank === 1 ? T.today.pointsCardRankOne : rank > 0 && rank <= 3 ? T.today.pointsCardTop3 : T.today.pointsCardKeepGoing;
   const ringPct = Math.max(0, Math.min(1, (total % 100) / 100));
   const ringOffset = 88 - 88 * ringPct;
-  return <button type="button" className="form-card points-card points-card-compact" onClick={onViewPoints}>
+  const tier = total === 0 ? "start" : alone ? "go" : rank === 1 ? "gold" : rank > 0 && rank <= 3 ? "top" : "go";
+  return <button type="button" className={`form-card points-card points-card-compact points-card-${tier}`} onClick={onViewPoints}>
     <div className="points-card-ring">
       <svg viewBox="0 0 36 36">
         <circle cx="18" cy="18" r="14" className="points-ring-track" />
         <circle cx="18" cy="18" r="14" className="points-ring-progress" strokeDasharray="88" strokeDashoffset={ringOffset} />
       </svg>
       <svg className="points-card-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7L12 2z" /></svg>
+      <i className="points-spark s1" /><i className="points-spark s2" /><i className="points-spark s3" />
     </div>
     <div className="points-card-main">
       <span className="input-label points-card-label">{T.today.pointsCardTitle} · {T.drumPoints.cardYear}</span>
-      <div className="points-card-line"><strong className="points-card-value">{total}</strong><span className="points-card-status">{status}</span></div>
+      <div className="points-card-line"><strong className="points-card-value">{total}</strong><span className="points-chip">{tier === "gold" && <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 18l1.5-9 4.5 4 3-7 3 7 4.5-4L21 18H3zm0 2h18v2H3z" /></svg>}{status}</span></div>
     </div>
     <span className="points-card-go" aria-hidden="true">→</span>
   </button>;
@@ -5210,6 +5217,16 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
   const [name, setName] = useState(profileName); const [goal, setGoal] = useState(dailyGoal != null ? String(dailyGoal) : ""); const [language, setLanguage] = useState<Lang>(currentLanguage); const [color, setColor] = useState<string | null>(null); const [tone, setTone] = useState(currentMetronomeTone); const [showDaysThisYear, setShowDaysThisYear] = useState(currentShowDaysThisYear); const [kidMode, setKidMode] = useState(currentKidMode); const [difficulty, setDifficulty] = useState<Difficulty>(currentDifficulty); const [pushOn, setPushOn] = useState(() => pushSupported() && pushWanted(user.id)); const [pushMsg, setPushMsg] = useState(""); const [dobInput, setDobInput] = useState(""); const [dobBusy, setDobBusy] = useState(false); const [dobMsg, setDobMsg] = useState(""); const [dobShown, setDobShown] = useState("");
   // Leaderboard section: join / leave the worldwide leaderboard, and (players up to 14, who only see Points) show the other rankings too.
   const [lbIn, setLbIn] = useState<boolean | null>(null);
+  // Points leaderboard (18 and older): its own opt-in. Switching it on also switches Drum Points on.
+  const [pbIn, setPbIn] = useState<boolean | null>(null);
+  useEffect(() => { supabase.from("settings").select("points_board_opt_in").eq("user_id", user.id).maybeSingle().then(({ data }: any) => setPbIn(!!data?.points_board_opt_in)); }, [user.id]);
+  async function setPointsBoard(on: boolean) {
+    setLbBusy(true);
+    if (on && !drumState?.enabled) await onDrumPoints(true);
+    const { error } = await supabase.from("settings").upsert({ user_id: user.id, points_board_opt_in: on }, { onConflict: "user_id" });
+    setLbBusy(false);
+    if (!error) setPbIn(on); else setError(error.message);
+  }
   const [lbBusy, setLbBusy] = useState(false);
   const young = currentBand === "under_10" || currentBand === "10_13";
   useEffect(() => { supabase.from("settings").select("leaderboard_opt_in").eq("user_id", user.id).maybeSingle().then(({ data }: any) => setLbIn(!!data?.leaderboard_opt_in)); }, [user.id]);
@@ -5332,6 +5349,8 @@ function Settings({ allRankings, onAllRankings, signOut, user, setError, profile
       <button type="button" className="sx-row sx-switch-row" role="switch" aria-checked={!!lbIn} disabled={lbIn === null || lbBusy || !currentBand} onClick={() => setLeaderboard(!lbIn)}><span className="sx-switch-text"><span className="sx-label">{LB.join}</span><span className="sx-sub">{currentBand ? LB.joinSub : LB.needDob}</span></span><i className={lbIn ? "sx-switch on" : "sx-switch"}><b /></i></button>
       {young && lbIn && <button type="button" className="sx-row sx-switch-row" role="switch" aria-checked={allRankings} onClick={() => onAllRankings(!allRankings)}><span className="sx-switch-text"><span className="sx-label">{LB.others}</span><span className="sx-sub">{LB.othersSub}</span></span><i className={allRankings ? "sx-switch on" : "sx-switch"}><b /></i></button>}
       {drumState?.eligible && <button type="button" className="sx-row sx-switch-row" role="switch" aria-checked={drumState.enabled} onClick={() => onDrumPoints(!drumState.enabled)}><span className="sx-switch-text"><span className="sx-label">{T.drumPoints.switchLabel}</span><span className="sx-sub">{T.drumPoints.switchDesc}</span></span><i className={drumState.enabled ? "sx-switch on" : "sx-switch"}><b /></i></button>}
+      {drumState?.eligible && currentBand === "18_plus" && <button type="button" className="sx-row sx-switch-row" role="switch" aria-checked={!!pbIn} disabled={pbIn === null || lbBusy} onClick={() => setPointsBoard(!pbIn)}><span className="sx-switch-text"><span className="sx-label">{POINTS_LB_TEXT[language as Lang].label}</span><span className="sx-sub">{POINTS_LB_TEXT[language as Lang].sub}</span></span><i className={pbIn ? "sx-switch on" : "sx-switch"}><b /></i></button>}
+
     </div>
     {pushSupported() && <>
     <p className="sx-title">{LB.notif}</p>
@@ -6376,6 +6395,11 @@ const GIVE_POINTS_TEXT: Record<Lang, { title: string; pick: string; total: strin
   en: { title: "GIVE POINTS", pick: "Choose a student", total: "points now", expand: "Show full screen", given: (n, name) => n > 0 ? `+${n} given to ${name}` : `−${-n} taken from ${name}`, undo: "Undo" },
   nl: { title: "PUNTEN GEVEN", pick: "Kies een leerling", total: "punten nu", expand: "Toon op volledig scherm", given: (n, name) => n > 0 ? `+${n} gegeven aan ${name}` : `−${-n} afgenomen van ${name}`, undo: "Ongedaan maken" },
   es: { title: "DAR PUNTOS", pick: "Elige un alumno", total: "puntos ahora", expand: "Pantalla completa", given: (n, name) => n > 0 ? `+${n} dados a ${name}` : `−${-n} quitados a ${name}`, undo: "Deshacer" },
+};
+const POINTS_LB_TEXT: Record<Lang, { label: string; sub: string }> = {
+  en: { label: "Points leaderboard", sub: "Turns Drum Points on and shows your first name and points to other adults who joined." },
+  nl: { label: "Puntenranglijst", sub: "Zet Drum Points aan en toont je voornaam en punten aan andere volwassenen die meedoen." },
+  es: { label: "Tabla de puntos", sub: "Activa los Drum Points y muestra tu nombre y puntos a otros adultos que se unieron." },
 };
 const SPEED_GROUP_TEXT: Record<Lang, { adults: string; kids: string }> = {
   en: { adults: "14 and up", kids: "Under 14" },
