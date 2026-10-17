@@ -2792,7 +2792,7 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
       </div>
       <button type="button" className="start-session-btn today-empty-cta" onClick={onGoToPractice}><span className="start-cta-play today-empty-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg></span>{T.today.startPracticeTitle}</button>
     </div> : <div className={todayMinutes === 0 && todaySkillExercises.length === 0 ? "form-card today-goal-card today-goal-card-empty" : "form-card today-goal-card today-goal-card-open"} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") (todayMinutes === 0 && todaySkillExercises.length === 0 ? onGoToPractice() : setShowDetail(true)); }} onClick={(e) => { if ((e.target as HTMLElement).closest("button")) return; if (todayMinutes === 0 && todaySkillExercises.length === 0) onGoToPractice(); else setShowDetail(true); }}>
-      <label className="input-label">{T.today.todaySummary}{(todayMinutes > 0 || todaySkillExercises.length > 0) && <span className="today-detail-hint" aria-hidden="true">›</span>}</label>
+      <label className="input-label">{T.today.todaySummary}{(todayMinutes > 0 || todaySkillExercises.length > 0) && <span className="today-detail-hint" aria-hidden="true">{TODAY_DETAILS[language as Lang]} ›</span>}</label>
       {dailyGoal != null ? (
         <div className="goal-progress"><div className="goal-progress-label"><strong className={goalAchieved ? "achieved" : ""}>{formatMinutes(todayMinutes)} / {formatMinutes(dailyGoal)}</strong></div><div className="goal-progress-track"><div className={goalAchieved ? "goal-progress-bar achieved" : "goal-progress-bar"} style={{ width: `${goalPct}%` }} /></div></div>
       ) : (
@@ -2802,22 +2802,7 @@ function Today({ onGoToProgress, streak, longestStreak, daysThisYear, showDaysTh
           <button className="no-goal-btn" onClick={(e) => { e.stopPropagation(); openSettings(); }}>{T.today.noGoalBtn}</button>
         </div>
       )}
-      {todayLog && todayLog.equipment && <span className="roster-equipment">{equipmentSplitLabel(todayLog.drumsetMinutes, todayLog.padMinutes, T) ?? T.calendar.onEquipment(equipmentLabel(todayLog.equipment, T))}</span>}
-      {todaySkillSeconds > 0 ? <div className="today-breakdown">
-        <div className="today-breakdown-block">
-          <div className="today-breakdown-head"><span>{T.today.skillBreakdown}</span><strong>{formatMinutes(Math.max(1, Math.round(todaySkillSeconds / 60)))} · {T.today.exerciseCount(todaySkillExercises.length)}</strong></div>
-          <div className="detail-chips">{todaySkillExercises.slice(0, 2).map((item) => <PracticedChip key={item} item={item} skill language={language} onOpen={PRACTICE_EXERCISES.some((e) => e.en === item) ? () => onOpenExercise(item) : undefined} />)}{todaySkillExercises.length > 2 && <button type="button" className="more-chip" onClick={() => setShowDetail(true)}>{T.today.moreCount(todaySkillExercises.length - 2)}</button>}</div>
-        </div>
-        {(todayOtherSeconds > 0 || todayOtherItems.length > 0) && <div className="today-breakdown-block">
-          <div className="today-breakdown-head"><span>{T.today.otherBreakdown}</span>{todayOtherSeconds > 0 && <strong>{formatMinutes(Math.max(1, Math.round(todayOtherSeconds / 60)))}</strong>}</div>
-          {todayOtherItems.length > 0 && <div className="detail-chips">{todayOtherItems.slice(0, 2).map((item) => <PracticedChip key={item} item={item} skill={false} language={language} />)}{todayOtherItems.length > 2 && <button type="button" className="more-chip" onClick={() => setShowDetail(true)}>{T.today.moreCount(todayOtherItems.length - 2)}</button>}</div>}
-        </div>}
-      </div> : (() => {
-        const loggedItems = todayLog ? [...todayLog.items, ...todayLog.customItems] : [];
-        const allItems: string[] = Array.from(new Set([...loggedItems, ...todaySkillExercises]));
-        return allItems.length > 0 ? <div className="detail-chips">{allItems.slice(0, 2).map((item) => <PracticedChip key={item} item={item} skill={todaySkillExercises.includes(item)} language={language} onOpen={todaySkillExercises.includes(item) && PRACTICE_EXERCISES.some((e) => e.en === item) ? () => onOpenExercise(item) : undefined} />)}{allItems.length > 2 && <button type="button" className="more-chip" onClick={() => setShowDetail(true)}>{T.today.moreCount(allItems.length - 2)}</button>}</div> : (todayMinutes === 0 ? <p className="hint">{T.today.noPracticeYet}</p> : null);
-      })()}
-      {todayLog && todayLog.notes && <p className="today-notes"><b>{T.today.notesPrefix}</b> {todayLog.notes}</p>}
+      <button type="button" className="start-session-btn today-empty-cta today-card-cta" onClick={(e) => { e.stopPropagation(); onGoToPractice(); }}><span className="start-cta-play today-empty-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg></span>{todayMinutes > 0 || todaySkillExercises.length > 0 ? TODAY_KEEP_GOING[language as Lang] : T.today.startPracticeTitle}</button>
     </div>}
     <HomeChallenges user={user} practiceSessions={practiceSessions} language={language} T={T} onSeeAll={onGoToPractice} onOpenExercise={onOpenExercise} />
     <div className="home-pinned">
@@ -4674,14 +4659,20 @@ function PracticeMode({ whenCelebrationsDone, onMetronomeToneChange, skillTab, s
   }
   // The newest session at this tempo decides how it is labelled: if it felt comfortable last week but "almost" this week, it now reads "almost".
   // Unlocking is unaffected (an unlocked tempo stays unlocked), and a downgrade never plays an animation.
-  function latestSessionAt(itemEn: string, targetBpm: number) {
+  // A session of only a few seconds is a test tap, not practice: it never changes how a tempo is labelled (it still counts in the history).
+  const MIN_LABEL_SECONDS = 15;
+  function latestSessionAt(itemEn: string, targetBpm: number, skipTooShortGood = false) {
     const stamp = (s: any) => String(s.created_at ?? s.practiced_on ?? "");
-    return sessions.filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm).reduce((latest: any, s: any) => (!latest || stamp(s) >= stamp(latest) ? s : latest), null as any);
+    return sessions
+      .filter((s: any) => s.item_en === itemEn && s.bpm === targetBpm && sessionMinutesExact(s) * 60 >= MIN_LABEL_SECONDS
+        // A "comfortable" or "mastered" that was too short to count must not pull down a tempo that was already unlocked.
+        && !(skipTooShortGood && (s.rating === "comfortable" || s.rating === "mastered") && effectiveRatingOf(s) !== s.rating))
+      .reduce((latest: any, s: any) => (!latest || stamp(s) >= stamp(latest) ? s : latest), null as any);
   }
   function bestQualifyingRating(itemEn: string, targetBpm: number) {
-    // Only tempos that have a counting session get a label here; the label itself is the newest feeling.
+    // Only tempos that have a counting session get a label here; the label itself is the newest real feeling.
     if (qualifyingMinutesAt(itemEn, targetBpm) <= 0) return null;
-    const latest = latestSessionAt(itemEn, targetBpm);
+    const latest = latestSessionAt(itemEn, targetBpm, true);
     return latest ? effectiveRatingOf(latest) : null;
   }
   function bestRatingAny(itemEn: string, targetBpm: number) {
@@ -6401,6 +6392,8 @@ const POINTS_LB_TEXT: Record<Lang, { label: string; sub: string }> = {
   nl: { label: "Puntenranglijst", sub: "Zet Drum Points aan en toont je voornaam en punten aan andere volwassenen die meedoen." },
   es: { label: "Tabla de puntos", sub: "Activa los Drum Points y muestra tu nombre y puntos a otros adultos que se unieron." },
 };
+const TODAY_KEEP_GOING: Record<Lang, string> = { en: "Keep it going", nl: "Ga door", es: "Sigue así" };
+const TODAY_DETAILS: Record<Lang, string> = { en: "Details", nl: "Details", es: "Detalles" };
 const SPEED_GROUP_TEXT: Record<Lang, { adults: string; kids: string }> = {
   en: { adults: "14 and up", kids: "Under 14" },
   nl: { adults: "14 en ouder", kids: "Onder 14" },

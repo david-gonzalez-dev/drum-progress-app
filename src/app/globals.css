@@ -2505,3 +2505,8 @@ html.is-tablet .metro-practice .metro-section-label{font-size:15px}
 @keyframes pointsFloat{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-2px) rotate(4deg)}}
 @keyframes pointsTwinkle{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.points-card-compact .points-card-icon,.points-spark{animation:none}.points-spark{opacity:.8}}
+
+/* Home Today card: always one button; the practised items live in the Details window */
+.today-goal-card .today-card-cta{display:flex;margin:14px auto 0}
+.today-detail-hint{float:right;font:500 13px 'DM Sans';letter-spacing:.2px;color:#ffb27a;text-transform:none}
+.today-goal-card-open{border-color:rgba(255,155,80,.35)}
